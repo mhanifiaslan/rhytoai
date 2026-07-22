@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Cosmic Social AI</string>
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Yıldızların Sırlarını Keşfet</string>
+    <string name="onboarding_continue">Devam Et</string>
+    <!-- Common -->
+    <string name="home">Ana Sayfa</string>
+    <string name="chat">Sohbet</string>
+    <string name="social">Sosyal</string>
+    <string name="profile">Profil</string>
+</resources>

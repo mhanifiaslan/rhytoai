@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">RythoAI</string>
+    <!-- Onboarding -->
+    <string name="onboarding_welcome_title">Discover the Secrets of the Stars</string>
+    <string name="onboarding_continue">Continue</string>
+    <!-- Common -->
+    <string name="home">Home</string>
+    <string name="chat">Chat</string>
+    <string name="social">Social</string>
+    <string name="profile">Profile</string>
+    <!-- Firebase / Google Sign-In Web Client ID (from Firebase Console > Auth > Google > Web client ID) -->
+    <string name="default_web_client_id">770582338651-0kimgrjfj4brfl6k5h3g6amn2rm7ue6a.apps.googleusercontent.com</string>
+</resources>

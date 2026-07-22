@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+kerykeion
+deepface
+opencv-python
+pydantic
+python-multipart
+tf-keras
+google-genai
+google-cloud-aiplatform
+python-dotenv
