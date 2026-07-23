@@ -12,8 +12,6 @@ service cloud.firestore {
 
     // ---------- Kullanıcı profilleri ----------
     match /users/{uid} {
-      // Profiller sosyal katman icin okunabilir (dogum verisi hassas —
-      // istemci yalnizca gerekli alanlari yazar/gosterir)
       allow read: if signedIn();
       allow create, update: if isOwner(uid)
         && request.resource.data.keys().hasOnly([
@@ -23,19 +21,36 @@ service cloud.firestore {
           'onboardingCompleted', 'createdAt', 'updatedAt', 'fcmToken', 'bio'
         ]);
       allow delete: if isOwner(uid);
+
+      // Takip sistemi (X modeli):
+      // following/{targetUid} -> profil sahibi yazar
+      match /following/{targetUid} {
+        allow read: if signedIn();
+        allow create, delete: if isOwner(uid);
+      }
+      // followers/{followerUid} -> takip eden kişi yazar
+      match /followers/{followerUid} {
+        allow read: if signedIn();
+        allow create, delete: if signedIn() && request.auth.uid == followerUid;
+      }
     }
 
-    // ---------- Herkese açık kozmik akış ----------
+    // ---------- Gönderiler (kişisel akış + kanal gönderileri) ----------
     match /posts/{postId} {
+      function isChannelOwner() {
+        return get(/databases/$(database)/documents/channels/$(request.resource.data.channelId)).data.ownerId == request.auth.uid;
+      }
+
       allow read: if signedIn();
       allow create: if signedIn()
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.text is string
         && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 2000;
-      // Yazar yalnizca kendi gonderisini gunceller/siler; begeni sayaclari
-      // begeniler alt koleksiyonundan Cloud Function'siz istemci tarafinda
-      // hesaplanir, dokuman uzerinde sayac tutulmaz.
+        && request.resource.data.text.size() <= 2000
+        // Kanal gönderisini yalnızca kanal sahibi atabilir
+        && (!('channelId' in request.resource.data)
+            || request.resource.data.channelId == null
+            || isChannelOwner());
       allow update, delete: if signedIn()
         && resource.data.authorId == request.auth.uid;
 
@@ -53,29 +68,19 @@ service cloud.firestore {
       }
     }
 
-    // ---------- Ağlar (topluluklar) ----------
-    match /networks/{networkId} {
+    // ---------- Kanallar (tek yönlü yayın) ----------
+    match /channels/{channelId} {
       allow read: if signedIn();
       allow create: if signedIn()
-        && request.resource.data.creatorId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid
         && request.resource.data.name is string
         && request.resource.data.name.size() >= 3
         && request.resource.data.name.size() <= 60;
-      allow update, delete: if signedIn() && resource.data.creatorId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
 
-      match /members/{uid} {
+      match /subscribers/{uid} {
         allow read: if signedIn();
-        // Kullanici kendini ekler/cikarir (acik aglar)
         allow create, delete: if isOwner(uid);
-      }
-
-      match /posts/{postId} {
-        allow read: if signedIn();
-        allow create: if signedIn()
-          && request.resource.data.authorId == request.auth.uid
-          && exists(/databases/$(database)/documents/networks/$(networkId)/members/$(request.auth.uid))
-          && request.resource.data.text.size() <= 2000;
-        allow update, delete: if signedIn() && resource.data.authorId == request.auth.uid;
       }
     }
 

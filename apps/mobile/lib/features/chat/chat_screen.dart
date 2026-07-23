@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/cosmic_scaffold.dart';
 
 /// Rytho ile sohbet — AI mesajları "marjinal not", kullanıcı mesajları
 /// mürekkep bloğu olarak akar.
@@ -65,7 +66,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CosmicScaffold(
       appBar: AppBar(title: const Text('Rytho')),
       body: Column(children: [
         Expanded(

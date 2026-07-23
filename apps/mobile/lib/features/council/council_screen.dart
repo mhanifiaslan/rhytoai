@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/rytho_theme.dart';
+import 'channels_tab.dart';
 import 'feed_tab.dart';
 import 'messages_tab.dart';
-import 'networks_tab.dart';
 
-/// MECLİS — sosyal katman: herkese açık akış, ağlar (topluluklar) ve DM.
+/// MECLİS — sosyal katman: X-modeli akış (Takip/Keşfet), kanallar ve DM.
 class CouncilScreen extends StatefulWidget {
   const CouncilScreen({super.key});
 
@@ -27,6 +27,7 @@ class _CouncilScreenState extends State<CouncilScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Meclis'),
         bottom: TabBar(
@@ -39,14 +40,14 @@ class _CouncilScreenState extends State<CouncilScreen>
               RythoText.label(12, color: RythoColors.parchmentDim),
           tabs: const [
             Tab(text: 'AKIŞ'),
-            Tab(text: 'AĞLAR'),
+            Tab(text: 'KANALLAR'),
             Tab(text: 'MESAJLAR'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [FeedTab(), NetworksTab(), MessagesTab()],
+        children: const [FeedTab(), ChannelsTab(), MessagesTab()],
       ),
     );
   }

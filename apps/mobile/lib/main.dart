@@ -10,6 +10,7 @@ import 'features/onboarding/onboarding_screen.dart';
 import 'features/shell/app_shell.dart';
 import 'theme/rytho_theme.dart';
 import 'widgets/atlas_widgets.dart';
+import 'widgets/cosmic_scaffold.dart';
 
 /// Web client id (google-services.json / client_type 3) — Google Sign-In için.
 const kServerClientId =
@@ -75,7 +76,7 @@ class _Splash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return CosmicScaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,

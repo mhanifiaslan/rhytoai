@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/rytho_theme.dart';
+import '../../widgets/cosmic_scaffold.dart';
+import '../../widgets/glass.dart';
 import '../atlas/atlas_screen.dart';
 import '../council/council_screen.dart';
 import '../oracle/oracle_screen.dart';
 import '../profile/profile_screen.dart';
 import '../sky/sky_screen.dart';
 
-/// Ana kabuk: 5 sekme — Gökyüzü, Atlas, Kehanet, Meclis, Sicil.
+/// Ana kabuk: yıldız alanı zemin + 5 sekmeli yüzen cam dock.
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -28,67 +29,35 @@ class _AppShellState extends State<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _index,
-        children: const [
-          SkyScreen(),
-          AtlasScreen(),
-          OracleScreen(),
-          CouncilScreen(),
-          ProfileScreen(),
-        ],
-      ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: RythoColors.ink,
-          border: Border(top: BorderSide(color: RythoColors.line)),
-        ),
-        child: SafeArea(
-          child: SizedBox(
-            height: 62,
-            child: Row(
-              children: [
-                for (var i = 0; i < _tabs.length; i++)
-                  Expanded(
-                    child: InkWell(
-                      onTap: () => setState(() => _index = i),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _tabs[i].icon,
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: _index == i
-                                  ? RythoColors.goldBright
-                                  : RythoColors.parchmentDim,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            _tabs[i].label,
-                            style: RythoText.label(9,
-                                color: _index == i
-                                    ? RythoColors.goldBright
-                                    : RythoColors.parchmentDim),
-                          ),
-                          const SizedBox(height: 4),
-                          AnimatedContainer(
-                            duration: const Duration(milliseconds: 250),
-                            curve: Curves.easeOutCubic,
-                            height: 2,
-                            width: _index == i ? 16 : 0,
-                            color: RythoColors.gold,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
+    return CosmicScaffold(
+      extendBody: true,
+      body: Stack(children: [
+        for (var i = 0; i < 5; i++)
+          IgnorePointer(
+            ignoring: _index != i,
+            child: AnimatedOpacity(
+              opacity: _index == i ? 1 : 0,
+              duration: const Duration(milliseconds: 280),
+              curve: Curves.easeOutCubic,
+              child: AnimatedSlide(
+                offset: _index == i ? Offset.zero : const Offset(0, 0.012),
+                duration: const Duration(milliseconds: 280),
+                curve: Curves.easeOutCubic,
+                child: const [
+                  SkyScreen(),
+                  AtlasScreen(),
+                  OracleScreen(),
+                  CouncilScreen(),
+                  ProfileScreen(),
+                ][i],
+              ),
             ),
           ),
-        ),
+      ]),
+      bottomNavigationBar: CosmicDock(
+        items: _tabs,
+        index: _index,
+        onChanged: (i) => setState(() => _index = i),
       ),
     );
   }

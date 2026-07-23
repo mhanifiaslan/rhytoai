@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/api.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/cosmic_scaffold.dart';
 
 String _chatIdFor(String a, String b) {
   final ids = [a, b]..sort();
@@ -160,7 +161,7 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    return Scaffold(
+    return CosmicScaffold(
       appBar: AppBar(title: Text(widget.otherName)),
       body: Column(children: [
         Expanded(
@@ -193,10 +194,19 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                       constraints: BoxConstraints(
                           maxWidth: MediaQuery.of(context).size.width * 0.75),
                       decoration: BoxDecoration(
-                        color: mine ? RythoColors.inkLighter : RythoColors.inkLight,
-                        borderRadius: BorderRadius.circular(4),
+                        color: mine
+                            ? RythoColors.inkLighter.withValues(alpha: 0.85)
+                            : RythoColors.glassFill,
+                        borderRadius: BorderRadius.only(
+                          topLeft: const Radius.circular(16),
+                          topRight: const Radius.circular(16),
+                          bottomLeft: Radius.circular(mine ? 16 : 4),
+                          bottomRight: Radius.circular(mine ? 4 : 16),
+                        ),
                         border: Border.all(
-                            color: mine ? RythoColors.line : RythoColors.gold,
+                            color: mine
+                                ? RythoColors.glassStroke
+                                : RythoColors.gold.withValues(alpha: 0.5),
                             width: mine ? 1 : 0.6),
                       ),
                       child: Text(message['text'] ?? '',

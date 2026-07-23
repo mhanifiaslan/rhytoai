@@ -27,7 +27,9 @@ class BaziTab extends ConsumerWidget {
             Map<String, dynamic>.from(chart['element_distribution']);
         final luck = List<Map<String, dynamic>>.from(chart['luck_pillars']);
 
-        return ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
+        return ListView(
+            padding: const EdgeInsets.only(top: 8, bottom: 110),
+            children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text('Kaderin Dört Sütunu', style: RythoText.display(28)),

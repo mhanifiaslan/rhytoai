@@ -48,7 +48,9 @@ class _IChingTabState extends ConsumerState<IChingTab> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(padding: const EdgeInsets.all(16), children: [
+    return ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
+        children: [
       Text('Değişimler Kitabı', style: RythoText.display(28)),
       const SizedBox(height: 8),
       Text(

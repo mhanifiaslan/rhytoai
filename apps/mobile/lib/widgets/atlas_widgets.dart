@@ -3,8 +3,9 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/rytho_theme.dart';
+import 'glass.dart';
 
-/// "Levha" — konturlu, gölgesiz kart. Üstte mono etiketli başlık şeridi.
+/// "Levha" — v2'de cam panele delege eder; eski çağrı yüzeyi korunur.
 class Plaque extends StatelessWidget {
   const Plaque({
     super.key,
@@ -21,28 +22,11 @@ class Plaque extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassPanel(
+      label: label,
+      padding: padding,
       margin: margin,
-      decoration: BoxDecoration(
-        color: RythoColors.inkLight,
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: RythoColors.line),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (label != null)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: const BoxDecoration(
-                border: Border(bottom: BorderSide(color: RythoColors.line)),
-              ),
-              child: Text(label!.toUpperCase(),
-                  style: RythoText.mono(11, color: RythoColors.parchmentDim)),
-            ),
-          Padding(padding: padding, child: child),
-        ],
-      ),
+      child: child,
     );
   }
 }
@@ -64,15 +48,22 @@ class GoldButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 48,
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: onPressed != null && !busy
+            ? const [BoxShadow(color: RythoColors.goldGlow, blurRadius: 22, spreadRadius: -8)]
+            : null,
+      ),
       child: OutlinedButton(
         onPressed: busy ? null : onPressed,
         style: OutlinedButton.styleFrom(
           side: const BorderSide(color: RythoColors.gold),
-          backgroundColor: filled ? RythoColors.gold : Colors.transparent,
+          backgroundColor:
+              filled ? RythoColors.gold : RythoColors.glassFill,
           foregroundColor: filled ? RythoColors.ink : RythoColors.goldBright,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: busy
             ? const SizedBox(width: 22, height: 22, child: AstrolabeSpinner(size: 22))
@@ -129,6 +120,49 @@ class MarginNote extends StatelessWidget {
           Text(text, style: RythoText.body(15, height: 1.65)),
         ],
       ),
+    );
+  }
+}
+
+/// Metni daktilo/akış hissiyle beliren blok — AI okumaları için.
+class TypewriterText extends StatefulWidget {
+  const TypewriterText({super.key, required this.text, required this.style});
+  final String text;
+  final TextStyle style;
+
+  @override
+  State<TypewriterText> createState() => _TypewriterTextState();
+}
+
+class _TypewriterTextState extends State<TypewriterText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: Duration(milliseconds: (widget.text.length * 9).clamp(600, 6000)),
+  )..forward();
+
+  @override
+  void didUpdateWidget(TypewriterText old) {
+    super.didUpdateWidget(old);
+    if (old.text != widget.text) _controller.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, _) {
+        final count =
+            (widget.text.length * Curves.easeOut.transform(_controller.value))
+                .round();
+        return Text(widget.text.substring(0, count), style: widget.style);
+      },
     );
   }
 }

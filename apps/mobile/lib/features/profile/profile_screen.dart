@@ -47,8 +47,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(title: const Text('Sicil')),
-      body: ListView(padding: const EdgeInsets.symmetric(vertical: 8), children: [
+      body: ListView(
+          padding: const EdgeInsets.only(top: 8, bottom: 110),
+          children: [
         const SizedBox(height: 12),
         Center(
           child: CircleAvatar(

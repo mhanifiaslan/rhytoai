@@ -1,91 +1,99 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
-import 'synastry_sheet.dart';
+import '../../widgets/glass.dart';
+import 'profile_page.dart';
 
-/// Herkese açık kozmik akış. networkId'siz gönderiler burada yayınlanır.
-class FeedTab extends ConsumerWidget {
-  const FeedTab({super.key, this.networkId});
+enum FeedMode { following, explore }
 
-  /// null → herkese açık akış; dolu → ağ akışı.
-  final String? networkId;
+/// X-modeli akış: "Takip" (takip edilenler + kendin) ve "Keşfet" (herkes).
+/// channelId verilirse o kanalın tek yönlü akışı gösterilir.
+class FeedTab extends ConsumerStatefulWidget {
+  const FeedTab({super.key, this.channelId, this.channelOwnerId});
 
-  Query<Map<String, dynamic>> _query() {
-    var q = FirebaseFirestore.instance
-        .collection('posts')
-        .where('networkId', isNull: networkId == null);
-    if (networkId != null) {
-      q = FirebaseFirestore.instance
-          .collection('posts')
-          .where('networkId', isEqualTo: networkId);
-    }
-    return q.orderBy('createdAt', descending: true).limit(50);
-  }
+  final String? channelId;
+  final String? channelOwnerId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FeedTab> createState() => _FeedTabState();
+}
+
+class _FeedTabState extends ConsumerState<FeedTab> {
+  FeedMode _mode = FeedMode.following;
+
+  String get _uid => FirebaseAuth.instance.currentUser!.uid;
+  bool get _isChannel => widget.channelId != null;
+
+  @override
+  Widget build(BuildContext context) {
+    final canPost = !_isChannel || widget.channelOwnerId == _uid;
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-        stream: _query().snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Akış yüklenemedi: ${snapshot.error}',
-                  style: RythoText.body(13, color: RythoColors.parchmentDim)),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: AstrolabeSpinner());
-          }
-          final docs = snapshot.data!.docs;
-          if (docs.isEmpty) {
-            return Center(
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text('✦', style: RythoText.display(32, color: RythoColors.gold)),
-                const SizedBox(height: 8),
-                Text('Meclis henüz sessiz.\nİlk sözü sen söyle.',
-                    textAlign: TextAlign.center,
-                    style:
-                        RythoText.body(14, color: RythoColors.parchmentDim)),
-              ]),
-            );
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.only(top: 8, bottom: 80),
-            itemCount: docs.length,
-            itemBuilder: (_, i) => PostCard(
-              postId: docs[i].id,
-              post: docs[i].data(),
-            ),
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: RythoColors.gold,
-        foregroundColor: RythoColors.ink,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-        onPressed: () => _openComposer(context, ref),
-        child: const Icon(Icons.edit_outlined),
-      ),
+      body: Column(children: [
+        if (!_isChannel) ...[
+          const SizedBox(height: 10),
+          GlassSegments(
+            labels: const ['Takip', 'Keşfet'],
+            index: _mode.index,
+            onChanged: (i) => setState(() => _mode = FeedMode.values[i]),
+          ),
+          const SizedBox(height: 4),
+        ],
+        Expanded(
+          child: _isChannel
+              ? _PostList(
+                  query: FirebaseFirestore.instance
+                      .collection('posts')
+                      .where('channelId', isEqualTo: widget.channelId)
+                      .orderBy('createdAt', descending: true)
+                      .limit(50),
+                  emptyText: 'Bu kanal henüz sessiz.',
+                )
+              : _mode == FeedMode.explore
+                  ? _PostList(
+                      query: FirebaseFirestore.instance
+                          .collection('posts')
+                          .where('channelId', isNull: true)
+                          .orderBy('createdAt', descending: true)
+                          .limit(50),
+                      emptyText: 'Meclis henüz sessiz.\nİlk sözü sen söyle.',
+                    )
+                  : _FollowingFeed(uid: _uid),
+        ),
+      ]),
+      floatingActionButton: canPost
+          ? Padding(
+              padding: EdgeInsets.only(bottom: _isChannel ? 0 : 78),
+              child: FloatingActionButton(
+                backgroundColor: RythoColors.gold,
+                foregroundColor: RythoColors.ink,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16)),
+                onPressed: () => _openComposer(context),
+                child: const Icon(Icons.edit_outlined),
+              ),
+            )
+          : null,
     );
   }
 
-  void _openComposer(BuildContext context, WidgetRef ref) {
+  void _openComposer(BuildContext context) {
     final controller = TextEditingController();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: RythoColors.inkLight,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-        side: BorderSide(color: RythoColors.line),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        side: BorderSide(color: RythoColors.glassStroke),
       ),
       builder: (sheetContext) => Padding(
         padding: EdgeInsets.only(
@@ -95,7 +103,7 @@ class FeedTab extends ConsumerWidget {
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('MECLİSE SESLEN',
+          Text(_isChannel ? 'KANALA YAYINLA' : 'MECLİSE SESLEN',
               style: RythoText.mono(11, color: RythoColors.parchmentDim)),
           const SizedBox(height: 14),
           TextField(
@@ -125,7 +133,7 @@ class FeedTab extends ConsumerWidget {
                   'authorPhoto': profile['photoUrl'],
                   'authorSign': profile['sunSign'],
                   'text': text,
-                  'networkId': networkId,
+                  'channelId': widget.channelId,
                   'createdAt': FieldValue.serverTimestamp(),
                 });
               },
@@ -137,33 +145,129 @@ class FeedTab extends ConsumerWidget {
   }
 }
 
-class PostCard extends ConsumerWidget {
+/// Takip akışı: following listesi + kendi gönderilerin.
+/// İlk sürüm: ≤10 takip için `whereIn`; fazlası Keşfet'e yönlendirilir.
+class _FollowingFeed extends StatelessWidget {
+  const _FollowingFeed({required this.uid});
+  final String uid;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('following')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: AstrolabeSpinner());
+        }
+        final ids = [uid, ...snapshot.data!.docs.map((d) => d.id)];
+        // Firestore whereIn sınırı 10 — ilk 10 kimlikle sorgula
+        final queryIds = ids.take(10).toList();
+        return _PostList(
+          query: FirebaseFirestore.instance
+              .collection('posts')
+              .where('channelId', isNull: true)
+              .where('authorId', whereIn: queryIds)
+              .orderBy('createdAt', descending: true)
+              .limit(50),
+          emptyText: ids.length == 1
+              ? 'Henüz kimseyi takip etmiyorsun.\nKeşfet sekmesinden gökyüzü komşularını bul.'
+              : 'Takip ettiklerin henüz sessiz.',
+        );
+      },
+    );
+  }
+}
+
+class _PostList extends StatelessWidget {
+  const _PostList({required this.query, required this.emptyText});
+  final Query<Map<String, dynamic>> query;
+  final String emptyText;
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+      stream: query.snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('Akış yüklenemedi: ${snapshot.error}',
+                  style: RythoText.body(13, color: RythoColors.parchmentDim)),
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Center(child: AstrolabeSpinner());
+        }
+        final docs = snapshot.data!.docs;
+        if (docs.isEmpty) {
+          return Center(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Text('✦', style: RythoText.display(32, color: RythoColors.gold)),
+              const SizedBox(height: 8),
+              Text(emptyText,
+                  textAlign: TextAlign.center,
+                  style: RythoText.body(14, color: RythoColors.parchmentDim)),
+            ]),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.only(top: 8, bottom: 140),
+          itemCount: docs.length,
+          itemBuilder: (_, i) => PostCard(
+            postId: docs[i].id,
+            post: docs[i].data(),
+          )
+              .animate(delay: (i.clamp(0, 8) * 45).ms)
+              .fadeIn(duration: 320.ms)
+              .slideY(begin: 0.05, curve: Curves.easeOutCubic),
+        );
+      },
+    );
+  }
+}
+
+/// Cam gönderi kartı: avatar → profil sayfası, beğenide ✦ patlaması.
+class PostCard extends ConsumerStatefulWidget {
   const PostCard({super.key, required this.postId, required this.post});
   final String postId;
   final Map<String, dynamic> post;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PostCard> createState() => _PostCardState();
+}
+
+class _PostCardState extends ConsumerState<PostCard> {
+  int _likeBurst = 0;
+
+  void _openProfile() {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ProfilePage(uid: widget.post['authorId'])));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final post = widget.post;
     final uid = FirebaseAuth.instance.currentUser!.uid;
     final createdAt = (post['createdAt'] as Timestamp?)?.toDate();
     final timeText = createdAt == null
         ? ''
         : DateFormat('d MMM HH:mm', 'tr_TR').format(createdAt);
 
-    return Container(
+    return GlassPanel(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: RythoColors.inkLight,
-        border: Border.all(color: RythoColors.line),
-        borderRadius: BorderRadius.circular(4),
-      ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           GestureDetector(
-            onTap: () => showUserSheet(context, post['authorId']),
+            onTap: _openProfile,
             child: CircleAvatar(
-              radius: 16,
+              radius: 17,
               backgroundColor: RythoColors.inkLighter,
               backgroundImage: post['authorPhoto'] != null
                   ? NetworkImage(post['authorPhoto'])
@@ -175,16 +279,21 @@ class PostCard extends ConsumerWidget {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(post['authorName'] ?? 'Gezgin', style: RythoText.body(14)),
-              Text(
-                [
-                  if (post['authorSign'] != null) '☉ ${post['authorSign']}',
-                  timeText,
-                ].join('  ·  '),
-                style: RythoText.mono(10, color: RythoColors.parchmentDim),
-              ),
-            ]),
+            child: GestureDetector(
+              onTap: _openProfile,
+              child:
+                  Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(post['authorName'] ?? 'Gezgin',
+                    style: RythoText.body(14, w: FontWeight.w600)),
+                Text(
+                  [
+                    if (post['authorSign'] != null) '☉ ${post['authorSign']}',
+                    timeText,
+                  ].join('  ·  '),
+                  style: RythoText.mono(10, color: RythoColors.parchmentDim),
+                ),
+              ]),
+            ),
           ),
         ]),
         const SizedBox(height: 10),
@@ -193,7 +302,7 @@ class PostCard extends ConsumerWidget {
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
               .collection('posts')
-              .doc(postId)
+              .doc(widget.postId)
               .collection('likes')
               .snapshots(),
           builder: (_, snapshot) {
@@ -201,26 +310,50 @@ class PostCard extends ConsumerWidget {
             final liked = likes.any((d) => d.id == uid);
             return Row(children: [
               InkWell(
+                borderRadius: BorderRadius.circular(8),
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   final refDoc = FirebaseFirestore.instance
                       .collection('posts')
-                      .doc(postId)
+                      .doc(widget.postId)
                       .collection('likes')
                       .doc(uid);
-                  liked ? refDoc.delete() : refDoc.set({'at': FieldValue.serverTimestamp()});
+                  if (liked) {
+                    refDoc.delete();
+                  } else {
+                    refDoc.set({'at': FieldValue.serverTimestamp()});
+                    setState(() => _likeBurst++);
+                  }
                 },
-                child: Text(
-                  liked ? '✦ ${likes.length}' : '✧ ${likes.length}',
-                  style: RythoText.mono(13,
-                      color:
-                          liked ? RythoColors.goldBright : RythoColors.parchmentDim),
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  child: Text(
+                    liked ? '✦ ${likes.length}' : '✧ ${likes.length}',
+                    style: RythoText.mono(13,
+                        color: liked
+                            ? RythoColors.goldBright
+                            : RythoColors.parchmentDim),
+                  )
+                      .animate(key: ValueKey(_likeBurst))
+                      .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1.5, 1.5),
+                          duration: 140.ms,
+                          curve: Curves.easeOut)
+                      .then()
+                      .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1 / 1.5, 1 / 1.5),
+                          duration: 220.ms,
+                          curve: Curves.elasticOut),
                 ),
               ),
               const Spacer(),
               if (post['authorId'] != uid)
                 InkWell(
-                  onTap: () => showUserSheet(context, post['authorId']),
-                  child: Text('UYUM BAK',
+                  onTap: _openProfile,
+                  child: Text('PROFİL',
                       style: RythoText.label(10, color: RythoColors.copper)),
                 ),
             ]);

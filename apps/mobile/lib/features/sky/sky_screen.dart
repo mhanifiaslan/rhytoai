@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/glass.dart';
 import '../chat/chat_screen.dart';
 
 /// GÖKYÜZÜ — ana ekran: canlı zodyak çemberi (gerçek gezegen konumları),
@@ -19,6 +20,7 @@ class SkyScreen extends ConsumerWidget {
     final today = DateFormat('d MMMM yyyy', 'tr_TR').format(DateTime.now());
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Şu Anki Sema'),
         actions: [
@@ -40,6 +42,7 @@ class SkyScreen extends ConsumerWidget {
         },
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 110),
           children: [
             const SizedBox(height: 8),
             Center(
@@ -67,25 +70,25 @@ class SkyScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Text('Günün Okuması', style: RythoText.display(24)),
             ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: daily.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(32),
-                  child: Center(child: AstrolabeSpinner()),
-                ),
-                error: (e, _) => _ErrorPlaque(error: '$e'),
-                data: (data) => data == null
-                    ? const SizedBox.shrink()
-                    : MarginNote(
-                        title:
-                            '${data['sun_sign']} · ${data['moon_sign']} · yükselen ${data['ascendant']}',
-                        text: data['reading'] ?? '',
-                      ),
+            const SizedBox(height: 4),
+            daily.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(32),
+                child: Center(child: AstrolabeSpinner()),
               ),
+              error: (e, _) => _ErrorPlaque(error: '$e'),
+              data: (data) => data == null
+                  ? const SizedBox.shrink()
+                  : GlassPanel(
+                      label:
+                          '${data['sun_sign']} · ${data['moon_sign']} · yükselen ${data['ascendant']}',
+                      child: TypewriterText(
+                        text: data['reading'] ?? '',
+                        style: RythoText.body(15, height: 1.65),
+                      ),
+                    ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
           ],
         ),
       ),

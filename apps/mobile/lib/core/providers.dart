@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -46,19 +45,6 @@ final natalReportProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   final response =
       await dio.post('/api/v1/reports/natal', data: birthPayload(profile));
   return Map<String, dynamic>.from(response.data['data']);
-});
-
-/// Natal harita SVG'si (gravür teması).
-final natalSvgProvider = FutureProvider<String?>((ref) async {
-  final profile = ref.watch(profileProvider).value;
-  if (profile == null || profile['onboardingCompleted'] != true) return null;
-  final dio = ref.watch(apiProvider);
-  final response = await dio.post(
-    '/api/v1/astrology/natal-chart/svg',
-    data: birthPayload(profile),
-    options: Options(responseType: ResponseType.plain),
-  );
-  return response.data as String;
 });
 
 /// BaZi haritası + rapor.

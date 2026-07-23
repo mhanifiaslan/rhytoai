@@ -28,6 +28,7 @@ class _OracleScreenState extends ConsumerState<OracleScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text('Kehanet Odası'),
         bottom: TabBar(

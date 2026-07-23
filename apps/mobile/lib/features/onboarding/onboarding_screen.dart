@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import '../../core/api.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/cosmic_scaffold.dart';
 
 /// Doğum verisi kaydı: tarih, saat, şehir, cinsiyet.
 /// Kaydederken backend'den Büyük Üçlü (Güneş/Ay/Yükselen) hesaplanıp
@@ -89,7 +90,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final timeText =
         '${_birthTime.hour.toString().padLeft(2, '0')}:${_birthTime.minute.toString().padLeft(2, '0')}';
 
-    return Scaffold(
+    return CosmicScaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),

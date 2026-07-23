@@ -124,6 +124,7 @@ def get_natal_chart(
         houses.append({
             "house": i, "sign": h.sign, "sign_tr": SIGN_TR.get(h.sign, h.sign),
             "position": round(h.position, 2),
+            "abs_position": round(h.abs_pos, 2),
         })
 
     asc = subject.first_house
