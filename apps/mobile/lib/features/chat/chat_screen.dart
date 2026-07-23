@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
+import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
-import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
+import '../../widgets/nebula_widgets.dart';
 
-/// Rytho ile sohbet — AI mesajları "marjinal not", kullanıcı mesajları
-/// mürekkep bloğu olarak akar.
+/// Rytho AI sohbeti — v3: kullanıcı sağda beyaz balon, Rytho solda mor
+/// degrade balon; öneri çipleri, "yazıyor" üç noktası, yaylanan giriş
+/// animasyonları ve gönder/al sesleri.
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key});
 
@@ -21,10 +25,20 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   bool _busy = false;
 
-  Future<void> _send() async {
-    final text = _controller.text.trim();
+  static const _suggestions = [
+    'Kariyer 💼',
+    'Aşk hayatı ❤️',
+    'Bu ay beni ne bekliyor?',
+    'Finansal şans 💰',
+    'Evlilik zamanı 💍',
+  ];
+
+  Future<void> _send([String? preset]) async {
+    final text = (preset ?? _controller.text).trim();
     if (text.isEmpty || _busy) return;
     _controller.clear();
+    HapticFeedback.lightImpact();
+    SoundFx.send();
     setState(() {
       _messages.add((sender: 'USER', text: text));
       _busy = true;
@@ -41,6 +55,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           data: {'history': history, 'message': text});
       setState(() =>
           _messages.add((sender: 'AI', text: response.data['reply'] ?? '')));
+      SoundFx.receive();
     } catch (e) {
       setState(() => _messages.add((
             sender: 'AI',
@@ -67,102 +82,239 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return CosmicScaffold(
-      appBar: AppBar(title: const Text('Rytho')),
+      appBar: AppBar(
+        title: Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RythoColors.primaryGradient,
+            ),
+            child: const Text('✦',
+                style: TextStyle(fontSize: 14, color: Colors.white)),
+          ),
+          const SizedBox(width: 10),
+          const Text('Rytho AI'),
+        ]),
+      ),
       body: Column(children: [
         Expanded(
           child: _messages.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text('✧', style: RythoText.display(40, color: RythoColors.gold)),
-                      const SizedBox(height: 12),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 48),
-                        child: Text(
-                          'Haritan, yüzün, kaderin... Aklından geçen her soruyu '
-                          'kadim kaynaklarla harmanlayarak yanıtlarım.',
-                          textAlign: TextAlign.center,
-                          style: RythoText.body(14, color: RythoColors.parchmentDim),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
+              ? _EmptyState(onSuggestion: (s) => _send(s))
               : ListView.builder(
                   controller: _scrollController,
                   padding: const EdgeInsets.all(16),
                   itemCount: _messages.length + (_busy ? 1 : 0),
                   itemBuilder: (_, i) {
                     if (i == _messages.length) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16),
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: AstrolabeSpinner(size: 28),
+                      return const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 12),
+                          child: TypingDots(),
                         ),
-                      );
+                      )
+                          .animate()
+                          .fadeIn(duration: 220.ms)
+                          .slideY(begin: 0.2, curve: Curves.easeOutBack);
                     }
                     final m = _messages[i];
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: m.sender == 'AI'
-                          ? MarginNote(text: m.text)
-                          : Align(
-                              alignment: Alignment.centerRight,
-                              child: Container(
-                                constraints: BoxConstraints(
-                                    maxWidth:
-                                        MediaQuery.of(context).size.width * 0.75),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: RythoColors.inkLighter,
-                                  borderRadius: BorderRadius.circular(4),
-                                  border: Border.all(color: RythoColors.line),
-                                ),
-                                child: Text(m.text, style: RythoText.body(15)),
-                              ),
-                            ),
+                    final mine = m.sender != 'AI';
+                    return Align(
+                      alignment:
+                          mine ? Alignment.centerRight : Alignment.centerLeft,
+                      child: _Bubble(text: m.text, mine: mine)
+                          .animate()
+                          .fadeIn(duration: 240.ms)
+                          .slideY(begin: 0.25, curve: Curves.easeOutBack)
+                          .scale(
+                              begin: const Offset(0.92, 0.92),
+                              curve: Curves.easeOutBack,
+                              duration: 300.ms),
                     );
                   },
                 ),
         ),
-        Container(
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: RythoColors.line)),
+        // Öneri çipleri
+        SizedBox(
+          height: 42,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: _suggestions.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (_, i) => Center(
+              child: SuggestionChip(
+                text: _suggestions[i],
+                onTap: () => _send(_suggestions[i]),
+              ),
+            ),
           ),
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        ),
+        const SizedBox(height: 8),
+        // Giriş alanı: + / metin / degrade gönder
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
           child: SafeArea(
             child: Row(children: [
+              Container(
+                width: 42,
+                height: 42,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: RythoColors.inkLight,
+                  border: Border.all(color: RythoColors.glassStroke),
+                ),
+                child: const Icon(Icons.add,
+                    size: 20, color: RythoColors.parchmentDim),
+              ),
+              const SizedBox(width: 10),
               Expanded(
                 child: TextField(
                   controller: _controller,
                   style: RythoText.body(15),
                   minLines: 1,
                   maxLines: 4,
-                  decoration: const InputDecoration(hintText: 'Sor...'),
+                  decoration: InputDecoration(
+                    hintText: 'Geleceğinle ilgili her şeyi sor...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide:
+                          const BorderSide(color: RythoColors.glassStroke),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide:
+                          const BorderSide(color: RythoColors.glassStroke),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide:
+                          const BorderSide(color: RythoColors.purple),
+                    ),
+                  ),
                   onSubmitted: (_) => _send(),
                 ),
               ),
               const SizedBox(width: 10),
-              InkWell(
+              Pressable(
                 onTap: _send,
                 child: Container(
-                  width: 44,
-                  height: 44,
+                  width: 46,
+                  height: 46,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: RythoColors.gold),
-                    borderRadius: BorderRadius.circular(4),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RythoColors.primaryGradient,
+                    boxShadow: [
+                      BoxShadow(
+                          color: RythoColors.goldGlow, blurRadius: 16),
+                    ],
                   ),
-                  child: const Text('✦',
-                      style: TextStyle(color: RythoColors.goldBright, fontSize: 18)),
+                  child: const Icon(Icons.send_rounded,
+                      size: 20, color: Colors.white),
                 ),
               ),
             ]),
           ),
         ),
       ]),
+    );
+  }
+}
+
+/// Sohbet balonu: kullanıcı beyaz (koyu metin), Rytho mor degrade (beyaz).
+class _Bubble extends StatelessWidget {
+  const _Bubble({required this.text, required this.mine});
+  final String text;
+  final bool mine;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+      constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.78),
+      decoration: BoxDecoration(
+        color: mine ? Colors.white : null,
+        gradient: mine ? null : RythoColors.primaryGradient,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(20),
+          topRight: const Radius.circular(20),
+          bottomLeft: Radius.circular(mine ? 20 : 6),
+          bottomRight: Radius.circular(mine ? 6 : 20),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: mine
+                ? Colors.black.withValues(alpha: 0.25)
+                : RythoColors.goldGlow,
+            blurRadius: 12,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        style: RythoText.body(14.5,
+            color: mine ? const Color(0xFF1D1230) : Colors.white,
+            height: 1.5),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState({required this.onSuggestion});
+  final ValueChanged<String> onSuggestion;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 76,
+            height: 76,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RythoColors.primaryGradient,
+              boxShadow: [
+                BoxShadow(color: RythoColors.magentaGlow, blurRadius: 34),
+              ],
+            ),
+            child: const Text('✦',
+                style: TextStyle(fontSize: 32, color: Colors.white)),
+          )
+              .animate(onPlay: (c) => c.repeat(reverse: true))
+              .scale(
+                  begin: const Offset(1, 1),
+                  end: const Offset(1.06, 1.06),
+                  duration: 1400.ms,
+                  curve: Curves.easeInOut),
+          const SizedBox(height: 18),
+          Text('Rytho AI', style: RythoText.display(24)),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 48),
+            child: Text(
+              'Haritan, yüzün, kaderin... Aklından geçen her soruyu '
+              'kadim kaynaklarla harmanlayarak yanıtlarım.',
+              textAlign: TextAlign.center,
+              style: RythoText.body(14, color: RythoColors.parchmentDim),
+            ),
+          ),
+        ],
+      )
+          .animate()
+          .fadeIn(duration: 400.ms)
+          .slideY(begin: 0.06, curve: Curves.easeOutCubic),
     );
   }
 }
