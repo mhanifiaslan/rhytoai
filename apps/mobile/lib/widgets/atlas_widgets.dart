@@ -189,11 +189,19 @@ class _AstrolabeSpinnerState extends State<AstrolabeSpinner>
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (_, _) => CustomPaint(
-        size: Size.square(widget.size),
-        painter: _AstrolabePainter(angle: _controller.value * 2 * math.pi),
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: RythoColors.goldGlow, blurRadius: 24, spreadRadius: -4),
+        ],
+      ),
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (_, _) => CustomPaint(
+          size: Size.square(widget.size),
+          painter: _AstrolabePainter(angle: _controller.value * 2 * math.pi),
+        ),
       ),
     );
   }
@@ -240,7 +248,7 @@ class _AstrolabePainter extends CustomPainter {
 }
 
 /// Canlı zodyak çemberi: /sky/now verisinden gerçek gezegen konumları.
-class ZodiacRing extends StatelessWidget {
+class ZodiacRing extends StatefulWidget {
   const ZodiacRing({super.key, required this.planets, this.size = 300});
 
   /// [{name_tr, longitude, symbol, retrograde}, ...]
@@ -248,17 +256,42 @@ class ZodiacRing extends StatelessWidget {
   final double size;
 
   @override
+  State<ZodiacRing> createState() => _ZodiacRingState();
+}
+
+class _ZodiacRingState extends State<ZodiacRing>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _breath = AnimationController(
+      vsync: this, duration: const Duration(seconds: 4))
+    ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _breath.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size.square(size),
-      painter: _ZodiacRingPainter(planets: planets),
+    return AnimatedBuilder(
+      animation: _breath,
+      builder: (_, _) => CustomPaint(
+        size: Size.square(widget.size),
+        painter: _ZodiacRingPainter(
+          planets: widget.planets,
+          breath: Curves.easeInOut.transform(_breath.value),
+        ),
+      ),
     );
   }
 }
 
 class _ZodiacRingPainter extends CustomPainter {
-  _ZodiacRingPainter({required this.planets});
+  _ZodiacRingPainter({required this.planets, this.breath = 0});
   final List<Map<String, dynamic>> planets;
+
+  /// 0..1 — gezegen glow'unun nefes fazı.
+  final double breath;
 
   static const _planetGlyphs = {
     'Sun': '☉', 'Moon': '☽', 'Mercury': '☿', 'Venus': '♀', 'Mars': '♂',
@@ -307,13 +340,19 @@ class _ZodiacRingPainter extends CustomPainter {
       );
     }
 
-    // Gezegenler
+    // Gezegenler — nefes alan glow ile
     for (final p in planets) {
       final lon = (p['longitude'] as num).toDouble();
       final a = math.pi - lon * math.pi / 180;
       final retro = p['retrograde'] == true;
       final pos = center + Offset(math.cos(a), math.sin(a)) * (inner - 22);
       final glyph = _planetGlyphs[p['name']] ?? '•';
+      final glowColor = retro ? RythoColors.copper : RythoColors.gold;
+      final glowPaint = Paint()
+        ..color = glowColor.withValues(alpha: 0.12 + 0.16 * breath)
+        ..maskFilter =
+            MaskFilter.blur(BlurStyle.normal, 6 + 5 * breath);
+      canvas.drawCircle(pos, 9 + 3 * breath, glowPaint);
       _drawText(canvas, glyph, pos, 14,
           retro ? RythoColors.copper : RythoColors.gold);
       // konum işaretçisi
@@ -340,5 +379,6 @@ class _ZodiacRingPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_ZodiacRingPainter old) => old.planets != planets;
+  bool shouldRepaint(_ZodiacRingPainter old) =>
+      old.planets != planets || old.breath != breath;
 }

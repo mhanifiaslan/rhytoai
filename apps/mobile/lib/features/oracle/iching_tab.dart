@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
@@ -91,12 +94,94 @@ class _IChingTabState extends ConsumerState<IChingTab> {
       ]),
       const SizedBox(height: 16),
       GoldButton(text: 'Çekimi yap', busy: _busy, onPressed: _cast),
+      if (_busy) ...[
+        const SizedBox(height: 36),
+        const Center(child: _CoinToss()),
+        const SizedBox(height: 12),
+        Center(
+          child: Text('Paralar havada...',
+              style: RythoText.mono(12, color: RythoColors.parchmentDim)),
+        ),
+      ],
       if (_result != null) ...[
         const SectionDivider(),
-        _HexagramView(result: _result!),
+        _HexagramView(result: _result!)
+            .animate()
+            .fadeIn(duration: 500.ms)
+            .slideY(begin: 0.04, curve: Curves.easeOutCubic),
       ],
       const SizedBox(height: 32),
     ]);
+  }
+}
+
+/// Üç paranın 3D dönüş animasyonu — çekim sürerken oynar.
+class _CoinToss extends StatefulWidget {
+  const _CoinToss();
+
+  @override
+  State<_CoinToss> createState() => _CoinTossState();
+}
+
+class _CoinTossState extends State<_CoinToss>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1100))
+    ..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (_, _) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < 3; i++)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Transform.translate(
+                offset: Offset(
+                    0,
+                    -14 *
+                        math.sin((_controller.value + i * 0.23) * math.pi)
+                            .abs()),
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.002) // perspektif
+                    ..rotateX((_controller.value + i * 0.23) * 2 * math.pi),
+                  child: Container(
+                  width: 34,
+                  height: 34,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [RythoColors.goldBright, RythoColors.copper],
+                    ),
+                    boxShadow: const [
+                      BoxShadow(color: RythoColors.goldGlow, blurRadius: 14),
+                    ],
+                  ),
+                    child: Text('中',
+                        style: TextStyle(
+                            fontSize: 15,
+                            color: RythoColors.ink.withValues(alpha: 0.8))),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

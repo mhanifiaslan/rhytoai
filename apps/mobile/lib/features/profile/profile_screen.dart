@@ -8,8 +8,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../council/feed_tab.dart' show PostCard;
 
-/// SİCİL — profil: rozetler, doğum kaydı, bildirim kaydı, oturum.
+/// SİCİL — birleşik profil: başkalarının gördüğü sayfa (rozetler, sayaçlar,
+/// gönderiler) + kendi ayarların (doğum kaydı, bildirim, oturum).
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -45,6 +47,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider).value ?? {};
     final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -54,15 +57,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
         const SizedBox(height: 12),
         Center(
-          child: CircleAvatar(
-            radius: 40,
-            backgroundColor: RythoColors.inkLighter,
-            backgroundImage: profile['photoUrl'] != null
-                ? NetworkImage(profile['photoUrl'])
-                : null,
-            child: profile['photoUrl'] == null
-                ? Text('☽', style: RythoText.display(28))
-                : null,
+          child: Container(
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: RythoColors.goldGlow, blurRadius: 30),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: RythoColors.inkLighter,
+              backgroundImage: profile['photoUrl'] != null
+                  ? NetworkImage(profile['photoUrl'])
+                  : null,
+              child: profile['photoUrl'] == null
+                  ? Text('☽', style: RythoText.display(28))
+                  : null,
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -75,7 +86,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Text(user?.email ?? '',
               style: RythoText.mono(11, color: RythoColors.parchmentDim)),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
         Center(
           child: Wrap(spacing: 8, children: [
             for (final badge in [
@@ -85,16 +96,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ])
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  border: Border.all(color: RythoColors.gold),
+                  color: RythoColors.glassFill,
+                  border: Border.all(color: RythoColors.glassStroke),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(badge,
-                    style: RythoText.mono(12, color: RythoColors.goldBright)),
+                    style: RythoText.mono(11, color: RythoColors.goldBright)),
               ),
           ]),
         ),
+        if (uid != null) ...[
+          const SizedBox(height: 14),
+          _FollowCounters(uid: uid),
+        ],
         Plaque(
           label: 'Doğum Kaydı',
           child: Column(children: [
@@ -129,6 +145,39 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             },
           ),
         ),
+        if (uid != null) ...[
+          const SectionDivider(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text('Gönderilerin', style: RythoText.display(20)),
+          ),
+          const SizedBox(height: 6),
+          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: FirebaseFirestore.instance
+                .collection('posts')
+                .where('authorId', isEqualTo: uid)
+                .orderBy('createdAt', descending: true)
+                .limit(20)
+                .snapshots(),
+            builder: (_, snapshot) {
+              final docs = snapshot.data?.docs ?? [];
+              if (docs.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(
+                    child: Text('Meclis\'te henüz söz almadın.',
+                        style: RythoText.body(13,
+                            color: RythoColors.parchmentDim)),
+                  ),
+                );
+              }
+              return Column(children: [
+                for (final doc in docs)
+                  PostCard(postId: doc.id, post: doc.data()),
+              ]);
+            },
+          ),
+        ],
         const SizedBox(height: 24),
       ]),
     );
@@ -144,6 +193,36 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 style: RythoText.mono(10, color: RythoColors.parchmentDim))),
         Text(value, style: RythoText.body(14)),
       ]),
+    );
+  }
+}
+
+class _FollowCounters extends StatelessWidget {
+  const _FollowCounters({required this.uid});
+  final String uid;
+
+  Widget _counter(String label, Stream<int> stream) {
+    return StreamBuilder<int>(
+      stream: stream,
+      builder: (_, snapshot) => Column(children: [
+        Text('${snapshot.data ?? 0}', style: RythoText.display(20)),
+        Text(label, style: RythoText.mono(10, color: RythoColors.parchmentDim)),
+      ]),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final users = FirebaseFirestore.instance.collection('users').doc(uid);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _counter('TAKİPÇİ',
+            users.collection('followers').snapshots().map((s) => s.size)),
+        const SizedBox(width: 40),
+        _counter('TAKİP',
+            users.collection('following').snapshots().map((s) => s.size)),
+      ],
     );
   }
 }

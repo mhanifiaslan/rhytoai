@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
@@ -47,17 +48,22 @@ class BaziTab extends ConsumerWidget {
             label: 'Dört Sütun',
             padding: const EdgeInsets.all(12),
             child: Row(children: [
-              for (final key in const [
+              for (final (i, key) in const [
                 ('hour', 'SAAT'),
                 ('day', 'GÜN'),
                 ('month', 'AY'),
                 ('year', 'YIL'),
-              ])
-                Expanded(child: _PillarColumn(
-                  label: key.$2,
-                  pillar: Map<String, dynamic>.from(pillars[key.$1]),
-                  highlight: key.$1 == 'day',
-                )),
+              ].indexed)
+                Expanded(
+                  child: _PillarColumn(
+                    label: key.$2,
+                    pillar: Map<String, dynamic>.from(pillars[key.$1]),
+                    highlight: key.$1 == 'day',
+                  )
+                      .animate(delay: (i * 130).ms)
+                      .fadeIn(duration: 380.ms)
+                      .slideY(begin: 0.18, curve: Curves.easeOutCubic),
+                ),
             ]),
           ),
           Plaque(

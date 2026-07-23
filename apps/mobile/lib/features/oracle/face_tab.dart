@@ -21,6 +21,7 @@ class FaceTab extends ConsumerStatefulWidget {
 class _FaceTabState extends ConsumerState<FaceTab> {
   bool _busy = false;
   Map<String, dynamic>? _result;
+  Uint8List? _imageBytes;
 
   Future<void> _analyze(ImageSource source) async {
     final picker = ImagePicker();
@@ -28,12 +29,13 @@ class _FaceTabState extends ConsumerState<FaceTab> {
         source: source, maxWidth: 1280, imageQuality: 88);
     if (file == null) return;
 
+    final Uint8List bytes = await file.readAsBytes();
     setState(() {
       _busy = true;
       _result = null;
+      _imageBytes = bytes;
     });
     try {
-      final Uint8List bytes = await file.readAsBytes();
       final dio = ref.read(apiProvider);
       final form = FormData.fromMap({
         'file': MultipartFile.fromBytes(bytes, filename: 'face.jpg'),
@@ -84,8 +86,11 @@ class _FaceTabState extends ConsumerState<FaceTab> {
         ),
       ]),
       if (_busy) ...[
-        const SizedBox(height: 40),
-        const Center(child: AstrolabeSpinner(size: 56)),
+        const SizedBox(height: 28),
+        if (_imageBytes != null)
+          Center(child: _ScanningImage(bytes: _imageBytes!))
+        else
+          const Center(child: AstrolabeSpinner(size: 56)),
         const SizedBox(height: 12),
         Center(
           child: Text('Hatlar ölçülüyor...',
@@ -98,6 +103,88 @@ class _FaceTabState extends ConsumerState<FaceTab> {
       ],
       const SizedBox(height: 32),
     ]);
+  }
+}
+
+/// Analiz sürerken fotoğrafın üzerinde gezinen altın tarama çizgisi.
+class _ScanningImage extends StatefulWidget {
+  const _ScanningImage({required this.bytes});
+  final Uint8List bytes;
+
+  @override
+  State<_ScanningImage> createState() => _ScanningImageState();
+}
+
+class _ScanningImageState extends State<_ScanningImage>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1600))
+    ..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const height = 260.0;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: SizedBox(
+        height: height,
+        width: 200,
+        child: Stack(fit: StackFit.expand, children: [
+          Image.memory(widget.bytes, fit: BoxFit.cover),
+          Container(color: RythoColors.ink.withValues(alpha: 0.35)),
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (_, _) {
+              final y = Curves.easeInOut.transform(_controller.value) *
+                  (height - 4);
+              return Stack(children: [
+                Positioned(
+                  top: y - 30,
+                  left: 0,
+                  right: 0,
+                  height: 60,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          RythoColors.gold.withValues(alpha: 0.22),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: y,
+                  left: 8,
+                  right: 8,
+                  height: 2,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: RythoColors.goldBright,
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: const [
+                        BoxShadow(
+                            color: RythoColors.goldGlow, blurRadius: 12),
+                      ],
+                    ),
+                  ),
+                ),
+              ]);
+            },
+          ),
+        ]),
+      ),
+    );
   }
 }
 

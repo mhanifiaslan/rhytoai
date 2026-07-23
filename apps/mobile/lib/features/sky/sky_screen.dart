@@ -58,7 +58,7 @@ class SkyScreen extends ConsumerWidget {
                 Center(
                   child: ZodiacRing(
                     planets: List<Map<String, dynamic>>.from(data['planets']),
-                    size: MediaQuery.of(context).size.width - 80,
+                    size: MediaQuery.of(context).size.width - 40,
                   ),
                 ),
                 const SizedBox(height: 16),

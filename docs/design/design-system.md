@@ -1,29 +1,45 @@
-# RythoAI Tasarım Sistemi — "Gök Atlası" (Celestial Atlas)
+# RythoAI Tasarım Sistemi v2 — "Camdan Rasathane"
 
-Amaç: "Yapay zeka üretti" izlenimi veren klişe estetiği (mor degrade, neon,
-emoji yağmuru, cam efektli kartlar) tamamen reddedip; **eski gökyüzü atlasları,
-usturlap gravürleri ve bilimsel enstrüman** estetiğinde, editoryal ve zamansız
-bir arayüz kurmak. Uygulama bir "fal uygulaması" gibi değil, **18. yüzyıl
-rasathanesinden çıkmış canlı bir enstrüman** gibi hissettirmeli.
+v1'in "Gök Atlası" kimliği (mürekkep + altın + editoryal tipografi) korunur;
+üzerine **cam katmanları, derinlik ve hareket** eklenir. Uygulama artık düz
+bir gravür levhası değil, **yıldız alanının önünde asılı duran camdan bir
+rasathane** gibi hissettirmeli. "Yapay zeka üretti" izlenimi veren klişe
+estetik (mor degrade, neon, emoji yağmuru) hâlâ reddedilir.
+
+## 0. v2'nin üç katmanı
+
+1. **Zemin**: `StarfieldBackground` — uzay degradesi + üç derinlik katmanında
+   süzülen, göz kırpan yıldızlar. Her ekran `CosmicScaffold` ile bu zeminin
+   üstünde saydam durur.
+2. **Cam**: `GlassPanel` — `BackdropFilter` blur (σ≈14), yarı saydam mürekkep
+   dolgu, 1px ışıklı üst kenar (`glassEdge`) ve yumuşak kontur (`glassStroke`).
+   Plaque artık bu panele delege eder.
+3. **Işık**: aktif öğelerde `goldGlow` (yumuşak altın hale) — dock'ta,
+   spinner'da, gezegen gliflerinde "nefes alan" animasyonla.
 
 ## 1. Renk Paleti
 
-Koyu zemin, mürekkep ve altın varak. Degrade YOK; düz, mat yüzeyler ve ince
-çizgi işi dokular VAR.
+Koyu zemin, mürekkep ve altın varak. Yüzeyler artık yarı saydam camdır;
+degrade yalnızca zeminin radyal uzay geçişinde ve cam dolgusunda kullanılır.
 
 | Token | Hex | Kullanım |
 |---|---|---|
-| `ink` | `#0B1026` | Ana zemin (gece mürekkebi — siyah değil, çok koyu lacivert) |
-| `inkLight` | `#141B33` | Kart/yüzey zemini |
+| `ink` | `#0B1026` | Zemin degradenin merkezi (gece mürekkebi) |
+| `inkDeep` | `#070B1C` | Zemin degradenin dış ucu (uzay derinliği) |
+| `inkLight` | `#141B33` | Opak yüzeyler (bottom sheet vb.) |
 | `inkLighter` | `#1E2742` | Yükseltilmiş yüzey, girdi alanları |
-| `parchment` | `#EDE4CF` | Ana metin (fildişi/parşömen — saf beyaz değil) |
-| `parchmentDim` | `#B7AE99` | İkincil metin |
-| `gold` | `#C9A227` | Vurgu: aktif ikonlar, önemli değerler, çizgi işi süslemeler |
-| `goldBright` | `#E8C55A` | Basılı durum, parlak vurgu |
-| `copper` | `#A66A3E` | İkincil vurgu: retro gezegen, uyarılar |
-| `celadon` | `#7FA98F` | Olumlu durum (nadir kullanım) |
-| `madder` | `#B4524B` | Hata/kritik (kırmızı değil, kök boyası kızılı) |
-| `line` | `#2C3552` | Ayraç ve gravür çizgileri |
+| `parchment` | `#F0E8D6` | Ana metin |
+| `parchmentDim` | `#C9C0AB` | İkincil metin (v2'de kontrast yükseltildi) |
+| `gold` | `#C9A227` | Vurgu |
+| `goldBright` | `#E8C55A` | Basılı/aktif durum |
+| `copper` | `#B87848` | Retro gezegen, uyarılar |
+| `celadon` | `#7FA98F` | Olumlu durum |
+| `madder` | `#C4625B` | Hata |
+| `line` | `#323C5E` | Çizgiler |
+| `glassFill` | `#141B33 @55%` | Cam panel dolgusu |
+| `glassEdge` | `#E8C55A @20%` | Cam üst kenar ışığı |
+| `glassStroke` | `#4A5580 @30%` | Cam kontur |
+| `goldGlow` | `#C9A227 @33%` | Altın hale/glow |
 
 Kural: Bir ekranda altın vurgusu toplam alanın %10'unu geçmez. Renk cömertliği
 değil, mürekkep disiplini.
@@ -40,7 +56,7 @@ Editoryal ikili sistem — serif başlık + mono veri. (Google Fonts, ücretsiz)
 | Buton / etiket | Spectral (500), harf aralığı +1.2, BÜYÜK HARF | Enstrüman kadranı etiketi hissi |
 
 Örnek hiyerarşi: ekran başlığı 32/Cormorant, bölüm başlığı 20/Cormorant,
-gövde 15/Spectral, veri 13/JetBrains Mono.
+gövde 16/Spectral (v2'de +1pt, satır aralığı 1.6), veri 13/JetBrains Mono.
 
 ## 3. Görsel Dil
 
@@ -53,33 +69,35 @@ gövde 15/Spectral, veri 13/JetBrains Mono.
 - **Kadran ve cetvel motifleri**: ilerleme göstergeleri bar değil, usturlap
   kadranı (dairesel tik işaretleri); ayraçlar ince çizgi + merkezde küçük ✦.
 - **Doku**: %2-3 opaklıkta yıldız noktası dokusu; gürültü/grain yok.
-- **Köşe yarıçapı**: 4px (keskin, enstrüman hissi). Tam yuvarlak yalnızca
-  gezegen rozetlerinde.
-- **Gölge yok**: derinlik, gölge yerine 1px `line` konturu ve zemin tonu
-  farkıyla verilir.
+- **Köşe yarıçapı**: v2'de 14-18px (cam panel), 26px (dock). Keskin 4px köşe
+  yalnızca mono veri çiplerinde kalır.
+- **Derinlik**: 1px kontur + blur + `goldGlow` halesiyle verilir; sert gölge yok.
 
 ## 4. Bileşen Kuralları
 
-- **Kart ("Levha")**: `inkLight` zemin, 1px `line` kontur, 4px köşe; başlık
-  üstte mono küçük etiketle ("LEVHA I — DOĞUM HARİTASI" gibi).
-- **Birincil buton**: altın kontur + parşömen metin, dolgu YOK; basılınca
-  `goldBright` dolgu + `ink` metin. 48px yükseklik.
-- **Alt gezinme**: 5 sekme; ikonlar çizgi işi, aktif sekme altında 16px'lik
-  ince altın çizgi. Sekmeler: **Gökyüzü** (ana), **Atlas** (haritalar),
-  **Kehanet** (I Ching/BaZi/Yüz), **Meclis** (sosyal+DM), **Sicil** (profil).
-- **AI mesaj balonu**: balon değil, sol kenarında altın dikey çizgi olan
-  parşömen renkli **marjinal not** bloğu; kullanıcı mesajı sağda mürekkep bloğu.
-- **Grafikler**: natal harita SVG'si `dark` temayla backend'den gelir; çevresine
-  mono derece cetveli işlenir.
+- **Cam panel (`GlassPanel`)**: blur'lu yarı saydam yüzey, ışıklı üst kenar,
+  mono etiket başlık ("LEVHA I — DOĞUM HARİTASI" gibi). `Plaque` buna delege eder.
+- **Birincil buton (`GoldButton`)**: altın kontur + cam dolgu, 14px köşe,
+  aktifken yumuşak altın glow. 50px yükseklik.
+- **Alt gezinme (`CosmicDock`)**: yüzen cam dock; aktif sekme yay animasyonlu
+  büyür ve altın glow alır. Sekmeler: **Gökyüzü**, **Atlas**, **Kehanet**,
+  **Meclis**, **Sicil**.
+- **AI mesaj balonu**: cam panelde daktilo-akış (`TypewriterText`) ile belirir;
+  kullanıcı mesajı sağda mürekkep bloğu.
+- **Natal çark (`NatalWheel`)**: yerli CustomPainter — burç dilimleri, ev
+  çizgileri, gezegen glifleri, merkezde açı ağı; sweep animasyonuyla kurulur,
+  gezegene dokununca cam bilgi çipi açılır. Backend SVG'si kullanılmaz.
+- **Segment seçici (`GlassSegments`)**: Takip/Keşfet gibi ikili akış seçimleri.
 
 ## 5. Hareket
 
-- Süreler 200-300ms, `easeOutCubic`. Sıçrayan/elastik animasyon yok.
-- Sayfa geçişi: hafif dikey parallax + solma ("atlas sayfası çevirme").
-- Yükleme göstergesi: dönen usturlap kadranı (dairesel tik animasyonu),
-  spinner yok.
-- İskelet ekran yerine "mürekkep dolumu": metin satırları soldan sağa
-  %8 opaklıkta çizgiyle belirir.
+- Süreler 250-350ms, `easeOutCubic`; dock'ta `easeOutBack` yay hissi.
+- Sekme geçişi: çapraz solma + 12px dikey kayma (paylaşılan eksen).
+- Kart girişleri: 45ms aralıklı stagger (`flutter_animate`).
+- Basmalarda scale + haptic (`HapticFeedback.selectionClick`).
+- Yükleme: glow'lu usturlap kadranı; AI metinleri daktilo-akışla belirir.
+- Tören animasyonları: I Ching'de üç paranın 3D dönüşü, yüz analizinde altın
+  tarama çizgisi, natal çarkın çizilerek kurulması, beğenide ✦ patlaması.
 
 ## 6. Ses ve Dil (copy)
 
