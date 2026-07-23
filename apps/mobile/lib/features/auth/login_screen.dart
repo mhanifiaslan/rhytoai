@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../theme/rytho_theme.dart';
@@ -219,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ],
           const SizedBox(height: 18),
           GoldButton(
-            text: isRegister ? 'ÜYE OL' : 'GİRİŞ YAP',
+            text: isRegister ? 'Üye ol' : 'Giriş yap',
             busy: _emailBusy,
             onPressed: _submitEmail,
           ),
@@ -242,38 +243,64 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var stagger = 0;
+    Duration next() => Duration(milliseconds: 70 * stagger++);
+
     return CosmicScaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
           children: [
             const SizedBox(height: 12),
-            const Center(child: AstrolabeSpinner(size: 96)),
-            const SizedBox(height: 28),
+            // Nefes alan degrade ✦ küresi
+            Center(
+              child: Container(
+                width: 92,
+                height: 92,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RythoColors.primaryGradient,
+                  boxShadow: [
+                    BoxShadow(color: RythoColors.magentaGlow, blurRadius: 44),
+                  ],
+                ),
+                child: const Text('✦',
+                    style: TextStyle(fontSize: 40, color: Colors.white)),
+              )
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .scale(
+                      begin: const Offset(1, 1),
+                      end: const Offset(1.06, 1.06),
+                      duration: 1500.ms,
+                      curve: Curves.easeInOut),
+            ).animate(delay: next()).fadeIn(duration: 500.ms),
+            const SizedBox(height: 26),
             Center(
               child: Text('RYTHO',
-                  style: RythoText.label(22, color: RythoColors.gold)),
-            ),
-            const SizedBox(height: 10),
+                  style: RythoText.label(20, color: RythoColors.lilac)),
+            ).animate(delay: next()).fadeIn(duration: 400.ms),
+            const SizedBox(height: 8),
             Center(
-              child: Text('Gök Atlası',
-                  style: RythoText.display(38, w: FontWeight.w600)),
-            ),
+              child: Text('Kişisel Kozmik Zekân',
+                  textAlign: TextAlign.center,
+                  style: RythoText.display(30)),
+            ).animate(delay: next()).fadeIn(duration: 400.ms).slideY(
+                begin: 0.1, curve: Curves.easeOutCubic),
             const SizedBox(height: 12),
             Text(
               'Kadim bilgelik, hassas gökyüzü hesabıyla buluşur.\n'
-              'Haritan çizilir, yüzün okunur, yolun aydınlanır.',
+              'Haritan çizilir, yüzün okunur, yolun aydınlanır. ✨',
               textAlign: TextAlign.center,
-              style: RythoText.body(15, color: RythoColors.parchmentDim),
-            ),
-            const SizedBox(height: 28),
-            // Türkçe 'İ' için metinler önceden büyük harfle veriliyor
-            // (toUpperCase 'i'yi 'I' yapar).
+              style: RythoText.body(14.5, color: RythoColors.parchmentDim),
+            ).animate(delay: next()).fadeIn(duration: 400.ms),
+            const SizedBox(height: 26),
             GoldButton(
-              text: 'GOOGLE İLE GİRİŞ',
+              text: 'Google ile giriş',
               busy: _googleBusy,
               onPressed: _signInWithGoogle,
-            ),
+            ).animate(delay: next()).fadeIn(duration: 400.ms).slideY(
+                begin: 0.08, curve: Curves.easeOutCubic),
             // Ayraç: — ya da —
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
@@ -281,9 +308,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Expanded(child: Divider()),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('YA DA',
+                  child: Text('ya da',
                       style:
-                          RythoText.mono(10, color: RythoColors.parchmentDim)),
+                          RythoText.body(11, color: RythoColors.parchmentDim)),
                 ),
                 const Expanded(child: Divider()),
               ]),
@@ -297,7 +324,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   GlassSegments(
-                    labels: const ['GİRİŞ YAP', 'ÜYE OL'],
+                    labels: const ['Giriş yap', 'Üye ol'],
                     index: _segment,
                     onChanged: (i) {
                       if (i == _segment) return;
@@ -311,14 +338,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ],
               ),
-            ),
+            ).animate(delay: next()).fadeIn(duration: 400.ms).slideY(
+                begin: 0.06, curve: Curves.easeOutCubic),
             const SizedBox(height: 20),
             Text(
               'Devam ederek gizlilik ilkelerini kabul etmiş olursun.\n'
               'Yorumlar içgörü amaçlıdır; tıbbi/finansal tavsiye değildir.',
               textAlign: TextAlign.center,
               style: RythoText.body(11, color: RythoColors.parchmentDim),
-            ),
+            ).animate(delay: next()).fadeIn(duration: 400.ms),
             const SizedBox(height: 8),
           ],
         ),
