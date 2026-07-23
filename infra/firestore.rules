@@ -18,7 +18,9 @@ service cloud.firestore {
           'uid', 'displayName', 'photoUrl', 'email',
           'birthDate', 'birthTime', 'birthCity', 'birthNation', 'gender',
           'sunSign', 'moonSign', 'ascendant', 'wuXingElement', 'mizac',
-          'onboardingCompleted', 'createdAt', 'updatedAt', 'fcmToken', 'bio'
+          'onboardingCompleted', 'createdAt', 'updatedAt', 'fcmToken', 'bio',
+          // Günlük seri (motivasyon): son görülen gün + seri sayacı
+          'lastSeenDaily', 'streakCount'
         ]);
       allow delete: if isOwner(uid);
 
