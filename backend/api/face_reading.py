@@ -1,3 +1,4 @@
+import logging
 import os
 import shutil
 import tempfile
@@ -7,6 +8,8 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from core.auth import AuthUser, get_current_user
 from services import report_service
 from services.face_service import analyze_face
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -32,8 +35,13 @@ async def process_face_image(
         return {"status": "success", "data": result}
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        # Traceback'i logla; kullanıcıya iç detay sızdırmadan kısa Türkçe mesaj döndür
+        logger.exception("Yüz analizi başarısız oldu")
+        raise HTTPException(
+            status_code=500,
+            detail="Yüz analizi sırasında beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+        )
     finally:
         # Fotoğraf analiz sonrası SİLİNİR — KVKK/GDPR gereği sunucuda tutulmaz
         if tmp_path and os.path.exists(tmp_path):

@@ -15,7 +15,8 @@ google-genai
 firebase-admin
 
 # Görüntü işleme (yüz analizi v2)
-mediapipe
+# mediapipe lokal ortamla eşit sürüme sabitlendi (Tasks API / ctypes arayüzü sürüme duyarlı)
+mediapipe==0.10.35
 opencv-python-headless
 numpy
 pillow
