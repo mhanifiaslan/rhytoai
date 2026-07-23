@@ -9,6 +9,7 @@ import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../council/feed_tab.dart' show PostCard;
+import 'legal_page.dart';
 
 /// SİCİL — birleşik profil: başkalarının gördüğü sayfa (rozetler, sayaçlar,
 /// gönderiler) + kendi ayarların (doğum kaydı, bildirim, oturum).
@@ -131,6 +132,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             const SizedBox(height: 10),
             Text('Efemeris: Swiss Ephemeris © Astrodienst AG',
                 style: RythoText.mono(10, color: RythoColors.parchmentDim)),
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            _legalLink(context, 'Gizlilik Politikası',
+                () => const LegalPage(
+                    title: 'Gizlilik Politikası',
+                    sections: kPrivacyPolicySections)),
+            const Divider(height: 1),
+            _legalLink(context, 'Kullanım Şartları',
+                () => const LegalPage(
+                    title: 'Kullanım Şartları',
+                    sections: kTermsOfUseSections)),
           ]),
         ),
         Padding(
@@ -180,6 +192,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ],
         const SizedBox(height: 24),
       ]),
+    );
+  }
+
+  /// Hukuki metin sayfasını açan sade satır.
+  Widget _legalLink(
+      BuildContext context, String title, Widget Function() pageBuilder) {
+    return InkWell(
+      onTap: () => Navigator.of(context)
+          .push(MaterialPageRoute(builder: (_) => pageBuilder())),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(children: [
+          Expanded(child: Text(title, style: RythoText.body(13.5))),
+          Text('›',
+              style: RythoText.body(16, color: RythoColors.parchmentDim)),
+        ]),
+      ),
     );
   }
 
