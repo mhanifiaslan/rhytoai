@@ -33,6 +33,23 @@ service cloud.firestore {
         allow read: if signedIn();
         allow create, delete: if signedIn() && request.auth.uid == followerUid;
       }
+
+      // Engellenen kullanıcılar: yalnızca liste sahibi yazar/siler/okur
+      match /blocked/{targetUid} {
+        allow read, create, delete: if isOwner(uid);
+      }
+    }
+
+    // ---------- Şikayetler (yalnızca konsoldan incelenir) ----------
+    match /reports/{reportId} {
+      allow create: if signedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.targetType in ['post', 'user']
+        && request.resource.data.targetId is string
+        && request.resource.data.targetId.size() > 0
+        && request.resource.data.reason is string
+        && request.resource.data.reason.size() <= 500;
+      allow read, update, delete: if false;
     }
 
     // ---------- Gönderiler (kişisel akış + kanal gönderileri) ----------

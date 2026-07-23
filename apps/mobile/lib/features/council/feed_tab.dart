@@ -6,7 +6,10 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics.dart';
+import '../../core/api.dart';
 import '../../core/providers.dart';
+import '../../core/safety.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/glass.dart';
@@ -85,8 +88,24 @@ class _FeedTabState extends ConsumerState<FeedTab> {
     );
   }
 
+  /// Yayın öncesi içerik denetimi. Moderasyon servisi ulaşılamazsa yayını
+  /// engelleme (fail-open) ama durumu logla.
+  Future<bool> _moderate(String text) async {
+    try {
+      final response = await ref
+          .read(apiProvider)
+          .post('/api/v1/chat/moderate', data: {'text': text});
+      return response.data['safe'] != false;
+    } catch (e) {
+      debugPrint('Moderasyon çağrısı başarısız, fail-open uygulanıyor: $e');
+      return true;
+    }
+  }
+
   void _openComposer(BuildContext context) {
     final controller = TextEditingController();
+    var busy = false;
+    String? warning;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -95,51 +114,83 @@ class _FeedTabState extends ConsumerState<FeedTab> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
         side: BorderSide(color: RythoColors.glassStroke),
       ),
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
-        ),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(_isChannel ? 'KANALA YAYINLA' : 'MECLİSE SESLEN',
-              style: RythoText.mono(11, color: RythoColors.parchmentDim)),
-          const SizedBox(height: 14),
-          TextField(
-            controller: controller,
-            style: RythoText.body(15),
-            minLines: 3,
-            maxLines: 6,
-            maxLength: 2000,
-            autofocus: true,
-            decoration:
-                const InputDecoration(hintText: 'Gökyüzü bugün sana ne söyledi?'),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: EdgeInsets.only(
+            left: 20,
+            right: 20,
+            top: 20,
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
           ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: GoldButton(
-              text: 'Yayınla',
-              onPressed: () async {
-                final text = controller.text.trim();
-                if (text.isEmpty) return;
-                Navigator.of(sheetContext).pop();
-                final user = FirebaseAuth.instance.currentUser!;
-                final profile = ref.read(profileProvider).value ?? {};
-                await FirebaseFirestore.instance.collection('posts').add({
-                  'authorId': user.uid,
-                  'authorName': profile['displayName'] ?? 'Gezgin',
-                  'authorPhoto': profile['photoUrl'],
-                  'authorSign': profile['sunSign'],
-                  'text': text,
-                  'channelId': widget.channelId,
-                  'createdAt': FieldValue.serverTimestamp(),
-                });
-              },
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(_isChannel ? 'KANALA YAYINLA' : 'MECLİSE SESLEN',
+                style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+            const SizedBox(height: 14),
+            TextField(
+              controller: controller,
+              style: RythoText.body(15),
+              minLines: 3,
+              maxLines: 6,
+              maxLength: 2000,
+              autofocus: true,
+              decoration: const InputDecoration(
+                  hintText: 'Gökyüzü bugün sana ne söyledi?'),
             ),
-          ),
-        ]),
+            if (warning != null) ...[
+              const SizedBox(height: 8),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Text('☾',
+                    style: TextStyle(color: RythoColors.copper, fontSize: 14)),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(warning!,
+                      style: RythoText.body(12.5, color: RythoColors.copper)),
+                ),
+              ]),
+            ],
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: GoldButton(
+                text: 'Yayınla',
+                busy: busy,
+                onPressed: () async {
+                  final text = controller.text.trim();
+                  if (text.isEmpty || busy) return;
+                  setSheetState(() {
+                    busy = true;
+                    warning = null;
+                  });
+                  final safe = await _moderate(text);
+                  if (!sheetContext.mounted) return;
+                  if (!safe) {
+                    setSheetState(() {
+                      busy = false;
+                      warning =
+                          'Bu ifade Meclis\'in nezaket sınırlarını zorluyor '
+                          'gibi görünüyor. Sözlerini biraz yumuşatıp tekrar '
+                          'dener misin?';
+                    });
+                    return;
+                  }
+                  Navigator.of(sheetContext).pop();
+                  final user = FirebaseAuth.instance.currentUser!;
+                  final profile = ref.read(profileProvider).value ?? {};
+                  await FirebaseFirestore.instance.collection('posts').add({
+                    'authorId': user.uid,
+                    'authorName': profile['displayName'] ?? 'Gezgin',
+                    'authorPhoto': profile['photoUrl'],
+                    'authorSign': profile['sunSign'],
+                    'text': text,
+                    'channelId': widget.channelId,
+                    'createdAt': FieldValue.serverTimestamp(),
+                  });
+                  Analytics.postPublished(toChannel: _isChannel);
+                },
+              ),
+            ),
+          ]),
+        ),
       ),
     );
   }
@@ -182,13 +233,15 @@ class _FollowingFeed extends StatelessWidget {
   }
 }
 
-class _PostList extends StatelessWidget {
+class _PostList extends ConsumerWidget {
   const _PostList({required this.query, required this.emptyText});
   final Query<Map<String, dynamic>> query;
   final String emptyText;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Engellenen kullanıcıların gönderileri istemci tarafında gizlenir.
+    final blocked = ref.watch(blockedUsersProvider).value ?? const <String>{};
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: query.snapshots(),
       builder: (context, snapshot) {
@@ -204,7 +257,9 @@ class _PostList extends StatelessWidget {
         if (!snapshot.hasData) {
           return const Center(child: AstrolabeSpinner());
         }
-        final docs = snapshot.data!.docs;
+        final docs = snapshot.data!.docs
+            .where((d) => !blocked.contains(d.data()['authorId']))
+            .toList();
         if (docs.isEmpty) {
           return Center(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -295,6 +350,41 @@ class _PostCardState extends ConsumerState<PostCard> {
               ]),
             ),
           ),
+          if (post['authorId'] != uid)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_horiz,
+                  size: 18, color: RythoColors.parchmentDim),
+              color: RythoColors.inkLight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: RythoColors.glassStroke),
+              ),
+              onSelected: (value) async {
+                final messenger = ScaffoldMessenger.of(context);
+                if (value == 'report') {
+                  await showReportSheet(context,
+                      targetType: 'post', targetId: widget.postId);
+                } else if (value == 'block') {
+                  try {
+                    await blockUser(post['authorId']);
+                    messenger.showSnackBar(const SnackBar(
+                        content: Text(
+                            'Kullanıcı engellendi; içerikleri artık gösterilmeyecek.')));
+                  } catch (e) {
+                    messenger.showSnackBar(
+                        SnackBar(content: Text('Engelleme başarısız: $e')));
+                  }
+                }
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                    value: 'report',
+                    child: Text('Şikayet et', style: RythoText.body(13.5))),
+                PopupMenuItem(
+                    value: 'block',
+                    child: Text('Engelle', style: RythoText.body(13.5))),
+              ],
+            ),
         ]),
         const SizedBox(height: 10),
         Text(post['text'] ?? '', style: RythoText.body(14.5, height: 1.55)),

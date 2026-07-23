@@ -45,3 +45,5 @@ firestore-debug.log
 node_modules/
 *.log
 backend/cache/
+.gradle/
+apps/mobile/android/key.properties

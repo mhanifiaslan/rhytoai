@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
@@ -39,6 +40,7 @@ class _IChingTabState extends ConsumerState<IChingTab> {
       final response = await dio.post('/api/v1/reports/iching',
           data: {'question': question, 'method': _method});
       setState(() => _result = Map<String, dynamic>.from(response.data['data']));
+      Analytics.ichingCast(_method);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

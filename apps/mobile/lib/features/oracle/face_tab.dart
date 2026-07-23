@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
@@ -44,6 +45,7 @@ class _FaceTabState extends ConsumerState<FaceTab> {
           await dio.post('/api/v1/face-reading/analyze', data: form);
       setState(
           () => _result = Map<String, dynamic>.from(response.data['data']));
+      Analytics.faceAnalyzed();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

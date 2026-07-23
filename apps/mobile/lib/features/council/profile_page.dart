@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/analytics.dart';
 import '../../core/api.dart';
+import '../../core/providers.dart';
+import '../../core/safety.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
@@ -64,6 +67,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       batch.set(followerRef, stamp);
     }
     await batch.commit();
+    if (!following) Analytics.userFollowed();
   }
 
   Future<void> _loadSynastry() async {
@@ -81,6 +85,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         'person2': birthPayload(_profile!),
       });
       setState(() => _synastry = response.data['data']['report']);
+      Analytics.reportGenerated('synastry');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -94,8 +99,57 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final profile = _profile;
+    final blocked =
+        ref.watch(blockedUsersProvider).value ?? const <String>{};
+    final isBlocked = blocked.contains(widget.uid);
     return CosmicScaffold(
-      appBar: AppBar(title: Text(profile?['displayName'] ?? '')),
+      appBar: AppBar(
+        title: Text(profile?['displayName'] ?? ''),
+        actions: [
+          if (!_isMe)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert,
+                  size: 20, color: RythoColors.parchmentDim),
+              color: RythoColors.inkLight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: RythoColors.glassStroke),
+              ),
+              onSelected: (value) async {
+                final messenger = ScaffoldMessenger.of(context);
+                if (value == 'report') {
+                  await showReportSheet(context,
+                      targetType: 'user', targetId: widget.uid);
+                } else if (value == 'block') {
+                  try {
+                    if (isBlocked) {
+                      await unblockUser(widget.uid);
+                      messenger.showSnackBar(const SnackBar(
+                          content: Text('Engel kaldırıldı.')));
+                    } else {
+                      await blockUser(widget.uid);
+                      messenger.showSnackBar(const SnackBar(
+                          content: Text(
+                              'Kullanıcı engellendi; içerikleri artık gösterilmeyecek.')));
+                    }
+                  } catch (e) {
+                    messenger.showSnackBar(
+                        SnackBar(content: Text('İşlem başarısız: $e')));
+                  }
+                }
+              },
+              itemBuilder: (_) => [
+                PopupMenuItem(
+                    value: 'report',
+                    child: Text('Şikayet et', style: RythoText.body(13.5))),
+                PopupMenuItem(
+                    value: 'block',
+                    child: Text(isBlocked ? 'Engeli kaldır' : 'Engelle',
+                        style: RythoText.body(13.5))),
+              ],
+            ),
+        ],
+      ),
       body: profile == null
           ? const Center(child: AstrolabeSpinner())
           : ListView(

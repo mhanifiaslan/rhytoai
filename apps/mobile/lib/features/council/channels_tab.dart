@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/analytics.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
@@ -205,11 +206,16 @@ class _ChannelCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10)),
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
-                onPressed: () => subscribed
-                    ? subscribers.doc(uid).delete()
-                    : subscribers
+                onPressed: () {
+                  if (subscribed) {
+                    subscribers.doc(uid).delete();
+                  } else {
+                    subscribers
                         .doc(uid)
-                        .set({'at': FieldValue.serverTimestamp()}),
+                        .set({'at': FieldValue.serverTimestamp()});
+                    Analytics.channelSubscribed();
+                  }
+                },
                 child: Text(subscribed ? 'ABONE' : 'ABONE OL',
                     style: RythoText.label(9,
                         color: subscribed

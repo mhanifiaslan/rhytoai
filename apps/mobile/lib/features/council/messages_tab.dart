@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/api.dart';
+import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
@@ -38,12 +39,14 @@ Future<void> openChat(
 }
 
 /// DM listesi.
-class MessagesTab extends StatelessWidget {
+class MessagesTab extends ConsumerWidget {
   const MessagesTab({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
+    // Engellenen kullanıcılarla olan sohbetler listelenmez.
+    final blocked = ref.watch(blockedUsersProvider).value ?? const <String>{};
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: FirebaseFirestore.instance
           .collection('chats')
@@ -57,7 +60,10 @@ class MessagesTab extends StatelessWidget {
                   style: RythoText.body(13, color: RythoColors.parchmentDim)));
         }
         if (!snapshot.hasData) return const Center(child: AstrolabeSpinner());
-        final docs = snapshot.data!.docs;
+        final docs = snapshot.data!.docs.where((d) {
+          final participants = List<String>.from(d.data()['participants']);
+          return !participants.any(blocked.contains);
+        }).toList();
         if (docs.isEmpty) {
           return Center(
             child: Text(
