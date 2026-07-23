@@ -15,6 +15,7 @@ import json
 import logging
 import math
 import re
+from collections import OrderedDict
 from dataclasses import dataclass, field
 
 from core import config
@@ -63,9 +64,15 @@ def _load_chunks() -> list[Chunk]:
     return chunks
 
 
+# Aynı/benzer sorular tekrar geldiğinde embedding API'sine gitmemek için
+# küçük bir bellek içi LRU önbelleği (Cloud Run instance ömrü boyunca yaşar).
+_QUERY_CACHE_MAX = 128
+
+
 class _KnowledgeBase:
     def __init__(self):
         self._chunks: list[Chunk] | None = None
+        self._query_cache: OrderedDict[str, list[float]] = OrderedDict()
 
     def _embed_texts(self, texts: list[str]) -> list[list[float]] | None:
         if not config.GEMINI_API_KEY:
@@ -118,6 +125,20 @@ class _KnowledgeBase:
         self._chunks = chunks
         return chunks
 
+    def _embed_query(self, query: str) -> list[float] | None:
+        """Sorgu vektörünü LRU önbellek üzerinden üretir."""
+        key = " ".join(query.lower().split())
+        if key in self._query_cache:
+            self._query_cache.move_to_end(key)
+            return self._query_cache[key]
+        embs = self._embed_texts([query])
+        emb = embs[0] if embs else None
+        if emb:
+            self._query_cache[key] = emb
+            if len(self._query_cache) > _QUERY_CACHE_MAX:
+                self._query_cache.popitem(last=False)
+        return emb
+
     @staticmethod
     def _cosine(a: list[float], b: list[float]) -> float:
         dot = sum(x * y for x, y in zip(a, b))
@@ -132,8 +153,7 @@ class _KnowledgeBase:
         scored: list[tuple[float, Chunk]] = []
         query_emb = None
         if all(c.embedding for c in chunks):
-            embs = self._embed_texts([query])
-            query_emb = embs[0] if embs else None
+            query_emb = self._embed_query(query)
 
         if query_emb:
             for chunk in chunks:
@@ -161,3 +181,8 @@ def retrieve_context(query: str, top_k: int = 3) -> str:
         return ""
     parts = [f"[Kaynak: {r['doc']} / {r['title']}]\n{r['text']}" for r in results]
     return "\n\n---\n\n".join(parts)
+
+
+def retrieve_passages(query: str, top_k: int = 2) -> list[dict]:
+    """Sohbet için ham pasaj listesi (prompt_composer kırpar ve harmanlar)."""
+    return knowledge_base.search(query, top_k=top_k)
