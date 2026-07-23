@@ -32,16 +32,18 @@ class _CouncilScreenState extends State<CouncilScreen>
         title: const Text('Meclis'),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: RythoColors.gold,
+          indicatorColor: RythoColors.magenta,
           indicatorSize: TabBarIndicatorSize.label,
           dividerColor: RythoColors.line,
-          labelStyle: RythoText.label(12, color: RythoColors.goldBright),
+          labelColor: RythoColors.parchment,
+          unselectedLabelColor: RythoColors.parchmentDim,
+          labelStyle: RythoText.label(12),
           unselectedLabelStyle:
               RythoText.label(12, color: RythoColors.parchmentDim),
           tabs: const [
-            Tab(text: 'AKIŞ'),
-            Tab(text: 'KANALLAR'),
-            Tab(text: 'MESAJLAR'),
+            Tab(text: 'Akış'),
+            Tab(text: 'Kanallar'),
+            Tab(text: 'Mesajlar'),
           ],
         ),
       ),

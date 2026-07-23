@@ -4,11 +4,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import 'package:flutter_animate/flutter_animate.dart';
+
 import '../../core/api.dart';
 import '../../core/providers.dart';
+import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
+import '../../widgets/nebula_widgets.dart';
 
 String _chatIdFor(String a, String b) {
   final ids = [a, b]..sort();
@@ -135,10 +139,14 @@ class ChatDetailScreen extends ConsumerStatefulWidget {
 class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
   final _controller = TextEditingController();
 
+  /// Gelen mesaj sesi için bilinen mesaj sayısı (-1: ilk yükleme bekleniyor).
+  int _knownCount = -1;
+
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
     _controller.clear();
+    SoundFx.send();
     final me = FirebaseAuth.instance.currentUser!;
     final chatRef =
         FirebaseFirestore.instance.collection('chats').doc(widget.chatId);
@@ -184,6 +192,18 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 return const Center(child: AstrolabeSpinner());
               }
               final docs = snapshot.data!.docs;
+
+              // Yeni gelen (karşı taraftan) mesajda "ding" çal.
+              if (_knownCount == -1) {
+                _knownCount = docs.length;
+              } else if (docs.length > _knownCount) {
+                final newest = docs.isNotEmpty ? docs.first.data() : null;
+                if (newest != null && newest['senderId'] != uid) {
+                  SoundFx.receive();
+                }
+                _knownCount = docs.length;
+              }
+
               return ListView.builder(
                 reverse: true,
                 padding: const EdgeInsets.all(16),
@@ -191,33 +211,51 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 itemBuilder: (_, i) {
                   final message = docs[i].data();
                   final mine = message['senderId'] == uid;
+                  final bubble = Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 10),
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.75),
+                    decoration: BoxDecoration(
+                      color: mine ? Colors.white : null,
+                      gradient:
+                          mine ? null : RythoColors.primaryGradient,
+                      borderRadius: BorderRadius.only(
+                        topLeft: const Radius.circular(18),
+                        topRight: const Radius.circular(18),
+                        bottomLeft: Radius.circular(mine ? 18 : 5),
+                        bottomRight: Radius.circular(mine ? 5 : 18),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      message['text'] ?? '',
+                      style: RythoText.body(14.5,
+                          color: mine
+                              ? const Color(0xFF1D1230)
+                              : Colors.white),
+                    ),
+                  );
                   return Align(
                     alignment:
                         mine ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 10),
-                      padding: const EdgeInsets.all(11),
-                      constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.75),
-                      decoration: BoxDecoration(
-                        color: mine
-                            ? RythoColors.inkLighter.withValues(alpha: 0.85)
-                            : RythoColors.glassFill,
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(16),
-                          topRight: const Radius.circular(16),
-                          bottomLeft: Radius.circular(mine ? 16 : 4),
-                          bottomRight: Radius.circular(mine ? 4 : 16),
-                        ),
-                        border: Border.all(
-                            color: mine
-                                ? RythoColors.glassStroke
-                                : RythoColors.gold.withValues(alpha: 0.5),
-                            width: mine ? 1 : 0.6),
-                      ),
-                      child: Text(message['text'] ?? '',
-                          style: RythoText.body(14.5)),
-                    ),
+                    child: i == 0
+                        ? bubble
+                            .animate()
+                            .fadeIn(duration: 220.ms)
+                            .slideY(begin: 0.25, curve: Curves.easeOutBack)
+                            .scale(
+                                begin: const Offset(0.94, 0.94),
+                                curve: Curves.easeOutBack,
+                                duration: 280.ms)
+                        : bubble,
                   );
                 },
               );
@@ -235,24 +273,43 @@ class _ChatDetailScreenState extends ConsumerState<ChatDetailScreen> {
                 child: TextField(
                   controller: _controller,
                   style: RythoText.body(15),
-                  decoration: const InputDecoration(hintText: 'Yaz...'),
+                  decoration: InputDecoration(
+                    hintText: 'Yaz...',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide:
+                          const BorderSide(color: RythoColors.glassStroke),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide:
+                          const BorderSide(color: RythoColors.glassStroke),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(24),
+                      borderSide:
+                          const BorderSide(color: RythoColors.purple),
+                    ),
+                  ),
                   onSubmitted: (_) => _send(),
                 ),
               ),
               const SizedBox(width: 10),
-              InkWell(
+              Pressable(
                 onTap: _send,
                 child: Container(
                   width: 44,
                   height: 44,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: RythoColors.gold),
-                    borderRadius: BorderRadius.circular(4),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RythoColors.primaryGradient,
+                    boxShadow: [
+                      BoxShadow(color: RythoColors.goldGlow, blurRadius: 14),
+                    ],
                   ),
-                  child: const Text('✦',
-                      style: TextStyle(
-                          color: RythoColors.goldBright, fontSize: 18)),
+                  child: const Icon(Icons.send_rounded,
+                      size: 19, color: Colors.white),
                 ),
               ),
             ]),

@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/providers.dart';
+import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/nebula_widgets.dart';
 import '../council/feed_tab.dart' show PostCard;
 import 'legal_page.dart';
 
@@ -21,10 +23,15 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
+  bool _soundsEnabled = true;
+
   @override
   void initState() {
     super.initState();
     _registerFcm();
+    SoundFx.loadEnabled().then((v) {
+      if (mounted) setState(() => _soundsEnabled = v);
+    });
   }
 
   Future<void> _registerFcm() async {
@@ -59,15 +66,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 12),
         Center(
           child: Container(
+            padding: const EdgeInsets.all(3),
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
+              gradient: RythoColors.primaryGradient,
               boxShadow: [
-                BoxShadow(color: RythoColors.goldGlow, blurRadius: 30),
+                BoxShadow(color: RythoColors.magentaGlow, blurRadius: 26),
               ],
             ),
             child: CircleAvatar(
               radius: 40,
-              backgroundColor: RythoColors.inkLighter,
+              backgroundColor: RythoColors.inkLight,
               backgroundImage: profile['photoUrl'] != null
                   ? NetworkImage(profile['photoUrl'])
                   : null,
@@ -80,7 +89,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         const SizedBox(height: 12),
         Center(
           child: Text(profile['displayName'] ?? user?.displayName ?? 'Gezgin',
-              style: RythoText.display(28)),
+              style: RythoText.display(26)),
         ),
         const SizedBox(height: 4),
         Center(
@@ -91,33 +100,90 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Center(
           child: Wrap(spacing: 8, children: [
             for (final badge in [
-              if (profile['sunSign'] != null) '☉ ${profile['sunSign']}',
-              if (profile['moonSign'] != null) '☽ ${profile['moonSign']}',
-              if (profile['ascendant'] != null) '↑ ${profile['ascendant']}',
+              if (profile['sunSign'] != null)
+                (emoji: '☀️', text: profile['sunSign'] as String),
+              if (profile['moonSign'] != null)
+                (emoji: '🌙', text: profile['moonSign'] as String),
+              if (profile['ascendant'] != null)
+                (emoji: '⬆️', text: profile['ascendant'] as String),
             ])
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                decoration: BoxDecoration(
-                  color: RythoColors.glassFill,
-                  border: Border.all(color: RythoColors.glassStroke),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(badge,
-                    style: RythoText.mono(11, color: RythoColors.goldBright)),
-              ),
+              Builder(builder: (_) {
+                final signIndex = kSignNamesTr.indexOf(badge.text);
+                final color = signIndex >= 0
+                    ? RythoColors.signColors[signIndex]
+                    : RythoColors.lilac;
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    border: Border.all(color: color.withValues(alpha: 0.5)),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text('${badge.emoji} ${badge.text}',
+                      style: RythoText.body(12, w: FontWeight.w700)),
+                );
+              }),
           ]),
         ),
         if (uid != null) ...[
           const SizedBox(height: 14),
           _FollowCounters(uid: uid),
         ],
+        // Günlük seri kartı 🔥
+        Plaque(
+          label: 'Günlük Seri',
+          child: Row(children: [
+            const Text('🔥', style: TextStyle(fontSize: 30)),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${(profile['streakCount'] as num?)?.toInt() ?? 0} gün',
+                      style: RythoText.display(20),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Günlük okumayı her gün aç, serin büyüsün.',
+                      style: RythoText.body(12,
+                          color: RythoColors.parchmentDim),
+                    ),
+                  ]),
+            ),
+            StreakBadge(
+                count: (profile['streakCount'] as num?)?.toInt() ?? 0),
+          ]),
+        ),
         Plaque(
           label: 'Doğum Kaydı',
           child: Column(children: [
             _row('Tarih', profile['birthDate'] ?? '—'),
             _row('Saat', profile['birthTime'] ?? '—'),
             _row('Şehir', profile['birthCity'] ?? '—'),
+          ]),
+        ),
+        // Ayarlar: sesler aç/kapa
+        Plaque(
+          label: 'Ayarlar',
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Row(children: [
+            const Icon(Icons.music_note_outlined,
+                size: 18, color: RythoColors.lilac),
+            const SizedBox(width: 10),
+            Expanded(
+                child: Text('Sesler', style: RythoText.body(14))),
+            Switch(
+              value: _soundsEnabled,
+              activeThumbColor: RythoColors.magenta,
+              activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
+              onChanged: (v) {
+                setState(() => _soundsEnabled = v);
+                SoundFx.setEnabled(v);
+                if (v) SoundFx.like();
+              },
+            ),
           ]),
         ),
         Plaque(

@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -90,32 +91,47 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final timeText =
         '${_birthTime.hour.toString().padLeft(2, '0')}:${_birthTime.minute.toString().padLeft(2, '0')}';
 
+    var stagger = 0;
+    Duration next() => Duration(milliseconds: 70 * stagger++);
+
     return CosmicScaffold(
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
             const SizedBox(height: 16),
-            Text('LEVHA 0 — KAYIT',
-                style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+            Text('✨ Kayıt',
+                style: RythoText.label(12, color: RythoColors.lilac))
+                .animate(delay: next())
+                .fadeIn(duration: 360.ms),
             const SizedBox(height: 8),
-            Text('Doğum Anın', style: RythoText.display(34)),
+            Text('Doğum Anın', style: RythoText.display(32))
+                .animate(delay: next())
+                .fadeIn(duration: 360.ms)
+                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
             const SizedBox(height: 8),
             Text(
               'Haritanın çizilebilmesi için gökyüzünün o anki dizilişi gerekir. '
               'Saat ne kadar kesinse, yükselen o kadar doğrudur.',
               style: RythoText.body(14, color: RythoColors.parchmentDim),
-            ),
+            ).animate(delay: next()).fadeIn(duration: 360.ms),
             const SizedBox(height: 28),
-            _FieldRow(label: 'TARİH', value: dateText, onTap: _pickDate),
+            _FieldRow(label: 'Tarih', value: dateText, onTap: _pickDate)
+                .animate(delay: next())
+                .fadeIn(duration: 360.ms)
+                .slideY(begin: 0.08, curve: Curves.easeOutCubic),
             const SizedBox(height: 12),
-            _FieldRow(label: 'SAAT', value: timeText, onTap: _pickTime),
+            _FieldRow(label: 'Saat', value: timeText, onTap: _pickTime)
+                .animate(delay: next())
+                .fadeIn(duration: 360.ms)
+                .slideY(begin: 0.08, curve: Curves.easeOutCubic),
             const SizedBox(height: 12),
             TextField(
               controller: _cityController,
               style: RythoText.body(15),
-              decoration: const InputDecoration(labelText: 'DOĞUM ŞEHRİ'),
-            ),
+              decoration: const InputDecoration(labelText: 'Doğum şehri'),
+            ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
+                begin: 0.08, curve: Curves.easeOutCubic),
             const SizedBox(height: 20),
             Row(
               children: [
@@ -127,20 +143,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   Expanded(
                     child: GestureDetector(
                       onTap: () => setState(() => _gender = g.$1),
-                      child: Container(
-                        height: 44,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 240),
+                        curve: Curves.easeOutCubic,
+                        height: 46,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
+                          gradient: _gender == g.$1
+                              ? RythoColors.primaryGradient
+                              : null,
+                          color:
+                              _gender == g.$1 ? null : RythoColors.inkLight,
                           border: Border.all(
                               color: _gender == g.$1
-                                  ? RythoColors.gold
-                                  : RythoColors.line),
-                          borderRadius: BorderRadius.circular(4),
+                                  ? Colors.white.withValues(alpha: 0.2)
+                                  : RythoColors.glassStroke),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(g.$2,
                             style: RythoText.body(14,
+                                w: FontWeight.w600,
                                 color: _gender == g.$1
-                                    ? RythoColors.goldBright
+                                    ? Colors.white
                                     : RythoColors.parchmentDim)),
                       ),
                     ),
@@ -148,9 +172,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   if (g.$1 != 'other') const SizedBox(width: 8),
                 ],
               ],
-            ),
+            ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
+                begin: 0.08, curve: Curves.easeOutCubic),
             const SizedBox(height: 36),
-            GoldButton(text: 'Haritamı çiz', busy: _busy, onPressed: _save),
+            GoldButton(text: 'Haritamı çiz ✨', busy: _busy, onPressed: _save)
+                .animate(delay: next())
+                .fadeIn(duration: 360.ms)
+                .slideY(begin: 0.08, curve: Curves.easeOutCubic),
           ],
         ),
       ),
@@ -168,12 +196,13 @@ class _FieldRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
           color: RythoColors.inkLighter,
-          border: Border.all(color: RythoColors.line),
-          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: RythoColors.glassStroke),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: [

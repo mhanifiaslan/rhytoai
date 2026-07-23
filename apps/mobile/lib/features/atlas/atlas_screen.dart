@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/natal_wheel.dart';
+import '../../widgets/nebula_widgets.dart';
 
-/// ATLAS — doğum haritası: Büyük Üçlü, yerli çizim natal çark,
-/// gezegen cetveli, açılar ve derin AI raporu.
+/// ATLAS — Doğum Haritası Analizi v3: natal çark kartı, kişi kartı,
+/// gezegen konumları grid'i, animasyonlu kişilik çubukları ve derin AI raporu.
 class AtlasScreen extends ConsumerStatefulWidget {
   const AtlasScreen({super.key});
 
@@ -23,10 +25,11 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
   @override
   Widget build(BuildContext context) {
     final natal = ref.watch(natalReportProvider);
+    final profile = ref.watch(profileProvider).value ?? {};
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Doğum Atlası')),
+      appBar: AppBar(title: const Text('Doğum Haritası Analizi')),
       body: natal.when(
         loading: () => const Center(child: AstrolabeSpinner()),
         error: (e, _) => Center(
@@ -43,16 +46,15 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
           final houses = List<Map<String, dynamic>>.from(chart['houses'] ?? []);
           final aspects = List<Map<String, dynamic>>.from(chart['aspects'] ?? []);
 
+          var stagger = 0;
+          Duration next() => Duration(milliseconds: 70 * stagger++);
+
           return ListView(
-            padding: const EdgeInsets.only(bottom: 110),
+            padding: const EdgeInsets.only(bottom: 130),
             children: [
               const SizedBox(height: 8),
-              _BigThree(chart: chart)
-                  .animate()
-                  .fadeIn(duration: 400.ms)
-                  .slideY(begin: 0.06, curve: Curves.easeOutCubic),
+              // Natal çark
               GlassPanel(
-                label: 'Gök Çarkı — dokunarak keşfet',
                 padding: const EdgeInsets.all(8),
                 child: Column(children: [
                   Center(
@@ -74,9 +76,11 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                             margin: const EdgeInsets.fromLTRB(8, 4, 8, 8),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: RythoColors.inkLighter.withValues(alpha: 0.7),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: RythoColors.glassEdge),
+                              color: RythoColors.inkLighter,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(
+                                  color: RythoColors.lilac
+                                      .withValues(alpha: 0.3)),
                             ),
                             child: Row(children: [
                               Expanded(
@@ -86,7 +90,7 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                                     Text(
                                       '${_selectedPlanet!['name_tr']} — ${_selectedPlanet!['sign_tr']}',
                                       style: RythoText.body(15,
-                                          w: FontWeight.w600),
+                                          w: FontWeight.w700),
                                     ),
                                     Text(
                                       '${(_selectedPlanet!['position'] as num).toStringAsFixed(1)}°'
@@ -108,38 +112,28 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                           ),
                   ),
                 ]),
-              ),
+              ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
+                  begin: 0.06, curve: Curves.easeOutCubic),
+              // Kişi kartı
+              _PersonCard(profile: profile, chart: chart)
+                  .animate(delay: next())
+                  .fadeIn(duration: 380.ms)
+                  .slideY(begin: 0.06, curve: Curves.easeOutCubic),
+              // Gezegen konumları
+              GlassPanel(
+                label: 'Gezegen Konumları',
+                child: _PlanetGrid(points: points),
+              ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
+                  begin: 0.06, curve: Curves.easeOutCubic),
+              // Kişilik özellikleri — animasyonlu çubuklar
+              GlassPanel(
+                label: 'Kişilik Özellikleri',
+                child: _TraitBars(points: points),
+              ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
+                  begin: 0.06, curve: Curves.easeOutCubic),
+              // Açılar (katlanır detay)
               _FoldSection(
-                label: 'Levha II — Gezegen Cetveli',
-                child: Column(children: [
-                  for (final p in points)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Row(children: [
-                        SizedBox(
-                          width: 132,
-                          child:
-                              Text(p['name_tr'] ?? '', style: RythoText.body(13.5)),
-                        ),
-                        Text('${p['sign_tr']} ${p['symbol'] ?? ''}',
-                            style: RythoText.body(13.5,
-                                color: RythoColors.parchmentDim)),
-                        const Spacer(),
-                        if (p['retrograde'] == true)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: Text('R',
-                                style:
-                                    RythoText.mono(12, color: RythoColors.copper)),
-                          ),
-                        Text('${(p['position'] as num).toStringAsFixed(1)}°',
-                            style: RythoText.mono(13)),
-                      ]),
-                    ),
-                ]),
-              ),
-              _FoldSection(
-                label: 'Levha III — Açılar',
+                label: 'Açılar',
                 initiallyOpen: false,
                 child: Column(children: [
                   for (final a in aspects.take(14))
@@ -160,13 +154,15 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                       ]),
                     ),
                 ]),
-              ),
+              ).animate(delay: next()).fadeIn(duration: 380.ms),
               const SectionDivider(),
+              // Tam AI raporu
               GlassPanel(
-                label: 'Rytho\'nun okuma notu',
+                label: '✨ Rytho\'nun okuma notu',
                 child: Text(data['report'] ?? '',
-                    style: RythoText.body(15, height: 1.65)),
-              ),
+                    style: RythoText.body(14.5, height: 1.65)),
+              ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
+                  begin: 0.05, curve: Curves.easeOutCubic),
               const SizedBox(height: 16),
             ],
           );
@@ -176,7 +172,184 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
   }
 }
 
-/// Katlanabilir cam bölüm.
+/// Kişi kartı: ad, doğum tarihi/saati/yeri.
+class _PersonCard extends StatelessWidget {
+  const _PersonCard({required this.profile, required this.chart});
+  final Map<String, dynamic> profile;
+  final Map<String, dynamic> chart;
+
+  String get _birthDateText {
+    final raw = profile['birthDate'] as String?;
+    if (raw == null) return '—';
+    try {
+      return DateFormat('d MMMM yyyy', 'tr_TR').format(DateTime.parse(raw));
+    } catch (_) {
+      return raw;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassPanel(
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.all(2),
+          decoration: const BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: RythoColors.primaryGradient,
+          ),
+          child: CircleAvatar(
+            radius: 22,
+            backgroundColor: RythoColors.inkLight,
+            backgroundImage: profile['photoUrl'] != null
+                ? NetworkImage(profile['photoUrl'])
+                : null,
+            child: profile['photoUrl'] == null
+                ? Text('☽', style: RythoText.display(16))
+                : null,
+          ),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(profile['displayName'] ?? 'Gezgin',
+                style: RythoText.body(16, w: FontWeight.w700)),
+            const SizedBox(height: 4),
+            Text(
+              '$_birthDateText · 🕐 ${profile['birthTime'] ?? '—'} · 📍 ${profile['birthCity'] ?? '—'}',
+              style: RythoText.body(12, color: RythoColors.parchmentDim),
+            ),
+          ]),
+        ),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text('☀️ ${chart['sun_sign'] ?? '—'}',
+              style: RythoText.body(12, w: FontWeight.w600)),
+          const SizedBox(height: 2),
+          Text('⬆️ ${chart['ascendant'] ?? '—'}',
+              style: RythoText.body(12, color: RythoColors.parchmentDim)),
+        ]),
+      ]),
+    );
+  }
+}
+
+/// Gezegen konumları: 2 sütunlu çip grid'i (Güneş ☀️ – Aslan ♌ gibi).
+class _PlanetGrid extends StatelessWidget {
+  const _PlanetGrid({required this.points});
+  final List<Map<String, dynamic>> points;
+
+  static const _planetEmojis = {
+    'Sun': '☀️', 'Moon': '🌙', 'Mercury': '☿', 'Venus': '♀', 'Mars': '♂',
+    'Jupiter': '♃', 'Saturn': '♄', 'Uranus': '♅', 'Neptune': '♆', 'Pluto': '♇',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final majors = points
+        .where((p) => _planetEmojis.containsKey(p['name']))
+        .toList();
+    return Column(children: [
+      for (var i = 0; i < majors.length; i += 2)
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(children: [
+            Expanded(child: _cell(majors[i])),
+            const SizedBox(width: 8),
+            Expanded(
+                child: i + 1 < majors.length
+                    ? _cell(majors[i + 1])
+                    : const SizedBox()),
+          ]),
+        ),
+    ]);
+  }
+
+  Widget _cell(Map<String, dynamic> p) {
+    final signIndex = kSignNamesTr.indexOf(p['sign_tr'] ?? '');
+    final glyph = signIndex >= 0 ? kSignGlyphs[signIndex] : '';
+    final retro = p['retrograde'] == true;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: RythoColors.inkLighter,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+            color: retro
+                ? RythoColors.magenta.withValues(alpha: 0.4)
+                : RythoColors.glassStroke),
+      ),
+      child: Row(children: [
+        Text(_planetEmojis[p['name']] ?? '•',
+            style: const TextStyle(fontSize: 14)),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            '${p['name_tr']} – ${p['sign_tr']} $glyph${retro ? ' ℞' : ''}',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: RythoText.body(12, w: FontWeight.w600),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+/// Kişilik özellikleri: natal noktaların element/nitelik dağılımından
+/// DETERMİNİSTİK türetilen 5 çubuk. Eşleme (uydurma ama tutarlı):
+/// - Enerji      → ateş burçlarındaki gezegen oranı
+/// - Pratiklik   → toprak oranı
+/// - İletişim    → hava oranı
+/// - Duyarlılık  → su oranı
+/// - Kararlılık  → sabit (fixed) nitelik oranı
+/// Yüzde = 30 + oran×140 (20–97 aralığına kırpılır) — böylece tipik
+/// dağılımlar 35-75 bandında, baskın özellikler 80+ görünür.
+class _TraitBars extends StatelessWidget {
+  const _TraitBars({required this.points});
+  final List<Map<String, dynamic>> points;
+
+  @override
+  Widget build(BuildContext context) {
+    var fire = 0, earth = 0, air = 0, water = 0, fixed = 0, total = 0;
+    for (final p in points) {
+      final lon = (p['abs_position'] as num?)?.toDouble();
+      if (lon == null) continue;
+      final sign = (lon ~/ 30) % 12;
+      total++;
+      switch (sign % 4) {
+        case 0: fire++;
+        case 1: earth++;
+        case 2: air++;
+        case 3: water++;
+      }
+      if (sign % 3 == 1) fixed++; // Boğa, Aslan, Akrep, Kova
+    }
+    if (total == 0) total = 1;
+
+    int pct(int count) =>
+        (30 + (count / total) * 140).round().clamp(20, 97);
+
+    final traits = [
+      ('Enerji', pct(fire), RythoColors.magenta),
+      ('Kararlılık', pct(fixed), RythoColors.gold),
+      ('İletişim', pct(air), RythoColors.lilac),
+      ('Duyarlılık', pct(water), const Color(0xFF5AC8FA)),
+      ('Pratiklik', pct(earth), RythoColors.celadon),
+    ];
+
+    return Column(children: [
+      for (final (i, t) in traits.indexed)
+        GradientProgressBar(
+          label: t.$1,
+          percent: t.$2,
+          color: t.$3,
+          delay: Duration(milliseconds: 120 * i),
+        ),
+    ]);
+  }
+}
+
+/// Katlanabilir bölüm.
 class _FoldSection extends StatefulWidget {
   const _FoldSection({
     required this.label,
@@ -205,8 +378,8 @@ class _FoldSectionState extends State<_FoldSection> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: Row(children: [
-              Text(widget.label.toUpperCase(),
-                  style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+              Text(widget.label,
+                  style: RythoText.label(11, color: RythoColors.parchmentDim)),
               const Spacer(),
               AnimatedRotation(
                 turns: _open ? 0.5 : 0,
@@ -228,47 +401,6 @@ class _FoldSectionState extends State<_FoldSection> {
                 )
               : const SizedBox(width: double.infinity),
         ),
-      ]),
-    );
-  }
-}
-
-class _BigThree extends StatelessWidget {
-  const _BigThree({required this.chart});
-  final Map<String, dynamic> chart;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = [
-      ('GÜNEŞ', chart['sun_sign'] ?? '—', 'öz kimlik'),
-      ('AY', chart['moon_sign'] ?? '—', 'duygu dünyası'),
-      ('YÜKSELEN', chart['ascendant'] ?? '—', 'dışa açılan kapı'),
-    ];
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Row(children: [
-        for (final item in items)
-          Expanded(
-            child: Container(
-              margin: EdgeInsets.only(right: item == items.last ? 0 : 8),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                color: RythoColors.glassFill,
-                border: Border.all(color: RythoColors.glassStroke),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Column(children: [
-                Text(item.$1,
-                    style: RythoText.mono(10, color: RythoColors.parchmentDim)),
-                const SizedBox(height: 6),
-                Text(item.$2, style: RythoText.display(17)),
-                const SizedBox(height: 4),
-                Text(item.$3,
-                    style:
-                        RythoText.body(10.5, color: RythoColors.parchmentDim)),
-              ]),
-            ),
-          ),
       ]),
     );
   }

@@ -106,12 +106,14 @@ class _NatalWheelPainter extends CustomPainter {
     'Pluto': '♇', 'Chiron': '⚷', 'Mean_Lilith': '⚸',
     'True_North_Lunar_Node': '☊', 'True_South_Lunar_Node': '☋',
   };
+  // v3: magenta açı ağı — sert açılar magenta, uyumlu açılar lila,
+  // kavuşum altın.
   static const _aspectColors = {
-    'conjunction': RythoColors.goldBright,
-    'opposition': RythoColors.madder,
-    'square': RythoColors.madder,
-    'trine': RythoColors.celadon,
-    'sextile': RythoColors.celadon,
+    'conjunction': RythoColors.gold,
+    'opposition': RythoColors.magenta,
+    'square': RythoColors.magenta,
+    'trine': RythoColors.lilac,
+    'sextile': RythoColors.lilac,
     'quintile': RythoColors.parchmentDim,
     'quincunx': RythoColors.parchmentDim,
   };
@@ -149,11 +151,12 @@ class _NatalWheelPainter extends CustomPainter {
     final aspectRadius = houseInner - 26; // açı ağı yarıçapı
     final asc = ascendantAngle(houses);
 
+    // v3: lila çizgiler, eksenler tam lila.
     final line = Paint()
-      ..color = RythoColors.line
+      ..color = RythoColors.lilac.withValues(alpha: 0.22)
       ..style = PaintingStyle.stroke;
     final goldLine = Paint()
-      ..color = RythoColors.gold.withValues(alpha: 0.75)
+      ..color = RythoColors.lilac.withValues(alpha: 0.85)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 
@@ -176,7 +179,7 @@ class _NatalWheelPainter extends CustomPainter {
           _polar(center, a, signInner), _polar(center, a, outer), line);
       final mid = _screenAngle(startLon + 15, asc);
       _drawText(canvas, _signGlyphs[i], _polar(center, mid, (outer + signInner) / 2),
-          13, RythoColors.parchmentDim);
+          13, RythoColors.parchment);
     }
 
     // Ev çizgileri + numaraları
@@ -243,20 +246,21 @@ class _NatalWheelPainter extends CustomPainter {
       final angle = _screenAngle(lon, asc);
       final pos = _polar(center, angle, radius);
       final retro = p['retrograde'] == true;
-      final color = retro ? RythoColors.copper : RythoColors.goldBright;
+      // v3: beyaz glifler, retro magenta.
+      final color = retro ? RythoColors.magenta : RythoColors.parchment;
       // İşaretçi çizgisi
       canvas.drawLine(_polar(center, angle, signInner),
           _polar(center, angle, signInner - 5),
           Paint()..color = color..strokeWidth = 1.2);
       _drawText(canvas, _planetGlyphs[p['name']] ?? '•', pos, 15, color);
       if (retro) {
-        _drawText(canvas, 'R', pos + const Offset(9, -7), 7, RythoColors.copper);
+        _drawText(canvas, 'R', pos + const Offset(9, -7), 7, RythoColors.magenta);
       }
     }
 
     // Merkez
     _drawText(canvas, '✦', center, 11,
-        RythoColors.gold.withValues(alpha: progress));
+        RythoColors.lilac.withValues(alpha: progress));
   }
 
   void _drawText(

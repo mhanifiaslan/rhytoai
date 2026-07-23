@@ -10,6 +10,7 @@ import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../core/providers.dart';
 import '../../core/safety.dart';
+import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/glass.dart';
@@ -74,14 +75,26 @@ class _FeedTabState extends ConsumerState<FeedTab> {
       ]),
       floatingActionButton: canPost
           ? Padding(
-              padding: EdgeInsets.only(bottom: _isChannel ? 0 : 78),
-              child: FloatingActionButton(
-                backgroundColor: RythoColors.gold,
-                foregroundColor: RythoColors.ink,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
-                onPressed: () => _openComposer(context),
-                child: const Icon(Icons.edit_outlined),
+              padding: EdgeInsets.only(bottom: _isChannel ? 0 : 92),
+              child: GestureDetector(
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _openComposer(context);
+                },
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RythoColors.primaryGradient,
+                    boxShadow: [
+                      BoxShadow(color: RythoColors.magentaGlow, blurRadius: 18),
+                    ],
+                  ),
+                  child: const Icon(Icons.edit_outlined,
+                      color: Colors.white, size: 22),
+                ),
               ),
             )
           : null,
@@ -412,6 +425,7 @@ class _PostCardState extends ConsumerState<PostCard> {
                     refDoc.delete();
                   } else {
                     refDoc.set({'at': FieldValue.serverTimestamp()});
+                    SoundFx.like();
                     setState(() => _likeBurst++);
                   }
                 },
@@ -419,7 +433,7 @@ class _PostCardState extends ConsumerState<PostCard> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   child: Text(
-                    liked ? '✦ ${likes.length}' : '✧ ${likes.length}',
+                    liked ? '✨ ${likes.length}' : '✧ ${likes.length}',
                     style: RythoText.mono(13,
                         color: liked
                             ? RythoColors.goldBright

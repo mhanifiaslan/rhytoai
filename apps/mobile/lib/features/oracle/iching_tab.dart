@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/analytics.dart';
 import '../../core/api.dart';
+import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 
@@ -35,6 +36,7 @@ class _IChingTabState extends ConsumerState<IChingTab> {
       _busy = true;
       _result = null;
     });
+    SoundFx.cast();
     try {
       final dio = ref.read(apiProvider);
       final response = await dio.post('/api/v1/reports/iching',
@@ -71,22 +73,29 @@ class _IChingTabState extends ConsumerState<IChingTab> {
       ),
       const SizedBox(height: 12),
       Row(children: [
-        for (final m in const [('coins', 'ÜÇ PARA'), ('yarrow', 'CİVANPERÇEMİ')]) ...[
+        for (final m in const [('coins', 'Üç Para 🪙'), ('yarrow', 'Civanperçemi 🌿')]) ...[
           Expanded(
             child: GestureDetector(
               onTap: () => setState(() => _method = m.$1),
-              child: Container(
-                height: 40,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 240),
+                curve: Curves.easeOutCubic,
+                height: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
+                  gradient:
+                      _method == m.$1 ? RythoColors.primaryGradient : null,
+                  color: _method == m.$1 ? null : RythoColors.inkLight,
                   border: Border.all(
-                      color: _method == m.$1 ? RythoColors.gold : RythoColors.line),
-                  borderRadius: BorderRadius.circular(4),
+                      color: _method == m.$1
+                          ? Colors.white.withValues(alpha: 0.2)
+                          : RythoColors.glassStroke),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(m.$2,
-                    style: RythoText.label(11,
+                    style: RythoText.label(12,
                         color: _method == m.$1
-                            ? RythoColors.goldBright
+                            ? Colors.white
                             : RythoColors.parchmentDim)),
               ),
             ),
@@ -162,21 +171,21 @@ class _CoinTossState extends State<_CoinToss>
                   width: 34,
                   height: 34,
                   alignment: Alignment.center,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: const LinearGradient(
+                    gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [RythoColors.goldBright, RythoColors.copper],
+                      colors: [RythoColors.gold, RythoColors.magenta],
                     ),
-                    boxShadow: const [
-                      BoxShadow(color: RythoColors.goldGlow, blurRadius: 14),
+                    boxShadow: [
+                      BoxShadow(color: RythoColors.magentaGlow, blurRadius: 14),
                     ],
                   ),
                     child: Text('中',
                         style: TextStyle(
                             fontSize: 15,
-                            color: RythoColors.ink.withValues(alpha: 0.8))),
+                            color: RythoColors.ink.withValues(alpha: 0.85))),
                   ),
                 ),
               ),

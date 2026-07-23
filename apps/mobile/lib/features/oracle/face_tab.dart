@@ -158,7 +158,7 @@ class _ScanningImageState extends State<_ScanningImage>
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          RythoColors.gold.withValues(alpha: 0.22),
+                          RythoColors.magenta.withValues(alpha: 0.22),
                           Colors.transparent,
                         ],
                       ),
@@ -172,11 +172,11 @@ class _ScanningImageState extends State<_ScanningImage>
                   height: 2,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: RythoColors.goldBright,
+                      color: RythoColors.lilac,
                       borderRadius: BorderRadius.circular(2),
                       boxShadow: const [
                         BoxShadow(
-                            color: RythoColors.goldGlow, blurRadius: 12),
+                            color: RythoColors.magentaGlow, blurRadius: 12),
                       ],
                     ),
                   ),

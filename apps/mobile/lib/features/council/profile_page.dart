@@ -12,6 +12,7 @@ import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/nebula_widgets.dart';
 import 'feed_tab.dart' show PostCard;
 import 'messages_tab.dart';
 
@@ -158,15 +159,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 const SizedBox(height: 8),
                 Center(
                   child: Container(
+                    padding: const EdgeInsets.all(3),
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
+                      gradient: RythoColors.primaryGradient,
                       boxShadow: [
-                        BoxShadow(color: RythoColors.goldGlow, blurRadius: 30),
+                        BoxShadow(
+                            color: RythoColors.magentaGlow, blurRadius: 26),
                       ],
                     ),
                     child: CircleAvatar(
                       radius: 40,
-                      backgroundColor: RythoColors.inkLighter,
+                      backgroundColor: RythoColors.inkLight,
                       backgroundImage: profile['photoUrl'] != null
                           ? NetworkImage(profile['photoUrl'])
                           : null,
@@ -187,22 +191,32 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 Center(
                   child: Wrap(spacing: 8, children: [
                     for (final badge in [
-                      if (profile['sunSign'] != null) '☉ ${profile['sunSign']}',
-                      if (profile['moonSign'] != null) '☽ ${profile['moonSign']}',
-                      if (profile['ascendant'] != null) '↑ ${profile['ascendant']}',
+                      if (profile['sunSign'] != null)
+                        (emoji: '☀️', text: profile['sunSign'] as String),
+                      if (profile['moonSign'] != null)
+                        (emoji: '🌙', text: profile['moonSign'] as String),
+                      if (profile['ascendant'] != null)
+                        (emoji: '⬆️', text: profile['ascendant'] as String),
                     ])
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: RythoColors.glassFill,
-                          border: Border.all(color: RythoColors.glassStroke),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(badge,
-                            style: RythoText.mono(11,
-                                color: RythoColors.goldBright)),
-                      ),
+                      Builder(builder: (_) {
+                        final signIndex = kSignNamesTr.indexOf(badge.text);
+                        final color = signIndex >= 0
+                            ? RythoColors.signColors[signIndex]
+                            : RythoColors.lilac;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: color.withValues(alpha: 0.14),
+                            border: Border.all(
+                                color: color.withValues(alpha: 0.5)),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text('${badge.emoji} ${badge.text}',
+                              style:
+                                  RythoText.body(12, w: FontWeight.w700)),
+                        );
+                      }),
                   ]),
                 ),
                 if ((profile['bio'] as String?)?.isNotEmpty == true) ...[
