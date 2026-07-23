@@ -1,112 +1,151 @@
-# RythoAI Tasarım Sistemi v2 — "Camdan Rasathane"
+# RythoAI Tasarım Sistemi — v3 "Mor Nebula"
 
-v1'in "Gök Atlası" kimliği (mürekkep + altın + editoryal tipografi) korunur;
-üzerine **cam katmanları, derinlik ve hareket** eklenir. Uygulama artık düz
-bir gravür levhası değil, **yıldız alanının önünde asılı duran camdan bir
-rasathane** gibi hissettirmeli. "Yapay zeka üretti" izlenimi veren klişe
-estetik (mor degrade, neon, emoji yağmuru) hâlâ reddedilir.
+> Önceki sürümler: v1 "Gök Atlası" (mürekkep/parşömen/altın gravür), v2 "Camdan
+> Rasathane" (cam paneller). v3 bunların yerini alır: modern, canlı, mor-magenta
+> bir uzay estetiği + her etkileşimde hareket + ses + motivasyon katmanı.
 
-## 0. v2'nin üç katmanı
+## 1. Konsept
 
-1. **Zemin**: `StarfieldBackground` — uzay degradesi + üç derinlik katmanında
-   süzülen, göz kırpan yıldızlar. Her ekran `CosmicScaffold` ile bu zeminin
-   üstünde saydam durur.
-2. **Cam**: `GlassPanel` — `BackdropFilter` blur (σ≈14), yarı saydam mürekkep
-   dolgu, 1px ışıklı üst kenar (`glassEdge`) ve yumuşak kontur (`glassStroke`).
-   Plaque artık bu panele delege eder.
-3. **Işık**: aktif öğelerde `goldGlow` (yumuşak altın hale) — dock'ta,
-   spinner'da, gezegen gliflerinde "nefes alan" animasyonla.
+İlham: koyu siyah-mor uzay zemini üzerinde yumuşak yuvarlak koyu kartlar,
+mor→magenta degrade vurgular, renkli burç rozetleri, parlayan degrade merkez
+AI butonu, modern sohbet balonları ve animasyonlu ilerleme çubukları.
+Dil Türkçe; emoji bu sürümde serbesttir ama ölçülü kullanılır (rozet, çip,
+başlık vurgusu).
 
-## 1. Renk Paleti
+## 2. Renk paleti (`lib/theme/rytho_theme.dart` → `RythoColors`)
 
-Koyu zemin, mürekkep ve altın varak. Yüzeyler artık yarı saydam camdır;
-degrade yalnızca zeminin radyal uzay geçişinde ve cam dolgusunda kullanılır.
+Token adları v1/v2'den korunur (ekran dosyaları kırılmasın diye); değerler v3'tür.
 
-| Token | Hex | Kullanım |
+| Token | Değer | Kullanım |
 |---|---|---|
-| `ink` | `#0B1026` | Zemin degradenin merkezi (gece mürekkebi) |
-| `inkDeep` | `#070B1C` | Zemin degradenin dış ucu (uzay derinliği) |
-| `inkLight` | `#141B33` | Opak yüzeyler (bottom sheet vb.) |
-| `inkLighter` | `#1E2742` | Yükseltilmiş yüzey, girdi alanları |
-| `parchment` | `#F0E8D6` | Ana metin |
-| `parchmentDim` | `#C9C0AB` | İkincil metin (v2'de kontrast yükseltildi) |
-| `gold` | `#C9A227` | Vurgu |
-| `goldBright` | `#E8C55A` | Basılı/aktif durum |
-| `copper` | `#B87848` | Retro gezegen, uyarılar |
-| `celadon` | `#7FA98F` | Olumlu durum |
-| `madder` | `#C4625B` | Hata |
-| `line` | `#323C5E` | Çizgiler |
-| `glassFill` | `#141B33 @55%` | Cam panel dolgusu |
-| `glassEdge` | `#E8C55A @20%` | Cam üst kenar ışığı |
-| `glassStroke` | `#4A5580 @30%` | Cam kontur |
-| `goldGlow` | `#C9A227 @33%` | Altın hale/glow |
+| `ink` | `#0B0710` | Zemin degrade üst ucu (uzay siyahı) |
+| `inkDeep` | `#14091E` | Zemin degrade alt ucu (mor derinlik) |
+| `inkLight` | `#1C1326` | Kart yüzeyi |
+| `inkLighter` | `#271A36` | Yükseltilmiş yüzey, giriş alanları |
+| `parchment` | `#F4EFFA` | Ana metin (beyaz-lila) |
+| `parchmentDim` | `#A99EC2` | İkincil metin |
+| `violet` | `#7B2FF7` | Birincil degrade başlangıcı |
+| `purple` | `#B02EFF` | Birincil degrade ortası |
+| `magenta` / `copper` | `#E64ACF` | Degrade ucu; retro/uyarı vurgusu |
+| `lilac` | `#B79CFF` | İkincil vurgu: çizgiler, ikonlar, mono metin |
+| `gold` | `#FFC24B` | ✨ yıldız/puan/seri vurgusu |
+| `goldBright` | `#FFD98A` | Parlak yıldız vurgusu |
+| `celadon` | `#7FD8A4` | Olumlu |
+| `madder` | `#FF6B81` | Hata |
+| `line` | `#2C1F40` | Ayraçlar |
+| `glassFill` | `#1C1326` @90% | Kart dolgusu |
+| `glassStroke` | `#FFFFFF` @6% | Kart konturu (1px) |
+| `goldGlow` | `#7B2FF7` @33% | Mor glow (CTA/aktif) |
+| `magentaGlow` | `#E64ACF` @40% | Merkez AI butonu glow'u |
 
-Kural: Bir ekranda altın vurgusu toplam alanın %10'unu geçmez. Renk cömertliği
-değil, mürekkep disiplini.
+- **Birincil degrade** `primaryGradient`: `violet → purple → magenta`
+  (sol üst → sağ alt). CTA butonları, promo banner, aktif segmentler,
+  AI balonları, merkez buton.
+- **Zemin** `backgroundGradient`: `ink → inkDeep` dikey; üzerine beyaz-lila
+  yıldız alanı (`StarfieldBackground`) ve ekranın üstünde %3-4 opaklıkta dev
+  zodyak çarkı filigranı.
+- **Burç renkleri** `signColors[12]`: her burcun kendi çip rengi
+  (Koç kızıl, Boğa yeşil, ... Balık mavi-mor).
 
-## 2. Tipografi
+## 3. Tipografi (`RythoText`)
 
-Editoryal ikili sistem — serif başlık + mono veri. (Google Fonts, ücretsiz)
-
-| Rol | Font | Not |
+| Rol | Font | Ağırlık |
 |---|---|---|
-| Display / başlık | **Cormorant Garamond** (600) | Eski kitap kapağı havası; büyük puntoda harf aralığı +0.5 |
-| Gövde metni | **Cormorant Garamond** (400) yerine gövdede **Spectral** (400) | Uzun okumada Spectral daha rahat |
-| Veri / koordinat / derece | **JetBrains Mono** (400) | "17°42′ Akrep" gibi tüm sayısal astronomik veriler daima mono |
-| Buton / etiket | Spectral (500), harf aralığı +1.2, BÜYÜK HARF | Enstrüman kadranı etiketi hissi |
+| `display` — başlıklar | Sora | 600–700 |
+| `body` — gövde | Manrope | 400–600 |
+| `label` — buton/etiket | Manrope | 700, +0.8 aralık |
+| `mono` — astronomik veri | JetBrains Mono | 400 |
 
-Örnek hiyerarşi: ekran başlığı 32/Cormorant, bölüm başlığı 20/Cormorant,
-gövde 16/Spectral (v2'de +1pt, satır aralığı 1.6), veri 13/JetBrains Mono.
+Cormorant/Spectral tamamen kalktı.
 
-## 3. Görsel Dil
+## 4. Bileşenler
 
-- **Çizgi işi (line-art) her yerde**: dolgulu ikonlar yerine 1px altın/mürekkep
-  konturlu gravür ikonlar. Gezegen sembolleri (☉ ☽ ☿ ♀ ♂ ♃ ♄) tipografik olarak
-  kullanılır — resimli maskot yok.
-- **Canlı gökyüzü zemini**: ana ekran arka planında, backend'in `/sky/now`
-  verisinden çizilen **gerçek zamanlı gezegen konumlu** minimal bir zodyak
-  çemberi (CustomPainter). Dekor değil, veri.
-- **Kadran ve cetvel motifleri**: ilerleme göstergeleri bar değil, usturlap
-  kadranı (dairesel tik işaretleri); ayraçlar ince çizgi + merkezde küçük ✦.
-- **Doku**: %2-3 opaklıkta yıldız noktası dokusu; gürültü/grain yok.
-- **Köşe yarıçapı**: v2'de 14-18px (cam panel), 26px (dock). Keskin 4px köşe
-  yalnızca mono veri çiplerinde kalır.
-- **Derinlik**: 1px kontur + blur + `goldGlow` halesiyle verilir; sert gölge yok.
+- **`GlassPanel`** (widgets/glass.dart): koyu mor kart, 22px köşe, 1px %6 beyaz
+  kontur, üst kenar ışığı. Blur varsayılan kapalı (performans).
+- **`CosmicDock`**: ince koyu saydam alt bar; 4 outline ikon
+  (Gökyüzü, Atlas, Meclis, Profil) + ORTADA yukarı taşan degrade dairesel
+  **AI butonu** (✦) — sürekli yumuşak glow pulse (scale 1.0→1.06), Rytho
+  sohbetini açar.
+- **`GoldButton`** (adı tarihsel): degrade dolgulu CTA; basınca scale 0.96 +
+  haptic; busy'de `AstrolabeSpinner`.
+- **`GlassSegments`**: aktif segment degrade dolgulu.
+- **`ZodiacChip`** (widgets/nebula_widgets.dart): renkli degrade daire içinde
+  burç glifi + ad; seçiliyken renkli glow.
+- **`PromoBanner`**: degrade motivasyon/upsell banner'ı; 2.4sn'de bir hafif
+  shimmer; Atlas'ın derin raporuna götürür.
+- **`GradientProgressBar`**: 800ms'de dolan degrade ilerleme çubuğu
+  (kişilik özellikleri).
+- **`TypingDots`**: Rytho yanıt beklerken degrade balonda üç nokta dalgası.
+- **`StreakBadge`**: 🔥 + gün sayısı (günlük seri).
+- **`SuggestionChip` / `InfoChip`**: yuvarlak koyu çipler, ince parlak kontur.
+- **`Pressable`**: her dokunuşta scale 0.96 + haptic sarmalayıcısı.
+- **`NatalWheel`**: lila halkalar, beyaz glifler, magenta sert açılar /
+  lila uyumlu açılar / altın kavuşum; sweep kurulum animasyonu korunur.
 
-## 4. Bileşen Kuralları
+## 5. Ekran yerleşimleri
 
-- **Cam panel (`GlassPanel`)**: blur'lu yarı saydam yüzey, ışıklı üst kenar,
-  mono etiket başlık ("LEVHA I — DOĞUM HARİTASI" gibi). `Plaque` buna delege eder.
-- **Birincil buton (`GoldButton`)**: altın kontur + cam dolgu, 14px köşe,
-  aktifken yumuşak altın glow. 50px yükseklik.
-- **Alt gezinme (`CosmicDock`)**: yüzen cam dock; aktif sekme yay animasyonlu
-  büyür ve altın glow alır. Sekmeler: **Gökyüzü**, **Atlas**, **Kehanet**,
-  **Meclis**, **Sicil**.
-- **AI mesaj balonu**: cam panelde daktilo-akış (`TypewriterText`) ile belirir;
-  kullanıcı mesajı sağda mürekkep bloğu.
-- **Natal çark (`NatalWheel`)**: yerli CustomPainter — burç dilimleri, ev
-  çizgileri, gezegen glifleri, merkezde açı ağı; sweep animasyonuyla kurulur,
-  gezegene dokununca cam bilgi çipi açılır. Backend SVG'si kullanılmaz.
-- **Segment seçici (`GlassSegments`)**: Takip/Keşfet gibi ikili akış seçimleri.
+1. **Gökyüzü (ana)**: avatar + saate göre selamlama + sohbet ikonu; 12 burçlu
+   yatay çip şeridi (kullanıcının burcu önde/seçili); degrade promo banner;
+   "Bugünün İçgörüsü" (TypewriterText + burca özel nudge kutusu); "Kehanet
+   Araçları" karuseli (I Ching 🪙, BaZi 🀄, Yüz 🔮, Sinastri 💞); "Şu An
+   Gökyüzünde" kartı (zodyak çemberi, Ay evresi, retro çipleri, açı çipleri).
+2. **Rytho AI sohbeti**: kullanıcı sağda BEYAZ balon (koyu metin), Rytho solda
+   mor degrade balon (beyaz metin); öneri çipleri; "+" ve degrade gönder
+   butonu; yazıyor animasyonu; balonlar easeOutBack ile girer.
+3. **Atlas**: natal çark kartı → kişi kartı (ad, tarih, 🕐 saat, 📍 şehir) →
+   "Gezegen Konumları" 2 sütunlu çip grid'i → "Kişilik Özellikleri" 5
+   animasyonlu çubuk (element/nitelik dağılımından deterministik) → açılar
+   (katlanır) → tam AI raporu.
+4. **Kehanet**: ana ekrandan push edilir (`OracleScreen(initialTab: i)`);
+   para animasyonu altın→magenta, yüz tarama çizgisi lila.
+5. **Meclis**: kart akışı, ✨ beğeni patlaması + tick sesi, degrade FAB ve
+   segmentler; DM'de v3 balon dili.
+6. **Profil**: degrade halkalı avatar, burç renkli çipler, 🔥 Günlük Seri
+   kartı, "Sesler" anahtarı, hukuk sayfaları.
+7. **Onboarding/Login**: aynı dil; login'de e-posta + Google akışı korunur,
+   nefes alan degrade ✦ küresi.
 
-## 5. Hareket
+## 6. Hareket dili (flutter_animate)
 
-- Süreler 250-350ms, `easeOutCubic`; dock'ta `easeOutBack` yay hissi.
-- Sekme geçişi: çapraz solma + 12px dikey kayma (paylaşılan eksen).
-- Kart girişleri: 45ms aralıklı stagger (`flutter_animate`).
-- Basmalarda scale + haptic (`HapticFeedback.selectionClick`).
-- Yükleme: glow'lu usturlap kadranı; AI metinleri daktilo-akışla belirir.
-- Tören animasyonları: I Ching'de üç paranın 3D dönüşü, yüz analizinde altın
-  tarama çizgisi, natal çarkın çizilerek kurulması, beğenide ✦ patlaması.
+- Kart girişleri: 70ms stagger ile fadeIn + slideY (easeOutCubic).
+- Sayfa geçişleri: `FadeForwardsPageTransitionsBuilder`.
+- Merkez AI butonu: sürekli scale 1.0→1.06 + glow pulse.
+- Promo banner: hafif shimmer döngüsü.
+- Beğeni: ✨ scale patlaması (elasticOut) + tick sesi.
+- İlerleme çubukları: 800ms scaleX dolumu.
+- Sohbet balonları: scale+slide easeOutBack.
+- Butonlar: basınca scale 0.96 + `HapticFeedback.lightImpact`.
+- Pull-to-refresh: magenta.
+- Yıldız alanı: 3 katman parallax süzülme + göz kırpma; zodyak nefesi korunur.
 
-## 6. Ses ve Dil (copy)
+## 7. Ses (`lib/core/sound.dart` + `tools/generate_sounds.py`)
 
-- Üslup: bilge, ölçülü, edebi; asla çocuksu değil. Emoji kullanılmaz
-  (yalnızca astronomik semboller: ☉ ☽ ♄ ✦ ve Ay evresi glifleri).
-- "Fal", "şans" yerine: "okuma", "harita", "kehanet", "levha", "sema".
-- AI kendini "Rytho" olarak tanıtır; "yapay zeka" ifadesi arayüzde geçmez.
+numpy ile sentezlenen WAV'lar (`apps/mobile/assets/sounds/`):
 
-## 7. Erişilebilirlik
+| Ses | Karakter | Tetik |
+|---|---|---|
+| `message_send` | ~120ms yumuşak pop (700→900Hz) | Rytho/DM mesaj gönderme |
+| `message_receive` | ~200ms iki tonlu ding (E6→G6) | Yanıt/yeni DM gelmesi |
+| `cast` | ~350ms harmonikli chime | I Ching çekimi |
+| `like` | ~60ms tick | Beğeni |
 
-- Metin kontrastı: parchment/ink = 13.4:1 (AAA). parchmentDim minimum 16px.
-- Dokunma hedefleri ≥ 44px; mono veriler için `FontFeature.tabularFigures()`.
+Ses seviyesi 0.3–0.5; Profil > Ayarlar > "Sesler" anahtarıyla kapatılır
+(shared_preferences, varsayılan açık).
+
+## 8. Motivasyon katmanı
+
+- **Günlük seri**: `users/{uid}.lastSeenDaily` + `streakCount` (firestore.rules
+  hasOnly listesine eklendi). Ana ekran açılışında `DailyStreak.touch` —
+  ardışık günlerde artar, atlanınca 1'e döner. Rozet ana ekranda + Profil'de
+  kart.
+- **Kişisel nudge**: `core/motivation.dart` — burç → 3 afirmasyon; gün
+  numarasıyla döngüsel seçim, günlük okuma kartının altında.
+- **Premium upsell**: ana ekrandaki degrade banner ("Yıldızların ötesine geç ✨"
+  → "Keşfet") Atlas'ın derin raporuna götürür; ödeme henüz yok.
+
+## 9. Yapılmayacaklar
+
+- Parşömen/altın gravür estetiğine dönüş yok; Cormorant/Spectral kullanılmaz.
+- Saf siyah (#000) veya saf beyaz büyük yüzeyler yok.
+- Emoji: rozet/çip/vurgu dışında gövde metinlerine serpiştirilmez.
+- Blur yalnızca alt barda; kartlarda performans için düz dolgu.
