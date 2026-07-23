@@ -1,11 +1,21 @@
+# Çekirdek — Cloud Run imajına giren bağımlılıklar
 fastapi
-uvicorn
-kerykeion
-deepface
-opencv-python
+uvicorn[standard]
 pydantic
 python-multipart
-tf-keras
-google-genai
-google-cloud-aiplatform
 python-dotenv
+httpx
+
+# Astroloji
+kerykeion
+pyswisseph
+
+# AI
+google-genai
+firebase-admin
+
+# Görüntü işleme (yüz analizi v2)
+mediapipe
+opencv-python-headless
+numpy
+pillow

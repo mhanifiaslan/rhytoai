@@ -1,58 +1,40 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
-from pydantic import BaseModel
-from typing import List, Optional
-import shutil
 import os
-from services.deepface_service import analyze_face
-from services.gemini_service import generate_face_reading_summary, chat_with_cosmic_confidant
+import shutil
+import tempfile
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+
+from core.auth import AuthUser, get_current_user
+from services import report_service
+from services.face_service import analyze_face
 
 router = APIRouter()
 
-class ChatMessageItem(BaseModel):
-    sender: str
-    text: str
-
-class ChatRequest(BaseModel):
-    history: List[ChatMessageItem] = []
-    message: str
 
 @router.post("/analyze")
-async def process_face_image(file: UploadFile = File(...)):
+async def process_face_image(
+    file: UploadFile = File(...),
+    user: AuthUser = Depends(get_current_user),
+):
+    tmp_path = None
     try:
-        # Save uploaded file temporarily
-        temp_file = f"temp_{file.filename}"
-        with open(temp_file, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        # Analyze using DeepFace
-        result = analyze_face(temp_file)
-        
-        # Clean up
-        if os.path.exists(temp_file):
-            os.remove(temp_file)
-            
-        if "error" in result:
-            raise HTTPException(status_code=500, detail=result["error"])
-            
-        # Enrich with Gemini LLM Summary
-        summary = generate_face_reading_summary(
-            age=result.get("age", 25),
-            gender=result.get("gender", "Unknown"),
-            emotion=result.get("emotion", "neutral"),
-            wu_xing=result.get("wu_xing_element", "Toprak"),
-            san_ting=result.get("san_ting_balance", "Dengeli")
-        )
-        result["face_reading_summary"] = summary
-            
-        return {"status": "success", "data": result}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        suffix = os.path.splitext(file.filename or "photo.jpg")[1] or ".jpg"
+        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+            shutil.copyfileobj(file.file, tmp)
+            tmp_path = tmp.name
 
-@router.post("/chat")
-async def chat_with_confidant(request: ChatRequest):
-    try:
-        history_dicts = [{"sender": item.sender, "text": item.text} for item in request.history]
-        reply = chat_with_cosmic_confidant(history_dicts, request.message)
-        return {"status": "success", "reply": reply}
+        result = analyze_face(tmp_path)
+        if "error" in result:
+            raise HTTPException(status_code=422, detail=result["error"])
+
+        report = report_service.face_report(user.uid, result)
+        result["face_reading_summary"] = report["text"]
+        return {"status": "success", "data": result}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        # Fotoğraf analiz sonrası SİLİNİR — KVKK/GDPR gereği sunucuda tutulmaz
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)

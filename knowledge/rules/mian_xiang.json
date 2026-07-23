@@ -1,0 +1,50 @@
+{
+  "source": "Ming dönemi Shen Xiang Quan Bian geleneğine dayanan Mian Xiang (Çin yüz okuma) kural matrisi",
+  "san_ting": {
+    "description": "Yüz yatay düzlemde üç kronolojik evreye ayrılır (Three Divisions)",
+    "zones": [
+      {"id": "shang_ting", "name_tr": "Üst Bölüm (Gökyüzü)", "region": "Saç çizgisinden kaşlara kadar (alın)", "life_period": "15-30 yaş", "represents": "Entelektüellik, planlama yeteneği, gençlik şansı, aileden gelen destek", "dominant_meaning": "Zihinsel güç baskın: analitik düşünce, vizyon ve öğrenme kapasitesi hayatınızın motoru.", "weak_meaning": "Gençlik dönemi kendi emeğinizle şekillenir; pratik zeka ve deneyim sizin okulunuz."},
+      {"id": "zhong_ting", "name_tr": "Orta Bölüm (İnsan)", "region": "Kaşlardan burun tabanına kadar", "life_period": "31-50 yaş", "represents": "İrade, kariyer gücü, duygusal yönetim, orta yaş başarısı", "dominant_meaning": "İrade ve uygulama gücü baskın: kariyer zirveniz orta yaşta gelir; yönetici enerjisi taşırsınız.", "weak_meaning": "Gücünüz zihinde ve sezgide; uygulama için doğru ortaklar seçmek başarınızı katlar."},
+      {"id": "xia_ting", "name_tr": "Alt Bölüm (Yeryüzü)", "region": "Burun altından çene ucuna", "life_period": "51+ yaş", "represents": "İçgüdüsel arzular, fiziksel dayanıklılık, yaşlılık konforu, köklenme", "dominant_meaning": "Yaşam gücü ve dayanıklılık baskın: yılların birikimi size konforlu bir hasat dönemi vaat ediyor.", "weak_meaning": "Enerjinizi gençlik ve orta yaşta cömertçe kullanıyorsunuz; uzun vade için birikim bilinci geliştirin."}
+    ]
+  },
+  "wu_guan": {
+    "description": "Beş Subay (Five Officers) — yüz organları ve element/organ bağlantıları",
+    "officers": [
+      {"organ": "kaslar", "title": "Ömür ve Mizaç Subayı", "element": "Ahşap", "tcm": "Karaciğer", "reads": "Uzun ömür, kararlılık, kardeş ve dost ilişkileri"},
+      {"organ": "gozler", "title": "Gözetim Subayı", "element": "Ahşap", "tcm": "Karaciğer/Sinir ağı", "reads": "Ruh (Shen), duygusal işleme kapasitesi, zeka parlaklığı"},
+      {"organ": "burun", "title": "Servet Subayı", "element": "Toprak", "tcm": "Dalak/Mide", "reads": "Hırs, risk kapasitesi, servet birikimi, 41-50 yaş şansı"},
+      {"organ": "agiz", "title": "İletişim Subayı", "element": "Ateş", "tcm": "Kalp", "reads": "İfade gücü, haz kapasitesi, sosyallik, sözün gücü"},
+      {"organ": "kulaklar", "title": "Bilgelik Subayı", "element": "Su", "tcm": "Böbrek", "reads": "Çocukluk şansı (1-14 yaş), gizli bilgelik, içgüdü"}
+    ]
+  },
+  "wu_xing_face_shapes": {
+    "description": "Yüz şekli → Beş Element sınıflandırması",
+    "shapes": [
+      {"element": "Ahşap (Mu)", "shape": "Uzun, dikdörtgen, ince", "geometry": "aspect_ratio < 0.72", "traits": "Vizyoner, gelişime açık, yaratıcı, idealist", "career": "Eğitim, sanat, strateji, girişimcilik"},
+      {"element": "Ateş (Huo)", "shape": "Elmas/kalp: geniş elmacık, sivri çene", "geometry": "genis elmacik + dar cene", "traits": "Tutkulu, karizmatik, enerjik, ilham veren", "career": "Sahne, satış, liderlik, medya"},
+      {"element": "Toprak (Tu)", "shape": "Kare, geniş, etli", "geometry": "aspect_ratio > 0.85 + koseli cene", "traits": "Kararlı, güvenilir, köklü, pratik", "career": "Emlak, finans yönetimi, operasyon, tarım"},
+      {"element": "Metal (Jin)", "shape": "Oval, düzgün, simetrik", "geometry": "yuksek simetri + orta oran", "traits": "Disiplinli, adil, estetik, keskin zekalı", "career": "Hukuk, mühendislik, tasarım, yönetim"},
+      {"element": "Su (Shui)", "shape": "Yuvarlak, yumuşak hatlı", "geometry": "aspect_ratio 0.8-0.9 + yuvarlak cene", "traits": "Sezgisel, derin, uyumlu, diplomatik", "career": "Psikoloji, diplomasi, ticaret, iletişim"}
+    ],
+    "cycles": {
+      "productive": ["Su -> Ahşap", "Ahşap -> Ateş", "Ateş -> Toprak", "Toprak -> Metal", "Metal -> Su"],
+      "destructive": ["Su -> Ateş", "Ateş -> Metal", "Metal -> Ahşap", "Ahşap -> Toprak", "Toprak -> Su"]
+    }
+  },
+  "twelve_palaces": [
+    {"id": "ming_gong", "name_tr": "Hayat Sarayı", "name_en": "Life/Destiny Palace", "location": "İki kaşın tam arası (Yin Tang)", "landmark_hint": "glabella", "reads": "Hayata bakış, vizyon, doğuştan şans, genel mutluluk", "bright": "Açık ve parlak Yin Tang: net vizyon, akıcı şans, iyimser yaşam gücü.", "marked": "Bu bölgedeki iz/gölge, dönemsel zihin yorgunluğuna işaret eder; meditasyon ve sadeleşme önerilir."},
+    {"id": "guan_lu_gong", "name_tr": "Kariyer Sarayı", "name_en": "Career Palace", "location": "Alnın tam orta noktası", "landmark_hint": "mid_forehead", "reads": "Statü, liderlik, profesyonel başarı, terfi şansı", "bright": "Pürüzsüz ve dolgun alın merkezi: otorite figürlerinin desteği ve doğal terfi enerjisi.", "marked": "Kariyer yolunda kendi kurallarınızı yazma eğilimi; bağımsız çalışma modelleri size daha uygun."},
+    {"id": "cai_bo_gong", "name_tr": "Servet Sarayı", "name_en": "Wealth Palace", "location": "Burun ucu (apex) ve kanatları", "landmark_hint": "nose_tip", "reads": "Finansal zeka, para kazanma ve tutabilme kapasitesi", "bright": "Dolgun ve parlak burun ucu: güçlü finansal sezgi ve birikim kapasitesi.", "marked": "Para akışkan; kazanırsınız ama tutmak bilinç ister. Otomatik birikim sistemleri kurun."},
+    {"id": "fu_qi_gong", "name_tr": "Evlilik Sarayı", "name_en": "Marriage Palace", "location": "Göz dış köşelerinden şakaklara uzanan bölge", "landmark_hint": "temple", "reads": "Romantik uyum, eş bağı kuvveti, ilişki istikrarı", "bright": "Dolgun ve lekesiz şakak bölgesi: derin ve istikrarlı bağ kurma kapasitesi.", "marked": "İlişkilerde yoğun ve dönüştürücü deneyimler; bilinçli iletişim pratiği bağı sağlamlaştırır."},
+    {"id": "zi_nu_gong", "name_tr": "Çocuklar Sarayı", "name_en": "Children Palace", "location": "Gözlerin hemen altı (göz torbaları bölgesi)", "landmark_hint": "under_eye", "reads": "Üreme sağlığı, yaratıcı üretkenlik, evlatlarla ilişki", "bright": "Dolgun ve canlı alt göz bölgesi: yaratıcı bereket ve nesillerle güçlü bağ.", "marked": "Yaratıcı enerji dalgalı; dinlenme ve su dengesi (TCM: böbrek) üretkenliği doğrudan etkiler."},
+    {"id": "tian_zhai_gong", "name_tr": "Mülk Sarayı", "name_en": "Property Palace", "location": "Üst göz kapağı (göz-kaş arası)", "landmark_hint": "upper_eyelid", "reads": "Gayrimenkul, miras, aileden gelen fiziksel destek", "bright": "Geniş ve temiz göz-kaş arası: mülk edinme ve miras şansı güçlü.", "marked": "Varlığınızı kendi ellerinizle inşa edersiniz; bu, mülkünüzün kıymetini bilmenizi sağlar."},
+    {"id": "xiong_di_gong", "name_tr": "Kardeşler Sarayı", "name_en": "Siblings Palace", "location": "Doğrudan kaşların üzeri", "landmark_hint": "brow_ridge", "reads": "Kardeşler, yakın dostluklar, iş ortaklıkları güveni", "bright": "Düzgün kaş üstü hattı: güçlü dostluk ağı ve güvenilir ortaklıklar.", "marked": "Az ama öz dostluk modeli; kalabalık yerine derin bağlar sizi besler."},
+    {"id": "qian_yi_gong", "name_tr": "Seyahat Sarayı", "name_en": "Traveling Palace", "location": "Alnın dış üst köşeleri", "landmark_hint": "forehead_corner", "reads": "Seyahat kazançları, yurtdışı fırsatları, göç potansiyeli", "bright": "Parlak alın köşeleri: uzak coğrafyalar size şans getirir; yurtdışı bağlantıları besleyin.", "marked": "Kök saldığınız yerde güçlüsünüz; seyahatleri kısa ve amaçlı planlamak verimi artırır."},
+    {"id": "ji_e_gong", "name_tr": "Sağlık Sarayı", "name_en": "Health Palace", "location": "Burun köprüsü (iki göz arası)", "landmark_hint": "nose_bridge", "reads": "Fiziksel dayanıklılık, kronik direnç, iyileşme kapasitesi", "bright": "Düz ve kesintisiz burun köprüsü: güçlü bağışıklık ve hızlı toparlanma.", "marked": "Beden sinyallerinize kulak verin; düzenli uyku ve sindirim ritmi sizin şifa anahtarınız."},
+    {"id": "nu_pu_gong", "name_tr": "Destek Sarayı", "name_en": "Support Palace", "location": "Çenenin yan alt bölgeleri", "landmark_hint": "jaw_side", "reads": "Astlar, ekip desteği, sosyal destek ağı", "bright": "Dolgun çene yanları: ekipler size sadakatle bağlanır; yönettikleriniz sizi yüceltir.", "marked": "Desteği talep etmeyi öğrenin; her şeyi tek başına taşımak zorunda değilsiniz."},
+    {"id": "fu_de_gong", "name_tr": "Erdem ve Talih Sarayı", "name_en": "Fortune & Virtue Palace", "location": "Kaş dış uçlarının üzeri", "landmark_hint": "outer_brow_above", "reads": "İç huzur, manevi şans, erdem birikimi", "bright": "Aydınlık kaş üstü dış bölge: iç huzur ve 'görünmez koruma' hissi güçlü.", "marked": "Maneviyat pratiği (şükür, hizmet, doğa) talih kanallarınızı açar."},
+    {"id": "fu_mu_gong", "name_tr": "Ebeveyn Sarayı", "name_en": "Parents Palace", "location": "Alnın üst iki yanı (saç çizgisi altı)", "landmark_hint": "upper_forehead_sides", "reads": "Ebeveynlerle bağ, aileden gelen sağlık ve statü mirası", "bright": "Dolgun üst alın yanları: köklerden gelen güçlü destek ve koruma.", "marked": "Aile mirasını kendi değerlerinizle yeniden yazıyorsunuz; bu bilinçli kopuş sizi özgürleştirir."}
+  ],
+  "moles_note": "Zhi Xiang: Saray bölgelerindeki benler o sarayın enerjisini yoğunlaştırır veya kilitler; ben analizi yalnızca kullanıcı açıkça istediğinde yapılır."
+}

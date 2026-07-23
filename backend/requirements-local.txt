@@ -1,0 +1,5 @@
+# Opsiyonel ağır bağımlılıklar — yalnızca lokal geliştirmede
+# (DeepFace yaş/duygu tahmini; yoksa servis MediaPipe-only çalışır)
+deepface
+tf-keras
+opencv-python
