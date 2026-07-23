@@ -35,7 +35,7 @@ astroaiproject/
 | Astroloji | Kerykeion / Swiss Ephemeris | Natal, transit, sinastri; Tropikal + Sidereal (Lahiri) |
 | Çin metafiziği | Özel BaZi motoru + 64 heksagram I Ching | Jie Qi güneş terimleri swisseph ile hesaplanır |
 | Yüz analizi | MediaPipe Face Mesh (+ opsiyonel DeepFace) | San Ting, 12 Saray, Wu Xing sınıflandırma |
-| AI yorum | Gemini 2.5 Flash + RAG | knowledge/ korpusundan pasaj çekilir, önbelleklenir |
+| AI yorum | Gemini (gemini-flash-latest) + RAG | knowledge/ korpusundan pasaj çekilir, önbelleklenir |
 | Veri | Firebase (Auth, Firestore, Storage, FCM) | Sosyal ağ, DM, profiller |
 
 ## Geliştirme
@@ -74,6 +74,20 @@ cd infra
 # Firestore kuralları + indexler
 firebase deploy --only firestore,storage
 ```
+
+## Üretim Ortamı
+
+| Kaynak | Adres |
+|---|---|
+| Backend (Cloud Run) | https://rytho-backend-770582338651.us-central1.run.app |
+| API dokümantasyonu | https://rytho-backend-770582338651.us-central1.run.app/docs |
+| Firebase Console | https://console.firebase.google.com/project/rhytoai |
+| İmaj deposu | `us-central1-docker.pkg.dev/rhytoai/rytho/backend` |
+
+Gemini anahtarı Secret Manager'da `GEMINI_API_KEY` olarak tutulur; Cloud Run
+bunu ortam değişkeni olarak okur. Not: Cloud Run'da `/healthz` yolu Google
+Frontend tarafından yakalanabildiğinden canlılık kontrolü için kök `/` ucunu
+kullanın.
 
 ## Ortam Değişkenleri (backend/.env)
 

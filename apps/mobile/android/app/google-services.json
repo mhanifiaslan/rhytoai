@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "770582338651",
+    "project_id": "rhytoai",
+    "storage_bucket": "rhytoai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:770582338651:android:ddf37d8d8ab4436653737e",
+        "android_client_info": {
+          "package_name": "ai.rytho"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "770582338651-phqcf8majaqfp6fqmvai91saneqqh47e.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ai.rytho",
+            "certificate_hash": "fcbd4d70764bcd0bcb3afbe4d76981b2325a1c76"
+          }
+        },
+        {
+          "client_id": "770582338651-0kimgrjfj4brfl6k5h3g6amn2rm7ue6a.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClUoImRbKU1L7uQd0lbGn1mQrVv9IyEDQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "770582338651-0kimgrjfj4brfl6k5h3g6amn2rm7ue6a.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

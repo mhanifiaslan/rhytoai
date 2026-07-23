@@ -15,6 +15,7 @@ from api.bazi import router as bazi_router
 from api.chat import router as chat_router
 from api.face_reading import router as face_reading_router
 from api.iching import router as iching_router
+from api.notify import router as notify_router
 from api.reports import router as reports_router
 from api.sky import router as sky_router
 
@@ -44,6 +45,7 @@ app.include_router(face_reading_router, prefix="/api/v1/face-reading", tags=["Fa
 app.include_router(sky_router, prefix="/api/v1/sky", tags=["Sky"])
 app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(reports_router, prefix="/api/v1/reports", tags=["Reports"])
+app.include_router(notify_router, prefix="/api/v1/notify", tags=["Notify"])
 
 
 @app.get("/")
