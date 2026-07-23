@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/rytho_theme.dart';
 
-/// Tüm ekranların zemini: uzay degradesi + yavaşça kayan, göz kırpan
-/// yıldız alanı. Scaffold arka planı saydamdır; içerik camların arkasında
-/// bu alanı görür.
+/// Tüm ekranların zemini: siyah-mor uzay degradesi + yavaşça kayan,
+/// göz kırpan yıldız alanı + üstte %3-4 opaklıkta dev zodyak çarkı
+/// filigranı. Scaffold arka planı saydamdır.
 class CosmicScaffold extends StatelessWidget {
   const CosmicScaffold({
     super.key,
@@ -42,8 +42,8 @@ class CosmicScaffold extends StatelessWidget {
   }
 }
 
-/// Parallax hissi veren yıldız alanı: üç derinlik katmanı, farklı hızlarda
-/// kayar; yıldızlar sinüs fazıyla göz kırpar.
+/// Parallax hissi veren yıldız alanı: üç derinlik katmanı farklı hızlarda
+/// kayar; yıldızlar sinüs fazıyla göz kırpar. Beyaz-lila tonlar.
 class StarfieldBackground extends StatefulWidget {
   const StarfieldBackground({super.key});
 
@@ -69,7 +69,7 @@ class _StarfieldBackgroundState extends State<StarfieldBackground>
         size: 0.5 + depth * 0.45 + random.nextDouble() * 0.5,
         phase: random.nextDouble() * 2 * math.pi,
         depth: depth,
-        warm: random.nextDouble() < 0.18,
+        warm: random.nextDouble() < 0.22,
       );
     });
   }
@@ -83,22 +83,97 @@ class _StarfieldBackgroundState extends State<StarfieldBackground>
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment(0, -0.6),
-          radius: 1.6,
-          colors: [RythoColors.ink, RythoColors.inkDeep],
+      decoration: const BoxDecoration(gradient: RythoColors.backgroundGradient),
+      child: Stack(fit: StackFit.expand, children: [
+        // Üst kısımda hafif mor nebula parlaması
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: Alignment(0.4, -1.1),
+              radius: 1.3,
+              colors: [Color(0x33471B6E), Colors.transparent],
+            ),
+          ),
         ),
-      ),
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (_, _) => CustomPaint(
-          painter: _StarfieldPainter(t: _controller.value, stars: _stars),
-          size: Size.infinite,
+        // Dev zodyak çarkı filigranı — ekranın üst kısmında, %3-4 opaklık
+        const Positioned(
+          top: -140,
+          left: -60,
+          right: -60,
+          child: IgnorePointer(
+            child: _ZodiacWatermark(height: 440),
+          ),
         ),
-      ),
+        AnimatedBuilder(
+          animation: _controller,
+          builder: (_, _) => CustomPaint(
+            painter: _StarfieldPainter(t: _controller.value, stars: _stars),
+            size: Size.infinite,
+          ),
+        ),
+      ]),
     );
   }
+}
+
+/// Çok hafif zodyak çarkı filigranı (statik CustomPaint).
+class _ZodiacWatermark extends StatelessWidget {
+  const _ZodiacWatermark({required this.height});
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: height,
+      child: const CustomPaint(painter: _ZodiacWatermarkPainter()),
+    );
+  }
+}
+
+class _ZodiacWatermarkPainter extends CustomPainter {
+  const _ZodiacWatermarkPainter();
+
+  static const _glyphs = [
+    '♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = math.min(size.width, size.height) / 2 - 8;
+    final stroke = Paint()
+      ..color = RythoColors.lilac.withValues(alpha: 0.035)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+
+    canvas.drawCircle(center, radius, stroke);
+    canvas.drawCircle(center, radius * 0.82, stroke);
+    canvas.drawCircle(center, radius * 0.5, stroke);
+
+    for (var i = 0; i < 12; i++) {
+      final a = i * math.pi / 6;
+      final dir = Offset(math.cos(a), math.sin(a));
+      canvas.drawLine(center + dir * radius * 0.82, center + dir * radius, stroke);
+      // Glif dilimin ortasına
+      final mid = a + math.pi / 12;
+      final pos = center +
+          Offset(math.cos(mid), math.sin(mid)) * radius * 0.91;
+      final tp = TextPainter(
+        text: TextSpan(
+          text: _glyphs[i],
+          style: TextStyle(
+            fontSize: 18,
+            color: RythoColors.lilac.withValues(alpha: 0.04),
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(canvas, pos - Offset(tp.width / 2, tp.height / 2));
+    }
+  }
+
+  @override
+  bool shouldRepaint(_ZodiacWatermarkPainter old) => false;
 }
 
 class _Star {
@@ -129,7 +204,7 @@ class _StarfieldPainter extends CustomPainter {
       final dy = (star.y + drift) % 1.0;
       final twinkle =
           0.35 + 0.65 * (0.5 + 0.5 * math.sin(star.phase + t * 2 * math.pi * 6));
-      final baseColor = star.warm ? RythoColors.goldBright : RythoColors.parchment;
+      final baseColor = star.warm ? RythoColors.lilac : Colors.white;
       paint.color = baseColor.withValues(
           alpha: twinkle * (0.10 + star.depth * 0.10));
       canvas.drawCircle(

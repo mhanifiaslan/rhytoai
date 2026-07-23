@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../theme/rytho_theme.dart';
 import 'glass.dart';
@@ -31,14 +32,15 @@ class Plaque extends StatelessWidget {
   }
 }
 
-/// Birincil buton: altın kontur, dolgusuz; basılınca dolar.
-class GoldButton extends StatelessWidget {
+/// Birincil CTA butonu — v3: mor→magenta degrade dolgu, glow,
+/// basınca scale 0.96 + haptic. Adı tarihsel (v1 "altın buton").
+class GoldButton extends StatefulWidget {
   const GoldButton({
     super.key,
     required this.text,
     this.onPressed,
     this.busy = false,
-    this.filled = false,
+    this.filled = true,
   });
 
   final String text;
@@ -47,29 +49,54 @@ class GoldButton extends StatelessWidget {
   final bool filled;
 
   @override
+  State<GoldButton> createState() => _GoldButtonState();
+}
+
+class _GoldButtonState extends State<GoldButton> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 50,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: onPressed != null && !busy
-            ? const [BoxShadow(color: RythoColors.goldGlow, blurRadius: 22, spreadRadius: -8)]
-            : null,
-      ),
-      child: OutlinedButton(
-        onPressed: busy ? null : onPressed,
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: RythoColors.gold),
-          backgroundColor:
-              filled ? RythoColors.gold : RythoColors.glassFill,
-          foregroundColor: filled ? RythoColors.ink : RythoColors.goldBright,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+    final enabled = widget.onPressed != null && !widget.busy;
+    return GestureDetector(
+      onTapDown: enabled ? (_) => setState(() => _pressed = true) : null,
+      onTapCancel: () => setState(() => _pressed = false),
+      onTapUp: enabled
+          ? (_) {
+              setState(() => _pressed = false);
+              HapticFeedback.lightImpact();
+              widget.onPressed!();
+            }
+          : null,
+      child: AnimatedScale(
+        scale: _pressed ? 0.96 : 1.0,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: Container(
+          height: 52,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: enabled
+                ? RythoColors.primaryGradient
+                : const LinearGradient(colors: [
+                    RythoColors.inkLighter,
+                    RythoColors.inkLighter,
+                  ]),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            boxShadow: enabled
+                ? const [BoxShadow(color: RythoColors.goldGlow, blurRadius: 22, spreadRadius: -4)]
+                : null,
+          ),
+          child: widget.busy
+              ? const SizedBox(
+                  width: 22, height: 22, child: AstrolabeSpinner(size: 22))
+              : Text(widget.text,
+                  style: RythoText.label(14,
+                      color: enabled
+                          ? Colors.white
+                          : RythoColors.parchmentDim)),
         ),
-        child: busy
-            ? const SizedBox(width: 22, height: 22, child: AstrolabeSpinner(size: 22))
-            : Text(text.toUpperCase(),
-                style: RythoText.label(13,
-                    color: filled ? RythoColors.ink : RythoColors.goldBright)),
       ),
     );
   }
@@ -87,7 +114,7 @@ class SectionDivider extends StatelessWidget {
         const Expanded(child: Divider()),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text('✦', style: RythoText.mono(10, color: RythoColors.gold)),
+          child: Text('✦', style: RythoText.mono(10, color: RythoColors.lilac)),
         ),
         const Expanded(child: Divider()),
       ]),
@@ -95,7 +122,7 @@ class SectionDivider extends StatelessWidget {
   }
 }
 
-/// AI metni: balon değil, sol kenarı altın çizgili "marjinal not".
+/// AI metni: sol kenarı mor degrade çizgili not bloğu.
 class MarginNote extends StatelessWidget {
   const MarginNote({super.key, required this.text, this.title});
 
@@ -104,20 +131,35 @@ class MarginNote extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        border: Border(left: BorderSide(color: RythoColors.gold, width: 2)),
-      ),
-      padding: const EdgeInsets.only(left: 14, top: 2, bottom: 2),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (title != null) ...[
-            Text(title!.toUpperCase(),
-                style: RythoText.mono(11, color: RythoColors.parchmentDim)),
-            const SizedBox(height: 6),
-          ],
-          Text(text, style: RythoText.body(15, height: 1.65)),
+          Container(
+            width: 3,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [RythoColors.violet, RythoColors.magenta],
+              ),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (title != null) ...[
+                  Text(title!,
+                      style: RythoText.label(11, color: RythoColors.lilac)),
+                  const SizedBox(height: 6),
+                ],
+                Text(text, style: RythoText.body(15, height: 1.65)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -219,7 +261,7 @@ class _AstrolabePainter extends CustomPainter {
       ..color = RythoColors.line
       ..style = PaintingStyle.stroke;
     final gold = Paint()
-      ..color = RythoColors.gold
+      ..color = RythoColors.lilac
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
 

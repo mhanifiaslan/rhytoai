@@ -1,52 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../atlas/atlas_screen.dart';
+import '../chat/chat_screen.dart';
 import '../council/council_screen.dart';
-import '../oracle/oracle_screen.dart';
 import '../profile/profile_screen.dart';
 import '../sky/sky_screen.dart';
 
-/// Ana kabuk: yıldız alanı zemin + 5 sekmeli yüzen cam dock.
-class AppShell extends StatefulWidget {
+/// Aktif sekme — ekranlar (örn. promo banner) sekme değiştirebilsin diye
+/// Riverpod üzerinden paylaşılır. 0: Gökyüzü, 1: Atlas, 2: Meclis, 3: Profil.
+final shellTabProvider = StateProvider<int>((_) => 0);
+
+/// Ana kabuk: yıldız alanı zemin + 4 sekme + merkez degrade AI butonu
+/// (Rytho sohbetini açar). Kehanet araçlarına ana ekran kartlarından gidilir.
+class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
-  @override
-  State<AppShell> createState() => _AppShellState();
-}
-
-class _AppShellState extends State<AppShell> {
-  int _index = 0;
-
   static const _tabs = [
-    (icon: '☉', label: 'GÖKYÜZÜ'),
-    (icon: '𝛑', label: 'ATLAS'),
-    (icon: '䷀', label: 'KEHANET'),
-    (icon: '✦', label: 'MECLİS'),
-    (icon: '☽', label: 'SİCİL'),
+    (icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Gökyüzü'),
+    (icon: Icons.donut_large_outlined, activeIcon: Icons.donut_large_rounded, label: 'Atlas'),
+    (icon: Icons.forum_outlined, activeIcon: Icons.forum_rounded, label: 'Meclis'),
+    (icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profil'),
   ];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final index = ref.watch(shellTabProvider);
     return CosmicScaffold(
       extendBody: true,
       body: Stack(children: [
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 4; i++)
           IgnorePointer(
-            ignoring: _index != i,
+            ignoring: index != i,
             child: AnimatedOpacity(
-              opacity: _index == i ? 1 : 0,
+              opacity: index == i ? 1 : 0,
               duration: const Duration(milliseconds: 280),
               curve: Curves.easeOutCubic,
               child: AnimatedSlide(
-                offset: _index == i ? Offset.zero : const Offset(0, 0.012),
+                offset: index == i ? Offset.zero : const Offset(0, 0.012),
                 duration: const Duration(milliseconds: 280),
                 curve: Curves.easeOutCubic,
                 child: const [
                   SkyScreen(),
                   AtlasScreen(),
-                  OracleScreen(),
                   CouncilScreen(),
                   ProfileScreen(),
                 ][i],
@@ -56,8 +55,11 @@ class _AppShellState extends State<AppShell> {
       ]),
       bottomNavigationBar: CosmicDock(
         items: _tabs,
-        index: _index,
-        onChanged: (i) => setState(() => _index = i),
+        index: index,
+        onChanged: (i) => ref.read(shellTabProvider.notifier).state = i,
+        onCenterTap: () => Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ChatScreen()),
+        ),
       ),
     );
   }
