@@ -1,38 +1,5 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "posts",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {"fieldPath": "channelId", "order": "ASCENDING"},
-        {"fieldPath": "createdAt", "order": "DESCENDING"}
-      ]
-    },
-    {
-      "collectionGroup": "posts",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {"fieldPath": "authorId", "order": "ASCENDING"},
-        {"fieldPath": "createdAt", "order": "DESCENDING"}
-      ]
-    },
-    {
-      "collectionGroup": "posts",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {"fieldPath": "channelId", "order": "ASCENDING"},
-        {"fieldPath": "authorId", "order": "ASCENDING"},
-        {"fieldPath": "createdAt", "order": "DESCENDING"}
-      ]
-    },
-    {
-      "collectionGroup": "chats",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {"fieldPath": "participants", "arrayConfig": "CONTAINS"},
-        {"fieldPath": "updatedAt", "order": "DESCENDING"}
-      ]
-    }
-  ],
+  "_comment": "posts ve chats indeksleri kaldırıldı: gönderi akışı, kanallar ve DM v1 kapsamı dışında (bkz. firestore.rules). Faz 5'te arkadaş katmanı için yeni indeksler eklenecek.",
+  "indexes": [],
   "fieldOverrides": []
 }
