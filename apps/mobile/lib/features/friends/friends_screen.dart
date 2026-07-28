@@ -12,6 +12,7 @@ import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
 import 'friend_detail_screen.dart';
+import '../../core/api.dart' show friendlyError;
 
 /// ARKADAŞLAR — serbest metin içermeyen sosyal katman.
 ///
@@ -58,7 +59,7 @@ class FriendsScreen extends ConsumerWidget {
           ),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(24),
-            child: Text('Arkadaşlar yüklenemedi: $e',
+            child: Text(friendlyError(e),
                 style: RythoText.body(13, color: RythoColors.parchmentDim)),
           ),
           data: (friends) => _FriendsList(friends: friends),

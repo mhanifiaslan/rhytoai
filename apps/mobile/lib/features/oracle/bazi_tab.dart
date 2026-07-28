@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../paywall/plus_locked_card.dart';
+import '../../core/api.dart' show friendlyError;
 
 /// BaZi — Dört Sütun tablosu, Day Master, element dağılımı, şans dönemleri.
 class BaziTab extends ConsumerWidget {
@@ -17,11 +19,19 @@ class BaziTab extends ConsumerWidget {
     return bazi.when(
       loading: () => const Center(child: AstrolabeSpinner()),
       error: (e, _) => Center(
-        child: Text('BaZi hesaplanamadı: $e',
+        child: Text(friendlyError(e),
             style: RythoText.body(13, color: RythoColors.parchmentDim)),
       ),
       data: (data) {
-        if (data == null) return const SizedBox.shrink();
+        if (data == null) {
+          return const PlusLockedCard(
+            emoji: '🀄',
+            title: 'BaZi — Dört Sütun',
+            description:
+                'Day Master, On Tanrı ve şans sütunları analizi Rytho+ ile açılır.',
+            centered: true,
+          );
+        }
         final chart = Map<String, dynamic>.from(data['chart']);
         final pillars = Map<String, dynamic>.from(chart['pillars']);
         final elements =

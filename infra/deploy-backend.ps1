@@ -25,7 +25,15 @@ gcloud run deploy $SERVICE `
     --timeout 300 `
     --max-instances 3 `
     --set-env-vars "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT" `
-    --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest"
+    --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest"
+
+# REVENUECAT_WEBHOOK_SECRET olmadan /api/v1/billing/revenuecat 503 doner ve
+# hicbir kullanici abone olarak isaretlenemez (dogrulamasiz abonelik yazmaya
+# izin verilmiyor). Ayni deger RevenueCat panelindeki webhook'un Authorization
+# basligina da yazilmali.
+#
+# Gelistirme sirasinda odemesiz test icin --set-env-vars satirina
+# RYTHO_FORCE_PLUS=1 eklenebilir; uretimde ASLA acik birakilmamali.
 
 Write-Host "Tamamlandı. Servis URL'i:"
 gcloud run services describe $SERVICE --project $PROJECT --region $REGION --format "value(status.url)"

@@ -50,6 +50,30 @@ const kSignNamesTr = [
   'Terazi', 'Akrep', 'Yay', 'Oğlak', 'Kova', 'Balık',
 ];
 
+/// Backend'in burç anahtarları — [kSignNamesTr] ile AYNI SIRADA.
+/// /api/v1/reports/horoscope/{sign} bu anahtarları bekler.
+const kSignKeys = [
+  'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo',
+  'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
+];
+
+/// Burç adını indekse çevirir; bulunamazsa -1.
+///
+/// Backend `sun_sign` alanını ad + sembol olarak döndürüyor ("Kova ♒") ve bu
+/// biçim profillerde kayıtlı. Birebir karşılaştırma yapılırsa hiçbir kullanıcının
+/// kendi burcu tanınmaz ve ana ekranda herkese Koç gösterilir. Bu yüzden
+/// eşleştirme sembole toleranslıdır.
+int signIndexOf(String? name) {
+  if (name == null) return -1;
+  final cleaned = name.trim();
+  for (var i = 0; i < kSignNamesTr.length; i++) {
+    if (cleaned == kSignNamesTr[i] || cleaned.startsWith('${kSignNamesTr[i]} ')) {
+      return i;
+    }
+  }
+  return -1;
+}
+
 /// Yuvarlak burç çipi: renkli degrade daire içinde glif + altta ad.
 class ZodiacChip extends StatelessWidget {
   const ZodiacChip({

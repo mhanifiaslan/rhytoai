@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 
 from api.astrology import router as astrology_router
 from api.bazi import router as bazi_router
+from api.billing import router as billing_router
 from api.chat import router as chat_router
 from api.iching import router as iching_router
 from api.reports import router as reports_router
@@ -83,6 +84,7 @@ app.include_router(iching_router, prefix="/api/v1/iching", tags=["I Ching"])
 app.include_router(sky_router, prefix="/api/v1/sky", tags=["Sky"])
 app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(reports_router, prefix="/api/v1/reports", tags=["Reports"])
+app.include_router(billing_router, prefix="/api/v1/billing", tags=["Billing"])
 # Bildirim ucu (api/notify.py) kaldırıldı: tek işlevi DM push'u göndermekti ve
 # DM v1 kapsamı dışında. İstemcinin serbestçe başlık/gövde göndermesine izin
 # verdiği için ayrıca kötüye kullanıma açıktı. Faz 6'da sunucu tarafından
@@ -96,4 +98,16 @@ def read_root():
 
 @app.get("/healthz")
 def healthz():
+    return {"status": "ok"}
+
+
+@app.get("/health")
+def health():
+    """Canlılık ucu.
+
+    `/healthz` *.run.app alan adlarında Google'ın ön yüzü tarafından yakalanıyor
+    ve istek konteynıra hiç ulaşmıyor (dışarıdan Google'ın 404 sayfası döner).
+    Dışarıdan izleme yapılacaksa bu yol kullanılmalı; `/healthz` yerel ve
+    konteynır içi kontroller için duruyor.
+    """
     return {"status": "ok"}

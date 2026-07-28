@@ -5,6 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from core.auth import AuthUser, get_current_user
+from core.entitlements import (
+    FREE_ICHING_PER_DAY,
+    enforce_daily_quota,
+    require_plus,
+)
 from services import astro_service, profile_service, report_service
 from services.bazi_service import get_bazi_chart
 from services.iching_service import cast_iching
@@ -88,7 +93,14 @@ def horoscope(
 
 
 @router.post("/daily")
-def daily(data: BirthData, user: AuthUser = Depends(get_current_user)):
+def daily(data: BirthData, user: AuthUser = Depends(require_plus("personal_daily"))):
+    """Kisiye ozel gunluk okuma — Rytho+ .
+
+    Ucretsiz katmanin gunluk icerigi /horoscope'tur: o, kullanicidan bagimsiz
+    ve paylasimli onbellekten servis edilir. Buradaki okuma ise kullanicinin
+    natal haritasiyla uretildigi icin kullanici basina bir LLM cagrisi
+    gerektirir; abonelik siniri tam olarak bu maliyet farkindan geciyor.
+    """
     try:
         natal = astro_service.get_natal_chart(**_natal_kwargs(data))
         sky = get_sky_now()
@@ -104,7 +116,7 @@ def daily(data: BirthData, user: AuthUser = Depends(get_current_user)):
 
 
 @router.post("/natal")
-def natal(data: BirthData, user: AuthUser = Depends(get_current_user)):
+def natal(data: BirthData, user: AuthUser = Depends(require_plus("natal_report"))):
     try:
         chart = astro_service.get_natal_chart(**_natal_kwargs(data))
         report = report_service.natal_report(user.uid, chart)
@@ -114,7 +126,7 @@ def natal(data: BirthData, user: AuthUser = Depends(get_current_user)):
 
 
 @router.post("/bazi")
-def bazi(data: BirthData, user: AuthUser = Depends(get_current_user)):
+def bazi(data: BirthData, user: AuthUser = Depends(require_plus("bazi"))):
     try:
         chart = get_bazi_chart(
             year=data.year, month=data.month, day=data.day, hour=data.hour,
@@ -129,6 +141,12 @@ def bazi(data: BirthData, user: AuthUser = Depends(get_current_user)):
 
 @router.post("/iching")
 def iching(req: IChingReportRequest, user: AuthUser = Depends(get_current_user)):
+    """I Ching hafif gunluk ritual olarak ucretsiz kalir, ama gunde bir cekilis.
+
+    Sinirsiz olsaydi ucretsiz kullanici basina acik uclu LLM maliyeti olusurdu;
+    gunde bir cekilis hem ritueli korur hem maliyeti ongorulur tutar.
+    """
+    enforce_daily_quota(user, "iching", FREE_ICHING_PER_DAY)
     try:
         cast = cast_iching(req.question, method=req.method)
         report = report_service.iching_reading(user.uid, cast)
@@ -138,7 +156,7 @@ def iching(req: IChingReportRequest, user: AuthUser = Depends(get_current_user))
 
 
 @router.post("/dyad")
-def dyad(req: DyadRequest, user: AuthUser = Depends(get_current_user)):
+def dyad(req: DyadRequest, user: AuthUser = Depends(require_plus("dyad"))):
     """İki arkadaşın BUGÜNE özgü ilişki dinamiği.
 
     İstemci yalnızca arkadaşın kimliğini gönderir; iki doğum verisini de sunucu
@@ -181,7 +199,8 @@ def dyad(req: DyadRequest, user: AuthUser = Depends(get_current_user)):
 
 
 @router.post("/synastry")
-def synastry(req: SynastryReportRequest, user: AuthUser = Depends(get_current_user)):
+def synastry(req: SynastryReportRequest,
+             user: AuthUser = Depends(require_plus("synastry"))):
     try:
         result = astro_service.get_synastry(
             _natal_kwargs(req.person1), _natal_kwargs(req.person2)

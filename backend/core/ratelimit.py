@@ -15,12 +15,24 @@ from starlette.responses import JSONResponse
 
 # LLM'e giden pahalı uçlar: daha sıkı kota
 LLM_PREFIXES = ("/api/v1/reports", "/api/v1/chat")
+
+# LLM kotasından muaf tutulan uçlar.
+# Burç yorumu kullanıcıdan bağımsızdır ve paylaşımlı önbellekten servis edilir:
+# dönem başına burç başına en fazla bir LLM çağrısı yapılır, gerisi önbellek
+# okumasıdır. Kullanıcı burç şeridinde çiplere dokundukça saniyeler içinde
+# 10 isteği geçebiliyor; ücretsiz katmanın omurgasını buna kurban etmemek için
+# genel kotaya (dakikada 60) tabi tutulur.
+LLM_EXEMPT_PREFIXES = ("/api/v1/reports/horoscope",)
 LLM_LIMIT_PER_MINUTE = 10
 DEFAULT_LIMIT_PER_MINUTE = 60
 WINDOW_SECONDS = 60.0
 
-# Kota dışı tutulan hafif uçlar
-EXEMPT_PATHS = {"/", "/healthz", "/docs", "/openapi.json", "/redoc"}
+# Kota dışı tutulan hafif uçlar.
+# RevenueCat webhook'u da muaftır: tüm olaylar aynı Authorization başlığıyla
+# gelir, yani tek bir kovayı paylaşırlar ve yoğun anlarda abonelik olayları
+# düşerdi. Uç zaten paylaşılan gizli anahtarla korunuyor.
+EXEMPT_PATHS = {"/", "/healthz", "/health", "/docs", "/openapi.json", "/redoc",
+                "/api/v1/billing/revenuecat"}
 
 RATE_LIMIT_MESSAGE = (
     "Gökyüzü biraz nefes istiyor: kısa sürede çok fazla istek gönderdin. "
@@ -63,7 +75,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or path in EXEMPT_PATHS:
             return await call_next(request)
 
-        is_llm = path.startswith(LLM_PREFIXES)
+        is_llm = (path.startswith(LLM_PREFIXES)
+                  and not path.startswith(LLM_EXEMPT_PREFIXES))
         limit = LLM_LIMIT_PER_MINUTE if is_llm else DEFAULT_LIMIT_PER_MINUTE
         # LLM ve genel kotalar ayrı sayaçlarda tutulur
         key = f"{'llm' if is_llm else 'std'}:{self._client_key(request)}"

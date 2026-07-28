@@ -7,7 +7,7 @@ import datetime as dt
 import pytest
 from fastapi.testclient import TestClient
 
-from core import cache, config
+from core import cache, config, entitlements
 from services import profile_service, report_service
 
 try:
@@ -163,8 +163,16 @@ def _basliklar(etiket: str) -> dict:
     return {"Authorization": f"Bearer test-{etiket}"}
 
 
+@pytest.fixture
+def abone(monkeypatch):
+    """İkili dinamik Rytho+ içindedir; bu dosyadaki uç testleri abonelik
+    kapısının ARKASINDAKİ davranışı ölçer. Kapının kendisi
+    tests/test_entitlements.py'de test edilir."""
+    monkeypatch.setattr(entitlements, "is_subscriber", lambda uid: True)
+
+
 @uygulama_gerekir
-def test_dyad_ucu_kendinle_okumayi_reddeder(monkeypatch):
+def test_dyad_ucu_kendinle_okumayi_reddeder(abone, monkeypatch):
     from api import reports as reports_api
 
     with TestClient(app) as client:
@@ -176,7 +184,7 @@ def test_dyad_ucu_kendinle_okumayi_reddeder(monkeypatch):
 
 
 @uygulama_gerekir
-def test_dyad_ucu_arkadas_olmayani_reddeder(monkeypatch):
+def test_dyad_ucu_arkadas_olmayani_reddeder(abone, monkeypatch):
     from api import reports as reports_api
 
     monkeypatch.setattr(reports_api.profile_service, "are_friends",
@@ -190,7 +198,7 @@ def test_dyad_ucu_arkadas_olmayani_reddeder(monkeypatch):
 
 
 @uygulama_gerekir
-def test_dyad_ucu_ham_dogum_verisi_sizdirmaz(monkeypatch):
+def test_dyad_ucu_ham_dogum_verisi_sizdirmaz(abone, monkeypatch):
     """Yanıt yalnızca türetilmiş alanlar içermeli; doğum tarihi/saati/şehri asla."""
     from api import reports as reports_api
 

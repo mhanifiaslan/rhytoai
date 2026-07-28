@@ -46,3 +46,9 @@ CACHE_BACKEND: str = os.getenv(
 CACHE_COLLECTION: str = os.getenv("RYTHO_CACHE_COLLECTION", "aiCache")
 
 GEONAMES_USERNAME: str | None = os.getenv("GEONAMES_USERNAME")
+
+# RevenueCat webhook'u icin paylasilan gizli anahtar. RevenueCat panelinde
+# webhook'a "Authorization" basligi olarak tanimlanir. Tanimsizsa webhook ucu
+# tum istekleri reddeder — abonelik durumu yazan tek yol bu oldugu icin
+# dogrulamasiz calismasina izin verilmez.
+REVENUECAT_WEBHOOK_SECRET: str | None = os.getenv("REVENUECAT_WEBHOOK_SECRET")

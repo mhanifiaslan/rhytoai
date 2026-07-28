@@ -3,6 +3,8 @@
 *.env
 !*.env.example
 **/serviceAccountKey.json
+# RevenueCat/API anahtarlari (dart-define dosyasi); ornegi commit'lenir
+dart_defines.local.json
 
 # --- Python ---
 __pycache__/

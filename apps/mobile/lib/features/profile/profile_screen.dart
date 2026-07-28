@@ -111,7 +111,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 (emoji: '⬆️', text: profile['ascendant'] as String),
             ])
               Builder(builder: (_) {
-                final signIndex = kSignNamesTr.indexOf(badge.text);
+                // Profildeki değerler sembol içeriyor ("Kova ♒"), birebir
+                // eşleşme tutmaz — rozet rengi bu yüzden hep varsayılana
+                // düşüyordu.
+                final signIndex = signIndexOf(badge.text);
                 final color = signIndex >= 0
                     ? RythoColors.signColors[signIndex]
                     : RythoColors.lilac;

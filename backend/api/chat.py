@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from core.auth import AuthUser, get_current_user
+from core.entitlements import FREE_CHAT_PER_DAY, enforce_daily_quota
 from services import gemini_service
 from services.prompt_composer import compose_chat_message, should_use_rag
 from services.rag_service import retrieve_passages
@@ -28,6 +29,12 @@ class ModerationRequest(BaseModel):
 @router.post("")
 @router.post("/")
 def chat(request: ChatRequest, user: AuthUser = Depends(get_current_user)):
+    """Sohbet: ucretsiz katmanda gunde [FREE_CHAT_PER_DAY] mesaj, abonede sinirsiz.
+
+    Kota LLM cagrisindan ONCE dusulur; aksi halde hata donen istekler de
+    kullaniciya bedava mesaj kazandirirdi.
+    """
+    enforce_daily_quota(user, "chat", FREE_CHAT_PER_DAY)
     try:
         history = [{"sender": m.sender, "text": m.text} for m in request.history]
 

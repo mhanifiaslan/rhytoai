@@ -9,6 +9,8 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/natal_wheel.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../paywall/plus_locked_card.dart';
+import '../../core/api.dart' show friendlyError;
 
 /// ATLAS — Doğum Haritası Analizi v3: natal çark kartı, kişi kartı,
 /// gezegen konumları grid'i, animasyonlu kişilik çubukları ve derin AI raporu.
@@ -35,12 +37,21 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
-            child: Text('Atlas çizilemedi: $e',
+            child: Text(friendlyError(e),
                 style: RythoText.body(14, color: RythoColors.parchmentDim)),
           ),
         ),
         data: (data) {
-          if (data == null) return const SizedBox.shrink();
+          if (data == null) {
+            return const PlusLockedCard(
+              emoji: '🗺️',
+              title: 'Doğum haritası analizi',
+              description:
+                  'Gezegen konumların, evlerin ve açıların derin yorumu '
+                  'Rytho+ ile açılır.',
+              centered: true,
+            );
+          }
           final chart = Map<String, dynamic>.from(data['chart']);
           final points = List<Map<String, dynamic>>.from(chart['points'] ?? []);
           final houses = List<Map<String, dynamic>>.from(chart['houses'] ?? []);
