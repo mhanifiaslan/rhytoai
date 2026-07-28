@@ -74,6 +74,166 @@ yorumu olmasın. Somut bir günlük tema + bir pratik öneri ver.
     return _cached_generate(cache_key, prompt, fallback)
 
 
+#: Dönem -> önbellek TTL'i. Anahtar tarih kovası içerdiği için TTL'in tek
+#: görevi eski dosyaların diskte birikmesini önlemek; kova süresiyle hizalıdır.
+_HOROSCOPE_TTL = {
+    "daily": 24 * 3600,
+    "weekly": 7 * 24 * 3600,
+    "monthly": 31 * 24 * 3600,
+}
+
+_HOROSCOPE_PERIOD_TR = {
+    "daily": "bugün",
+    "weekly": "bu hafta",
+    "monthly": "bu ay",
+}
+
+
+def _horoscope_bucket(period: str, today: dt.date) -> str:
+    """Önbellek tarih kovası: günlük YYYY-MM-DD, haftalık ISO yıl-hafta, aylık YYYY-MM."""
+    if period == "weekly":
+        iso = today.isocalendar()
+        return f"{iso.year}-W{iso.week:02d}"
+    if period == "monthly":
+        return today.strftime("%Y-%m")
+    return today.isoformat()
+
+
+def horoscope_reading(sign: str, sign_tr: str, period: str,
+                      sky: dict[str, Any]) -> dict[str, Any]:
+    """Burç bazlı günlük/haftalık/aylık yorum.
+
+    Kullanıcıdan BAĞIMSIZ önbelleklenir: anahtar (burç, dönem, tarih kovası).
+    Böylece 12 burç x dönem başına LLM'e en fazla 1 kez gidilir; sonraki tüm
+    kullanıcılar aynı dönem içinde önbellekten okur.
+    """
+    today = dt.date.today()
+    bucket = _horoscope_bucket(period, today)
+    cache_key = f"horoscope-{sign}-{period}-{bucket}"
+
+    # Önbellek isabeti en sık yoldur (12 burç x dönem başına tek üretim, geri
+    # kalan tüm istekler isabet). Bu yüzden prompt kurulmadan ÖNCE bakılır:
+    # aksi halde her istekte RAG araması (ve embedding API çağrısı) boşuna
+    # yapılırdı.
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True, "generated_for": bucket}
+
+    period_tr = _HOROSCOPE_PERIOD_TR.get(period, "bugün")
+    length = ("120-160 kelime" if period == "daily" else "200-250 kelime")
+
+    retros = ", ".join(sky.get("retrogrades", [])) or "yok"
+    aspects = "; ".join(
+        f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
+    ) or "belirgin açı yok"
+    moon = sky.get("moon_phase", {})
+    rag = retrieve_context(f"{sign_tr} burcu mizaç gezegen transit yorumu")
+
+    prompt = f"""
+GÖREV: {sign_tr} burcu için {period_tr.upper()} geçerli, {length} uzunluğunda
+bir burç yorumu yaz. Bu yorum {sign_tr} burcundan HERKESE hitap eder (kişiye
+özel doğum verisi yok).
+
+DÖNEM: {period_tr} (referans tarih: {today.isoformat()})
+
+ŞU ANKİ GERÇEK GÖKYÜZÜ (Swiss Ephemeris):
+- Ay evresi: {moon.get('name')} {moon.get('emoji')} (aydınlanma %{moon.get('illumination')})
+- Retro gezegenler: {retros}
+- Önemli açılar: {aspects}
+
+KAYNAK PASAJLARI:
+{rag}
+
+KURALLAR:
+- Samimi "sen" diliyle, sıcak ve akıcı yaz; kadercilik yok.
+- Gökyüzü verisini {sign_tr} burcunun mizacıyla çarpıştır; genel geçer
+  klişelerden kaçın.
+- Aşk, iş ve iç dünya temalarından en az ikisine dokun; sonda tek cümlelik
+  somut bir öneri ver. Başlık veya madde işareti kullanma, düz metin yaz.
+"""
+    fallback = (
+        f"{sign_tr} için {period_tr} gökyüzü sakin bir ritim sunuyor. "
+        f"Ay {moon.get('name', 'yolculuğunda')} evresinde ilerlerken iç sesine "
+        "alan aç; küçük ama kararlı bir adım, dönemin enerjisini senin lehine çevirir. "
+        "Detaylı yorum için biraz sonra tekrar dene."
+    )
+    result = _cached_generate(cache_key, prompt, fallback,
+                              ttl_seconds=_HOROSCOPE_TTL.get(period, 24 * 3600))
+    result["generated_for"] = bucket
+    return result
+
+
+def dyad_cache_key(uid_a: str, uid_b: str, today: dt.date) -> str:
+    """İkili okuma önbellek anahtarı — çiftin sırasından bağımsız.
+
+    İki arkadaş aynı günü aynı metinle görmeli: hem tek üretim yapılır hem de
+    aralarında konuşulabilecek ortak bir şey oluşur.
+    """
+    first, second = sorted((uid_a, uid_b))
+    return f"dyad-{first}-{second}-{today.isoformat()}"
+
+
+def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
+                 synastry: dict[str, Any], sky: dict[str, Any]) -> dict[str, Any]:
+    """İki arkadaş için GÜNLÜK ikili dinamik okuması.
+
+    Kalıcı bir uyum skoru üretilmez. Gerekçe iki katlı: skor ölçüm değil
+    gelenektir (ürünün dürüstlük ilkesi), ve geri alınamaz bir damga gerçek
+    ilişkilere zarar verir. Bunun yerine bugüne özgü, yarın değişebilecek bir
+    dinamik anlatılır.
+    """
+    today = dt.date.today()
+    cache_key = dyad_cache_key(uid_a, uid_b, today)
+
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True, "generated_for": today.isoformat()}
+
+    aspects = "\n".join(
+        f"- {a['p1_tr']} ({name_a}) {a['aspect_tr']} {a['p2_tr']} ({name_b}) orb {a['orbit']}°"
+        for a in synastry.get("aspects", [])[:6]
+    ) or "belirgin karşılıklı açı yok"
+
+    moon = sky.get("moon_phase", {})
+    retros = ", ".join(sky.get("retrogrades", [])) or "yok"
+    rag = retrieve_context("sinastri ilişki iletişim gezegen açıları günlük transit")
+
+    prompt = f"""
+GÖREV: {name_a} ile {name_b} arasındaki ilişki dinamiğinin BUGÜNE özgü halini
+anlatan 90-130 kelimelik kısa bir metin yaz.
+
+BUGÜNÜN GÖKYÜZÜ ({today.isoformat()}):
+- Ay evresi: {moon.get('name')} {moon.get('emoji')} (aydınlanma %{moon.get('illumination')})
+- Retro gezegenler: {retros}
+
+ARALARINDAKİ KARŞILIKLI AÇILAR:
+{aspects}
+
+KAYNAK PASAJLARI:
+{rag}
+
+KURALLAR (kesin):
+- ASLA puan, yüzde veya "uyumlusunuz/uyumsuzsunuz" gibi kalıcı bir yargı verme.
+  Anlattığın şey yalnızca BUGÜN için geçerli bir eğilimdir.
+- İki tarafı da eşit ele al; birini haklı diğerini haksız çıkarma.
+- Pohpohlama. Gerginlik varsa gerginlik de; ama daima birlikte atılabilecek
+  somut ve küçük bir adımla bitir.
+- İlişkinin geleceği, ayrılık, evlilik, hamilelik veya sağlık hakkında
+  ÖNGÖRÜDE BULUNMA.
+- Düz metin yaz: başlık, madde işareti veya numaralandırma kullanma.
+- İkisine birden hitap et ("ikiniz"), tek bir kişiye değil.
+"""
+    fallback = (
+        f"Bugün {name_a} ile {name_b} arasındaki ritim sakin bir zeminde ilerliyor. "
+        f"Ay {moon.get('name', 'yolculuğunda')} evresindeyken birbirinize ayıracağınız "
+        "kısa ama bölünmemiş bir dikkat, günün tonunu belirleyecek. "
+        "Detaylı okuma için biraz sonra tekrar dene."
+    )
+    result = _cached_generate(cache_key, prompt, fallback, ttl_seconds=24 * 3600)
+    result["generated_for"] = today.isoformat()
+    return result
+
+
 def natal_report(user_id: str, natal: dict[str, Any]) -> dict[str, Any]:
     """Derinlemesine doğum haritası raporu (kullanıcı başına bir kez, 30 gün önbellek)."""
     cache_key = f"natal-report-{user_id}-{natal.get('sun_sign')}-{natal.get('ascendant')}"

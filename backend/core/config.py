@@ -31,4 +31,18 @@ else:
 CACHE_DIR = Path(os.getenv("RYTHO_CACHE_DIR", str(BACKEND_DIR / "cache")))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Önbellek arka ucu: "firestore" | "file".
+# Cloud Run'da instance diski geçici ve instance'lar arası paylaşımsızdır; burç
+# yorumu gibi kullanıcıdan bağımsız içerikler ancak paylaşımlı bir arka uçla
+# "tüm kullanıcılar için tek LLM çağrısı" garantisini verebilir.
+# Varsayılan DEV_MODE'a bağlanır: lokalde dosya, üretimde Firestore.
+CACHE_BACKEND: str = os.getenv(
+    "RYTHO_CACHE_BACKEND", "file" if DEV_MODE else "firestore"
+).strip().lower()
+
+# Firestore önbellek koleksiyonu. Bu koleksiyona `expiresAt` alanı üzerinden
+# native TTL politikası tanımlanmalıdır; aksi halde süresi dolan dokümanlar
+# yalnızca okuma anında temizlenir.
+CACHE_COLLECTION: str = os.getenv("RYTHO_CACHE_COLLECTION", "aiCache")
+
 GEONAMES_USERNAME: str | None = os.getenv("GEONAMES_USERNAME")

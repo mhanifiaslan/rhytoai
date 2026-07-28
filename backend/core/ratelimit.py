@@ -14,7 +14,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 # LLM'e giden pahalı uçlar: daha sıkı kota
-LLM_PREFIXES = ("/api/v1/reports", "/api/v1/chat", "/api/v1/face-reading")
+LLM_PREFIXES = ("/api/v1/reports", "/api/v1/chat")
 LLM_LIMIT_PER_MINUTE = 10
 DEFAULT_LIMIT_PER_MINUTE = 60
 WINDOW_SECONDS = 60.0

@@ -14,9 +14,9 @@ pyswisseph
 google-genai
 firebase-admin
 
-# Görüntü işleme (yüz analizi v2)
-# mediapipe lokal ortamla eşit sürüme sabitlendi (Tasks API / ctypes arayüzü sürüme duyarlı)
-mediapipe==0.10.35
-opencv-python-headless
+# Görüntü işleme
+# mediapipe ve opencv yalnızca yüz analizi için gerekliydi; o özellik v1 kapsamı
+# dışında olduğu için requirements-local.txt'e taşındı (imaj boyutu ve soğuk
+# başlatma süresi için kritik).
 numpy
 pillow

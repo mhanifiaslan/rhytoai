@@ -14,9 +14,7 @@ from fastapi.responses import JSONResponse
 from api.astrology import router as astrology_router
 from api.bazi import router as bazi_router
 from api.chat import router as chat_router
-from api.face_reading import router as face_reading_router
 from api.iching import router as iching_router
-from api.notify import router as notify_router
 from api.reports import router as reports_router
 from api.sky import router as sky_router
 from core.ratelimit import RateLimitMiddleware
@@ -28,8 +26,8 @@ app = FastAPI(
     title="RythoAI Cosmic Engine",
     version="2.0.0",
     description=(
-        "Swiss Ephemeris tabanlı astroloji, BaZi, I Ching, yüz analizi (Mian Xiang "
-        "+ Kıyafetname) ve RAG destekli Gemini yorum servisi."
+        "Swiss Ephemeris tabanlı astroloji, BaZi, I Ching ve RAG destekli "
+        "Gemini yorum servisi."
     ),
 )
 
@@ -79,11 +77,16 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 app.include_router(astrology_router, prefix="/api/v1/astrology", tags=["Astrology"])
 app.include_router(bazi_router, prefix="/api/v1/bazi", tags=["BaZi"])
 app.include_router(iching_router, prefix="/api/v1/iching", tags=["I Ching"])
-app.include_router(face_reading_router, prefix="/api/v1/face-reading", tags=["Face Reading"])
+# Yüz analizi (api/face_reading.py, services/face_service.py) v1 kapsamı dışıdır:
+# biyometrik veri işlediği için GDPR Md.9 / KVKK md.6 ve BIPA benzeri düzenlemelere
+# tabi. Kod v2 referansı olarak repoda durur, uç kaydı yapılmaz.
 app.include_router(sky_router, prefix="/api/v1/sky", tags=["Sky"])
 app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(reports_router, prefix="/api/v1/reports", tags=["Reports"])
-app.include_router(notify_router, prefix="/api/v1/notify", tags=["Notify"])
+# Bildirim ucu (api/notify.py) kaldırıldı: tek işlevi DM push'u göndermekti ve
+# DM v1 kapsamı dışında. İstemcinin serbestçe başlık/gövde göndermesine izin
+# verdiği için ayrıca kötüye kullanıma açıktı. Faz 6'da sunucu tarafından
+# zamanlanan (Cloud Scheduler) bildirim sistemi olarak yeniden kurulacak.
 
 
 @app.get("/")
