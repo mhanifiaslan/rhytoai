@@ -19,6 +19,7 @@ apps/mobile/build/
 apps/mobile/.flutter-plugins
 apps/mobile/.flutter-plugins-dependencies
 apps/mobile/android/.gradle/
+apps/mobile/android/build/
 apps/mobile/android/local.properties
 apps/mobile/ios/Pods/
 apps/mobile/ios/.symlinks/

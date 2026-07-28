@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/api.dart';
+import '../../core/friends.dart' show syncPublicProfile;
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
@@ -75,6 +76,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           .collection('users')
           .doc(user.uid)
           .set(profile, SetOptions(merge: true));
+      // Arkadaş listesinde görünen alanları herkese açık karta yansıt
+      // (users/{uid} yalnızca sahibine okunabilir — doğum verisi içeriyor).
+      await syncPublicProfile();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)

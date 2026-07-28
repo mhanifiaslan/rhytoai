@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import 'bazi_tab.dart';
-import 'face_tab.dart';
 import 'iching_tab.dart';
 
-/// KEHANET — üç kadim disiplin: I Ching, BaZi, Yüz Okuma.
+/// KEHANET — iki kadim disiplin: I Ching ve BaZi.
 /// v3'te ana ekrandaki "Kehanet Araçları" kartlarından push edilir;
 /// [initialTab] ile doğrudan ilgili disipline açılır.
+///
+/// Yüz okuma sekmesi (face_tab.dart) v1 kapsamı dışıdır — biyometrik veri
+/// işlediği için ayrı bir hukuki uyum katmanı gerektiriyor. Dosya v2 referansı
+/// olarak repoda durur, hiçbir yerden bağlanmaz.
 class OracleScreen extends ConsumerStatefulWidget {
   const OracleScreen({super.key, this.initialTab = 0});
 
@@ -22,7 +25,7 @@ class OracleScreen extends ConsumerStatefulWidget {
 class _OracleScreenState extends ConsumerState<OracleScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController = TabController(
-      length: 3, vsync: this, initialIndex: widget.initialTab.clamp(0, 2));
+      length: 2, vsync: this, initialIndex: widget.initialTab.clamp(0, 1));
 
   @override
   void dispose() {
@@ -48,13 +51,12 @@ class _OracleScreenState extends ConsumerState<OracleScreen>
           tabs: const [
             Tab(text: 'I CHING 🪙'),
             Tab(text: 'BAZI 🀄'),
-            Tab(text: 'YÜZ 🔮'),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
-        children: const [IChingTab(), BaziTab(), FaceTab()],
+        children: const [IChingTab(), BaziTab()],
       ),
     );
   }

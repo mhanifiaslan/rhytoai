@@ -5,16 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../core/friends.dart' show setStreakVisible;
 import '../../core/providers.dart';
 import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/nebula_widgets.dart';
-import '../council/feed_tab.dart' show PostCard;
 import 'legal_page.dart';
 
-/// SİCİL — birleşik profil: başkalarının gördüğü sayfa (rozetler, sayaçlar,
-/// gönderiler) + kendi ayarların (doğum kaydı, bildirim, oturum).
+/// SİCİL — kendi profilin: rozetler, günlük seri, doğum kaydı, gizlilik ve
+/// uygulama ayarları, hukuki metinler ve oturum işlemleri.
+///
+/// Bu ekran yalnızca kullanıcının kendisine gösterilir; `users/{uid}` dokümanı
+/// doğum verisi içerdiği için Firestore'da da yalnızca sahibine okunabilir.
+/// Arkadaşların gördüğü alanlar ayrı bir karttan gelir (`publicProfiles/{uid}`).
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -55,7 +59,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider).value ?? {};
     final user = FirebaseAuth.instance.currentUser;
-    final uid = user?.uid;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -126,10 +129,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               }),
           ]),
         ),
-        if (uid != null) ...[
-          const SizedBox(height: 14),
-          _FollowCounters(uid: uid),
-        ],
+        // Takipçi/takip sayaçları kaldırıldı: tek yönlü takip yerine karşılıklı
+        // arkadaşlık modeli kullanılıyor (bkz. features/friends).
         // Günlük seri kartı 🔥
         Plaque(
           label: 'Günlük Seri',
@@ -186,12 +187,44 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ]),
         ),
+        // Gizlilik: arkadaşlara ne göründüğü. Tüm görünürlük ayarları
+        // varsayılan olarak KAPALIDIR ve yalnızca buradan açılır.
+        Plaque(
+          label: 'Gizlilik',
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Column(children: [
+            Row(children: [
+              const Icon(Icons.local_fire_department_outlined,
+                  size: 18, color: RythoColors.lilac),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Serimi arkadaşlarım görsün',
+                          style: RythoText.body(14)),
+                      Text(
+                        'Kapalıyken serin ve bugün okuyup okumadığın paylaşılmaz.',
+                        style: RythoText.body(11.5,
+                            color: RythoColors.parchmentDim),
+                      ),
+                    ]),
+              ),
+              Switch(
+                value: profile['streakVisible'] == true,
+                activeThumbColor: RythoColors.magenta,
+                activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
+                onChanged: (v) => setStreakVisible(v),
+              ),
+            ]),
+          ]),
+        ),
         Plaque(
           label: 'Hakkında',
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
-              'Rytho; Batı astrolojisi, BaZi, I Ching ve İlm-i Sima geleneklerini '
-              'hassas efemeris hesabıyla birleştirir. Yorumlar içgörü amaçlıdır; '
+              'Rytho; Batı astrolojisi, BaZi ve I Ching geleneklerini hassas '
+              'efemeris hesabıyla birleştirir. Yorumlar içgörü amaçlıdır; '
               'tıbbi, hukuki veya finansal tavsiye değildir.',
               style: RythoText.body(13, color: RythoColors.parchmentDim),
             ),
@@ -223,39 +256,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             },
           ),
         ),
-        if (uid != null) ...[
-          const SectionDivider(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('Gönderilerin', style: RythoText.display(20)),
-          ),
-          const SizedBox(height: 6),
-          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance
-                .collection('posts')
-                .where('authorId', isEqualTo: uid)
-                .orderBy('createdAt', descending: true)
-                .limit(20)
-                .snapshots(),
-            builder: (_, snapshot) {
-              final docs = snapshot.data?.docs ?? [];
-              if (docs.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Center(
-                    child: Text('Meclis\'te henüz söz almadın.',
-                        style: RythoText.body(13,
-                            color: RythoColors.parchmentDim)),
-                  ),
-                );
-              }
-              return Column(children: [
-                for (final doc in docs)
-                  PostCard(postId: doc.id, post: doc.data()),
-              ]);
-            },
-          ),
-        ],
+        // "Gönderilerin" bölümü kaldırıldı: kullanıcı üretimi serbest metin
+        // v1 kapsamı dışında. Yerine Faz 5'te arkadaş katmanı (seri, hazır
+        // tepkiler, günlük ikili dinamik) gelecek.
         const SizedBox(height: 24),
       ]),
     );
@@ -292,32 +295,3 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 }
 
-class _FollowCounters extends StatelessWidget {
-  const _FollowCounters({required this.uid});
-  final String uid;
-
-  Widget _counter(String label, Stream<int> stream) {
-    return StreamBuilder<int>(
-      stream: stream,
-      builder: (_, snapshot) => Column(children: [
-        Text('${snapshot.data ?? 0}', style: RythoText.display(20)),
-        Text(label, style: RythoText.mono(10, color: RythoColors.parchmentDim)),
-      ]),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final users = FirebaseFirestore.instance.collection('users').doc(uid);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _counter('TAKİPÇİ',
-            users.collection('followers').snapshots().map((s) => s.size)),
-        const SizedBox(width: 40),
-        _counter('TAKİP',
-            users.collection('following').snapshots().map((s) => s.size)),
-      ],
-    );
-  }
-}

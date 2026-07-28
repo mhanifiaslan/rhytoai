@@ -290,7 +290,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 12),
             Text(
               'Kadim bilgelik, hassas gökyüzü hesabıyla buluşur.\n'
-              'Haritan çizilir, yüzün okunur, yolun aydınlanır. ✨',
+              'Haritan çizilir, yolun aydınlanır. ✨',
               textAlign: TextAlign.center,
               style: RythoText.body(14.5, color: RythoColors.parchmentDim),
             ).animate(delay: next()).fadeIn(duration: 400.ms),

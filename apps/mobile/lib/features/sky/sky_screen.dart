@@ -182,11 +182,13 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
+                    // Yüz Okuma kartı v1 kapsamı dışında (biyometrik veri).
+                    // Sinastri kartı da kaldırıldı: giriş noktası Meclis'teki
+                    // kullanıcı profilleriydi. Faz 5'te arkadaş katmanının
+                    // "günlük ikili dinamik" özelliği olarak geri gelecek.
                     for (final (i, tool) in const [
                       ('🪙', 'I Ching', 'Değişimler Kitabı'),
                       ('🀄', 'BaZi', 'Dört Sütun'),
-                      ('🔮', 'Yüz Okuma', 'İlm-i Sima'),
-                      ('💞', 'Sinastri', 'Kozmik uyum'),
                     ].indexed)
                       Padding(
                         padding: const EdgeInsets.only(right: 12),
@@ -194,17 +196,9 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                           emoji: tool.$1,
                           title: tool.$2,
                           subtitle: tool.$3,
-                          onTap: () {
-                            if (i < 3) {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) =>
-                                      OracleScreen(initialTab: i)));
-                            } else {
-                              // Sinastri: Meclis'te bir profile girip
-                              // "Kozmik uyum" ile hesaplanır.
-                              ref.read(shellTabProvider.notifier).state = 2;
-                            }
-                          },
+                          onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => OracleScreen(initialTab: i))),
                         )
                             .animate(delay: Duration(milliseconds: 70 * stagger + i * 70))
                             .fadeIn(duration: 360.ms)

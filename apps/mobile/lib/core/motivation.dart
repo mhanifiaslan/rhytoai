@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
+import 'friends.dart' show syncPublicProfile;
+
 /// Günlük seri (streak) ve burca özel motivasyon cümleleri.
 ///
 /// Seri kuralı: kullanıcı günlük okumayı art arda günlerde açtıkça
@@ -32,6 +34,9 @@ class DailyStreak {
       'lastSeenDaily': today,
       'streakCount': next,
     }, SetOptions(merge: true));
+    // Arkadaşlar `users/{uid}` dokümanını okuyamaz (doğum verisi içerir);
+    // seri bilgisi herkese açık karta buradan yansır.
+    await syncPublicProfile();
     return next;
   }
 }

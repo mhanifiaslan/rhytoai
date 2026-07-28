@@ -6,12 +6,17 @@ import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../atlas/atlas_screen.dart';
 import '../chat/chat_screen.dart';
-import '../council/council_screen.dart';
+import '../friends/friends_screen.dart';
 import '../profile/profile_screen.dart';
 import '../sky/sky_screen.dart';
 
 /// Aktif sekme — ekranlar (örn. promo banner) sekme değiştirebilsin diye
-/// Riverpod üzerinden paylaşılır. 0: Gökyüzü, 1: Atlas, 2: Meclis, 3: Profil.
+/// Riverpod üzerinden paylaşılır. 0: Gökyüzü, 1: Atlas, 2: Arkadaşlar, 3: Profil.
+///
+/// Eski "Meclis" sekmesinin yerini Arkadaşlar aldı: gönderi akışı, kanallar ve
+/// DM (serbest metinli kullanıcı içeriği) kaldırıldı; yerine serbest metin
+/// içermeyen arkadaş katmanı geldi — seri görünürlüğü, kapalı kümeden hazır
+/// tepkiler ve günlük ikili dinamik.
 final shellTabProvider = StateProvider<int>((_) => 0);
 
 /// Ana kabuk: yıldız alanı zemin + 4 sekme + merkez degrade AI butonu
@@ -22,7 +27,7 @@ class AppShell extends ConsumerWidget {
   static const _tabs = [
     (icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Gökyüzü'),
     (icon: Icons.donut_large_outlined, activeIcon: Icons.donut_large_rounded, label: 'Atlas'),
-    (icon: Icons.forum_outlined, activeIcon: Icons.forum_rounded, label: 'Meclis'),
+    (icon: Icons.people_outline_rounded, activeIcon: Icons.people_rounded, label: 'Arkadaşlar'),
     (icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profil'),
   ];
 
@@ -46,7 +51,7 @@ class AppShell extends ConsumerWidget {
                 child: const [
                   SkyScreen(),
                   AtlasScreen(),
-                  CouncilScreen(),
+                  FriendsScreen(),
                   ProfileScreen(),
                 ][i],
               ),
