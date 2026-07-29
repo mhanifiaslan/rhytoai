@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../widgets/cosmic_scaffold.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/glass.dart';
 import '../atlas/atlas_screen.dart';
 import '../chat/chat_screen.dart';
@@ -24,16 +25,22 @@ final shellTabProvider = StateProvider<int>((_) => 0);
 class AppShell extends ConsumerWidget {
   const AppShell({super.key});
 
-  static const _tabs = [
-    (icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Gökyüzü'),
-    (icon: Icons.donut_large_outlined, activeIcon: Icons.donut_large_rounded, label: 'Atlas'),
-    (icon: Icons.people_outline_rounded, activeIcon: Icons.people_rounded, label: 'Arkadaşlar'),
-    (icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profil'),
-  ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final index = ref.watch(shellTabProvider);
+    final l10n = AppLocalizations.of(context);
+    // Etiketler dile göre üretildiği için const olamaz.
+    final tabs = [
+      (icon: Icons.home_outlined, activeIcon: Icons.home_rounded,
+       label: l10n.tabSky),
+      (icon: Icons.donut_large_outlined, activeIcon: Icons.donut_large_rounded,
+       label: l10n.tabAtlas),
+      (icon: Icons.people_outline_rounded, activeIcon: Icons.people_rounded,
+       label: l10n.tabFriends),
+      (icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded,
+       label: l10n.tabProfile),
+    ];
     return CosmicScaffold(
       extendBody: true,
       body: Stack(children: [
@@ -59,7 +66,7 @@ class AppShell extends ConsumerWidget {
           ),
       ]),
       bottomNavigationBar: CosmicDock(
-        items: _tabs,
+        items: tabs,
         index: index,
         onChanged: (i) => ref.read(shellTabProvider.notifier).state = i,
         onCenterTap: () => Navigator.of(context).push(

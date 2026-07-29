@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/paywall/paywall_screen.dart';
+import 'locale.dart';
 
 /// Paywall'ı herhangi bir ekrandan açabilmek için kök navigatör.
 final GlobalKey<NavigatorState> rythoNavigatorKey = GlobalKey<NavigatorState>();
@@ -54,6 +55,10 @@ final apiProvider = Provider<Dio>((ref) {
         final token = await user.getIdToken();
         options.headers['Authorization'] = 'Bearer $token';
       }
+      // Backend yorumları bu başlığa göre üretir (persona, korpus ve önbellek
+      // dahil). Gönderilmezse sunucu Türkçe varsayar ve arayüz İngilizce olsa
+      // bile yorumlar Türkçe gelir.
+      options.headers['Accept-Language'] = acceptLanguageHeader();
       handler.next(options);
     },
     onError: (error, handler) {

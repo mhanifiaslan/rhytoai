@@ -1,0 +1,13 @@
+# ARB -> AppLocalizations üretimi.
+# Şablon dil Türkçe: ürün Türkçe yazıldı, İngilizce ikinci dil olarak eklendi.
+# Bir anahtar İngilizce ARB'de eksikse Türkçesi kullanılır (fallback).
+#
+# Üretim doğrudan lib/l10n altına yapılıyor: güncel Flutter sürümlerinde
+# `package:flutter_gen` sentetik paketi kaldırıldı, dosya normal bir kaynak
+# dosyası olarak içe aktarılıyor.
+arb-dir: lib/l10n
+template-arb-file: app_tr.arb
+output-localization-file: app_localizations.dart
+output-dir: lib/l10n
+output-class: AppLocalizations
+nullable-getter: false

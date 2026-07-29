@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Çok dillilik (TR + EN)
+  flutter_localizations:
+    sdk: flutter
+
   # Durum yönetimi
   flutter_riverpod: ^3.0.3
 
@@ -45,6 +49,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # ARB dosyalarından AppLocalizations üretimi (bkz. l10n.yaml)
+  generate: true
 
   assets:
     - assets/sounds/

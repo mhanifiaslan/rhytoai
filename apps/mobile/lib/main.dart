@@ -7,11 +7,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/api.dart';
+import 'core/locale.dart';
 import 'core/providers.dart';
 import 'core/subscription.dart';
 import 'features/auth/login_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/shell/app_shell.dart';
+import 'l10n/app_localizations.dart';
 import 'theme/rytho_theme.dart';
 import 'widgets/atlas_widgets.dart';
 import 'widgets/cosmic_scaffold.dart';
@@ -48,11 +50,16 @@ Future<void> main() async {
   runApp(const ProviderScope(child: RythoApp()));
 }
 
-class RythoApp extends StatelessWidget {
+class RythoApp extends ConsumerWidget {
   const RythoApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final locale = ref.watch(localeProvider);
+    // Dio interceptor'ı ProviderScope dışından çağrıldığı için seçilen dili
+    // ayrıca bildiriyoruz; backend yorumları Accept-Language'e göre üretir.
+    setRequestLanguage(locale);
+
     return MaterialApp(
       title: 'Rytho',
       debugShowCheckedModeBanner: false,
@@ -60,6 +67,9 @@ class RythoApp extends StatelessWidget {
       // Sunucu 402 döndüğünde paywall'ı hangi ekranda olursak olalım
       // açabilmek için (bkz. core/api.dart).
       navigatorKey: rythoNavigatorKey,
+      locale: locale,
+      supportedLocales: kSupportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: const _Gate(),
     );
   }
