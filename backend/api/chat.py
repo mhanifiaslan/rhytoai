@@ -1,12 +1,12 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 
 from core.auth import AuthUser, get_current_user
 from core.entitlements import FREE_CHAT_PER_DAY, enforce_daily_quota
-from services import gemini_service
+from services import gemini_service, memory_extractor, memory_service
 from services.prompt_composer import compose_chat_message, should_use_rag
 from services.rag_service import retrieve_passages
 from services.safety_rules import forbidden_topic
@@ -31,7 +31,8 @@ class ModerationRequest(BaseModel):
 
 @router.post("")
 @router.post("/")
-def chat(request: ChatRequest, user: AuthUser = Depends(get_current_user)):
+def chat(request: ChatRequest, background: BackgroundTasks,
+         user: AuthUser = Depends(get_current_user)):
     """Sohbet: ucretsiz katmanda gunde [FREE_CHAT_PER_DAY] mesaj, abonede sinirsiz.
 
     Kota LLM cagrisindan ONCE dusulur; aksi halde hata donen istekler de
@@ -52,10 +53,16 @@ def chat(request: ChatRequest, user: AuthUser = Depends(get_current_user)):
         # Seçici RAG: selamlaşma/duygu/kısa onay turlarında korpus araması
         # (ve embedding çağrısı) atlanır; kadim bilgi soran mesajlarda en
         # fazla 2 kırpılmış pasaj "arka plan fısıltısı" olarak eklenir.
-        message = request.message
+        passages = []
         if should_use_rag(request.message):
             passages = retrieve_passages(request.message, top_k=2)
-            message = compose_chat_message(request.message, passages)
+
+        # Kullanıcı hafızası: "seni tanıyor" hissinin kaynağı burası. Okuma
+        # ucuz (tek Firestore dokümanı) ve RAG'den bağımsız olarak her turda
+        # yapılır — kullanıcı hakkında bilinenler her mesajda geçerlidir.
+        memory = memory_service.memory_context(user.uid)
+
+        message = compose_chat_message(request.message, passages, memory=memory)
 
         reply = gemini_service.chat(history, message)
         if reply is None:
@@ -64,6 +71,12 @@ def chat(request: ChatRequest, user: AuthUser = Depends(get_current_user)):
                 "kadim kaynaklar her zamanki yerinde. Lütfen birkaç saniye sonra "
                 "tekrar sor."
             )
+        # Olgu çıkarımı yanıttan SONRA, arka planda: kullanıcı ikinci bir LLM
+        # çağrısını beklemez. Kendi içinde kotalı ve hataya dayanıklı.
+        background.add_task(
+            memory_extractor.extract_and_store, user.uid, history, request.message
+        )
+
         return {"status": "success", "reply": reply}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

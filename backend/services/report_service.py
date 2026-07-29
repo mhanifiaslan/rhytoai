@@ -13,10 +13,26 @@ import logging
 from typing import Any
 
 from core import cache
-from services import gemini_service
+from services import gemini_service, memory_service
 from services.rag_service import retrieve_context
 
 logger = logging.getLogger(__name__)
+
+
+def _memory_block(memory: str) -> str:
+    """Hafıza bağlamını prompt'a iliştirilebilir bir bloğa çevirir.
+
+    Hafıza boşsa hiçbir başlık yazılmaz — boş bir "KULLANICI HAKKINDA" başlığı
+    modeli bilmediği şeyler uydurmaya davet eder.
+    """
+    memory = (memory or "").strip()
+    if not memory:
+        return ""
+    return (
+        "KULLANICI HAKKINDA ÖNCEDEN BİLDİKLERİN (kendi anlattıklarından; "
+        "hatırladığını ilan etmeden, uygun düştüğünde doğal biçimde dokundur):\n"
+        f"{memory}\n"
+    )
 
 
 def _cached_generate(cache_key: str, prompt: str, fallback: str,
@@ -41,6 +57,9 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any]) -> d
         f"{natal.get('sun_sign', '')} güneş {natal.get('moon_sign', '')} ay burcu "
         f"gezegen transit yorumu mizaç"
     )
+    # Kullanıcı hafızası: günlük okumayı gerçekten kişisel yapan şey natal
+    # harita değil (o herkes için sabit), zamanla biriken bu bağlam.
+    memory = memory_service.memory_context(user_id, max_chars=400)
     retros = ", ".join(sky.get("retrogrades", [])) or "yok"
     aspects = "; ".join(
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
@@ -62,6 +81,7 @@ BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris + NASA JPL):
 KAYNAK PASAJLARI:
 {rag}
 
+{_memory_block(memory)}
 Yorum, natal konumlar ile bugünkü gökyüzünü ÇARPIŞTIRSIN; genel geçer burç
 yorumu olmasın. Somut bir günlük tema + bir pratik öneri ver.
 """

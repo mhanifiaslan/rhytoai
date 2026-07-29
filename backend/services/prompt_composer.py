@@ -74,14 +74,17 @@ def should_use_rag(message: str) -> bool:
     return False
 
 
-def compose_chat_message(message: str, passages: list[dict]) -> str:
-    """Pasajları kırpılmış arka plan fısıltısı olarak mesaja iliştirir.
+def compose_chat_message(message: str, passages: list[dict],
+                         memory: str = "") -> str:
+    """Bilgi tabanı pasajlarını ve kullanıcı hafızasını mesaja iliştirir.
 
-    Pasaj yoksa mesaj olduğu gibi döner; API şeması ve model arayüzü değişmez.
+    İkisi de "arka plan fısıltısı" olarak verilir: model bunları blok halinde
+    aktarmaz, en fazla tek bir ilgili ayrıntıyı kendi cümlesine sindirir.
+    Hafızayı olduğu gibi döktürmek, kullanıcıya "hakkında tuttuğum notlar"
+    okumak gibi olur ve ürkütücüdür.
+
+    Hiçbiri yoksa mesaj olduğu gibi döner; API şeması ve model arayüzü değişmez.
     """
-    if not passages:
-        return message
-
     whispers = []
     for p in passages[:MAX_PASSAGES]:
         text = re.sub(r"\s+", " ", p.get("text", "")).strip()
@@ -90,13 +93,25 @@ def compose_chat_message(message: str, passages: list[dict]) -> str:
         if text:
             whispers.append(f"- {text}")
 
-    if not whispers:
+    memory = (memory or "").strip()
+    if not whispers and not memory:
         return message
 
-    return (
-        "ARKA PLAN FISILTISI (yalnızca senin iç bilgin; kullanıcıya asla blok "
-        "halinde aktarma, listeleme veya alıntılama — en fazla tek bir ilgili "
-        "ayrıntıyı kendi cümlelerinle sohbetine sindir):\n"
-        + "\n".join(whispers)
-        + f"\n\nKULLANICININ MESAJI: {message}"
-    )
+    parts = []
+    if whispers:
+        parts.append(
+            "ARKA PLAN FISILTISI (yalnızca senin iç bilgin; kullanıcıya asla "
+            "blok halinde aktarma, listeleme veya alıntılama — en fazla tek bir "
+            "ilgili ayrıntıyı kendi cümlelerinle sohbetine sindir):\n"
+            + "\n".join(whispers)
+        )
+    if memory:
+        parts.append(
+            "KULLANICI HAKKINDA HATIRLADIKLARIN (önceki konuşmalardan; "
+            "kullanıcıya bunları hatırladığını ilan ETME, listeleme veya "
+            "yüzüne vurma — yalnızca uygun düştüğünde doğal biçimde dokundur. "
+            "Bilgi eskimiş olabilir; çelişirse kullanıcının SON söylediği "
+            "geçerlidir):\n" + memory
+        )
+
+    return "\n\n".join(parts) + f"\n\nKULLANICININ MESAJI: {message}"

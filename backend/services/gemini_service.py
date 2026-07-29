@@ -146,6 +146,29 @@ def generate(prompt: str, temperature: float = 0.9) -> str | None:
     return None
 
 
+def extract_json(prompt: str, schema: dict | None = None) -> str | None:
+    """Persona'sız, düşük sıcaklıkta yapılandırılmış üretim.
+
+    Olgu çıkarımı gibi işler için: Rytho personası (sıcak, edebi, "sen" dili)
+    burada zararlıdır — istenen şey yorum değil, veri. Bu yüzden
+    ``SYSTEM_INSTRUCTION`` uygulanmaz ve sıcaklık düşük tutulur.
+    """
+    if _client is None:
+        return None
+    try:
+        cfg: dict = {"temperature": 0.1, "response_mime_type": "application/json"}
+        if schema is not None:
+            cfg["response_schema"] = schema
+        response = _client.models.generate_content(
+            model=config.GEMINI_MODEL, contents=prompt, config=cfg
+        )
+        if response and response.text:
+            return response.text.strip()
+    except Exception as exc:
+        logger.warning("Yapılandırılmış üretim hatası: %s", exc)
+    return None
+
+
 def chat(history: list[dict], user_message: str) -> str | None:
     """Çok turlu sohbet. history: [{'sender': 'USER'|'AI', 'text': ...}]
 
