@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -8,7 +9,9 @@ from core.entitlements import FREE_CHAT_PER_DAY, enforce_daily_quota
 from services import gemini_service
 from services.prompt_composer import compose_chat_message, should_use_rag
 from services.rag_service import retrieve_passages
+from services.safety_rules import forbidden_topic
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -34,6 +37,14 @@ def chat(request: ChatRequest, user: AuthUser = Depends(get_current_user)):
     Kota LLM cagrisindan ONCE dusulur; aksi halde hata donen istekler de
     kullaniciya bedava mesaj kazandirirdi.
     """
+    # Yasak alan kapısı kotadan ÖNCE: reddedilen bir soru kullanıcının günlük
+    # hakkını yemez.
+    blocked = forbidden_topic(request.message)
+    if blocked is not None:
+        kategori, reply = blocked
+        logger.info("Yasak alan reddedildi: %s", kategori)
+        return {"status": "success", "reply": reply, "blocked": kategori}
+
     enforce_daily_quota(user, "chat", FREE_CHAT_PER_DAY)
     try:
         history = [{"sender": m.sender, "text": m.text} for m in request.history]
