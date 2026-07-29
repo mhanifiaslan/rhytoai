@@ -472,4 +472,14 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get errorSkyUnavailable => 'Gökyüzüne şu an ulaşılamıyor.';
+
+  @override
+  String get promoTitle => 'Yıldızların ötesine geç ✨';
+
+  @override
+  String get promoBody =>
+      'Doğum haritanın derin analizini ve kişilik raporunu keşfet.';
+
+  @override
+  String get promoAction => 'Keşfet';
 }

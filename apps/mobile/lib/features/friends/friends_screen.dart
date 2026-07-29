@@ -11,8 +11,9 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
-import 'friend_detail_screen.dart';
+import 'friend_detail_screen.dart' show FriendDetailScreen, reactionLabel;
 import '../../core/api.dart' show friendlyError;
+import '../../l10n/app_localizations.dart';
 
 /// ARKADAŞLAR — serbest metin içermeyen sosyal katman.
 ///
@@ -25,16 +26,17 @@ class FriendsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final profile = ref.watch(profileProvider).value;
     final friendsAsync = ref.watch(friendsProvider);
     final username = profile?['username'] as String?;
 
     return CosmicScaffold(
       appBar: AppBar(
-        title: const Text('Arkadaşlar'),
+        title: Text(l10n.friendsTitle),
         actions: [
           IconButton(
-            tooltip: 'Arkadaş ekle',
+            tooltip: l10n.addFriend,
             icon: const Icon(Icons.person_add_alt_1_rounded, size: 21),
             onPressed: username == null
                 ? null
@@ -105,15 +107,14 @@ class _UsernameSetupPanelState extends State<_UsernameSetupPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GlassPanel(
-      label: 'KULLANICI ADI',
+      label: l10n.usernameLabel,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Arkadaşların seni bulabilsin',
-            style: RythoText.display(19)),
+        Text(l10n.usernameHeadline, style: RythoText.display(19)),
         const SizedBox(height: 6),
         Text(
-          'Bir kullanıcı adı seç. Rehberine erişmiyoruz; arkadaş eklemek '
-          'yalnızca kullanıcı adı veya davet bağlantısıyla olur.',
+          l10n.usernameBody,
           style: RythoText.body(12.5, color: RythoColors.parchmentDim),
         ),
         const SizedBox(height: 14),
@@ -125,14 +126,14 @@ class _UsernameSetupPanelState extends State<_UsernameSetupPanel> {
           style: RythoText.body(15),
           decoration: InputDecoration(
             prefixText: '@',
-            hintText: 'kullaniciadi',
+            hintText: l10n.usernameHint,
             counterText: '',
             errorText: _error,
             hintStyle: RythoText.body(15, color: RythoColors.parchmentDim),
           ),
         ),
         const SizedBox(height: 12),
-        GoldButton(text: 'Kullanıcı adını al', busy: _busy, onPressed: _submit),
+        GoldButton(text: l10n.claimUsername, busy: _busy, onPressed: _submit),
       ]),
     );
   }
@@ -152,8 +153,9 @@ class _MyCardPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GlassPanel(
-      label: 'SEN',
+      label: l10n.youLabel,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Expanded(
@@ -166,8 +168,8 @@ class _MyCardPanel extends StatelessWidget {
           Expanded(
             child: Text(
               streakVisible
-                  ? 'Arkadaşların serini ve bugün okuyup okumadığını görebilir.'
-                  : 'Serin arkadaşlarından gizli.',
+                  ? l10n.streakVisibleOn
+                  : l10n.streakVisibleOff,
               style: RythoText.body(12.5, color: RythoColors.parchmentDim),
             ),
           ),
@@ -183,12 +185,12 @@ class _MyCardPanel extends StatelessWidget {
             await Clipboard.setData(
                 ClipboardData(text: inviteLinkFor(username)));
             if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Davet bağlantısı kopyalandı.')));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text(l10n.inviteLinkCopied)));
             }
           },
           icon: const Icon(Icons.link_rounded, size: 18),
-          label: Text('Davet bağlantısını kopyala', style: RythoText.label(12)),
+          label: Text(l10n.copyInviteLink, style: RythoText.label(12)),
         ),
       ]),
     );
@@ -203,6 +205,7 @@ class _InboxPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final nudges = ref.watch(myNudgesProvider).value ?? const [];
     if (nudges.isEmpty) return const SizedBox.shrink();
 
@@ -214,7 +217,7 @@ class _InboxPanel extends ConsumerWidget {
     }
 
     return GlassPanel(
-      label: 'SANA GELENLER',
+      label: l10n.inboxLabel,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         for (final nudge in nudges.take(6))
           if (kReactions[nudge['reaction']] case final reaction?)
@@ -228,7 +231,8 @@ class _InboxPanel extends ConsumerWidget {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '${nameOf(nudge['fromUid'] as String?)} · ${reaction.label}',
+                      '${nameOf(nudge['fromUid'] as String?)} · '
+                      '${reactionLabel(l10n, nudge['reaction'] as String)}',
                       style: RythoText.body(13.5),
                     ),
                   ),
@@ -249,18 +253,18 @@ class _FriendsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (friends.isEmpty) {
       return Padding(
         padding: const EdgeInsets.fromLTRB(28, 40, 28, 0),
         child: Column(children: [
           const Text('🛰️', style: TextStyle(fontSize: 34)),
           const SizedBox(height: 12),
-          Text('Henüz kimse yok',
+          Text(l10n.noFriendsYet,
               style: RythoText.display(18), textAlign: TextAlign.center),
           const SizedBox(height: 6),
           Text(
-            'Bir arkadaşını kullanıcı adıyla ekle; serilerinizi görün ve '
-            'her gün aranızdaki dinamiği okuyun.',
+            l10n.noFriendsBody,
             style: RythoText.body(12.5, color: RythoColors.parchmentDim),
             textAlign: TextAlign.center,
           ),
@@ -278,12 +282,12 @@ class _FriendsList extends StatelessWidget {
     return Column(children: [
       if (incoming.isNotEmpty) ...[
         const SectionDivider(),
-        _sectionTitle('Gelen davetler'),
+        _sectionTitle(l10n.incomingRequests),
         for (final friend in incoming) _RequestTile(friend: friend),
       ],
       if (accepted.isNotEmpty) ...[
         const SectionDivider(),
-        _sectionTitle('Arkadaşların'),
+        _sectionTitle(l10n.yourFriends),
         for (final (i, friend) in accepted.indexed)
           _FriendTile(friend: friend)
               .animate(delay: Duration(milliseconds: 40 * i))
@@ -291,7 +295,7 @@ class _FriendsList extends StatelessWidget {
       ],
       if (outgoing.isNotEmpty) ...[
         const SectionDivider(),
-        _sectionTitle('Yanıt bekleyen davetlerin'),
+        _sectionTitle(l10n.pendingInvites),
         for (final friend in outgoing) _PendingTile(friend: friend),
       ],
     ]);
@@ -310,6 +314,7 @@ class _FriendTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GlassPanel(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -330,15 +335,15 @@ class _FriendTile extends StatelessWidget {
               if (friend.streakVisible)
                 Text(
                   friend.readToday
-                      ? 'Bugün okumasını yaptı'
-                      : 'Bugün henüz okumadı',
+                      ? l10n.readToday
+                      : l10n.notReadToday,
                   style: RythoText.body(11.5,
                       color: friend.readToday
                           ? RythoColors.goldBright
                           : RythoColors.parchmentDim),
                 )
               else
-                Text('Serisi gizli',
+                Text(l10n.streakHidden,
                     style: RythoText.body(11.5, color: RythoColors.parchmentDim)),
             ]),
           ]),
@@ -360,20 +365,21 @@ class _RequestTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GlassPanel(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       child: Row(children: [
         Expanded(child: Text(friend.name, style: RythoText.display(16))),
         TextButton(
           onPressed: () => removeFriend(friend.uid),
-          child: Text('Yoksay',
+          child: Text(l10n.ignore,
               style: RythoText.label(12, color: RythoColors.parchmentDim)),
         ),
         const SizedBox(width: 4),
         SizedBox(
           width: 104,
           child: GoldButton(
-            text: 'Kabul et',
+            text: l10n.accept,
             onPressed: () => acceptFriendRequest(friend.uid),
           ),
         ),
@@ -389,6 +395,7 @@ class _PendingTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GlassPanel(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
       child: Row(children: [
@@ -396,10 +403,11 @@ class _PendingTile extends StatelessWidget {
           child: Text(friend.name,
               style: RythoText.body(14.5, color: RythoColors.parchmentDim)),
         ),
-        Text('Bekliyor', style: RythoText.label(11, color: RythoColors.parchmentDim)),
+        Text(l10n.pending,
+            style: RythoText.label(11, color: RythoColors.parchmentDim)),
         const SizedBox(width: 8),
         IconButton(
-          tooltip: 'Daveti geri al',
+          tooltip: l10n.withdrawInvite,
           icon: const Icon(Icons.close_rounded, size: 18),
           onPressed: () => removeFriend(friend.uid),
         ),
@@ -479,11 +487,12 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('ARKADAŞ EKLE',
+          Text(l10n.addFriend.toUpperCase(),
               style: RythoText.mono(11, color: RythoColors.parchmentDim)),
           const SizedBox(height: 12),
           TextField(
@@ -496,14 +505,14 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
             onSubmitted: (_) => _send(),
             decoration: InputDecoration(
               prefixText: '@',
-              hintText: 'kullaniciadi',
+              hintText: l10n.usernameHint,
               counterText: '',
               errorText: _message,
               hintStyle: RythoText.body(15, color: RythoColors.parchmentDim),
             ),
           ),
           const SizedBox(height: 12),
-          GoldButton(text: 'Davet gönder', busy: _busy, onPressed: _send),
+          GoldButton(text: l10n.sendInvite, busy: _busy, onPressed: _send),
           const SizedBox(height: 10),
           TextButton.icon(
             onPressed: () async {
@@ -512,7 +521,7 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
               if (context.mounted) Navigator.of(context).pop();
             },
             icon: const Icon(Icons.link_rounded, size: 18),
-            label: Text('Bunun yerine davet bağlantımı paylaş',
+            label: Text(l10n.shareInviteInstead,
                 style: RythoText.label(12)),
           ),
         ]),
@@ -523,6 +532,7 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
 
 /// Arkadaş menüsü: şikayet ve engelleme akışları korunur.
 Future<void> showFriendSafetySheet(BuildContext context, Friend friend) async {
+  final l10n = AppLocalizations.of(context);
   await showModalBottomSheet<void>(
     context: context,
     backgroundColor: RythoColors.inkLight,
@@ -534,7 +544,7 @@ Future<void> showFriendSafetySheet(BuildContext context, Friend friend) async {
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         ListTile(
           leading: const Icon(Icons.person_remove_rounded, size: 20),
-          title: Text('Arkadaşlıktan çıkar', style: RythoText.body(14)),
+          title: Text(l10n.removeFriend, style: RythoText.body(14)),
           onTap: () {
             Navigator.of(sheetContext).pop();
             removeFriend(friend.uid);
@@ -542,7 +552,7 @@ Future<void> showFriendSafetySheet(BuildContext context, Friend friend) async {
         ),
         ListTile(
           leading: const Icon(Icons.block_rounded, size: 20),
-          title: Text('Engelle', style: RythoText.body(14)),
+          title: Text(l10n.blockUser, style: RythoText.body(14)),
           onTap: () async {
             Navigator.of(sheetContext).pop();
             await removeFriend(friend.uid);
@@ -551,7 +561,7 @@ Future<void> showFriendSafetySheet(BuildContext context, Friend friend) async {
         ),
         ListTile(
           leading: const Icon(Icons.flag_outlined, size: 20),
-          title: Text('Şikayet et', style: RythoText.body(14)),
+          title: Text(l10n.reportUser, style: RythoText.body(14)),
           onTap: () {
             Navigator.of(sheetContext).pop();
             showReportSheet(context, targetType: 'user', targetId: friend.uid);

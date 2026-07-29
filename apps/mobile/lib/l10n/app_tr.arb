@@ -1,6 +1,5 @@
 {
   "@@locale": "tr",
-
   "appTagline": "Kadim bilgelik, hassas gökyüzü hesabıyla buluşur.\nHaritan çizilir, yolun aydınlanır. ✨",
   "signInWithGoogle": "Google ile giriş",
   "orDivider": "ya da",
@@ -9,21 +8,22 @@
   "email": "E-posta",
   "password": "Şifre",
   "forgotPassword": "Şifremi unuttum",
-
   "tabSky": "Gökyüzü",
   "tabAtlas": "Atlas",
   "tabFriends": "Arkadaşlar",
   "tabProfile": "Profil",
-
   "greetingMorning": "Günaydın",
   "greetingDay": "İyi günler",
   "greetingEvening": "İyi akşamlar",
   "greetingNight": "İyi geceler",
-
   "todaysInsight": "Bugünün İçgörüsü",
   "signToday": "{sign} · bugün",
   "@signToday": {
-    "placeholders": { "sign": { "type": "String" } }
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      }
+    }
   },
   "oracleTools": "Kehanet Araçları",
   "skyNow": "Şu An Gökyüzünde",
@@ -31,19 +31,21 @@
   "iChingSubtitle": "Değişimler Kitabı",
   "baZi": "BaZi",
   "baZiSubtitle": "Dört Sütun",
-
   "personalReadingLocked": "Sana özel günlük okuma",
   "personalReadingLockedBody": "Rytho+ ile yorumlar senin haritanla üretilir.",
   "personalReadingLockedBodyWithSign": "Yukarısı tüm {sign} burçları için. Rytho+ ile bu yorum senin Ay ve yükselenini de hesaba katar.",
   "@personalReadingLockedBodyWithSign": {
-    "placeholders": { "sign": { "type": "String" } }
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      }
+    }
   },
   "personalReadingTitle": "Sana özel",
   "natalLockedTitle": "Doğum haritası analizi",
   "natalLockedBody": "Gezegen konumların, evlerin ve açıların derin yorumu Rytho+ ile açılır.",
   "baziLockedTitle": "BaZi — Dört Sütun",
   "baziLockedBody": "Day Master, On Tanrı ve şans sütunları analizi Rytho+ ile açılır.",
-
   "friendsTitle": "Arkadaşlar",
   "addFriend": "Arkadaş ekle",
   "usernameLabel": "KULLANICI ADI",
@@ -63,11 +65,19 @@
   "sendInvite": "Davet gönder",
   "inviteSent": "@{username} kullanıcısına davet gönderildi.",
   "@inviteSent": {
-    "placeholders": { "username": { "type": "String" } }
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
   },
   "userNotFound": "@{username} bulunamadı.",
   "@userNotFound": {
-    "placeholders": { "username": { "type": "String" } }
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
   },
   "cannotAddSelf": "Kendini ekleyemezsin.",
   "inboxLabel": "SANA GELENLER",
@@ -93,12 +103,15 @@
   "sendReactionBody": "Hazır tepkilerden birini seç — mesaj yazma yok, sadece küçük bir selam.",
   "reactionSent": "{emoji} gönderildi.",
   "@reactionSent": {
-    "placeholders": { "emoji": { "type": "String" } }
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      }
+    }
   },
   "removeFriend": "Arkadaşlıktan çıkar",
   "blockUser": "Engelle",
   "reportUser": "Şikayet et",
-
   "reactionStreak": "Seri devam",
   "reactionThinkingOfYou": "Seni düşündüm",
   "reactionShine": "Parlıyorsun",
@@ -107,7 +120,6 @@
   "reactionSameFrequency": "Aynı frekans",
   "reactionGoodNight": "İyi geceler",
   "reactionCheckToday": "Bugüne bak",
-
   "paywallTitle": "Rytho+",
   "paywallHeadline": "Yıldızlar herkese aynı,\nsen değilsin.",
   "paywallBody": "Ücretsiz katmanda günlük burç yorumun ve gerçek gökyüzü verisi her zaman açık kalır. Rytho+ ise yorumları senin haritanla üretir.",
@@ -126,9 +138,15 @@
   "trialThenPrice": "{count} {unit} ücretsiz, sonra {price}",
   "@trialThenPrice": {
     "placeholders": {
-      "count": { "type": "int" },
-      "unit": { "type": "String" },
-      "price": { "type": "String" }
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
     }
   },
   "unitDay": "gün",
@@ -146,7 +164,6 @@
   "benefitChatBody": "Rytho seni tanıdıkça konuşma derinleşir.",
   "benefitBaziTitle": "BaZi ve sinastri",
   "benefitBaziBody": "Dört Sütun analizi ve ikili harita karşılaştırması.",
-
   "profileTitle": "Sicil",
   "settings": "Ayarlar",
   "sounds": "Sesler",
@@ -166,16 +183,22 @@
   "dailyStreak": "Günlük Seri",
   "streakDays": "{count} gün",
   "@streakDays": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "streakBody": "Günlük okumayı her gün aç, serin büyüsün.",
   "birthRecord": "Doğum Kaydı",
   "birthDate": "Tarih",
   "birthTime": "Saat",
   "birthCity": "Şehir",
-
   "retry": "Tekrar dene",
   "errorGeneric": "Beklenmeyen bir sorun oluştu. Lütfen biraz sonra tekrar dene.",
   "errorConnection": "Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.",
-  "errorSkyUnavailable": "Gökyüzüne şu an ulaşılamıyor."
+  "errorSkyUnavailable": "Gökyüzüne şu an ulaşılamıyor.",
+  "promoTitle": "Yıldızların ötesine geç ✨",
+  "promoBody": "Doğum haritanın derin analizini ve kişilik raporunu keşfet.",
+  "promoAction": "Keşfet"
 }

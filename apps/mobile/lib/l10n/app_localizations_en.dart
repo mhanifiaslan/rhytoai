@@ -473,4 +473,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorSkyUnavailable => 'The sky is out of reach right now.';
+
+  @override
+  String get promoTitle => 'Go beyond the stars ✨';
+
+  @override
+  String get promoBody => 'Explore the full analysis of your birth chart.';
+
+  @override
+  String get promoAction => 'Explore';
 }

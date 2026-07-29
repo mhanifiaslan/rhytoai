@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../core/friends.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
@@ -51,7 +52,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       setState(() => _reading = response.data['data']['reading'] as String?);
       Analytics.reportGenerated('dyad');
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (mounted) setState(() => _error = friendlyError(e));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -63,19 +64,21 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       await sendReaction(widget.friend.uid, key);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text('${kReactions[key]!.emoji} gönderildi.')));
+            content: Text(AppLocalizations.of(context)
+                .reactionSent(kReactions[key]!.emoji))));
       }
     } catch (e) {
       if (mounted) {
         setState(() => _sentReaction = null);
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Gönderilemedi: $e')));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final friend = widget.friend;
     return CosmicScaffold(
       appBar: AppBar(
@@ -89,7 +92,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       ),
       body: ListView(padding: const EdgeInsets.only(bottom: 40), children: [
         GlassPanel(
-          label: 'ARKADAŞIN',
+          label: l10n.friendLabel,
           child: Row(children: [
             Expanded(
               child: Column(
@@ -106,15 +109,15 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                     if (friend.streakVisible)
                       Text(
                         friend.readToday
-                            ? 'Bugünkü okumasını yaptı'
-                            : 'Bugün henüz okumadı',
+                            ? l10n.readTodayDone
+                            : l10n.notReadToday,
                         style: RythoText.body(12.5,
                             color: friend.readToday
                                 ? RythoColors.goldBright
                                 : RythoColors.parchmentDim),
                       )
                     else
-                      Text('Serisini gizli tutuyor',
+                      Text(l10n.streakHiddenByFriend,
                           style: RythoText.body(12.5,
                               color: RythoColors.parchmentDim)),
                   ]),
@@ -144,10 +147,10 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Bir tepki gönder', style: RythoText.display(17)),
+            Text(l10n.sendReaction, style: RythoText.display(17)),
             const SizedBox(height: 4),
             Text(
-              'Hazır tepkilerden birini seç — mesaj yazma yok, sadece küçük bir selam.',
+              l10n.sendReactionBody,
               style: RythoText.body(12.5, color: RythoColors.parchmentDim),
             ),
           ]),
@@ -161,7 +164,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
               for (final entry in kReactions.entries)
                 _ReactionChip(
                   emoji: entry.value.emoji,
-                  label: entry.value.label,
+                  label: reactionLabel(l10n, entry.key),
                   selected: _sentReaction == entry.key,
                   onTap: _sentReaction == null ? () => _react(entry.key) : null,
                 ),
@@ -172,6 +175,23 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     );
   }
 }
+
+/// Hazır tepki etiketleri dile göre çözülür.
+///
+/// Anahtarlar (`streak`, `shine` ...) Firestore kuralında da geçtiği için
+/// sabittir; yalnızca gösterilen metin değişir.
+String reactionLabel(AppLocalizations l10n, String key) => switch (key) {
+      'streak' => l10n.reactionStreak,
+      'thinking_of_you' => l10n.reactionThinkingOfYou,
+      'shine' => l10n.reactionShine,
+      'keep_going' => l10n.reactionKeepGoing,
+      'congrats' => l10n.reactionCongrats,
+      'same_frequency' => l10n.reactionSameFrequency,
+      'good_night' => l10n.reactionGoodNight,
+      'check_today' => l10n.reactionCheckToday,
+      _ => key,
+    };
+
 
 class _DyadPanel extends StatelessWidget {
   const _DyadPanel({
@@ -188,8 +208,9 @@ class _DyadPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return GlassPanel(
-      label: 'BUGÜN ARANIZDA',
+      label: l10n.dyadLabel,
       glow: true,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (busy)
@@ -198,20 +219,19 @@ class _DyadPanel extends StatelessWidget {
             child: Center(child: AstrolabeSpinner()),
           )
         else if (error != null) ...[
-          Text('Okuma alınamadı.', style: RythoText.body(14)),
+          Text(l10n.dyadFailed, style: RythoText.body(14)),
           const SizedBox(height: 6),
           Text(error!,
               style: RythoText.body(11.5, color: RythoColors.parchmentDim)),
           const SizedBox(height: 12),
-          GoldButton(text: 'Tekrar dene', onPressed: onRetry, filled: false),
+          GoldButton(text: l10n.retry, onPressed: onRetry, filled: false),
         ] else ...[
           Text(reading ?? '', style: RythoText.body(14.5, height: 1.6))
               .animate()
               .fadeIn(duration: 420.ms),
           const SizedBox(height: 12),
           Text(
-            'Bu okuma yalnızca bugün için geçerlidir ve yarın değişir. '
-            'Kalıcı bir uyum puanı vermiyoruz.',
+            l10n.dyadDisclaimer,
             style: RythoText.body(11.5, color: RythoColors.parchmentDim),
           ),
         ],

@@ -17,6 +17,7 @@ import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
 import '../shell/app_shell.dart';
 import '../../core/api.dart' show friendlyError;
+import '../../l10n/app_localizations.dart';
 
 /// GÖKYÜZÜ — ana ekran v3: selamlama, burç çipleri, promo banner,
 /// günün içgörüsü (+ seri ve kişisel nudge), kehanet araçları karuseli
@@ -33,12 +34,12 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   bool _streakTouched = false;
   bool _introPaywallHandled = false;
 
-  String get _greeting {
+  String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return 'Günaydın';
-    if (hour >= 12 && hour < 18) return 'İyi günler';
-    if (hour >= 18 && hour < 23) return 'İyi akşamlar';
-    return 'İyi geceler';
+    if (hour >= 5 && hour < 12) return l10n.greetingMorning;
+    if (hour >= 12 && hour < 18) return l10n.greetingDay;
+    if (hour >= 18 && hour < 23) return l10n.greetingEvening;
+    return l10n.greetingNight;
   }
 
   /// Günlük seri: profil geldiğinde bir kez işlenir.
@@ -77,6 +78,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final sky = ref.watch(skyNowProvider);
     final daily = ref.watch(dailyReadingProvider);
     final profile = ref.watch(profileProvider).value ?? {};
@@ -118,7 +120,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
             children: [
               const SizedBox(height: 10),
               _Header(
-                greeting: _greeting,
+                greeting: _greeting(l10n),
                 name: profile['displayName'] ?? 'Gezgin',
                 photoUrl: profile['photoUrl'],
                 streak: streak,
@@ -145,10 +147,9 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               const SizedBox(height: 8),
               // Premium/upsell banner'ı → Atlas'ın derin raporu
               PromoBanner(
-                title: 'Yıldızların ötesine geç ✨',
-                subtitle:
-                    'Doğum haritanın derin analizini ve kişilik raporunu keşfet.',
-                buttonText: 'Keşfet',
+                title: l10n.promoTitle,
+                subtitle: l10n.promoBody,
+                buttonText: l10n.promoAction,
                 onTap: () =>
                     ref.read(shellTabProvider.notifier).state = 1,
               ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
@@ -157,10 +158,13 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
                 child: Row(children: [
-                  Text('Bugünün İçgörüsü', style: RythoText.display(19)),
+                  Text(l10n.todaysInsight, style: RythoText.display(19)),
                   const Spacer(),
                   Text(
-                    DateFormat('d MMMM', 'tr_TR').format(DateTime.now()),
+                    // Tarih biçimi de dile bağlı: sabit 'tr_TR' İngilizce
+                    // arayüzde Türkçe ay adı gösteriyordu.
+                    DateFormat('d MMMM', Localizations.localeOf(context)
+                        .toLanguageTag()).format(DateTime.now()),
                     style: RythoText.mono(11, color: RythoColors.parchmentDim),
                   ),
                 ]),
@@ -179,7 +183,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                       // buradan tetiklenir (hesap ömründe bir kez).
                       _maybeShowIntroPaywall();
                       return GlassPanel(
-                      label: '${kSignNamesTr[selected]} · bugün',
+                      label: l10n.signToday(kSignNamesTr[selected]),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -218,12 +222,11 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                 error: (e, _) => _ErrorCard(error: friendlyError(e)),
                 data: (data) => data == null
                     ? PlusLockedCard(
-                        title: 'Sana özel günlük okuma',
+                        title: l10n.personalReadingLocked,
                         description: userSignIndex < 0
-                            ? 'Rytho+ ile yorumlar senin haritanla üretilir.'
-                            : 'Yukarısı tüm ${kSignNamesTr[userSignIndex]} '
-                                'burçları için. Rytho+ ile bu yorum senin Ay ve '
-                                'yükselenini de hesaba katar.',
+                            ? l10n.personalReadingLockedBody
+                            : l10n.personalReadingLockedBodyWithSign(
+                                kSignNamesTr[userSignIndex]),
                       )
                     : GlassPanel(
                         label:
@@ -232,7 +235,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Sana özel',
+                            Text(l10n.personalReadingTitle,
                                 style: RythoText.label(
                                     11, color: RythoColors.goldBright)),
                             const SizedBox(height: 8),
@@ -245,7 +248,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               // Kehanet araçları karuseli
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-                child: Text('Kehanet Araçları', style: RythoText.display(19)),
+                child: Text(l10n.oracleTools, style: RythoText.display(19)),
               ).animate(delay: next()).fadeIn(duration: 360.ms),
               SizedBox(
                 height: 118,

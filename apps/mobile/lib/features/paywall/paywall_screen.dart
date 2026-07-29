@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/subscription.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
@@ -32,18 +33,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   bool _busy = false;
   String? _error;
 
-  static const _benefits = [
-    ('🌙', 'Kişiye özel günlük okuma',
-        'Natal haritan bugünün gökyüzüyle çarpışır — genel burç yorumu değil.'),
-    ('🗺️', 'Derin doğum haritası raporu',
-        'Gezegenler, evler ve açılar; tek seferlik yüzeysel özet değil.'),
-    ('💞', 'Arkadaşlarınla günlük ikili dinamik',
-        'Her gün yenilenen ortak okuma. Kalıcı uyum puanı yok.'),
-    ('💬', 'Sınırsız sohbet',
-        'Rytho seni tanıdıkça konuşma derinleşir.'),
-    ('🀄', 'BaZi ve sinastri',
-        'Dört Sütun analizi ve ikili harita karşılaştırması.'),
-  ];
+  /// Faydalar dile göre üretildiği için const olamaz.
+  List<(String, String, String)> _benefits(AppLocalizations l10n) => [
+        ('🌙', l10n.benefitDailyTitle, l10n.benefitDailyBody),
+        ('🗺️', l10n.benefitNatalTitle, l10n.benefitNatalBody),
+        ('💞', l10n.benefitDyadTitle, l10n.benefitDyadBody),
+        ('💬', l10n.benefitChatTitle, l10n.benefitChatBody),
+        ('🀄', l10n.benefitBaziTitle, l10n.benefitBaziBody),
+      ];
 
   Future<void> _buy() async {
     final package = _selected;
@@ -58,7 +55,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
       if (code != PurchasesErrorCode.purchaseCancelledError && mounted) {
-        setState(() => _error = e.message ?? 'Satın alma tamamlanamadı.');
+        setState(() => _error =
+            e.message ?? AppLocalizations.of(context).purchaseFailed);
       }
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
@@ -75,7 +73,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       if (ok) {
         Navigator.of(context).pop(true);
       } else {
-        setState(() => _error = 'Geri yüklenecek aktif bir abonelik bulunamadı.');
+        setState(() =>
+            _error = AppLocalizations.of(context).noActiveSubscription);
       }
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
@@ -87,10 +86,11 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   @override
   Widget build(BuildContext context) {
     final offerings = ref.watch(offeringsProvider);
+    final l10n = AppLocalizations.of(context);
 
     return CosmicScaffold(
       appBar: AppBar(
-        title: const Text('Rytho+'),
+        title: Text(l10n.paywallTitle),
         leading: IconButton(
           icon: const Icon(Icons.close_rounded, size: 22),
           onPressed: () => Navigator.of(context).pop(false),
@@ -104,18 +104,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
           ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-          child: Text('Yıldızlar herkese aynı,\nsen değilsin.',
-              style: RythoText.display(26)),
+          child: Text(l10n.paywallHeadline, style: RythoText.display(26)),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           child: Text(
-            'Ücretsiz katmanda günlük burç yorumun ve gerçek gökyüzü verisi her '
-            'zaman açık kalır. Rytho+ ise yorumları senin haritanla üretir.',
+            l10n.paywallBody,
             style: RythoText.body(13.5, color: RythoColors.parchmentDim),
           ),
         ),
-        for (final (i, benefit) in _benefits.indexed)
+        for (final (i, benefit) in _benefits(l10n).indexed)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 7),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -143,9 +141,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             padding: EdgeInsets.symmetric(vertical: 30),
             child: Center(child: AstrolabeSpinner()),
           ),
-          error: (e, _) => _unavailable('Paketler alınamadı: $e'),
+          error: (e, _) => _unavailable(l10n, '$e'),
           data: (packages) {
-            if (packages.isEmpty) return _unavailable(null);
+            if (packages.isEmpty) return _unavailable(l10n, null);
             _selected ??= _defaultPackage(packages);
             // Tek plan varsa seçim yapılacak bir şey yok; radyo düğmesi
             // göstermek kullanıcıya sahte bir karar sunar.
@@ -171,7 +169,9 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
           child: GoldButton(
-            text: _selected == null ? 'Paket seç' : 'Rytho+ ile devam et',
+            text: _selected == null
+                ? l10n.paywallChoosePlan
+                : l10n.paywallContinue,
             busy: _busy,
             onPressed: _selected == null ? null : _buy,
           ),
@@ -179,7 +179,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         Center(
           child: TextButton(
             onPressed: _busy ? null : _restore,
-            child: Text('Satın alımları geri yükle',
+            child: Text(l10n.restorePurchases,
                 style: RythoText.label(12, color: RythoColors.parchmentDim)),
           ),
         ),
@@ -188,10 +188,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(24, 8, 24, 8),
           child: Text(
-            'Abonelik, dönem bitiminden en az 24 saat önce iptal edilmezse '
-            'otomatik yenilenir. Deneme süresi varsa, süre dolmadan iptal '
-            'edersen ücret alınmaz. İptali cihazının mağaza hesabı '
-            'ayarlarından yapabilirsin.',
+            l10n.subscriptionTerms,
             style: RythoText.body(11.5, color: RythoColors.parchmentDim),
             textAlign: TextAlign.center,
           ),
@@ -199,18 +196,18 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const LegalPage(
-                    title: 'Kullanım Şartları',
+                builder: (_) => LegalPage(
+                    title: l10n.termsOfUse,
                     sections: kTermsOfUseSections))),
-            child: Text('Kullanım Şartları', style: RythoText.label(11)),
+            child: Text(l10n.termsOfUse, style: RythoText.label(11)),
           ),
           Text('·', style: RythoText.label(11, color: RythoColors.parchmentDim)),
           TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => const LegalPage(
-                    title: 'Gizlilik Politikası',
+                builder: (_) => LegalPage(
+                    title: l10n.privacyPolicy,
                     sections: kPrivacyPolicySections))),
-            child: Text('Gizlilik Politikası', style: RythoText.label(11)),
+            child: Text(l10n.privacyPolicy, style: RythoText.label(11)),
           ),
         ]),
       ]),
@@ -225,16 +222,15 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     return packages.first;
   }
 
-  Widget _unavailable(String? detail) => GlassPanel(
+  Widget _unavailable(AppLocalizations l10n, String? detail) => GlassPanel(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Satın alma şu an kullanılamıyor', style: RythoText.display(16)),
+          Text(l10n.billingUnavailable, style: RythoText.display(16)),
           const SizedBox(height: 6),
           Text(
             detail ??
                 (billingConfigured
-                    ? 'Mağazada tanımlı paket bulunamadı.'
-                    : 'Bu derlemede abonelik anahtarları tanımlı değil '
-                        '(REVENUECAT_ANDROID_KEY / REVENUECAT_IOS_KEY).'),
+                    ? l10n.billingNoPackages
+                    : l10n.billingNotConfigured),
             style: RythoText.body(12.5, color: RythoColors.parchmentDim),
           ),
         ]),
@@ -258,28 +254,29 @@ class _PlanTile extends StatelessWidget {
 
   /// Deneme süresi varsa "3 gün ücretsiz, sonra X" — mağaza kuralı gereği
   /// denemenin ne zaman ücrete döndüğü satın alma ekranında yazmak zorunda.
-  static String _priceLine(StoreProduct product) {
+  static String _priceLine(AppLocalizations l10n, StoreProduct product) {
     final intro = product.introductoryPrice;
     if (intro == null) return product.priceString;
 
     final unit = switch (intro.periodUnit) {
-      PeriodUnit.day => 'gün',
-      PeriodUnit.week => 'hafta',
-      PeriodUnit.month => 'ay',
-      PeriodUnit.year => 'yıl',
-      _ => 'gün',
+      PeriodUnit.day => l10n.unitDay,
+      PeriodUnit.week => l10n.unitWeek,
+      PeriodUnit.month => l10n.unitMonth,
+      PeriodUnit.year => l10n.unitYear,
+      _ => l10n.unitDay,
     };
-    return '${intro.periodNumberOfUnits} $unit ücretsiz, '
-        'sonra ${product.priceString}';
+    return l10n.trialThenPrice(
+        intro.periodNumberOfUnits, unit, product.priceString);
   }
 
   @override
   Widget build(BuildContext context) {
     final product = package.storeProduct;
+    final l10n = AppLocalizations.of(context);
     final title = switch (package.packageType) {
-      PackageType.annual => 'Yıllık',
-      PackageType.weekly => 'Haftalık',
-      PackageType.monthly => 'Aylık',
+      PackageType.annual => l10n.planAnnual,
+      PackageType.weekly => l10n.planWeekly,
+      PackageType.monthly => l10n.planMonthly,
       _ => product.title,
     };
 
@@ -311,13 +308,13 @@ class _PlanTile extends StatelessWidget {
                     color: RythoColors.gold.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text('EN İYİ DEĞER',
+                  child: Text(l10n.bestValue,
                       style: RythoText.label(9, color: RythoColors.goldBright)),
                 ),
               ],
             ]),
             const SizedBox(height: 2),
-            Text(_priceLine(product),
+            Text(_priceLine(l10n, product),
                 style: RythoText.body(12.5, color: RythoColors.parchmentDim)),
           ]),
         ),

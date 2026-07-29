@@ -955,6 +955,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Gökyüzüne şu an ulaşılamıyor.'**
   String get errorSkyUnavailable;
+
+  /// No description provided for @promoTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıldızların ötesine geç ✨'**
+  String get promoTitle;
+
+  /// No description provided for @promoBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum haritanın derin analizini ve kişilik raporunu keşfet.'**
+  String get promoBody;
+
+  /// No description provided for @promoAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Keşfet'**
+  String get promoAction;
 }
 
 class _AppLocalizationsDelegate

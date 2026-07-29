@@ -1,6 +1,5 @@
 {
   "@@locale": "en",
-
   "appTagline": "Ancient wisdom, met with precise sky calculation.\nYour chart is drawn; your path lights up. ✨",
   "signInWithGoogle": "Sign in with Google",
   "orDivider": "or",
@@ -9,21 +8,22 @@
   "email": "Email",
   "password": "Password",
   "forgotPassword": "Forgot password",
-
   "tabSky": "Sky",
   "tabAtlas": "Atlas",
   "tabFriends": "Friends",
   "tabProfile": "Profile",
-
   "greetingMorning": "Good morning",
   "greetingDay": "Good afternoon",
   "greetingEvening": "Good evening",
   "greetingNight": "Good night",
-
   "todaysInsight": "Today's Insight",
   "signToday": "{sign} · today",
   "@signToday": {
-    "placeholders": { "sign": { "type": "String" } }
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      }
+    }
   },
   "oracleTools": "Oracle Tools",
   "skyNow": "In the Sky Right Now",
@@ -31,19 +31,21 @@
   "iChingSubtitle": "Book of Changes",
   "baZi": "BaZi",
   "baZiSubtitle": "Four Pillars",
-
   "personalReadingLocked": "Your personal daily reading",
   "personalReadingLockedBody": "With Rytho+, readings are built from your own chart.",
   "personalReadingLockedBodyWithSign": "The reading above is for every {sign}. With Rytho+ it also accounts for your Moon and Rising.",
   "@personalReadingLockedBodyWithSign": {
-    "placeholders": { "sign": { "type": "String" } }
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      }
+    }
   },
   "personalReadingTitle": "For you",
   "natalLockedTitle": "Birth chart analysis",
   "natalLockedBody": "The full reading of your placements, houses and aspects unlocks with Rytho+.",
   "baziLockedTitle": "BaZi — Four Pillars",
   "baziLockedBody": "Day Master, Ten Gods and luck pillars unlock with Rytho+.",
-
   "friendsTitle": "Friends",
   "addFriend": "Add friend",
   "usernameLabel": "USERNAME",
@@ -63,11 +65,19 @@
   "sendInvite": "Send invite",
   "inviteSent": "Invite sent to @{username}.",
   "@inviteSent": {
-    "placeholders": { "username": { "type": "String" } }
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
   },
   "userNotFound": "@{username} not found.",
   "@userNotFound": {
-    "placeholders": { "username": { "type": "String" } }
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
   },
   "cannotAddSelf": "You can't add yourself.",
   "inboxLabel": "SENT TO YOU",
@@ -93,12 +103,15 @@
   "sendReactionBody": "Pick one of the ready reactions — no writing, just a small hello.",
   "reactionSent": "{emoji} sent.",
   "@reactionSent": {
-    "placeholders": { "emoji": { "type": "String" } }
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      }
+    }
   },
   "removeFriend": "Remove friend",
   "blockUser": "Block",
   "reportUser": "Report",
-
   "reactionStreak": "Keep the streak",
   "reactionThinkingOfYou": "Thinking of you",
   "reactionShine": "You're shining",
@@ -107,7 +120,6 @@
   "reactionSameFrequency": "Same frequency",
   "reactionGoodNight": "Good night",
   "reactionCheckToday": "Check today",
-
   "paywallTitle": "Rytho+",
   "paywallHeadline": "The stars are the same for everyone.\nYou are not.",
   "paywallBody": "Your daily sign reading and the real sky data stay open on the free tier, always. Rytho+ builds every reading from your own chart.",
@@ -126,9 +138,15 @@
   "trialThenPrice": "{count} {unit} free, then {price}",
   "@trialThenPrice": {
     "placeholders": {
-      "count": { "type": "int" },
-      "unit": { "type": "String" },
-      "price": { "type": "String" }
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
     }
   },
   "unitDay": "days",
@@ -146,7 +164,6 @@
   "benefitChatBody": "The more Rytho knows you, the deeper it goes.",
   "benefitBaziTitle": "BaZi and synastry",
   "benefitBaziBody": "Four Pillars analysis and chart-to-chart comparison.",
-
   "profileTitle": "Profile",
   "settings": "Settings",
   "sounds": "Sounds",
@@ -166,16 +183,22 @@
   "dailyStreak": "Daily Streak",
   "streakDays": "{count} days",
   "@streakDays": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "streakBody": "Open your daily reading every day and watch the streak grow.",
   "birthRecord": "Birth Record",
   "birthDate": "Date",
   "birthTime": "Time",
   "birthCity": "City",
-
   "retry": "Try again",
   "errorGeneric": "Something unexpected happened. Please try again shortly.",
   "errorConnection": "Couldn't connect. Check your internet and try again.",
-  "errorSkyUnavailable": "The sky is out of reach right now."
+  "errorSkyUnavailable": "The sky is out of reach right now.",
+  "promoTitle": "Go beyond the stars ✨",
+  "promoBody": "Explore the full analysis of your birth chart.",
+  "promoAction": "Explore"
 }
