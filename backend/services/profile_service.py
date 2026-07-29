@@ -65,6 +65,39 @@ def birth_kwargs(profile: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def chart_summary(profile: dict[str, Any] | None) -> str:
+    """Sohbete iliştirilecek kompakt harita özeti.
+
+    Sohbet ucu daha önce bu bilgiyi HİÇ almıyordu: istemci yalnızca mesaj ve
+    geçmiş gönderiyor, persona da "doğum bilgisi sohbette geçiyorsa dokundur"
+    diyordu. Sonuç olarak Rytho, kullanıcı kendi burcunu söylemediği sürece
+    haritasından habersiz konuşuyordu — kişiselleştirmenin en temel parçası
+    eksikti.
+
+    Ham doğum verisi (tarih/saat/şehir) BURAYA GİRMEZ; yalnızca ondan
+    türetilmiş konumlar. Modelin doğum tarihini bilmesine gerek yok.
+    """
+    if not profile:
+        return ""
+
+    satirlar = []
+    ucler = [
+        ("Güneş", profile.get("sunSign")),
+        ("Ay", profile.get("moonSign")),
+        ("Yükselen", profile.get("ascendant")),
+    ]
+    buyuk_uclu = ", ".join(f"{ad}: {deger}" for ad, deger in ucler if deger)
+    if buyuk_uclu:
+        satirlar.append(f"- {buyuk_uclu}")
+
+    if profile.get("wuXingElement"):
+        satirlar.append(f"- Wu Xing elementi: {profile['wuXingElement']}")
+    if profile.get("mizac"):
+        satirlar.append(f"- Mizaç (Ahlat-ı Erbaa): {profile['mizac']}")
+
+    return "\n".join(satirlar)
+
+
 def are_friends(uid: str, other_uid: str) -> bool:
     """İki kullanıcı arasında **kabul edilmiş** arkadaşlık var mı?
 

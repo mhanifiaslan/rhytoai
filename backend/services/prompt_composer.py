@@ -75,8 +75,10 @@ def should_use_rag(message: str) -> bool:
 
 
 def compose_chat_message(message: str, passages: list[dict],
-                         memory: str = "") -> str:
-    """Bilgi tabanı pasajlarını ve kullanıcı hafızasını mesaja iliştirir.
+                         memory: str = "", chart: str = "",
+                         sky: str = "") -> str:
+    """Bilgi tabanı pasajlarını, kullanıcı hafızasını, haritasını ve bugünün
+    gökyüzünü mesaja iliştirir.
 
     İkisi de "arka plan fısıltısı" olarak verilir: model bunları blok halinde
     aktarmaz, en fazla tek bir ilgili ayrıntıyı kendi cümlesine sindirir.
@@ -94,10 +96,22 @@ def compose_chat_message(message: str, passages: list[dict],
             whispers.append(f"- {text}")
 
     memory = (memory or "").strip()
-    if not whispers and not memory:
+    chart = (chart or "").strip()
+    sky = (sky or "").strip()
+    if not whispers and not memory and not chart and not sky:
         return message
 
     parts = []
+    if chart:
+        parts.append(
+            "KULLANICININ HARİTASI (hesaplanmış veri — buna sadık kal, konum "
+            "uydurma. Her mesajda saymana gerek yok; yorum yaparken temel al):\n"
+            + chart
+        )
+    if sky:
+        parts.append(
+            "BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris ile hesaplandı):\n" + sky
+        )
     if whispers:
         parts.append(
             "ARKA PLAN FISILTISI (yalnızca senin iç bilgin; kullanıcıya asla "

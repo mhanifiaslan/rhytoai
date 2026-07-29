@@ -6,10 +6,16 @@ from pydantic import BaseModel
 
 from core.auth import AuthUser, get_current_user
 from core.entitlements import FREE_CHAT_PER_DAY, enforce_daily_quota
-from services import gemini_service, memory_extractor, memory_service
+from services import (
+    gemini_service,
+    memory_extractor,
+    memory_service,
+    profile_service,
+)
 from services.prompt_composer import compose_chat_message, should_use_rag
 from services.rag_service import retrieve_passages
 from services.safety_rules import forbidden_topic
+from services.sky_service import get_sky_now
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -27,6 +33,33 @@ class ChatRequest(BaseModel):
 
 class ModerationRequest(BaseModel):
     text: str
+
+
+def _sky_summary() -> str:
+    """Bugünün gökyüzünün kompakt özeti; hata durumunda boş döner.
+
+    Gökyüzü sohbetin çalışması için zorunlu değil — alınamazsa sohbet
+    haritasız/gökyüzsüz ama çalışır durumda devam eder.
+    """
+    try:
+        sky = get_sky_now()
+    except Exception as exc:
+        logger.warning("Gökyüzü alınamadı: %s", exc)
+        return ""
+
+    moon = sky.get("moon_phase", {}) or {}
+    retros = ", ".join(sky.get("retrogrades", [])) or "yok"
+    aspects = "; ".join(
+        f"{a['p1']}-{a['p2']} {a['aspect']}" for a in (sky.get("aspects") or [])[:3]
+    )
+
+    satirlar = [
+        f"- Ay evresi: {moon.get('name')} (aydınlanma %{moon.get('illumination')})",
+        f"- Retro gezegenler: {retros}",
+    ]
+    if aspects:
+        satirlar.append(f"- Önemli açılar: {aspects}")
+    return "\n".join(satirlar)
 
 
 @router.post("")
@@ -62,7 +95,16 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # yapılır — kullanıcı hakkında bilinenler her mesajda geçerlidir.
         memory = memory_service.memory_context(user.uid)
 
-        message = compose_chat_message(request.message, passages, memory=memory)
+        # Kullanıcının haritası: sohbet bunu daha önce hiç görmüyordu, yani
+        # Rytho kullanıcı kendi burcunu söylemedikçe habersiz konuşuyordu.
+        chart = profile_service.chart_summary(profile_service.get_profile(user.uid))
+
+        # Bugünün gökyüzü paylaşımlı önbellekten gelir (kullanıcı başına
+        # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.
+        sky = _sky_summary()
+
+        message = compose_chat_message(request.message, passages,
+                                       memory=memory, chart=chart, sky=sky)
 
         reply = gemini_service.chat(history, message)
         if reply is None:

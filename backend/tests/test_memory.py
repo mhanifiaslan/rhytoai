@@ -143,6 +143,61 @@ def test_hafiza_celisirse_son_soylenen_gecerli():
     assert "SON söylediği" in sonuc
 
 
+# --------------------------------------------------------------------------
+# Harita ve gökyüzü enjeksiyonu
+# --------------------------------------------------------------------------
+
+def test_harita_ozeti_turetilmis_alanlari_alir():
+    from services.profile_service import chart_summary
+
+    ozet = chart_summary({
+        "sunSign": "Kova ♒", "moonSign": "Aslan ♌", "ascendant": "Terazi ♎",
+        "mizac": "Demevi", "wuXingElement": "Ateş",
+    })
+    assert "Kova" in ozet and "Aslan" in ozet and "Terazi" in ozet
+    assert "Demevi" in ozet and "Ateş" in ozet
+
+
+def test_harita_ozetine_ham_dogum_verisi_girmez():
+    """Modelin doğum tarihini/saatini/şehrini bilmesine gerek yok."""
+    from services.profile_service import chart_summary
+
+    ozet = chart_summary({
+        "sunSign": "Kova", "birthDate": "1985-02-03",
+        "birthTime": "04:15", "birthCity": "Bursa",
+    })
+    for hassas in ("1985-02-03", "04:15", "Bursa"):
+        assert hassas not in ozet, f"ham doğum verisi sızdı: {hassas}"
+
+
+def test_bos_profil_bos_ozet():
+    from services.profile_service import chart_summary
+    assert chart_summary(None) == ""
+    assert chart_summary({}) == ""
+
+
+def test_harita_sohbet_baglamina_eklenir():
+    sonuc = prompt_composer.compose_chat_message(
+        "bugün nasılım", [], chart="- Güneş: Kova, Ay: Aslan")
+
+    assert "KULLANICININ HARİTASI" in sonuc
+    assert "Kova" in sonuc
+    # Modele konum uydurmaması söylenmeli
+    assert "uydurma" in sonuc
+
+
+def test_gokyuzu_sohbet_baglamina_eklenir():
+    sonuc = prompt_composer.compose_chat_message(
+        "ne var ne yok", [], sky="- Ay evresi: Dolunay")
+    assert "BUGÜNÜN GERÇEK GÖKYÜZÜ" in sonuc
+    assert "Dolunay" in sonuc
+
+
+def test_persona_verilmeyen_konumu_uydurmayi_yasaklar():
+    from services import gemini_service
+    assert "uydurma" in gemini_service.CHAT_SYSTEM_INSTRUCTION
+
+
 def test_bos_hafiza_bloku_baslik_yazmaz():
     """Boş bir "kullanıcı hakkında" başlığı modeli uydurmaya davet eder."""
     from services.report_service import _memory_block
