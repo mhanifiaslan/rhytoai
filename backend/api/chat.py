@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from core.auth import AuthUser, get_current_user
 from core.entitlements import FREE_CHAT_PER_DAY, enforce_daily_quota
+from core.i18n import get_language
 from services import (
     gemini_service,
     memory_extractor,
@@ -65,7 +66,8 @@ def _sky_summary() -> str:
 @router.post("")
 @router.post("/")
 def chat(request: ChatRequest, background: BackgroundTasks,
-         user: AuthUser = Depends(get_current_user)):
+         user: AuthUser = Depends(get_current_user),
+         lang: str = Depends(get_language)):
     """Sohbet: ucretsiz katmanda gunde [FREE_CHAT_PER_DAY] mesaj, abonede sinirsiz.
 
     Kota LLM cagrisindan ONCE dusulur; aksi halde hata donen istekler de
@@ -88,7 +90,7 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # fazla 2 kırpılmış pasaj "arka plan fısıltısı" olarak eklenir.
         passages = []
         if should_use_rag(request.message):
-            passages = retrieve_passages(request.message, top_k=2)
+            passages = retrieve_passages(request.message, top_k=2, lang=lang)
 
         # Kullanıcı hafızası: "seni tanıyor" hissinin kaynağı burası. Okuma
         # ucuz (tek Firestore dokümanı) ve RAG'den bağımsız olarak her turda
@@ -104,9 +106,10 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         sky = _sky_summary()
 
         message = compose_chat_message(request.message, passages,
-                                       memory=memory, chart=chart, sky=sky)
+                                       memory=memory, chart=chart, sky=sky,
+                                       lang=lang)
 
-        reply = gemini_service.chat(history, message)
+        reply = gemini_service.chat(history, message, lang=lang)
         if reply is None:
             reply = (
                 "Kozmik bağlantıda geçici bir parazit var; yıldız haritaların ve "

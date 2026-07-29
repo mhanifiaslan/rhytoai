@@ -154,8 +154,8 @@ def test_horoscope_onbellekten_okur():
     """Önbellek anahtarı kullanıcıdan bağımsız kurulmalı: önceden yazılan yorum
     doğrudan servis edilmeli, LLM'e gidilmemeli."""
     bucket = report_service._horoscope_bucket("weekly", dt.date.today())
-    cache.set(f"horoscope-pisces-weekly-{bucket}", "Önceden üretilmiş yorum.",
-              ttl_seconds=600)
+    cache.set(report_service.horoscope_cache_key("pisces", "weekly", bucket, "tr"),
+              "Önceden üretilmiş yorum.", ttl_seconds=600)
 
     with TestClient(app) as client:
         response = client.get("/api/v1/reports/horoscope/pisces?period=weekly",
@@ -171,7 +171,7 @@ def test_horoscope_onbellekten_okur():
 def test_horoscope_ucu_llm_cokerse_ayakta_kalir(monkeypatch):
     """LLM erişilemez olduğunda uç 500 vermez, yedek metinle 200 döner."""
     monkeypatch.setattr(report_service.gemini_service, "generate",
-                        lambda prompt: "")
+                        lambda prompt, **k: "")
 
     with TestClient(app) as client:
         response = client.get("/api/v1/reports/horoscope/scorpio?period=monthly",
@@ -198,9 +198,10 @@ SAHTE_GOKYUZU = {
 def test_horoscope_reading_onbellekten_okur():
     """Anahtar (burç, dönem, tarih kovası) ile kurulmalı — kullanıcı içermemeli."""
     bucket = report_service._horoscope_bucket("daily", dt.date.today())
-    cache.set(f"horoscope-leo-daily-{bucket}", "Hazır yorum.", ttl_seconds=600)
+    cache.set(report_service.horoscope_cache_key("leo", "daily", bucket, "tr"),
+              "Hazır yorum.", ttl_seconds=600)
 
-    sonuc = report_service.horoscope_reading("leo", "Aslan", "daily", SAHTE_GOKYUZU)
+    sonuc = report_service.horoscope_reading("leo", "daily", SAHTE_GOKYUZU)
 
     assert sonuc["cached"] is True
     assert sonuc["text"] == "Hazır yorum."
@@ -211,15 +212,16 @@ def test_horoscope_onbellek_isabetinde_rag_ve_llm_calismaz(monkeypatch):
     """Önbellek isabeti en sık yoldur; o yolda ne RAG araması ne LLM çağrısı
     yapılmalı. Aksi halde her istek boşuna embedding maliyeti üretir."""
     bucket = report_service._horoscope_bucket("daily", dt.date.today())
-    cache.set(f"horoscope-taurus-daily-{bucket}", "Hazır yorum.", ttl_seconds=600)
+    cache.set(report_service.horoscope_cache_key("taurus", "daily", bucket, "tr"),
+              "Hazır yorum.", ttl_seconds=600)
 
     rag_cagrildi: list[int] = []
     monkeypatch.setattr(report_service, "retrieve_context",
                         lambda *a, **k: rag_cagrildi.append(1) or "")
     monkeypatch.setattr(report_service.gemini_service, "generate",
-                        lambda prompt: pytest.fail("Önbellek isabetinde LLM'e gidilmemeli"))
+                        lambda prompt, **k: pytest.fail("Önbellek isabetinde LLM'e gidilmemeli"))
 
-    sonuc = report_service.horoscope_reading("taurus", "Boğa", "daily", SAHTE_GOKYUZU)
+    sonuc = report_service.horoscope_reading("taurus", "daily", SAHTE_GOKYUZU)
 
     assert sonuc["cached"] is True
     assert sonuc["generated_for"] == bucket
@@ -228,13 +230,14 @@ def test_horoscope_onbellek_isabetinde_rag_ve_llm_calismaz(monkeypatch):
 
 def test_horoscope_reading_ayni_donemde_tek_uretim():
     """İki farklı 'kullanıcı' aynı dönemde aynı önbellek girdisini paylaşır."""
-    report_service.horoscope_reading("virgo", "Başak", "weekly", SAHTE_GOKYUZU)
+    report_service.horoscope_reading("virgo", "weekly", SAHTE_GOKYUZU)
     cache.set(
-        f"horoscope-virgo-weekly-"
-        f"{report_service._horoscope_bucket('weekly', dt.date.today())}",
+        report_service.horoscope_cache_key(
+            "virgo", "weekly",
+            report_service._horoscope_bucket("weekly", dt.date.today()), "tr"),
         "Haftalık yorum.", ttl_seconds=600)
 
-    ikinci = report_service.horoscope_reading("virgo", "Başak", "weekly", SAHTE_GOKYUZU)
+    ikinci = report_service.horoscope_reading("virgo", "weekly", SAHTE_GOKYUZU)
     assert ikinci["cached"] is True
     assert ikinci["text"] == "Haftalık yorum."
 
@@ -242,16 +245,17 @@ def test_horoscope_reading_ayni_donemde_tek_uretim():
 def test_horoscope_reading_llm_yanit_vermezse_fallback(monkeypatch):
     """LLM boş dönerse (anahtar yok, kota doldu, servis hatası) uç yine de
     anlamlı bir metin vermeli ve bu metin önbelleğe yazılmamalı."""
-    monkeypatch.setattr(report_service.gemini_service, "generate", lambda prompt: "")
+    monkeypatch.setattr(report_service.gemini_service, "generate", lambda prompt, **k: "")
 
-    sonuc = report_service.horoscope_reading("aries", "Koç", "daily", SAHTE_GOKYUZU)
+    sonuc = report_service.horoscope_reading("aries", "daily", SAHTE_GOKYUZU)
     assert sonuc["fallback"] is True
     assert sonuc["cached"] is False
     assert "Koç" in sonuc["text"]
 
     # Yedek metin kalıcı hale gelmemeli: sonraki denemede yeniden üretilebilsin.
     bucket = report_service._horoscope_bucket("daily", dt.date.today())
-    assert cache.get(f"horoscope-aries-daily-{bucket}") is None
+    assert cache.get(
+        report_service.horoscope_cache_key("aries", "daily", bucket, "tr")) is None
 
 
 def test_horoscope_ttl_donem_suresiyle_hizali():

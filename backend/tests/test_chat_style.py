@@ -38,12 +38,13 @@ def test_selamlasmada_rag_cagrilmaz(monkeypatch):
     """Selamlaşma mesajında ne RAG araması ne embedding çağrısı yapılmalı."""
     called = {"rag": False}
 
-    def fake_retrieve(query, top_k=2):
+    def fake_retrieve(query, top_k=2, **k):
         called["rag"] = True
         return []
 
     monkeypatch.setattr("api.chat.retrieve_passages", fake_retrieve)
-    monkeypatch.setattr(gemini_service, "chat", lambda history, msg: "Selam sana da!")
+    monkeypatch.setattr(gemini_service, "chat",
+                        lambda history, msg, **k: "Selam sana da!")
 
     with TestClient(app) as client:
         response = client.post("/api/v1/chat", json={"history": [], "message": "selam"})
@@ -56,9 +57,10 @@ def test_bilgi_sorusunda_rag_cagrilir_ve_kirpilir(monkeypatch):
     captured = {}
     long_passage = {"doc": "d", "title": "t", "text": "x" * 2000, "score": 0.9}
 
-    monkeypatch.setattr("api.chat.retrieve_passages", lambda q, top_k=2: [long_passage] * 3)
+    monkeypatch.setattr("api.chat.retrieve_passages",
+                        lambda q, top_k=2, **k: [long_passage] * 3)
 
-    def fake_chat(history, msg):
+    def fake_chat(history, msg, **k):
         captured["msg"] = msg
         return "Kısa dostane yanıt."
 
@@ -80,7 +82,8 @@ def test_bilgi_sorusunda_rag_cagrilir_ve_kirpilir(monkeypatch):
 
 def test_api_semasi_degismedi(monkeypatch):
     """İstek/yanıt şeması korunmalı: {'status', 'reply'} — istemci sözleşmesi."""
-    monkeypatch.setattr(gemini_service, "chat", lambda history, msg: "test yanıtı")
+    monkeypatch.setattr(gemini_service, "chat",
+                        lambda history, msg, **k: "test yanıtı")
 
     with TestClient(app) as client:
         response = client.post(

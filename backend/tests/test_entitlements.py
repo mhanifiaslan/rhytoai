@@ -107,7 +107,7 @@ def test_sohbet_kotasi_dolunca_paywall(monkeypatch):
         return kullanilan["n"] <= limit
 
     monkeypatch.setattr(entitlements, "consume_quota", sahte_kota)
-    monkeypatch.setattr("services.gemini_service.chat", lambda h, m: "merhaba")
+    monkeypatch.setattr("services.gemini_service.chat", lambda h, m, **k: "merhaba")
 
     with TestClient(app) as client:
         for i in range(entitlements.FREE_CHAT_PER_DAY):
@@ -127,7 +127,7 @@ def test_abone_sohbette_kotaya_takilmaz(monkeypatch):
     monkeypatch.setattr(entitlements, "is_subscriber", lambda uid: True)
     monkeypatch.setattr(entitlements, "consume_quota",
                         lambda *a: pytest.fail("Abonede kota dusulmemeli"))
-    monkeypatch.setattr("services.gemini_service.chat", lambda h, m: "merhaba")
+    monkeypatch.setattr("services.gemini_service.chat", lambda h, m, **k: "merhaba")
 
     with TestClient(app) as client:
         for i in range(entitlements.FREE_CHAT_PER_DAY + 3):

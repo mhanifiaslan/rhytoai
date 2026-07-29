@@ -91,7 +91,7 @@ def test_dyad_onbellek_isabetinde_rag_ve_llm_calismaz(monkeypatch):
     monkeypatch.setattr(report_service, "retrieve_context",
                         lambda *a, **k: rag_cagrildi.append(1) or "")
     monkeypatch.setattr(report_service.gemini_service, "generate",
-                        lambda prompt: pytest.fail("Önbellek isabetinde LLM'e gidilmemeli"))
+                        lambda prompt, **k: pytest.fail("Önbellek isabetinde LLM'e gidilmemeli"))
 
     report_service.dyad_reading("a", "b", "Ada", "Deniz",
                                 SAHTE_SINASTRI, SAHTE_GOKYUZU)
@@ -106,7 +106,7 @@ def test_dyad_prompta_uyum_skoru_girmez(monkeypatch):
     """Kalıcı uyum skoru ürün kararıyla yasak; sinastri skoru prompt'a sızmamalı."""
     yakalanan: dict[str, str] = {}
 
-    def sahte_generate(prompt: str) -> str:
+    def sahte_generate(prompt: str, **k) -> str:
         yakalanan["prompt"] = prompt
         return "üretilmiş metin"
 
@@ -122,7 +122,7 @@ def test_dyad_prompta_uyum_skoru_girmez(monkeypatch):
 
 
 def test_dyad_llm_yanit_vermezse_fallback(monkeypatch):
-    monkeypatch.setattr(report_service.gemini_service, "generate", lambda p: "")
+    monkeypatch.setattr(report_service.gemini_service, "generate", lambda p, **k: "")
     sonuc = report_service.dyad_reading("a", "b", "Ada", "Deniz",
                                         SAHTE_SINASTRI, SAHTE_GOKYUZU)
     assert sonuc["fallback"] is True
@@ -209,7 +209,7 @@ def test_dyad_ucu_ham_dogum_verisi_sizdirmaz(abone, monkeypatch):
                         lambda p1, p2: SAHTE_SINASTRI)
     monkeypatch.setattr(reports_api, "get_sky_now", lambda: SAHTE_GOKYUZU)
     monkeypatch.setattr(report_service.gemini_service, "generate",
-                        lambda prompt: "İkinizin bugünkü ritmi.")
+                        lambda prompt, **k: "İkinizin bugünkü ritmi.")
 
     with TestClient(app) as client:
         response = client.post("/api/v1/reports/dyad",

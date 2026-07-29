@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import re
 
+from services import prompts
+
 # Pasaj başına karakter sınırı ve en fazla pasaj sayısı
 MAX_PASSAGES = 2
 MAX_PASSAGE_CHARS = 280
@@ -76,7 +78,7 @@ def should_use_rag(message: str) -> bool:
 
 def compose_chat_message(message: str, passages: list[dict],
                          memory: str = "", chart: str = "",
-                         sky: str = "") -> str:
+                         sky: str = "", lang: str | None = None) -> str:
     """Bilgi tabanı pasajlarını, kullanıcı hafızasını, haritasını ve bugünün
     gökyüzünü mesaja iliştirir.
 
@@ -88,8 +90,8 @@ def compose_chat_message(message: str, passages: list[dict],
     Hiçbiri yoksa mesaj olduğu gibi döner; API şeması ve model arayüzü değişmez.
     """
     whispers = []
-    for p in passages[:MAX_PASSAGES]:
-        text = re.sub(r"\s+", " ", p.get("text", "")).strip()
+    for passage in passages[:MAX_PASSAGES]:
+        text = re.sub(r"\s+", " ", passage.get("text", "")).strip()
         if len(text) > MAX_PASSAGE_CHARS:
             text = text[:MAX_PASSAGE_CHARS].rsplit(" ", 1)[0] + "…"
         if text:
@@ -101,31 +103,18 @@ def compose_chat_message(message: str, passages: list[dict],
     if not whispers and not memory and not chart and not sky:
         return message
 
+    # Etiketler dile göre gelir: İngilizce sohbette Türkçe başlık görmek modeli
+    # dil karıştırmaya iter.
+    labels = prompts.get(lang)
     parts = []
     if chart:
-        parts.append(
-            "KULLANICININ HARİTASI (hesaplanmış veri — buna sadık kal, konum "
-            "uydurma. Her mesajda saymana gerek yok; yorum yaparken temel al):\n"
-            + chart
-        )
+        parts.append(labels.WHISPER_CHART + "\n" + chart)
     if sky:
-        parts.append(
-            "BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris ile hesaplandı):\n" + sky
-        )
+        parts.append(labels.WHISPER_SKY + "\n" + sky)
     if whispers:
-        parts.append(
-            "ARKA PLAN FISILTISI (yalnızca senin iç bilgin; kullanıcıya asla "
-            "blok halinde aktarma, listeleme veya alıntılama — en fazla tek bir "
-            "ilgili ayrıntıyı kendi cümlelerinle sohbetine sindir):\n"
-            + "\n".join(whispers)
-        )
+        parts.append(labels.WHISPER_RAG + "\n" + "\n".join(whispers))
     if memory:
-        parts.append(
-            "KULLANICI HAKKINDA HATIRLADIKLARIN (önceki konuşmalardan; "
-            "kullanıcıya bunları hatırladığını ilan ETME, listeleme veya "
-            "yüzüne vurma — yalnızca uygun düştüğünde doğal biçimde dokundur. "
-            "Bilgi eskimiş olabilir; çelişirse kullanıcının SON söylediği "
-            "geçerlidir):\n" + memory
-        )
+        parts.append(labels.WHISPER_MEMORY + "\n" + memory)
 
-    return "\n\n".join(parts) + f"\n\nKULLANICININ MESAJI: {message}"
+    return ("\n\n".join(parts)
+            + f"\n\n{labels.USER_MESSAGE_LABEL}: {message}")

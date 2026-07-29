@@ -12,14 +12,14 @@ import json
 import logging
 from typing import Any
 
-from core import cache
-from services import gemini_service, memory_service
+from core import cache, i18n
+from services import gemini_service, memory_service, prompts
 from services.rag_service import retrieve_context
 
 logger = logging.getLogger(__name__)
 
 
-def _memory_block(memory: str) -> str:
+def _memory_block(memory: str, lang: str | None = None) -> str:
     """Hafıza bağlamını prompt'a iliştirilebilir bir bloğa çevirir.
 
     Hafıza boşsa hiçbir başlık yazılmaz — boş bir "KULLANICI HAKKINDA" başlığı
@@ -28,70 +28,61 @@ def _memory_block(memory: str) -> str:
     memory = (memory or "").strip()
     if not memory:
         return ""
-    return (
-        "KULLANICI HAKKINDA ÖNCEDEN BİLDİKLERİN (kendi anlattıklarından; "
-        "hatırladığını ilan etmeden, uygun düştüğünde doğal biçimde dokundur):\n"
-        f"{memory}\n"
-    )
+    return prompts.get(lang).MEMORY_BLOCK.format(memory=memory)
 
 
 def _cached_generate(cache_key: str, prompt: str, fallback: str,
-                     ttl_seconds: int = 24 * 3600) -> dict[str, Any]:
+                     ttl_seconds: int = 24 * 3600,
+                     lang: str | None = None) -> dict[str, Any]:
     cached = cache.get(cache_key)
     if cached is not None:
         return {"text": cached, "cached": True}
 
-    text = gemini_service.generate(prompt)
+    text = gemini_service.generate(prompt, lang=lang)
     if text:
         cache.set(cache_key, text, ttl_seconds=ttl_seconds)
         return {"text": text, "cached": False}
     return {"text": fallback, "cached": False, "fallback": True}
 
 
-def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any]) -> dict[str, Any]:
+def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
+                  lang: str | None = None) -> dict[str, Any]:
     """Kişiye özel günlük kozmik yorum: natal harita x güncel gökyüzü."""
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
     today = dt.date.today().isoformat()
-    cache_key = f"daily-{user_id}-{today}"
+    # Dil önbellek anahtarına girer; aksi halde İngilizce kullanıcı Türkçe
+    # üretilmiş yorumu görür.
+    cache_key = f"daily-{user_id}-{today}-{lang}"
 
     rag = retrieve_context(
         f"{natal.get('sun_sign', '')} güneş {natal.get('moon_sign', '')} ay burcu "
-        f"gezegen transit yorumu mizaç"
+        f"gezegen transit yorumu mizaç",
+        lang=lang,
     )
     # Kullanıcı hafızası: günlük okumayı gerçekten kişisel yapan şey natal
     # harita değil (o herkes için sabit), zamanla biriken bu bağlam.
     memory = memory_service.memory_context(user_id, max_chars=400)
-    retros = ", ".join(sky.get("retrogrades", [])) or "yok"
+
+    retros = ", ".join(sky.get("retrogrades", [])) or "-"
     aspects = "; ".join(
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
     )
     moon = sky.get("moon_phase", {})
 
-    prompt = f"""
-GÖREV: Kullanıcı için bugüne özel, 150-200 kelimelik bir "günlük kozmik okuma" yaz.
-
-HESAPLANMIŞ NATAL VERİ:
-- Güneş: {natal.get('sun_sign')} | Ay: {natal.get('moon_sign')} | Yükselen: {natal.get('ascendant')}
-
-BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris + NASA JPL):
-- Tarih: {today}
-- Ay evresi: {moon.get('name')} {moon.get('emoji')} (aydınlanma %{moon.get('illumination')})
-- Retro gezegenler: {retros}
-- Günün önemli açıları: {aspects}
-
-KAYNAK PASAJLARI:
-{rag}
-
-{_memory_block(memory)}
-Yorum, natal konumlar ile bugünkü gökyüzünü ÇARPIŞTIRSIN; genel geçer burç
-yorumu olmasın. Somut bir günlük tema + bir pratik öneri ver.
-"""
-    fallback = (
-        f"Bugün Ay {moon.get('name', 'yolculuğunda')} evresinde ilerliyor. "
-        f"{natal.get('sun_sign', 'Güneş burcun')} özün ve {natal.get('ascendant', 'yükselenin')} "
-        "dış dünyaya açılan kapınla, bugün iç sesinle dış adımlarını hizalamak için güçlü bir gün. "
-        "Küçük ama kararlı bir adım at; gökyüzü sabırlı olanı ödüllendiriyor."
+    prompt = p.DAILY.format(
+        sun_sign=natal.get("sun_sign"), moon_sign=natal.get("moon_sign"),
+        ascendant=natal.get("ascendant"), today=today,
+        moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
+        illumination=moon.get("illumination"), retros=retros, aspects=aspects,
+        rag=rag, memory=_memory_block(memory, lang),
     )
-    return _cached_generate(cache_key, prompt, fallback)
+    fallback = p.DAILY_FALLBACK.format(
+        moon_name=moon.get("name") or "-",
+        sun_sign=natal.get("sun_sign") or "-",
+        ascendant=natal.get("ascendant") or "-",
+    )
+    return _cached_generate(cache_key, prompt, fallback, lang=lang)
 
 
 #: Dönem -> önbellek TTL'i. Anahtar tarih kovası içerdiği için TTL'in tek
@@ -101,13 +92,6 @@ _HOROSCOPE_TTL = {
     "weekly": 7 * 24 * 3600,
     "monthly": 31 * 24 * 3600,
 }
-
-_HOROSCOPE_PERIOD_TR = {
-    "daily": "bugün",
-    "weekly": "bu hafta",
-    "monthly": "bu ay",
-}
-
 
 def _horoscope_bucket(period: str, today: dt.date) -> str:
     """Önbellek tarih kovası: günlük YYYY-MM-DD, haftalık ISO yıl-hafta, aylık YYYY-MM."""
@@ -119,66 +103,64 @@ def _horoscope_bucket(period: str, today: dt.date) -> str:
     return today.isoformat()
 
 
-def horoscope_reading(sign: str, sign_tr: str, period: str,
-                      sky: dict[str, Any]) -> dict[str, Any]:
+def horoscope_cache_key(sign: str, period: str, bucket: str, lang: str) -> str:
+    """Burç yorumu önbellek anahtarı — kullanıcıdan bağımsız, dile bağlı.
+
+    Dil anahtara girmek zorunda: girmezse İngilizce kullanıcı, aynı burç ve
+    dönem için daha önce Türkçe üretilmiş yorumu görür.
+    """
+    return f"horoscope-{sign}-{period}-{bucket}-{lang}"
+
+
+def horoscope_reading(sign: str, period: str, sky: dict[str, Any],
+                      lang: str | None = None) -> dict[str, Any]:
     """Burç bazlı günlük/haftalık/aylık yorum.
 
-    Kullanıcıdan BAĞIMSIZ önbelleklenir: anahtar (burç, dönem, tarih kovası).
-    Böylece 12 burç x dönem başına LLM'e en fazla 1 kez gidilir; sonraki tüm
-    kullanıcılar aynı dönem içinde önbellekten okur.
+    Kullanıcıdan BAĞIMSIZ önbelleklenir: anahtar (burç, dönem, tarih kovası,
+    dil). Böylece dil x burç x dönem başına LLM'e en fazla 1 kez gidilir;
+    sonraki tüm kullanıcılar aynı dönem içinde önbellekten okur.
     """
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
     today = dt.date.today()
     bucket = _horoscope_bucket(period, today)
-    cache_key = f"horoscope-{sign}-{period}-{bucket}"
+    cache_key = horoscope_cache_key(sign, period, bucket, lang)
 
-    # Önbellek isabeti en sık yoldur (12 burç x dönem başına tek üretim, geri
-    # kalan tüm istekler isabet). Bu yüzden prompt kurulmadan ÖNCE bakılır:
-    # aksi halde her istekte RAG araması (ve embedding API çağrısı) boşuna
-    # yapılırdı.
+    # Önbellek isabeti en sık yoldur (dil x burç x dönem başına tek üretim,
+    # geri kalan tüm istekler isabet). Bu yüzden prompt kurulmadan ÖNCE
+    # bakılır: aksi halde her istekte RAG araması (ve embedding API çağrısı)
+    # boşuna yapılırdı.
     cached = cache.get(cache_key)
     if cached is not None:
         return {"text": cached, "cached": True, "generated_for": bucket}
 
-    period_tr = _HOROSCOPE_PERIOD_TR.get(period, "bugün")
-    length = ("120-160 kelime" if period == "daily" else "200-250 kelime")
+    sign_name = p.SIGN_NAMES.get(sign, sign)
+    period_name = p.PERIOD_NAMES.get(period, p.PERIOD_NAMES["daily"])
+    length = p.PERIOD_LENGTHS.get(period, p.PERIOD_LENGTHS["daily"])
 
-    retros = ", ".join(sky.get("retrogrades", [])) or "yok"
+    retros = ", ".join(sky.get("retrogrades", [])) or "-"
     aspects = "; ".join(
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
-    ) or "belirgin açı yok"
+    ) or "-"
     moon = sky.get("moon_phase", {})
-    rag = retrieve_context(f"{sign_tr} burcu mizaç gezegen transit yorumu")
+    rag = retrieve_context(f"{sign_name} sign temperament planet transit",
+                           lang=lang)
 
-    prompt = f"""
-GÖREV: {sign_tr} burcu için {period_tr.upper()} geçerli, {length} uzunluğunda
-bir burç yorumu yaz. Bu yorum {sign_tr} burcundan HERKESE hitap eder (kişiye
-özel doğum verisi yok).
-
-DÖNEM: {period_tr} (referans tarih: {today.isoformat()})
-
-ŞU ANKİ GERÇEK GÖKYÜZÜ (Swiss Ephemeris):
-- Ay evresi: {moon.get('name')} {moon.get('emoji')} (aydınlanma %{moon.get('illumination')})
-- Retro gezegenler: {retros}
-- Önemli açılar: {aspects}
-
-KAYNAK PASAJLARI:
-{rag}
-
-KURALLAR:
-- Samimi "sen" diliyle, sıcak ve akıcı yaz; kadercilik yok.
-- Gökyüzü verisini {sign_tr} burcunun mizacıyla çarpıştır; genel geçer
-  klişelerden kaçın.
-- Aşk, iş ve iç dünya temalarından en az ikisine dokun; sonda tek cümlelik
-  somut bir öneri ver. Başlık veya madde işareti kullanma, düz metin yaz.
-"""
-    fallback = (
-        f"{sign_tr} için {period_tr} gökyüzü sakin bir ritim sunuyor. "
-        f"Ay {moon.get('name', 'yolculuğunda')} evresinde ilerlerken iç sesine "
-        "alan aç; küçük ama kararlı bir adım, dönemin enerjisini senin lehine çevirir. "
-        "Detaylı yorum için biraz sonra tekrar dene."
+    prompt = p.HOROSCOPE.format(
+        sign=sign_name, period=period_name, period_upper=period_name.upper(),
+        length=length, today=today.isoformat(),
+        moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
+        illumination=moon.get("illumination"), retros=retros, aspects=aspects,
+        rag=rag,
     )
-    result = _cached_generate(cache_key, prompt, fallback,
-                              ttl_seconds=_HOROSCOPE_TTL.get(period, 24 * 3600))
+    fallback = p.HOROSCOPE_FALLBACK.format(
+        sign=sign_name, period=period_name,
+        moon_name=moon.get("name") or "-",
+    )
+    result = _cached_generate(
+        cache_key, prompt, fallback,
+        ttl_seconds=_HOROSCOPE_TTL.get(period, 24 * 3600), lang=lang,
+    )
     result["generated_for"] = bucket
     return result
 

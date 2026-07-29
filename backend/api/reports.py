@@ -5,12 +5,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from core.auth import AuthUser, get_current_user
+from core.i18n import get_language
 from core.entitlements import (
     FREE_ICHING_PER_DAY,
     enforce_daily_quota,
     require_plus,
 )
-from services import astro_service, profile_service, report_service
+from services import astro_service, profile_service, prompts, report_service
 from services.bazi_service import get_bazi_chart
 from services.iching_service import cast_iching
 from services.sky_service import get_sky_now
@@ -67,6 +68,7 @@ def horoscope(
     sign: SignName,
     period: Literal["daily", "weekly", "monthly"] = "daily",
     user: AuthUser = Depends(get_current_user),
+    lang: str = Depends(get_language),
 ):
     """Burç bazlı genel yorum — ücretsiz katmanın omurgası.
 
@@ -78,10 +80,12 @@ def horoscope(
     dahil) ve ucu kötüye kullanıma karşı korur; abonelik gerektirmez.
     """
     sky = get_sky_now()
-    report = report_service.horoscope_reading(sign, SIGN_TR[sign], period, sky)
+    report = report_service.horoscope_reading(sign, period, sky, lang=lang)
     return {"status": "success", "data": {
         "sign": sign,
         "sign_tr": SIGN_TR[sign],
+        "sign_name": prompts.sign_name(lang, sign),
+        "lang": lang,
         "period": period,
         "reading": report["text"],
         "cached": report.get("cached", False),
@@ -93,7 +97,9 @@ def horoscope(
 
 
 @router.post("/daily")
-def daily(data: BirthData, user: AuthUser = Depends(require_plus("personal_daily"))):
+def daily(data: BirthData,
+          user: AuthUser = Depends(require_plus("personal_daily")),
+          lang: str = Depends(get_language)):
     """Kisiye ozel gunluk okuma — Rytho+ .
 
     Ucretsiz katmanin gunluk icerigi /horoscope'tur: o, kullanicidan bagimsiz
@@ -104,7 +110,7 @@ def daily(data: BirthData, user: AuthUser = Depends(require_plus("personal_daily
     try:
         natal = astro_service.get_natal_chart(**_natal_kwargs(data))
         sky = get_sky_now()
-        report = report_service.daily_reading(user.uid, natal, sky)
+        report = report_service.daily_reading(user.uid, natal, sky, lang=lang)
         return {"status": "success", "data": {
             "reading": report["text"], "cached": report.get("cached", False),
             "sun_sign": natal["sun_sign"], "moon_sign": natal["moon_sign"],

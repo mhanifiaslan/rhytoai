@@ -44,11 +44,11 @@ def test_eksik_vektor_onbellege_yazilmaz(tmp_path, monkeypatch):
     """Kısmi embedding yazılırsa her açılışta yeniden denenir ve arama sessizce
     anahtar kelime modunda kalır."""
     onbellek = tmp_path / "rag_embeddings.json"
-    monkeypatch.setattr(rag_service, "_EMBED_CACHE_FILE", onbellek)
+    monkeypatch.setattr(rag_service, "_embed_cache_file", lambda lang: onbellek)
 
     kb = _KnowledgeBase()
     parcalar = _sahte_korpus(kb, 5)
-    monkeypatch.setattr(rag_service, "_load_chunks", lambda: parcalar)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
     # 5 parça istenirken 2 vektör dönmüş gibi davran
     monkeypatch.setattr(kb, "_embed_texts", lambda texts: [[0.1], [0.2]])
 
@@ -60,11 +60,11 @@ def test_eksik_vektor_onbellege_yazilmaz(tmp_path, monkeypatch):
 
 def test_tam_vektor_onbellege_yazilir(tmp_path, monkeypatch):
     onbellek = tmp_path / "rag_embeddings.json"
-    monkeypatch.setattr(rag_service, "_EMBED_CACHE_FILE", onbellek)
+    monkeypatch.setattr(rag_service, "_embed_cache_file", lambda lang: onbellek)
 
     kb = _KnowledgeBase()
     parcalar = _sahte_korpus(kb, 3)
-    monkeypatch.setattr(rag_service, "_load_chunks", lambda: parcalar)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
     monkeypatch.setattr(kb, "_embed_texts",
                         lambda texts: [[float(i)] for i in range(len(texts))])
 
@@ -106,7 +106,7 @@ def test_vektor_yoksa_arama_anahtar_kelimeye_duser(monkeypatch):
         Chunk(doc="d", title="mars", text="mars retro gerilim",
               keywords=_tokenize("mars retro gerilim")),
     ]
-    monkeypatch.setattr(rag_service, "_load_chunks", lambda: parcalar)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
     monkeypatch.setattr(kb, "_embed_texts", lambda texts: None)
     monkeypatch.setattr(kb, "_embed_query",
                         lambda q: pytest.fail("vektör yokken sorgu gömülmemeli"))
@@ -116,3 +116,58 @@ def test_vektor_yoksa_arama_anahtar_kelimeye_duser(monkeypatch):
     assert kb.semantic_ready() is False
     assert sonuc, "anahtar kelime modunda da sonuç dönmeli"
     assert sonuc[0]["title"] == "ay"
+
+
+# --------------------------------------------------------------------------
+# Çok dillilik
+# --------------------------------------------------------------------------
+
+def test_her_dil_ayri_taban_kullanir():
+    """Tek tabanda karıştırılsaydı İngilizce sorgu Türkçe pasajlarla skorlanır
+    ve yorum kalitesi düşerdi."""
+    tr = rag_service.base_for("tr")
+    en = rag_service.base_for("en")
+
+    assert tr is not en
+    assert tr.lang == "tr" and en.lang == "en"
+    # Aynı dil için aynı örnek dönmeli (tembel önbellek)
+    assert rag_service.base_for("en") is en
+
+
+def test_desteklenmeyen_dil_varsayilana_duser():
+    assert rag_service.base_for("de").lang == "tr"
+    assert rag_service.base_for(None).lang == "tr"
+
+
+def test_embedding_onbellegi_dil_basina_ayri():
+    """Tek dosya olsaydı diller birbirinin vektörlerini geçersiz kılardı."""
+    assert (rag_service._embed_cache_file("tr")
+            != rag_service._embed_cache_file("en"))
+
+
+def test_korpus_dizini_dile_gore_secilir():
+    tr_dizin = rag_service._corpus_dir("tr")
+    en_dizin = rag_service._corpus_dir("en")
+    assert tr_dizin.name == "tr"
+    assert en_dizin.name == "en"
+    # Korpusu olmayan dil varsayılana düşer, boş bağlamla çalışmaz
+    assert rag_service._corpus_dir("de").name == "tr"
+
+
+def test_ingilizce_korpus_yuklenir_ve_turkce_degil():
+    """İngilizce korpus gerçekten var ve içeriği İngilizce olmalı."""
+    parcalar = rag_service._load_chunks("en")
+    assert parcalar, "İngilizce korpus boş"
+
+    metin = " ".join(c.text for c in parcalar).lower()
+    assert "day master" in metin
+    assert "temperament" in metin
+    # Türkçe korpustan sızma olmamalı
+    assert "ahlat-ı erbaa" not in metin
+
+
+def test_turkce_korpus_hala_yuklenir():
+    parcalar = rag_service._load_chunks("tr")
+    assert parcalar
+    metin = " ".join(c.text for c in parcalar).lower()
+    assert "day master" in metin or "günün efendisi" in metin
