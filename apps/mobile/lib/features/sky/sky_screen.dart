@@ -184,32 +184,13 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                       _maybeShowIntroPaywall();
                       return GlassPanel(
                       label: l10n.signToday(kSignNamesTr[selected]),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TypewriterText(
-                            text: data['reading'] ?? '',
-                            style: RythoText.body(14.5, height: 1.6),
-                          ),
-                          const SizedBox(height: 14),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(14),
-                              color: RythoColors.violet.withValues(alpha: 0.14),
-                              border: Border.all(
-                                  color: RythoColors.lilac
-                                      .withValues(alpha: 0.25)),
-                            ),
-                            child: Text(
-                              nudgeForSign(kSignNamesTr[selected]),
-                              style: RythoText.body(13,
-                                  color: RythoColors.lilac,
-                                  w: FontWeight.w600),
-                            ),
-                          ),
-                        ],
+                      // Buradaki konserve motivasyon cümlesi kaldırıldı:
+                      // hemen üstünde AI'ın gerçek gökyüzü verisiyle ürettiği
+                      // burç yorumu duruyor, altına hazır bir cümle eklemek
+                      // yorumu ucuzlatıyordu.
+                      child: TypewriterText(
+                        text: data['reading'] ?? '',
+                        style: RythoText.body(14.5, height: 1.6),
                       ),
                     ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
                           begin: 0.06, curve: Curves.easeOutCubic);

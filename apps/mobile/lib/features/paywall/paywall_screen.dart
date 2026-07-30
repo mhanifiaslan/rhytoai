@@ -198,7 +198,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => LegalPage(
                     title: l10n.termsOfUse,
-                    sections: kTermsOfUseSections))),
+                    sections: termsOfUseSections(
+                        Localizations.localeOf(context).languageCode)))),
             child: Text(l10n.termsOfUse, style: RythoText.label(11)),
           ),
           Text('·', style: RythoText.label(11, color: RythoColors.parchmentDim)),
@@ -206,7 +207,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => LegalPage(
                     title: l10n.privacyPolicy,
-                    sections: kPrivacyPolicySections))),
+                    sections: privacyPolicySections(
+                        Localizations.localeOf(context).languageCode)))),
             child: Text(l10n.privacyPolicy, style: RythoText.label(11)),
           ),
         ]),

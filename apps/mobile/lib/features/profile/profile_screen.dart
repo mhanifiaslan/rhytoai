@@ -270,15 +270,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 style: RythoText.mono(10, color: RythoColors.parchmentDim)),
             const SizedBox(height: 12),
             const Divider(height: 1),
-            _legalLink(context, l10n.privacyPolicy,
-                () => const LegalPage(
-                    title: 'Gizlilik Politikası',
-                    sections: kPrivacyPolicySections)),
+            _legalLink(
+                context,
+                l10n.privacyPolicy,
+                () => LegalPage(
+                    title: l10n.privacyPolicy,
+                    sections: privacyPolicySections(
+                        Localizations.localeOf(context).languageCode))),
             const Divider(height: 1),
-            _legalLink(context, l10n.termsOfUse,
-                () => const LegalPage(
-                    title: 'Kullanım Şartları',
-                    sections: kTermsOfUseSections)),
+            _legalLink(
+                context,
+                l10n.termsOfUse,
+                () => LegalPage(
+                    title: l10n.termsOfUse,
+                    sections: termsOfUseSections(
+                        Localizations.localeOf(context).languageCode))),
           ]),
         ),
         Padding(
