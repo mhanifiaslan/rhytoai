@@ -176,7 +176,8 @@ def dyad_cache_key(uid_a: str, uid_b: str, today: dt.date) -> str:
 
 
 def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
-                 synastry: dict[str, Any], sky: dict[str, Any]) -> dict[str, Any]:
+                 synastry: dict[str, Any], sky: dict[str, Any],
+                 lang: str | None = None) -> dict[str, Any]:
     """İki arkadaş için GÜNLÜK ikili dinamik okuması.
 
     Kalıcı bir uyum skoru üretilmez. Gerekçe iki katlı: skor ölçüm değil
@@ -184,6 +185,8 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
     ilişkilere zarar verir. Bunun yerine bugüne özgü, yarın değişebilecek bir
     dinamik anlatılır.
     """
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
     today = dt.date.today()
     cache_key = dyad_cache_key(uid_a, uid_b, today)
 
@@ -194,89 +197,59 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
     aspects = "\n".join(
         f"- {a['p1_tr']} ({name_a}) {a['aspect_tr']} {a['p2_tr']} ({name_b}) orb {a['orbit']}°"
         for a in synastry.get("aspects", [])[:6]
-    ) or "belirgin karşılıklı açı yok"
+    ) or p.NO_ASPECTS
 
     moon = sky.get("moon_phase", {})
-    retros = ", ".join(sky.get("retrogrades", [])) or "yok"
-    rag = retrieve_context("sinastri ilişki iletişim gezegen açıları günlük transit")
+    retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
+    rag = retrieve_context("synastry relationship communication daily transit",
+                           lang=lang)
 
-    prompt = f"""
-GÖREV: {name_a} ile {name_b} arasındaki ilişki dinamiğinin BUGÜNE özgü halini
-anlatan 90-130 kelimelik kısa bir metin yaz.
-
-BUGÜNÜN GÖKYÜZÜ ({today.isoformat()}):
-- Ay evresi: {moon.get('name')} {moon.get('emoji')} (aydınlanma %{moon.get('illumination')})
-- Retro gezegenler: {retros}
-
-ARALARINDAKİ KARŞILIKLI AÇILAR:
-{aspects}
-
-KAYNAK PASAJLARI:
-{rag}
-
-KURALLAR (kesin):
-- ASLA puan, yüzde veya "uyumlusunuz/uyumsuzsunuz" gibi kalıcı bir yargı verme.
-  Anlattığın şey yalnızca BUGÜN için geçerli bir eğilimdir.
-- İki tarafı da eşit ele al; birini haklı diğerini haksız çıkarma.
-- Pohpohlama. Gerginlik varsa gerginlik de; ama daima birlikte atılabilecek
-  somut ve küçük bir adımla bitir.
-- İlişkinin geleceği, ayrılık, evlilik, hamilelik veya sağlık hakkında
-  ÖNGÖRÜDE BULUNMA.
-- Düz metin yaz: başlık, madde işareti veya numaralandırma kullanma.
-- İkisine birden hitap et ("ikiniz"), tek bir kişiye değil.
-"""
-    fallback = (
-        f"Bugün {name_a} ile {name_b} arasındaki ritim sakin bir zeminde ilerliyor. "
-        f"Ay {moon.get('name', 'yolculuğunda')} evresindeyken birbirinize ayıracağınız "
-        "kısa ama bölünmemiş bir dikkat, günün tonunu belirleyecek. "
-        "Detaylı okuma için biraz sonra tekrar dene."
+    prompt = p.DYAD.format(
+        name_a=name_a, name_b=name_b, today=today.isoformat(),
+        moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
+        illumination=moon.get("illumination"), retros=retros,
+        aspects=aspects, rag=rag,
     )
-    result = _cached_generate(cache_key, prompt, fallback, ttl_seconds=24 * 3600)
+    fallback = p.DYAD_FALLBACK.format(
+        name_a=name_a, name_b=name_b, moon_name=moon.get("name") or "-")
+    result = _cached_generate(cache_key, prompt, fallback,
+                              ttl_seconds=24 * 3600, lang=lang)
     result["generated_for"] = today.isoformat()
     return result
 
 
-def natal_report(user_id: str, natal: dict[str, Any]) -> dict[str, Any]:
+def natal_report(user_id: str, natal: dict[str, Any],
+                 lang: str | None = None) -> dict[str, Any]:
     """Derinlemesine doğum haritası raporu (kullanıcı başına bir kez, 30 gün önbellek)."""
-    cache_key = f"natal-report-{user_id}-{natal.get('sun_sign')}-{natal.get('ascendant')}"
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
+    cache_key = (f"natal-report-{user_id}-{natal.get('sun_sign')}"
+                 f"-{natal.get('ascendant')}-{lang}")
 
     points = "\n".join(
-        f"- {p['name_tr']}: {p['sign_tr']} {p['position']}° "
-        f"(Ev {p.get('house') or '?'}{', Retro' if p.get('retrograde') else ''})"
-        for p in natal.get("points", [])[:12]
+        f"- {pt['name_tr']}: {pt['sign_tr']} {pt['position']}° "
+        f"(Ev {pt.get('house') or '?'}{', Retro' if pt.get('retrograde') else ''})"
+        for pt in natal.get("points", [])[:12]
     )
     aspects = "\n".join(
         f"- {a['p1_tr']} {a['aspect_tr']} {a['p2_tr']} (orb {a['orbit']}°)"
         for a in natal.get("aspects", [])[:10]
     )
     rag = retrieve_context(
-        f"{natal.get('sun_sign')} güneş burcu mizaç gezegen ev yerleşimi karakter analizi"
+        f"{natal.get('sun_sign')} sun sign temperament house placement character",
+        lang=lang,
     )
 
-    prompt = f"""
-GÖREV: Aşağıdaki natal harita verilerinden 400-500 kelimelik derin bir doğum
-haritası analizi yaz. Bölümler: (1) Öz Kimlik (Güneş/Ay/Yükselen üçlüsü),
-(2) Gezegen vurguları, (3) Önemli açılar ve iç dinamikler, (4) Yaşam teması
-ve potansiyel.
-
-NATAL HARİTA (Swiss Ephemeris hassasiyetinde):
-Güneş: {natal.get('sun_sign')} | Ay: {natal.get('moon_sign')} | Yükselen: {natal.get('ascendant')}
-
-GEZEGENLER:
-{points}
-
-AÇILAR:
-{aspects}
-
-KAYNAK PASAJLARI (kadim gelenekten harmanla):
-{rag}
-"""
-    fallback = (
-        f"Güneşin {natal.get('sun_sign')}, Ayın {natal.get('moon_sign')} ve yükselenin "
-        f"{natal.get('ascendant')}. Bu üçlü; öz kimliğin, duygusal dünyan ve dışa dönük "
-        "maskenin haritasını çizer. Detaylı yorum için lütfen daha sonra tekrar dene."
+    prompt = p.NATAL.format(
+        sun_sign=natal.get("sun_sign"), moon_sign=natal.get("moon_sign"),
+        ascendant=natal.get("ascendant"), points=points, aspects=aspects, rag=rag,
     )
-    return _cached_generate(cache_key, prompt, fallback, ttl_seconds=30 * 24 * 3600)
+    fallback = p.NATAL_FALLBACK.format(
+        sun_sign=natal.get("sun_sign"), moon_sign=natal.get("moon_sign"),
+        ascendant=natal.get("ascendant"),
+    )
+    return _cached_generate(cache_key, prompt, fallback,
+                            ttl_seconds=30 * 24 * 3600, lang=lang)
 
 
 def face_report(user_id: str, face: dict[str, Any]) -> dict[str, Any]:
@@ -316,115 +289,110 @@ Sonda tek cümlelik bir "kadim tavsiye" ver.
     return _cached_generate(cache_key, prompt, fallback, ttl_seconds=7 * 24 * 3600)
 
 
-def bazi_report(user_id: str, bazi: dict[str, Any]) -> dict[str, Any]:
+def bazi_report(user_id: str, bazi: dict[str, Any],
+                lang: str | None = None) -> dict[str, Any]:
     """BaZi haritasından kader analizi raporu."""
-    cache_key = f"bazi-report-{user_id}-{bazi['pillars']['day']['label']}"
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
+    cache_key = f"bazi-report-{user_id}-{bazi['pillars']['day']['label']}-{lang}"
 
     pillars = " | ".join(f"{k}: {v['label']}" for k, v in bazi["pillars"].items())
     luck = "; ".join(
-        f"{lp['from_age']}-{lp['to_age']} yaş: {lp['label']} ({lp['ten_god']['name']})"
+        f"{lp['from_age']}-{lp['to_age']}: {lp['label']} ({lp['ten_god']['name']})"
         for lp in bazi.get("luck_pillars", [])[:4]
     )
-    rag = retrieve_context(f"BaZi Day Master {bazi['day_master']['element']} element On Tanrı şans sütunu")
-
-    prompt = f"""
-GÖREV: Aşağıdaki BaZi (Dört Sütun) verilerinden 250-300 kelimelik kader haritası
-analizi yaz.
-
-HESAPLANMIŞ BAZI HARİTASI (gerçek güneş terimleriyle):
-- Dört Sütun: {pillars}
-- Günün Efendisi (Day Master): {bazi['day_master']['description']}
-- Çin burcu: {bazi['zodiac_animal']}
-- Element dağılımı: {bazi['element_distribution']} (baskın: {bazi['dominant_element']},
-  eksik: {bazi.get('missing_elements') or 'yok'})
-- On Tanrı: yıl={bazi['ten_gods']['year']['name']}, ay={bazi['ten_gods']['month']['name']},
-  saat={bazi['ten_gods']['hour']['name']}
-- Şans Sütunları: {luck}
-
-KAYNAK PASAJLARI:
-{rag}
-
-Bölümler: (1) Öz element ve doğa, (2) Element dengesi ve beslenmesi gereken alan,
-(3) Önümüzdeki şans dönemi teması.
-"""
-    fallback = (
-        f"Günün Efendin {bazi['day_master']['element']} elementi: {bazi['day_master']['polarity']} "
-        f"doğanın özü bu. Baskın elementin {bazi['dominant_element']}. Detaylı yorum için tekrar dene."
+    rag = retrieve_context(
+        f"BaZi Day Master {bazi['day_master']['element']} element Ten Gods luck pillar",
+        lang=lang,
     )
-    return _cached_generate(cache_key, prompt, fallback, ttl_seconds=30 * 24 * 3600)
+
+    prompt = p.BAZI.format(
+        pillars=pillars, day_master=bazi["day_master"]["description"],
+        zodiac_animal=bazi["zodiac_animal"],
+        elements=bazi["element_distribution"], dominant=bazi["dominant_element"],
+        missing=bazi.get("missing_elements") or p.NONE_LABEL,
+        ten_year=bazi["ten_gods"]["year"]["name"],
+        ten_month=bazi["ten_gods"]["month"]["name"],
+        ten_hour=bazi["ten_gods"]["hour"]["name"],
+        luck=luck, rag=rag,
+    )
+    fallback = p.BAZI_FALLBACK.format(
+        element=bazi["day_master"]["element"],
+        polarity=bazi["day_master"]["polarity"],
+        dominant=bazi["dominant_element"],
+    )
+    return _cached_generate(cache_key, prompt, fallback,
+                            ttl_seconds=30 * 24 * 3600, lang=lang)
 
 
-def iching_reading(user_id: str, cast: dict[str, Any]) -> dict[str, Any]:
+def iching_reading(user_id: str, cast: dict[str, Any],
+                   lang: str | None = None) -> dict[str, Any]:
     """I Ching çekimini kullanıcının sorusuna bağlayan yorum."""
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
     primary = cast["primary"]
-    cache_key = f"iching-{user_id}-{primary['number']}-{cast.get('question', '')[:48]}-{'-'.join(map(str, cast.get('moving_lines', [])))}"
+    cache_key = (f"iching-{user_id}-{primary['number']}"
+                 f"-{cast.get('question', '')[:48]}"
+                 f"-{'-'.join(map(str, cast.get('moving_lines', [])))}-{lang}")
 
     transformed_text = ""
     if cast.get("transformed"):
         t = cast["transformed"]
-        transformed_text = (
-            f"\nHAREKETLİ ÇİZGİLER {cast['moving_lines']} → DÖNÜŞEN HEKSAGRAM: "
-            f"#{t['number']} {t['name_tr']} ({t['name']})\nHüküm: {t['judgment']}"
+        transformed_text = p.ICHING_TRANSFORMED.format(
+            lines=cast["moving_lines"], number=t["number"],
+            name_tr=t["name_tr"], name=t["name"], judgment=t["judgment"],
         )
 
-    rag = retrieve_context(f"I Ching heksagram {primary['name_tr']} değişim eşzamanlılık yorumu")
+    rag = retrieve_context(
+        f"I Ching hexagram {primary['name']} change synchronicity", lang=lang)
 
-    prompt = f"""
-GÖREV: Kullanıcının sorusunu, çekilen I Ching heksagramının 3000 yıllık metnine
-bağlayan 150-200 kelimelik bir kehanet yorumu yaz.
-
-KULLANICININ SORUSU: "{cast.get('question')}"
-
-ÇEKİM SONUCU ({cast.get('method')} yöntemi, gerçek olasılık dağılımıyla):
-- Heksagram #{primary['number']}: {primary['name_tr']} ({primary['name']} {primary['name_cn']}) {primary['unicode']}
-- Hüküm: {primary['judgment']}
-- İmge: {primary['image']}
-- Trigramlar: {primary['lower_trigram']['name_tr']} altında, {primary['upper_trigram']['name_tr']} üstte{transformed_text}
-
-KAYNAK PASAJLARI:
-{rag}
-
-Yorum SORUYA ÖZGÜ olsun; hareketli çizgi varsa 'şu andan geleceğe dönüşüm' vurgusu yap.
-"""
-    fallback = (
-        f"#{primary['number']} {primary['name_tr']} {primary['unicode']}: {primary['judgment']} "
-        + (f"Dönüşen heksagram: {cast['transformed']['name_tr']} — değişim yolda." if cast.get("transformed") else "")
+    prompt = p.ICHING.format(
+        question=cast.get("question"), method=cast.get("method"),
+        number=primary["number"], name_tr=primary["name_tr"],
+        name=primary["name"], name_cn=primary["name_cn"],
+        unicode=primary["unicode"], judgment=primary["judgment"],
+        image=primary["image"],
+        lower=primary["lower_trigram"]["name_tr"],
+        upper=primary["upper_trigram"]["name_tr"],
+        transformed=transformed_text, rag=rag,
     )
-    return _cached_generate(cache_key, prompt, fallback, ttl_seconds=3600)
+    fallback = (
+        f"#{primary['number']} {primary['name_tr']} {primary['unicode']}: "
+        f"{primary['judgment']}"
+    )
+    return _cached_generate(cache_key, prompt, fallback, ttl_seconds=3600,
+                            lang=lang)
 
 
-def synastry_report(user_id: str, synastry: dict[str, Any]) -> dict[str, Any]:
-    """İki kişi arasındaki kozmik uyum raporu."""
+def synastry_report(user_id: str, synastry: dict[str, Any],
+                    lang: str | None = None) -> dict[str, Any]:
+    """İki kişi arasındaki kozmik uyum raporu.
+
+    Sinastri skoru hesaplanıyor ama prompt'a GİRMİYOR ve rapora yazdırılmıyor:
+    ilişkiyi tek sayıya indirgemek ürünün dürüstlük ilkesiyle çelişiyor ve
+    ikili dinamikte de aynı gerekçeyle yasak.
+    """
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
     p1, p2 = synastry["person1"], synastry["person2"]
-    cache_key = f"synastry-{user_id}-{p1['name']}-{p2['name']}-{synastry['relationship_score'].get('score')}"
+    cache_key = f"synastry-{user_id}-{p1['name']}-{p2['name']}-{lang}"
 
     aspects = "\n".join(
-        f"- {a['p1_tr']} ({p1['name']}) {a['aspect_tr']} {a['p2_tr']} ({p2['name']}) orb {a['orbit']}°"
+        f"- {a['p1_tr']} ({p1['name']}) {a['aspect_tr']} {a['p2_tr']} "
+        f"({p2['name']}) orb {a['orbit']}°"
         for a in synastry.get("aspects", [])[:8]
+    ) or p.NO_ASPECTS
+    rag = retrieve_context("synastry compatibility love relationship aspects",
+                           lang=lang)
+
+    prompt = p.SYNASTRY.format(
+        name1=p1["name"], sun1=p1["sun"]["sign_tr"], moon1=p1["moon"]["sign_tr"],
+        name2=p2["name"], sun2=p2["sun"]["sign_tr"], moon2=p2["moon"]["sign_tr"],
+        aspects=aspects, rag=rag,
     )
-    rag = retrieve_context("sinastri uyum aşk ilişki gezegen açıları evlilik")
-
-    prompt = f"""
-GÖREV: İki kişi arasındaki sinastri (astrolojik uyum) verilerinden 200-250
-kelimelik bir kozmik uyum raporu yaz.
-
-KİŞİLER:
-- {p1['name']}: Güneş {p1['sun']['sign_tr']}, Ay {p1['moon']['sign_tr']}
-- {p2['name']}: Güneş {p2['sun']['sign_tr']}, Ay {p2['moon']['sign_tr']}
-
-UYUM SKORU: {synastry['relationship_score'].get('score')} ({synastry['relationship_score'].get('description')})
-
-ÖNEMLİ KARŞILIKLI AÇILAR:
-{aspects}
-
-KAYNAK PASAJLARI:
-{rag}
-
-Bölümler: (1) Genel rezonans, (2) Güçlü bağ noktaları, (3) Dikkat ve büyüme alanı.
-İki tarafı da eşit sıcaklıkta ele al.
-"""
-    fallback = (
-        f"{p1['name']} ({p1['sun']['sign_tr']}) ile {p2['name']} ({p2['sun']['sign_tr']}) arasında "
-        f"uyum skoru {synastry['relationship_score'].get('score', '—')}. Detaylı yorum için tekrar dene."
+    fallback = p.SYNASTRY_FALLBACK.format(
+        name1=p1["name"], sun1=p1["sun"]["sign_tr"],
+        name2=p2["name"], sun2=p2["sun"]["sign_tr"],
     )
-    return _cached_generate(cache_key, prompt, fallback, ttl_seconds=7 * 24 * 3600)
+    return _cached_generate(cache_key, prompt, fallback,
+                            ttl_seconds=7 * 24 * 3600, lang=lang)

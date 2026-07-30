@@ -196,3 +196,141 @@ WHISPER_CHART = (
 )
 WHISPER_SKY = "TODAY'S ACTUAL SKY (calculated with Swiss Ephemeris):"
 USER_MESSAGE_LABEL = "THE READER'S MESSAGE"
+
+# --- Dyad, natal, BaZi, I Ching, synastry ---
+
+NONE_LABEL = "none"
+NO_ASPECTS = "no notable cross-aspects"
+
+DYAD = """
+TASK: Write 90-130 words on the state of the dynamic between {name_a} and
+{name_b} TODAY specifically.
+
+TODAY'S SKY ({today}):
+- Moon phase: {moon_name} {moon_emoji} ({illumination}% illuminated)
+- Retrograde planets: {retros}
+
+CROSS-ASPECTS BETWEEN THEM:
+{aspects}
+
+SOURCE PASSAGES:
+{rag}
+
+RULES (strict):
+- NEVER give a score, a percentage, or a lasting verdict like "you're
+  compatible / incompatible". What you describe is a tendency valid for TODAY
+  only.
+- Treat both sides equally; do not cast one as right and the other as wrong.
+- No flattery. If there is friction, name the friction — but always close with
+  one small, concrete thing they can do together.
+- Make NO PREDICTIONS about the future of the relationship, a breakup,
+  marriage, pregnancy or health.
+- Plain prose: no headings, no bullets, no numbering.
+- Address them both ("the two of you"), not one person.
+"""
+
+DYAD_FALLBACK = (
+    "The rhythm between {name_a} and {name_b} runs on steady ground today. "
+    "With the Moon in its {moon_name} phase, a short but undivided stretch of "
+    "attention for each other will set the tone of the day. "
+    "Check back shortly for a fuller reading."
+)
+
+NATAL = """
+TASK: Write a 400-500 word deep birth chart analysis from the natal data below.
+Sections: (1) Core identity (the Sun/Moon/Rising trio), (2) Planetary emphases,
+(3) Major aspects and inner dynamics, (4) Life theme and potential.
+
+NATAL CHART (Swiss Ephemeris precision):
+Sun: {sun_sign} | Moon: {moon_sign} | Rising: {ascendant}
+
+PLANETS:
+{points}
+
+ASPECTS:
+{aspects}
+
+SOURCE PASSAGES (blend in from the tradition):
+{rag}
+"""
+
+NATAL_FALLBACK = (
+    "Your Sun is in {sun_sign}, your Moon in {moon_sign} and your Rising is "
+    "{ascendant}. That trio maps your core identity, your emotional world and "
+    "the face you turn to the world. Check back shortly for the full reading."
+)
+
+BAZI = """
+TASK: Write a 250-300 word destiny reading from the BaZi (Four Pillars) data
+below.
+
+CALCULATED BAZI CHART (using true solar terms):
+- Four Pillars: {pillars}
+- Day Master: {day_master}
+- Chinese zodiac: {zodiac_animal}
+- Element distribution: {elements} (dominant: {dominant}, missing: {missing})
+- Ten Gods: year={ten_year}, month={ten_month}, hour={ten_hour}
+- Luck Pillars: {luck}
+
+SOURCE PASSAGES:
+{rag}
+
+Sections: (1) Core element and nature, (2) Element balance and what needs
+cultivating, (3) The theme of the luck period ahead.
+"""
+
+BAZI_FALLBACK = (
+    "Your Day Master is {element}: {polarity} in nature, and that is your core. "
+    "Your dominant element is {dominant}. Check back shortly for the full reading."
+)
+
+ICHING = """
+TASK: Write a 150-200 word reading that ties the questioner's question to the
+three-thousand-year-old text of the hexagram they cast.
+
+THE QUESTION: "{question}"
+
+THE CAST ({method} method, with true probability distribution):
+- Hexagram #{number}: {name_tr} ({name} {name_cn}) {unicode}
+- Judgment: {judgment}
+- Image: {image}
+- Trigrams: {lower} below, {upper} above{transformed}
+
+SOURCE PASSAGES:
+{rag}
+
+Make the reading SPECIFIC to the question. If there are moving lines, stress
+the transformation from the present toward what is coming. Do not predict
+dated events.
+"""
+
+ICHING_TRANSFORMED = (
+    "\nMOVING LINES {lines} → TRANSFORMED HEXAGRAM: "
+    "#{number} {name_tr} ({name})\nJudgment: {judgment}"
+)
+
+SYNASTRY = """
+TASK: Write a 200-250 word synastry (astrological compatibility) reading from
+the data below.
+
+THE TWO PEOPLE:
+- {name1}: Sun {sun1}, Moon {moon1}
+- {name2}: Sun {sun2}, Moon {moon2}
+
+MAJOR CROSS-ASPECTS:
+{aspects}
+
+SOURCE PASSAGES:
+{rag}
+
+Sections: (1) Overall resonance, (2) Points of strong connection, (3) Where care
+and growth are needed. Treat both people with equal warmth. Do not give a
+lasting "compatibility score" — reducing a relationship to a number is
+misleading and leaves a mark that cannot be taken back.
+"""
+
+SYNASTRY_FALLBACK = (
+    "The dynamic between {name1} ({sun1}) and {name2} ({sun2}) carries both "
+    "points of attraction and points of friction. "
+    "Check back shortly for the full reading."
+)

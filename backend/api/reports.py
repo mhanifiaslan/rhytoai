@@ -122,31 +122,37 @@ def daily(data: BirthData,
 
 
 @router.post("/natal")
-def natal(data: BirthData, user: AuthUser = Depends(require_plus("natal_report"))):
+def natal(data: BirthData,
+          user: AuthUser = Depends(require_plus("natal_report")),
+          lang: str = Depends(get_language)):
     try:
         chart = astro_service.get_natal_chart(**_natal_kwargs(data))
-        report = report_service.natal_report(user.uid, chart)
+        report = report_service.natal_report(user.uid, chart, lang=lang)
         return {"status": "success", "data": {"chart": chart, "report": report["text"]}}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/bazi")
-def bazi(data: BirthData, user: AuthUser = Depends(require_plus("bazi"))):
+def bazi(data: BirthData,
+         user: AuthUser = Depends(require_plus("bazi")),
+         lang: str = Depends(get_language)):
     try:
         chart = get_bazi_chart(
             year=data.year, month=data.month, day=data.day, hour=data.hour,
             minute=data.minute, city=data.city, nation=data.nation,
             gender=data.gender, name=data.name,
         )
-        report = report_service.bazi_report(user.uid, chart)
+        report = report_service.bazi_report(user.uid, chart, lang=lang)
         return {"status": "success", "data": {"chart": chart, "report": report["text"]}}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/iching")
-def iching(req: IChingReportRequest, user: AuthUser = Depends(get_current_user)):
+def iching(req: IChingReportRequest,
+           user: AuthUser = Depends(get_current_user),
+           lang: str = Depends(get_language)):
     """I Ching hafif gunluk ritual olarak ucretsiz kalir, ama gunde bir cekilis.
 
     Sinirsiz olsaydi ucretsiz kullanici basina acik uclu LLM maliyeti olusurdu;
@@ -155,14 +161,16 @@ def iching(req: IChingReportRequest, user: AuthUser = Depends(get_current_user))
     enforce_daily_quota(user, "iching", FREE_ICHING_PER_DAY)
     try:
         cast = cast_iching(req.question, method=req.method)
-        report = report_service.iching_reading(user.uid, cast)
+        report = report_service.iching_reading(user.uid, cast, lang=lang)
         return {"status": "success", "data": {"cast": cast, "report": report["text"]}}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/dyad")
-def dyad(req: DyadRequest, user: AuthUser = Depends(require_plus("dyad"))):
+def dyad(req: DyadRequest,
+         user: AuthUser = Depends(require_plus("dyad")),
+         lang: str = Depends(get_language)):
     """İki arkadaşın BUGÜNE özgü ilişki dinamiği.
 
     İstemci yalnızca arkadaşın kimliğini gönderir; iki doğum verisini de sunucu
@@ -190,7 +198,7 @@ def dyad(req: DyadRequest, user: AuthUser = Depends(require_plus("dyad"))):
     report = report_service.dyad_reading(
         user.uid, req.friend_uid,
         me.get("displayName") or "Gezgin", friend.get("displayName") or "Gezgin",
-        synastry, sky,
+        synastry, sky, lang=lang,
     )
 
     return {"status": "success", "data": {
@@ -206,12 +214,13 @@ def dyad(req: DyadRequest, user: AuthUser = Depends(require_plus("dyad"))):
 
 @router.post("/synastry")
 def synastry(req: SynastryReportRequest,
-             user: AuthUser = Depends(require_plus("synastry"))):
+             user: AuthUser = Depends(require_plus("synastry")),
+             lang: str = Depends(get_language)):
     try:
         result = astro_service.get_synastry(
             _natal_kwargs(req.person1), _natal_kwargs(req.person2)
         )
-        report = report_service.synastry_report(user.uid, result)
+        report = report_service.synastry_report(user.uid, result, lang=lang)
         return {"status": "success", "data": {"synastry": result, "report": report["text"]}}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -222,3 +222,62 @@ def test_baslik_yoksa_turkce(monkeypatch):
     data = response.json()["data"]
     assert data["lang"] == "tr"
     assert data["sign_name"] == "Başak"
+
+
+# --------------------------------------------------------------------------
+# Tüm rapor türleri dile göre üretilir
+# --------------------------------------------------------------------------
+
+def test_tum_sablonlar_iki_dilde_var():
+    """Bir şablon yalnızca bir dilde tanımlıysa o dilde AttributeError alırız."""
+    zorunlu = [
+        "SYSTEM_INSTRUCTION", "CHAT_SYSTEM_INSTRUCTION",
+        "HOROSCOPE", "HOROSCOPE_FALLBACK", "DAILY", "DAILY_FALLBACK",
+        "DYAD", "DYAD_FALLBACK", "NATAL", "NATAL_FALLBACK",
+        "BAZI", "BAZI_FALLBACK", "ICHING", "ICHING_TRANSFORMED",
+        "SYNASTRY", "SYNASTRY_FALLBACK", "MEMORY_BLOCK",
+        "WHISPER_RAG", "WHISPER_MEMORY", "WHISPER_CHART", "WHISPER_SKY",
+        "USER_MESSAGE_LABEL", "NONE_LABEL", "NO_ASPECTS",
+        "SIGN_NAMES", "PERIOD_NAMES", "PERIOD_LENGTHS",
+    ]
+    for kod in i18n.SUPPORTED:
+        modul = prompts.get(kod)
+        for ad in zorunlu:
+            assert hasattr(modul, ad), f"{kod} dilinde {ad} eksik"
+
+
+def test_sinastri_promptuna_uyum_skoru_girmez(monkeypatch):
+    """Skor hesaplanıyor ama prompt'a girmemeli: ilişkiyi tek sayıya indirgemek
+    ikili dinamikte de yasak, sinastride de olmamalı."""
+    yakalanan: dict[str, str] = {}
+    monkeypatch.setattr(report_service.gemini_service, "generate",
+                        lambda prompt, **k: yakalanan.update(p=prompt) or "ok")
+    monkeypatch.setattr(report_service, "retrieve_context", lambda *a, **k: "")
+
+    sinastri = {
+        "person1": {"name": "Ada", "sun": {"sign_tr": "Leo"},
+                    "moon": {"sign_tr": "Aries"}},
+        "person2": {"name": "Deniz", "sun": {"sign_tr": "Libra"},
+                    "moon": {"sign_tr": "Pisces"}},
+        "relationship_score": {"score": 74, "description": "high"},
+        "aspects": [],
+    }
+    report_service.synastry_report("u", sinastri, lang="en")
+
+    assert "74" not in yakalanan["p"]
+    assert "compatibility score" in yakalanan["p"].lower()
+
+
+def test_natal_ve_bazi_onbellegi_dile_gore_ayrisir(monkeypatch):
+    uretilen: list[str] = []
+    monkeypatch.setattr(report_service.gemini_service, "generate",
+                        lambda prompt, **k: uretilen.append(k.get("lang")) or "x")
+    monkeypatch.setattr(report_service, "retrieve_context", lambda *a, **k: "")
+
+    natal = {"sun_sign": "Leo", "moon_sign": "Aries", "ascendant": "Libra",
+             "points": [], "aspects": []}
+    report_service.natal_report("u", natal, lang="tr")
+    report_service.natal_report("u", natal, lang="en")
+
+    # İki ayrı üretim olmalı; tek anahtar olsaydı ikincisi önbellekten gelirdi
+    assert uretilen == ["tr", "en"]

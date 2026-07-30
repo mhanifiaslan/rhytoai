@@ -183,3 +183,138 @@ WHISPER_CHART = (
 )
 WHISPER_SKY = "BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris ile hesaplandı):"
 USER_MESSAGE_LABEL = "KULLANICININ MESAJI"
+
+# --- İkili dinamik, natal, BaZi, I Ching, sinastri ---
+
+NONE_LABEL = "yok"
+NO_ASPECTS = "belirgin karşılıklı açı yok"
+
+DYAD = """
+GÖREV: {name_a} ile {name_b} arasındaki ilişki dinamiğinin BUGÜNE özgü halini
+anlatan 90-130 kelimelik kısa bir metin yaz.
+
+BUGÜNÜN GÖKYÜZÜ ({today}):
+- Ay evresi: {moon_name} {moon_emoji} (aydınlanma %{illumination})
+- Retro gezegenler: {retros}
+
+ARALARINDAKİ KARŞILIKLI AÇILAR:
+{aspects}
+
+KAYNAK PASAJLARI:
+{rag}
+
+KURALLAR (kesin):
+- ASLA puan, yüzde veya "uyumlusunuz/uyumsuzsunuz" gibi kalıcı bir yargı verme.
+  Anlattığın şey yalnızca BUGÜN için geçerli bir eğilimdir.
+- İki tarafı da eşit ele al; birini haklı diğerini haksız çıkarma.
+- Pohpohlama. Gerginlik varsa gerginlik de; ama daima birlikte atılabilecek
+  somut ve küçük bir adımla bitir.
+- İlişkinin geleceği, ayrılık, evlilik, hamilelik veya sağlık hakkında
+  ÖNGÖRÜDE BULUNMA.
+- Düz metin yaz: başlık, madde işareti veya numaralandırma kullanma.
+- İkisine birden hitap et ("ikiniz"), tek bir kişiye değil.
+"""
+
+DYAD_FALLBACK = (
+    "Bugün {name_a} ile {name_b} arasındaki ritim sakin bir zeminde ilerliyor. "
+    "Ay {moon_name} evresindeyken birbirinize ayıracağınız kısa ama bölünmemiş "
+    "bir dikkat, günün tonunu belirleyecek. "
+    "Detaylı okuma için biraz sonra tekrar dene."
+)
+
+NATAL = """
+GÖREV: Aşağıdaki natal harita verilerinden 400-500 kelimelik derin bir doğum
+haritası analizi yaz. Bölümler: (1) Öz Kimlik (Güneş/Ay/Yükselen üçlüsü),
+(2) Gezegen vurguları, (3) Önemli açılar ve iç dinamikler, (4) Yaşam teması
+ve potansiyel.
+
+NATAL HARİTA (Swiss Ephemeris hassasiyetinde):
+Güneş: {sun_sign} | Ay: {moon_sign} | Yükselen: {ascendant}
+
+GEZEGENLER:
+{points}
+
+AÇILAR:
+{aspects}
+
+KAYNAK PASAJLARI (kadim gelenekten harmanla):
+{rag}
+"""
+
+NATAL_FALLBACK = (
+    "Güneşin {sun_sign}, Ayın {moon_sign} ve yükselenin {ascendant}. Bu üçlü; "
+    "öz kimliğin, duygusal dünyan ve dışa dönük maskenin haritasını çizer. "
+    "Detaylı yorum için lütfen daha sonra tekrar dene."
+)
+
+BAZI = """
+GÖREV: Aşağıdaki BaZi (Dört Sütun) verilerinden 250-300 kelimelik kader haritası
+analizi yaz.
+
+HESAPLANMIŞ BAZI HARİTASI (gerçek güneş terimleriyle):
+- Dört Sütun: {pillars}
+- Günün Efendisi (Day Master): {day_master}
+- Çin burcu: {zodiac_animal}
+- Element dağılımı: {elements} (baskın: {dominant}, eksik: {missing})
+- On Tanrı: yıl={ten_year}, ay={ten_month}, saat={ten_hour}
+- Şans Sütunları: {luck}
+
+KAYNAK PASAJLARI:
+{rag}
+
+Bölümler: (1) Öz element ve doğa, (2) Element dengesi ve beslenmesi gereken alan,
+(3) Önümüzdeki şans dönemi teması.
+"""
+
+BAZI_FALLBACK = (
+    "Günün Efendin {element} elementi: {polarity} doğanın özü bu. "
+    "Baskın elementin {dominant}. Detaylı yorum için tekrar dene."
+)
+
+ICHING = """
+GÖREV: Kullanıcının sorusunu, çekilen I Ching heksagramının 3000 yıllık metnine
+bağlayan 150-200 kelimelik bir kehanet yorumu yaz.
+
+KULLANICININ SORUSU: "{question}"
+
+ÇEKİM SONUCU ({method} yöntemi, gerçek olasılık dağılımıyla):
+- Heksagram #{number}: {name_tr} ({name} {name_cn}) {unicode}
+- Hüküm: {judgment}
+- İmge: {image}
+- Trigramlar: {lower} altında, {upper} üstte{transformed}
+
+KAYNAK PASAJLARI:
+{rag}
+
+Yorum SORUYA ÖZGÜ olsun; hareketli çizgi varsa 'şu andan geleceğe dönüşüm'
+vurgusu yap. Kesin tarihli öngörüde bulunma.
+"""
+
+ICHING_TRANSFORMED = (
+    "\nHAREKETLİ ÇİZGİLER {lines} → DÖNÜŞEN HEKSAGRAM: "
+    "#{number} {name_tr} ({name})\nHüküm: {judgment}"
+)
+
+SYNASTRY = """
+GÖREV: İki kişi arasındaki sinastri (astrolojik uyum) verilerinden 200-250
+kelimelik bir kozmik uyum raporu yaz.
+
+KİŞİLER:
+- {name1}: Güneş {sun1}, Ay {moon1}
+- {name2}: Güneş {sun2}, Ay {moon2}
+
+ÖNEMLİ KARŞILIKLI AÇILAR:
+{aspects}
+
+KAYNAK PASAJLARI:
+{rag}
+
+Bölümler: (1) Genel rezonans, (2) Güçlü bağ noktaları, (3) Dikkat ve büyüme alanı.
+İki tarafı da eşit sıcaklıkta ele al. Kalıcı bir "uyum puanı" verme; ilişkiyi
+sayıya indirgemek yanıltıcıdır ve geri alınamaz bir damga bırakır.
+"""
+
+SYNASTRY_FALLBACK = (
+    "{name1} ({sun1}) ile {name2} ({sun2}) arasındaki dinamik hem çekim hem "
+    "sürtünme noktaları taşıyor. Detaylı yorum için tekrar dene."
+)
