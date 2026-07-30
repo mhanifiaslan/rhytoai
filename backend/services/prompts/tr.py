@@ -184,6 +184,12 @@ WHISPER_CHART = (
 WHISPER_SKY = "BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris ile hesaplandı):"
 USER_MESSAGE_LABEL = "KULLANICININ MESAJI"
 
+# Sohbete iliştirilen gökyüzü satırları. Bunlar da dile bağlı: İngilizce
+# prompt'a Türkçe etiket girerse model iki dil arasında sallanır.
+SKY_MOON = "- Ay evresi: {name} (aydınlanma %{illumination})"
+SKY_RETROS = "- Retro gezegenler: {retros}"
+SKY_ASPECTS = "- Önemli açılar: {aspects}"
+
 # --- İkili dinamik, natal, BaZi, I Ching, sinastri ---
 
 NONE_LABEL = "yok"

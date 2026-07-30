@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from core.auth import get_current_user
+from core.i18n import get_language
+from core.messages import text
 from services.iching_service import cast_iching, get_hexagram
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -23,8 +25,9 @@ def cast(query: Optional[IChingQuery] = None):
 
 
 @router.get("/hexagram/{number}")
-def hexagram_detail(number: int):
+def hexagram_detail(number: int, lang: str = Depends(get_language)):
     try:
         return {"status": "success", "hexagram": get_hexagram(number)}
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except ValueError:
+        raise HTTPException(status_code=404,
+                            detail=text("hexagram_not_found", lang))

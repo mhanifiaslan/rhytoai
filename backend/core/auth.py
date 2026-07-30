@@ -9,6 +9,8 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core import config
+from core.i18n import get_language
+from core.messages import text
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +47,14 @@ class AuthUser:
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
+    lang: str = Depends(get_language),
 ) -> AuthUser:
+    """Oturum doğrulama.
+
+    Dil bağımlılığı yalnızca hata metni için: 401 yanıtının `detail` alanı
+    istemcide doğrudan kullanıcıya gösteriliyor, o yüzden kullanıcının dilinde
+    olmak zorunda.
+    """
     if credentials is not None and _init_firebase():
         try:
             from firebase_admin import auth as fb_auth
@@ -55,9 +64,10 @@ async def get_current_user(
         except Exception as exc:
             logger.info("Token doğrulanamadı: %s", exc)
             if not config.DEV_MODE:
-                raise HTTPException(status_code=401, detail="Geçersiz kimlik belirteci")
+                raise HTTPException(status_code=401,
+                                    detail=text("auth_invalid", lang))
 
     if config.DEV_MODE:
         return AuthUser(uid="dev-user", anonymous=True)
 
-    raise HTTPException(status_code=401, detail="Kimlik doğrulama gerekli")
+    raise HTTPException(status_code=401, detail=text("auth_required", lang))

@@ -1,4 +1,5 @@
 """Yorum/rapor uçları: hesaplama + RAG + Gemini + önbellek tek çağrıda."""
+import logging
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -6,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
+from core.messages import text
 from core.entitlements import (
     FREE_ICHING_PER_DAY,
     enforce_daily_quota,
@@ -16,7 +18,20 @@ from services.bazi_service import get_bazi_chart
 from services.iching_service import cast_iching
 from services.sky_service import get_sky_now
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _internal(exc: Exception, uç: str, lang: str) -> HTTPException:
+    """İstisnayı sunucuda loglar, kullanıcıya sabit bir metinle döner.
+
+    Uçlar eskiden `detail=str(e)` döndürüyordu: istemci `detail` alanını
+    doğrudan ekrana bastığı için kullanıcı Python istisna metni görüyordu ve
+    sunucunun iç yapısı dışarı sızıyordu.
+    """
+    logger.exception("%s ucunda hata", uç, exc_info=exc)
+    return HTTPException(status_code=500, detail=text("internal", lang))
+
 
 # İngilizce burç anahtarı -> Türkçe ad (Koç→Balık sırası korunur).
 SIGN_TR = {
@@ -118,7 +133,7 @@ def daily(data: BirthData,
             "moon_phase": sky["moon_phase"], "retrogrades": sky["retrogrades"],
         }}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal(e, "daily", lang)
 
 
 @router.post("/natal")
@@ -130,7 +145,7 @@ def natal(data: BirthData,
         report = report_service.natal_report(user.uid, chart, lang=lang)
         return {"status": "success", "data": {"chart": chart, "report": report["text"]}}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal(e, "natal", lang)
 
 
 @router.post("/bazi")
@@ -146,7 +161,7 @@ def bazi(data: BirthData,
         report = report_service.bazi_report(user.uid, chart, lang=lang)
         return {"status": "success", "data": {"chart": chart, "report": report["text"]}}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal(e, "bazi", lang)
 
 
 @router.post("/iching")
@@ -158,13 +173,13 @@ def iching(req: IChingReportRequest,
     Sinirsiz olsaydi ucretsiz kullanici basina acik uclu LLM maliyeti olusurdu;
     gunde bir cekilis hem ritueli korur hem maliyeti ongorulur tutar.
     """
-    enforce_daily_quota(user, "iching", FREE_ICHING_PER_DAY)
+    enforce_daily_quota(user, "iching", FREE_ICHING_PER_DAY, lang=lang)
     try:
         cast = cast_iching(req.question, method=req.method)
         report = report_service.iching_reading(user.uid, cast, lang=lang)
         return {"status": "success", "data": {"cast": cast, "report": report["text"]}}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal(e, "iching", lang)
 
 
 @router.post("/dyad")
@@ -178,18 +193,17 @@ def dyad(req: DyadRequest,
     tarihi/saati/yeri hiçbir zaman karşı istemciye ulaşmaz.
     """
     if req.friend_uid == user.uid:
-        raise HTTPException(status_code=400, detail="Kendinle ikili okuma yapılamaz.")
+        raise HTTPException(status_code=400, detail=text("dyad.self", lang))
 
     if not profile_service.are_friends(user.uid, req.friend_uid):
-        raise HTTPException(
-            status_code=403,
-            detail="Bu okuma yalnızca karşılıklı olarak eklenmiş arkadaşlar için üretilir.",
-        )
+        raise HTTPException(status_code=403,
+                            detail=text("dyad.not_friends", lang))
 
     me = profile_service.get_profile(user.uid)
     friend = profile_service.get_profile(req.friend_uid)
     if not me or not friend:
-        raise HTTPException(status_code=404, detail="Profil bulunamadı.")
+        raise HTTPException(status_code=404,
+                            detail=text("dyad.profile_missing", lang))
 
     synastry = astro_service.get_synastry(
         profile_service.birth_kwargs(me), profile_service.birth_kwargs(friend)
@@ -223,4 +237,4 @@ def synastry(req: SynastryReportRequest,
         report = report_service.synastry_report(user.uid, result, lang=lang)
         return {"status": "success", "data": {"synastry": result, "report": report["text"]}}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise _internal(e, "synastry", lang)

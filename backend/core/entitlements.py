@@ -28,6 +28,8 @@ from fastapi import Depends, HTTPException
 
 from core import firestore as firestore_client
 from core.auth import AuthUser, get_current_user
+from core.i18n import DEFAULT as DEFAULT_LANG, get_language
+from core.messages import text
 
 logger = logging.getLogger(__name__)
 
@@ -48,25 +50,10 @@ FREE_CHAT_PER_DAY = 5
 #: Sinirsiz olsa kullanici basina acik uclu LLM maliyeti olusurdu.
 FREE_ICHING_PER_DAY = 1
 
-#: Kilitli uclarda istemciye donen mesajlar.
-PAYWALL_MESSAGES = {
-    "personal_daily": "Kisiye ozel gunluk okuma Rytho+ aboneligine dahildir.",
-    "natal_report": "Derinlemesine dogum haritasi raporu Rytho+ aboneligine dahildir.",
-    "dyad": "Arkadasinla gunluk ikili dinamik Rytho+ aboneligine dahildir.",
-    "synastry": "Sinastri raporu Rytho+ aboneligine dahildir.",
-    "bazi": "BaZi analizi Rytho+ aboneligine dahildir.",
-}
-
-QUOTA_MESSAGES = {
-    "chat": (
-        f"Bugunluk ucretsiz sohbet hakkin doldu ({FREE_CHAT_PER_DAY} mesaj). "
-        "Rytho+ ile sinirsiz konusabilirsin."
-    ),
-    "iching": (
-        "Bugunluk cekilisini yaptin. Yarin yeni bir heksagram seni bekliyor; "
-        "Rytho+ ile istedigin kadar cekebilirsin."
-    ),
-}
+#: Kilitli uclarda ve dolu kotalarda donen metinler artik core/messages.py'de,
+#: dile gore tutuluyor: bu metinler istemcide dogrudan kullaniciya gosteriliyor
+#: (bkz. friendlyError) ve Ingilizce kullanan biri Turkce paywall metni
+#: gormemeli. Anahtarlar "paywall.<ozellik>" ve "quota.<anahtar>" bicimindedir.
 
 
 def _private_doc(uid: str, name: str):
@@ -189,26 +176,31 @@ def require_plus(feature: str):
     Kullanim:  ``user: AuthUser = Depends(require_plus("natal_report"))``
     """
 
-    def dependency(user: AuthUser = Depends(get_current_user)) -> AuthUser:
+    def dependency(user: AuthUser = Depends(get_current_user),
+                   lang: str = Depends(get_language)) -> AuthUser:
         if not is_subscriber(user.uid):
             raise HTTPException(
                 status_code=PAYWALL_STATUS,
-                detail=PAYWALL_MESSAGES.get(feature, "Bu ozellik Rytho+ aboneligine dahildir."),
+                detail=text(f"paywall.{feature}", lang,
+                            fallback="paywall.default"),
             )
         return user
 
     return dependency
 
 
-def enforce_daily_quota(user: AuthUser, key: str, limit: int) -> None:
+def enforce_daily_quota(user: AuthUser, key: str, limit: int,
+                        lang: str = DEFAULT_LANG) -> None:
     """Ucretsiz kullanici icin gunluk kotayi uygular; abone sinirsizdir.
 
-    Kota dolduysa paywall koduyla (402) hata firlatir.
+    Kota dolduysa paywall koduyla (402) hata firlatir. ``lang`` yalnizca
+    kullaniciya donen metni belirler; kotanin kendisi dilden bagimsizdir.
     """
     if is_subscriber(user.uid):
         return
     if not consume_quota(user.uid, key, limit):
         raise HTTPException(
             status_code=PAYWALL_STATUS,
-            detail=QUOTA_MESSAGES.get(key, "Bugunluk ucretsiz hakkin doldu."),
+            detail=text(f"quota.{key}", lang, fallback="quota.default",
+                        limit=limit),
         )

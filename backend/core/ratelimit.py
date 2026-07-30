@@ -13,6 +13,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from core.i18n import resolve_language
+from core.messages import text
+
 # LLM'e giden pahalı uçlar: daha sıkı kota
 LLM_PREFIXES = ("/api/v1/reports", "/api/v1/chat")
 
@@ -34,10 +37,8 @@ WINDOW_SECONDS = 60.0
 EXEMPT_PATHS = {"/", "/healthz", "/health", "/docs", "/openapi.json", "/redoc",
                 "/api/v1/billing/revenuecat"}
 
-RATE_LIMIT_MESSAGE = (
-    "Gökyüzü biraz nefes istiyor: kısa sürede çok fazla istek gönderdin. "
-    "Lütfen bir dakika sonra tekrar dene."
-)
+# Kota mesajı dile göre core/messages.py'den gelir. Burası middleware olduğu
+# için FastAPI bağımlılığı kullanılamaz; başlık doğrudan okunur.
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -89,9 +90,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         if len(dq) >= limit:
             retry_after = max(1, int(WINDOW_SECONDS - (now - dq[0])) + 1)
+            lang = resolve_language(request.headers.get("accept-language"))
             return JSONResponse(
                 status_code=429,
-                content={"status": "error", "detail": RATE_LIMIT_MESSAGE},
+                content={"status": "error", "detail": text("rate_limited", lang)},
                 headers={"Retry-After": str(retry_after)},
             )
 

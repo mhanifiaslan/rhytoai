@@ -173,6 +173,32 @@ def test_ingilizce_burc_promptu_ingilizce(monkeypatch):
     assert "GÖREV" not in prompt, "İngilizce prompt'a Türkçe sızdı"
 
 
+@uygulama_gerekir
+def test_sohbet_gokyuzu_ozeti_dile_gore(monkeypatch):
+    """Gökyüzü bloğu prompt'a giriyor; Türkçe etiketler İngilizce prompt'un
+    içinde kalırsa model iki dil arasında sallanır."""
+    from api import chat as chat_api
+
+    monkeypatch.setattr(chat_api, "get_sky_now", lambda: SAHTE_GOKYUZU)
+
+    tr = chat_api._sky_summary("tr")
+    en = chat_api._sky_summary("en")
+
+    assert "Ay evresi" in tr and "Retro gezegenler" in tr
+    assert "Moon phase" in en and "Retrograde planets" in en
+    assert "Ay evresi" not in en, "İngilizce gökyüzü özetine Türkçe sızdı"
+
+
+def test_sohbet_gokyuzu_bos_retro_etiketi_dile_gore(monkeypatch):
+    from api import chat as chat_api
+
+    monkeypatch.setattr(chat_api, "get_sky_now",
+                        lambda: {**SAHTE_GOKYUZU, "retrogrades": []})
+
+    assert "yok" in chat_api._sky_summary("tr")
+    assert "none" in chat_api._sky_summary("en")
+
+
 def test_fisilti_etiketleri_dile_gore():
     tr = prompt_composer.compose_chat_message(
         "selam", [], chart="- Güneş: Aslan", lang="tr")
@@ -237,6 +263,7 @@ def test_tum_sablonlar_iki_dilde_var():
         "BAZI", "BAZI_FALLBACK", "ICHING", "ICHING_TRANSFORMED",
         "SYNASTRY", "SYNASTRY_FALLBACK", "MEMORY_BLOCK",
         "WHISPER_RAG", "WHISPER_MEMORY", "WHISPER_CHART", "WHISPER_SKY",
+        "SKY_MOON", "SKY_RETROS", "SKY_ASPECTS",
         "USER_MESSAGE_LABEL", "NONE_LABEL", "NO_ASPECTS",
         "SIGN_NAMES", "PERIOD_NAMES", "PERIOD_LENGTHS",
     ]

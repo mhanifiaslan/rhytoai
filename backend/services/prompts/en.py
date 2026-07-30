@@ -197,6 +197,12 @@ WHISPER_CHART = (
 WHISPER_SKY = "TODAY'S ACTUAL SKY (calculated with Swiss Ephemeris):"
 USER_MESSAGE_LABEL = "THE READER'S MESSAGE"
 
+# Sky lines attached to chat. Language-bound as well: Turkish labels inside an
+# English prompt make the model drift between the two languages.
+SKY_MOON = "- Moon phase: {name} ({illumination}% illuminated)"
+SKY_RETROS = "- Retrograde planets: {retros}"
+SKY_ASPECTS = "- Notable aspects: {aspects}"
+
 # --- Dyad, natal, BaZi, I Ching, synastry ---
 
 NONE_LABEL = "none"

@@ -74,6 +74,73 @@ def test_bos_mesaj():
     assert forbidden_topic("") is None
 
 
+# --------------------------------------------------------------------------
+# İngilizce kapı
+#
+# Kalıplar yalnızca Türkçe olduğu sürece uygulamayı İngilizce kullanan biri
+# için kapı hiç yoktu: "will my cancer get better?" doğrudan modele gidiyordu.
+# Dahi kötüsü, dili değiştirmek kapıyı aşmanın yolu oluyordu.
+# --------------------------------------------------------------------------
+
+@pytest.mark.parametrize("mesaj,beklenen", [
+    ("Will my cancer get better?", "saglik"),
+    ("Should I stop taking this medication?", "saglik"),
+    ("Will my surgery go well", "saglik"),
+    ("Will I get pregnant this year?", "hamilelik"),
+    ("Am I going to conceive soon", "hamilelik"),
+    ("When will I die", "olum"),
+    ("How long do I have to live", "olum"),
+    ("Should I buy this stock?", "finans"),
+    ("Will bitcoin go up", "finans"),
+    ("Is it a good time to buy gold", "finans"),
+])
+def test_ingilizce_ongoru_talepleri_yakalanir(mesaj, beklenen):
+    sonuc = forbidden_topic(mesaj, lang="en")
+    assert sonuc is not None, f"yakalanmali: {mesaj}"
+    assert sonuc[0] == beklenen
+
+
+@pytest.mark.parametrize("mesaj", [
+    # Duygu paylaşımı — talep işareti yok
+    "My mother is sick and I feel awful today",
+    "I lost my father to cancer last year",
+    "I have been depressed and cannot talk to anyone",
+    # Aşırı geniş kalıpların yakalayacağı masum sorular
+    "Will things get better for me?",
+    "Should I invest more time in this relationship?",
+    "Will he share his feelings with me",
+    # Genel sorular
+    "What does Mercury retrograde mean for my relationship",
+    "Will this week be good for love",
+    "How does the moon phase affect me today",
+])
+def test_ingilizce_normal_mesajlar_engellenmez(mesaj):
+    assert forbidden_topic(mesaj, lang="en") is None, f"engellenmemeli: {mesaj}"
+
+
+def test_dil_degistirerek_kapi_asilamaz():
+    """Kapı mesajı TÜM dillerin kalıplarına karşı sınar.
+
+    Arayüz dili Türkçeyken İngilizce yazmak (ya da tersi) engeli aşmamalı;
+    yalnızca dönen yanıtın dili kullanıcının diline göre değişir.
+    """
+    tr_arayuz = forbidden_topic("Will my cancer get better?", lang="tr")
+    assert tr_arayuz is not None
+    assert tr_arayuz[0] == "saglik"
+    assert "hekim" in tr_arayuz[1].lower(), "yanıt kullanıcının dilinde olmalı"
+
+    en_arayuz = forbidden_topic("Kanserim geçecek mi?", lang="en")
+    assert en_arayuz is not None
+    assert en_arayuz[0] == "saglik"
+    assert "doctor" in en_arayuz[1].lower(), "yanıt kullanıcının dilinde olmalı"
+
+
+def test_desteklenmeyen_dil_varsayilana_duser():
+    sonuc = forbidden_topic("Kanserim geçecek mi?", lang="de")
+    assert sonuc is not None
+    assert "hekim" in sonuc[1].lower()
+
+
 @pytest.mark.parametrize("mesaj", [
     "İlacı bırakmalı mıyım",
     "İYİLEŞECEK MİYİM ACABA HASTALIĞIM",
