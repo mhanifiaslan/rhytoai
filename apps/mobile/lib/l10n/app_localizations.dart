@@ -973,6 +973,234 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Keşfet'**
   String get promoAction;
+
+  /// No description provided for @chatTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho AI'**
+  String get chatTitle;
+
+  /// No description provided for @chatHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geleceğinle ilgili her şeyi sor...'**
+  String get chatHint;
+
+  /// No description provided for @chatEmptyBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritan, yüzün, kaderin... Aklından geçen her soruyu sor.'**
+  String get chatEmptyBody;
+
+  /// No description provided for @chatFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kozmik bağlantı koptu. Lütfen tekrar dene.'**
+  String get chatFailed;
+
+  /// No description provided for @suggestCareer.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kariyer 💼'**
+  String get suggestCareer;
+
+  /// No description provided for @suggestLove.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aşk hayatı ❤️'**
+  String get suggestLove;
+
+  /// No description provided for @suggestMonth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ay beni ne bekliyor?'**
+  String get suggestMonth;
+
+  /// No description provided for @suggestFinance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Finansal şans 💰'**
+  String get suggestFinance;
+
+  /// No description provided for @suggestMarriage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evlilik zamanı 💍'**
+  String get suggestMarriage;
+
+  /// No description provided for @oracleTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kehanet Odası'**
+  String get oracleTitle;
+
+  /// No description provided for @tabIChing.
+  ///
+  /// In tr, this message translates to:
+  /// **'I CHING 🪙'**
+  String get tabIChing;
+
+  /// No description provided for @tabBaZi.
+  ///
+  /// In tr, this message translates to:
+  /// **'BAZI 🀄'**
+  String get tabBaZi;
+
+  /// No description provided for @onboardingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum Anın'**
+  String get onboardingTitle;
+
+  /// No description provided for @onboardingBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritanın çizilebilmesi için gökyüzünün o anki dizilişi gerekir. Saat ne kadar kesinse, yükselen o kadar doğrudur.'**
+  String get onboardingBody;
+
+  /// No description provided for @onboardingCity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum şehri'**
+  String get onboardingCity;
+
+  /// No description provided for @genderFemale.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kadın'**
+  String get genderFemale;
+
+  /// No description provided for @genderMale.
+  ///
+  /// In tr, this message translates to:
+  /// **'Erkek'**
+  String get genderMale;
+
+  /// No description provided for @genderOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get genderOther;
+
+  /// No description provided for @onboardingSubmit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritamı çiz ✨'**
+  String get onboardingSubmit;
+
+  /// No description provided for @onboardingFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kayıt başarısız.'**
+  String get onboardingFailed;
+
+  /// No description provided for @atlasTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum Haritası Analizi'**
+  String get atlasTitle;
+
+  /// No description provided for @appHeadline.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kişisel Kozmik Zekân'**
+  String get appHeadline;
+
+  /// No description provided for @consentNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam ederek gizlilik ilkelerini kabul etmiş olursun.\nYorumlar içgörü amaçlıdır; tıbbi/finansal tavsiye değildir.'**
+  String get consentNote;
+
+  /// No description provided for @authNameRequired.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adını yaz.'**
+  String get authNameRequired;
+
+  /// No description provided for @authInvalidEmail.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geçerli bir e-posta yaz.'**
+  String get authInvalidEmail;
+
+  /// No description provided for @authWrongCredentials.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta veya şifre hatalı.'**
+  String get authWrongCredentials;
+
+  /// No description provided for @authEmailInUse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu e-posta zaten kayıtlı. Giriş yapmayı dene.'**
+  String get authEmailInUse;
+
+  /// No description provided for @authWeakPassword.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre en az 6 karakter olmalı.'**
+  String get authWeakPassword;
+
+  /// No description provided for @authTooManyRequests.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok fazla deneme yapıldı. Biraz sonra tekrar dene.'**
+  String get authTooManyRequests;
+
+  /// No description provided for @authDisabled.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta ile giriş şu an kapalı.'**
+  String get authDisabled;
+
+  /// No description provided for @authNetwork.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantı kurulamadı. İnternetini kontrol et.'**
+  String get authNetwork;
+
+  /// No description provided for @authFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir şeyler ters gitti. Tekrar dene.'**
+  String get authFailed;
+
+  /// No description provided for @displayName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adın'**
+  String get displayName;
+
+  /// No description provided for @passwordRepeat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre (tekrar)'**
+  String get passwordRepeat;
+
+  /// No description provided for @passwordsDoNotMatch.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifreler eşleşmiyor.'**
+  String get passwordsDoNotMatch;
+
+  /// No description provided for @enterEmailFirst.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önce e-posta adresini yaz.'**
+  String get enterEmailFirst;
+
+  /// No description provided for @resetLinkSent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre sıfırlama bağlantısı gönderildi.'**
+  String get resetLinkSent;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ad'**
+  String get nameLabel;
 }
 
 class _AppLocalizationsDelegate

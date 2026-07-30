@@ -65,7 +65,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(AppLocalizations.of(context)
-                .reactionSent(kReactions[key]!.emoji))));
+                .reactionSent(kReactions[key]!))));
       }
     } catch (e) {
       if (mounted) {
@@ -163,7 +163,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
             children: [
               for (final entry in kReactions.entries)
                 _ReactionChip(
-                  emoji: entry.value.emoji,
+                  emoji: entry.value,
                   label: reactionLabel(l10n, entry.key),
                   selected: _sentReaction == entry.key,
                   onTap: _sentReaction == null ? () => _react(entry.key) : null,

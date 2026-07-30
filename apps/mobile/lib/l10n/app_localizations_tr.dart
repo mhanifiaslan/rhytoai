@@ -482,4 +482,122 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get promoAction => 'Keşfet';
+
+  @override
+  String get chatTitle => 'Rytho AI';
+
+  @override
+  String get chatHint => 'Geleceğinle ilgili her şeyi sor...';
+
+  @override
+  String get chatEmptyBody =>
+      'Haritan, yüzün, kaderin... Aklından geçen her soruyu sor.';
+
+  @override
+  String get chatFailed => 'Kozmik bağlantı koptu. Lütfen tekrar dene.';
+
+  @override
+  String get suggestCareer => 'Kariyer 💼';
+
+  @override
+  String get suggestLove => 'Aşk hayatı ❤️';
+
+  @override
+  String get suggestMonth => 'Bu ay beni ne bekliyor?';
+
+  @override
+  String get suggestFinance => 'Finansal şans 💰';
+
+  @override
+  String get suggestMarriage => 'Evlilik zamanı 💍';
+
+  @override
+  String get oracleTitle => 'Kehanet Odası';
+
+  @override
+  String get tabIChing => 'I CHING 🪙';
+
+  @override
+  String get tabBaZi => 'BAZI 🀄';
+
+  @override
+  String get onboardingTitle => 'Doğum Anın';
+
+  @override
+  String get onboardingBody =>
+      'Haritanın çizilebilmesi için gökyüzünün o anki dizilişi gerekir. Saat ne kadar kesinse, yükselen o kadar doğrudur.';
+
+  @override
+  String get onboardingCity => 'Doğum şehri';
+
+  @override
+  String get genderFemale => 'Kadın';
+
+  @override
+  String get genderMale => 'Erkek';
+
+  @override
+  String get genderOther => 'Diğer';
+
+  @override
+  String get onboardingSubmit => 'Haritamı çiz ✨';
+
+  @override
+  String get onboardingFailed => 'Kayıt başarısız.';
+
+  @override
+  String get atlasTitle => 'Doğum Haritası Analizi';
+
+  @override
+  String get appHeadline => 'Kişisel Kozmik Zekân';
+
+  @override
+  String get consentNote =>
+      'Devam ederek gizlilik ilkelerini kabul etmiş olursun.\nYorumlar içgörü amaçlıdır; tıbbi/finansal tavsiye değildir.';
+
+  @override
+  String get authNameRequired => 'Adını yaz.';
+
+  @override
+  String get authInvalidEmail => 'Geçerli bir e-posta yaz.';
+
+  @override
+  String get authWrongCredentials => 'E-posta veya şifre hatalı.';
+
+  @override
+  String get authEmailInUse => 'Bu e-posta zaten kayıtlı. Giriş yapmayı dene.';
+
+  @override
+  String get authWeakPassword => 'Şifre en az 6 karakter olmalı.';
+
+  @override
+  String get authTooManyRequests =>
+      'Çok fazla deneme yapıldı. Biraz sonra tekrar dene.';
+
+  @override
+  String get authDisabled => 'E-posta ile giriş şu an kapalı.';
+
+  @override
+  String get authNetwork => 'Bağlantı kurulamadı. İnternetini kontrol et.';
+
+  @override
+  String get authFailed => 'Bir şeyler ters gitti. Tekrar dene.';
+
+  @override
+  String get displayName => 'Adın';
+
+  @override
+  String get passwordRepeat => 'Şifre (tekrar)';
+
+  @override
+  String get passwordsDoNotMatch => 'Şifreler eşleşmiyor.';
+
+  @override
+  String get enterEmailFirst => 'Önce e-posta adresini yaz.';
+
+  @override
+  String get resetLinkSent => 'Şifre sıfırlama bağlantısı gönderildi.';
+
+  @override
+  String get nameLabel => 'Ad';
 }

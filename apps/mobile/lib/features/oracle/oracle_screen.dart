@@ -5,6 +5,7 @@ import '../../theme/rytho_theme.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import 'bazi_tab.dart';
 import 'iching_tab.dart';
+import '../../l10n/app_localizations.dart';
 
 /// KEHANET — iki kadim disiplin: I Ching ve BaZi.
 /// v3'te ana ekrandaki "Kehanet Araçları" kartlarından push edilir;
@@ -35,9 +36,10 @@ class _OracleScreenState extends ConsumerState<OracleScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return CosmicScaffold(
       appBar: AppBar(
-        title: const Text('Kehanet Odası'),
+        title: Text(l10n.oracleTitle),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: RythoColors.magenta,
@@ -48,9 +50,9 @@ class _OracleScreenState extends ConsumerState<OracleScreen>
               RythoText.label(12, color: RythoColors.parchmentDim),
           labelColor: RythoColors.parchment,
           unselectedLabelColor: RythoColors.parchmentDim,
-          tabs: const [
-            Tab(text: 'I CHING 🪙'),
-            Tab(text: 'BAZI 🀄'),
+          tabs: [
+            Tab(text: l10n.tabIChing),
+            Tab(text: l10n.tabBaZi),
           ],
         ),
       ),

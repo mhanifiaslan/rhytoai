@@ -7,6 +7,7 @@ import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../paywall/plus_locked_card.dart';
 import '../../core/api.dart' show friendlyError;
+import '../../l10n/app_localizations.dart';
 
 /// BaZi — Dört Sütun tablosu, Day Master, element dağılımı, şans dönemleri.
 class BaziTab extends ConsumerWidget {
@@ -14,21 +15,21 @@ class BaziTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final bazi = ref.watch(baziReportProvider);
 
     return bazi.when(
       loading: () => const Center(child: AstrolabeSpinner()),
       error: (e, _) => Center(
-        child: Text(friendlyError(e),
+        child: Text(friendlyError(e, l10n),
             style: RythoText.body(13, color: RythoColors.parchmentDim)),
       ),
       data: (data) {
         if (data == null) {
-          return const PlusLockedCard(
+          return PlusLockedCard(
             emoji: '🀄',
-            title: 'BaZi — Dört Sütun',
-            description:
-                'Day Master, On Tanrı ve şans sütunları analizi Rytho+ ile açılır.',
+            title: l10n.baziLockedTitle,
+            description: l10n.baziLockedBody,
             centered: true,
           );
         }

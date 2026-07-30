@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/paywall/paywall_screen.dart';
+import '../l10n/app_localizations.dart';
 import 'locale.dart';
 
 /// Paywall'ı herhangi bir ekrandan açabilmek için kök navigatör.
@@ -79,17 +80,21 @@ final apiProvider = Provider<Dio>((ref) {
 /// Backend her hatada Türkçe ve anlaşılır bir `detail` döndürüyor (kota,
 /// paywall, sunucu hatası). Ham `DioException` metnini ekrana basmak
 /// kullanıcıya HTTP durum kodu ve MDN bağlantısı göstermek demek.
-String friendlyError(Object error) {
+String friendlyError(Object error, [AppLocalizations? l10n]) {
   if (error is DioException) {
+    // Sunucunun `detail` alani zaten kullanicinin dilinde uretiliyor
+    // (Accept-Language ile), o yuzden oldugu gibi gosterilir.
     final data = error.response?.data;
     if (data is Map && data['detail'] is String) return data['detail'] as String;
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.connectionError) {
-      return 'Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.';
+      return l10n?.errorConnection ??
+          'Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.';
     }
   }
-  return 'Beklenmeyen bir sorun oluştu. Lütfen biraz sonra tekrar dene.';
+  return l10n?.errorGeneric ??
+      'Beklenmeyen bir sorun oluştu. Lütfen biraz sonra tekrar dene.';
 }
 
 /// Kullanıcının doğum verisini backend'in beklediği gövdeye çevirir.

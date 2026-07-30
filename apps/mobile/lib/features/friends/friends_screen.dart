@@ -61,7 +61,7 @@ class FriendsScreen extends ConsumerWidget {
           ),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(24),
-            child: Text(friendlyError(e),
+            child: Text(friendlyError(e, l10n),
                 style: RythoText.body(13, color: RythoColors.parchmentDim)),
           ),
           data: (friends) => _FriendsList(friends: friends),
@@ -220,14 +220,14 @@ class _InboxPanel extends ConsumerWidget {
       label: l10n.inboxLabel,
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         for (final nudge in nudges.take(6))
-          if (kReactions[nudge['reaction']] case final reaction?)
+          if (kReactions[nudge['reaction']] case final emoji?)
             InkWell(
               borderRadius: BorderRadius.circular(12),
               onTap: () => dismissNudge(nudge['id'] as String),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(children: [
-                  Text(reaction.emoji, style: const TextStyle(fontSize: 18)),
+                  Text(emoji, style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(

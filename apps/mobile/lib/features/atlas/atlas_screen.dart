@@ -11,6 +11,7 @@ import '../../widgets/natal_wheel.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../paywall/plus_locked_card.dart';
 import '../../core/api.dart' show friendlyError;
+import '../../l10n/app_localizations.dart';
 
 /// ATLAS — Doğum Haritası Analizi v3: natal çark kartı, kişi kartı,
 /// gezegen konumları grid'i, animasyonlu kişilik çubukları ve derin AI raporu.
@@ -26,29 +27,28 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final natal = ref.watch(natalReportProvider);
     final profile = ref.watch(profileProvider).value ?? {};
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Doğum Haritası Analizi')),
+      appBar: AppBar(title: Text(l10n.atlasTitle)),
       body: natal.when(
         loading: () => const Center(child: AstrolabeSpinner()),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(32),
-            child: Text(friendlyError(e),
+            child: Text(friendlyError(e, l10n),
                 style: RythoText.body(14, color: RythoColors.parchmentDim)),
           ),
         ),
         data: (data) {
           if (data == null) {
-            return const PlusLockedCard(
+            return PlusLockedCard(
               emoji: '🗺️',
-              title: 'Doğum haritası analizi',
-              description:
-                  'Gezegen konumların, evlerin ve açıların derin yorumu '
-                  'Rytho+ ile açılır.',
+              title: l10n.natalLockedTitle,
+              description: l10n.natalLockedBody,
               centered: true,
             );
           }

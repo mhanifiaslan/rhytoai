@@ -177,7 +177,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                       padding: EdgeInsets.all(28),
                       child: Center(child: AstrolabeSpinner()),
                     ),
-                    error: (e, _) => _ErrorCard(error: friendlyError(e)),
+                    error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
                     data: (data) {
                       // Kullanıcı ilk değerini gördü: tanıtım paywall'ı
                       // buradan tetiklenir (hesap ömründe bir kez).
@@ -219,7 +219,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               // kilitli kart gösterilir ve paywall ancak dokununca açılır.
               daily.when(
                 loading: () => const SizedBox.shrink(),
-                error: (e, _) => _ErrorCard(error: friendlyError(e)),
+                error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
                 data: (data) => data == null
                     ? PlusLockedCard(
                         title: l10n.personalReadingLocked,
@@ -289,7 +289,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               sky.when(
                 loading: () => const SizedBox(
                     height: 180, child: Center(child: AstrolabeSpinner())),
-                error: (e, _) => _ErrorCard(error: friendlyError(e)),
+                error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
                 data: (data) => GlassPanel(
                   child: Column(children: [
                     Center(

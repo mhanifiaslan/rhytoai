@@ -482,4 +482,123 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get promoAction => 'Explore';
+
+  @override
+  String get chatTitle => 'Rytho AI';
+
+  @override
+  String get chatHint => 'Ask anything about what\'s ahead...';
+
+  @override
+  String get chatEmptyBody =>
+      'Your chart, your patterns, your path — ask whatever is on your mind.';
+
+  @override
+  String get chatFailed => 'The connection dropped. Please try again.';
+
+  @override
+  String get suggestCareer => 'Career 💼';
+
+  @override
+  String get suggestLove => 'Love life ❤️';
+
+  @override
+  String get suggestMonth => 'What does this month hold?';
+
+  @override
+  String get suggestFinance => 'Money and work 💰';
+
+  @override
+  String get suggestMarriage => 'Commitment 💍';
+
+  @override
+  String get oracleTitle => 'Oracle Room';
+
+  @override
+  String get tabIChing => 'I CHING 🪙';
+
+  @override
+  String get tabBaZi => 'BAZI 🀄';
+
+  @override
+  String get onboardingTitle => 'Your Birth Moment';
+
+  @override
+  String get onboardingBody =>
+      'Your chart needs the exact arrangement of the sky at that moment. The more precise the time, the more accurate your rising sign.';
+
+  @override
+  String get onboardingCity => 'Birth city';
+
+  @override
+  String get genderFemale => 'Female';
+
+  @override
+  String get genderMale => 'Male';
+
+  @override
+  String get genderOther => 'Other';
+
+  @override
+  String get onboardingSubmit => 'Draw my chart ✨';
+
+  @override
+  String get onboardingFailed => 'Couldn\'t save your details.';
+
+  @override
+  String get atlasTitle => 'Birth Chart Analysis';
+
+  @override
+  String get appHeadline => 'Your Personal Cosmic Intelligence';
+
+  @override
+  String get consentNote =>
+      'By continuing you accept our privacy terms.\nReadings are for insight; they are not medical or financial advice.';
+
+  @override
+  String get authNameRequired => 'Enter your name.';
+
+  @override
+  String get authInvalidEmail => 'Enter a valid email address.';
+
+  @override
+  String get authWrongCredentials => 'Email or password is incorrect.';
+
+  @override
+  String get authEmailInUse =>
+      'That email is already registered. Try signing in.';
+
+  @override
+  String get authWeakPassword => 'Password must be at least 6 characters.';
+
+  @override
+  String get authTooManyRequests =>
+      'Too many attempts. Please try again shortly.';
+
+  @override
+  String get authDisabled => 'Email sign-in is currently unavailable.';
+
+  @override
+  String get authNetwork => 'Couldn\'t connect. Check your internet.';
+
+  @override
+  String get authFailed => 'Something went wrong. Please try again.';
+
+  @override
+  String get displayName => 'Your name';
+
+  @override
+  String get passwordRepeat => 'Password (repeat)';
+
+  @override
+  String get passwordsDoNotMatch => 'Passwords don\'t match.';
+
+  @override
+  String get enterEmailFirst => 'Enter your email address first.';
+
+  @override
+  String get resetLinkSent => 'Password reset link sent.';
+
+  @override
+  String get nameLabel => 'Name';
 }

@@ -14,17 +14,20 @@ import 'providers.dart';
 /// `publicProfiles/{uid}` üzerinden çalışır; oraya doğum verisi yazılmaz
 /// (bkz. infra/firestore.rules).
 
-/// Gönderilebilecek hazır tepkiler. Anahtarlar Firestore kurallarındaki
-/// listeyle **birebir aynı** olmak zorundadır (infra/firestore.rules).
-const Map<String, ({String emoji, String label})> kReactions = {
-  'streak': (emoji: '🔥', label: 'Seri devam'),
-  'thinking_of_you': (emoji: '💭', label: 'Seni düşündüm'),
-  'shine': (emoji: '✨', label: 'Parlıyorsun'),
-  'keep_going': (emoji: '💪', label: 'Devam et'),
-  'congrats': (emoji: '🎉', label: 'Tebrikler'),
-  'same_frequency': (emoji: '🛰️', label: 'Aynı frekans'),
-  'good_night': (emoji: '🌙', label: 'İyi geceler'),
-  'check_today': (emoji: '👀', label: 'Bugüne bak'),
+/// Gönderilebilecek hazır tepkiler: anahtar -> emoji.
+///
+/// Anahtarlar Firestore kurallarındaki listeyle **birebir aynı** olmak
+/// zorundadır (infra/firestore.rules) ve dile göre DEĞİŞMEZ. Gösterilen
+/// etiket `reactionLabel()` ile çözülür (features/friends).
+const Map<String, String> kReactions = {
+  'streak': '🔥',
+  'thinking_of_you': '💭',
+  'shine': '✨',
+  'keep_going': '💪',
+  'congrats': '🎉',
+  'same_frequency': '🛰️',
+  'good_night': '🌙',
+  'check_today': '👀',
 };
 
 /// Arkadaşlık durumu. `outgoing`: ben davet ettim, `incoming`: bana davet

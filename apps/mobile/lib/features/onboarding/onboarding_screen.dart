@@ -10,6 +10,7 @@ import '../../core/friends.dart' show syncPublicProfile;
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Doğum verisi kaydı: tarih, saat, şehir, cinsiyet.
 /// Kaydederken backend'den Büyük Üçlü (Güneş/Ay/Yükselen) hesaplanıp
@@ -81,8 +82,8 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await syncPublicProfile();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Kayıt başarısız: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(AppLocalizations.of(context).onboardingFailed)));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -91,7 +92,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final dateText = DateFormat('d MMMM yyyy', 'tr_TR').format(_birthDate);
+    final l10n = AppLocalizations.of(context);
+    final dateText = DateFormat('d MMMM yyyy',
+            Localizations.localeOf(context).toLanguageTag())
+        .format(_birthDate);
     final timeText =
         '${_birthTime.hour.toString().padLeft(2, '0')}:${_birthTime.minute.toString().padLeft(2, '0')}';
 
@@ -109,23 +113,22 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 .animate(delay: next())
                 .fadeIn(duration: 360.ms),
             const SizedBox(height: 8),
-            Text('Doğum Anın', style: RythoText.display(32))
+            Text(l10n.onboardingTitle, style: RythoText.display(32))
                 .animate(delay: next())
                 .fadeIn(duration: 360.ms)
                 .slideY(begin: 0.1, curve: Curves.easeOutCubic),
             const SizedBox(height: 8),
             Text(
-              'Haritanın çizilebilmesi için gökyüzünün o anki dizilişi gerekir. '
-              'Saat ne kadar kesinse, yükselen o kadar doğrudur.',
+              l10n.onboardingBody,
               style: RythoText.body(14, color: RythoColors.parchmentDim),
             ).animate(delay: next()).fadeIn(duration: 360.ms),
             const SizedBox(height: 28),
-            _FieldRow(label: 'Tarih', value: dateText, onTap: _pickDate)
+            _FieldRow(label: l10n.birthDate, value: dateText, onTap: _pickDate)
                 .animate(delay: next())
                 .fadeIn(duration: 360.ms)
                 .slideY(begin: 0.08, curve: Curves.easeOutCubic),
             const SizedBox(height: 12),
-            _FieldRow(label: 'Saat', value: timeText, onTap: _pickTime)
+            _FieldRow(label: l10n.birthTime, value: timeText, onTap: _pickTime)
                 .animate(delay: next())
                 .fadeIn(duration: 360.ms)
                 .slideY(begin: 0.08, curve: Curves.easeOutCubic),
@@ -133,16 +136,16 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             TextField(
               controller: _cityController,
               style: RythoText.body(15),
-              decoration: const InputDecoration(labelText: 'Doğum şehri'),
+              decoration: InputDecoration(labelText: l10n.onboardingCity),
             ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
                 begin: 0.08, curve: Curves.easeOutCubic),
             const SizedBox(height: 20),
             Row(
               children: [
-                for (final g in const [
-                  ('female', 'Kadın'),
-                  ('male', 'Erkek'),
-                  ('other', 'Diğer'),
+                for (final g in [
+                  ('female', l10n.genderFemale),
+                  ('male', l10n.genderMale),
+                  ('other', l10n.genderOther),
                 ]) ...[
                   Expanded(
                     child: GestureDetector(
@@ -179,7 +182,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
                 begin: 0.08, curve: Curves.easeOutCubic),
             const SizedBox(height: 36),
-            GoldButton(text: 'Haritamı çiz ✨', busy: _busy, onPressed: _save)
+            GoldButton(text: l10n.onboardingSubmit, busy: _busy, onPressed: _save)
                 .animate(delay: next())
                 .fadeIn(duration: 360.ms)
                 .slideY(begin: 0.08, curve: Curves.easeOutCubic),
