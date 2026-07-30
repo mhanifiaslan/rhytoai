@@ -39,6 +39,17 @@ _DEACTIVATING_EVENTS = {"EXPIRATION", "SUBSCRIPTION_PAUSED", "REFUND"}
 #: kullanici odedigi donemin sonuna kadar erisimini korur.
 _CANCELLATION_EVENTS = {"CANCELLATION", "BILLING_ISSUE"}
 
+#: Aboneligi bir kimlikten digerine tasiyan olay.
+#:
+#: Anonim bir kimlikle satin alma yapilip sonra oturum acildiginda RevenueCat
+#: kaydi devreder ve bu olayi gonderir. Islenmezse abonelik anonim dokumanda
+#: kalir, kullanicinin uid'i altinda hicbir sey olmaz ve odeme yapmis kullanici
+#: kilitli ekranla kalir.
+#:
+#: Bu olayin yukunde `app_user_id` YOKTUR; kimlikler `transferred_from` ve
+#: `transferred_to` listelerinde gelir.
+_TRANSFER_EVENT = "TRANSFER"
+
 
 class SubscriptionStatus(BaseModel):
     active: bool
@@ -89,6 +100,54 @@ def _ms_to_datetime(value: Any) -> dt.datetime | None:
         return None
 
 
+def _subscription_ref(client, uid: str):
+    return (client.collection("users").document(uid)
+            .collection("private").document("subscription"))
+
+
+def _handle_transfer(client, event: dict[str, Any]) -> dict[str, Any]:
+    """Aboneligi eski kimlik(ler)den yeni kimlige tasir.
+
+    Olayin yukunde urun ve bitis tarihi gelmiyor, bu yuzden kayit eski
+    dokumandan KOPYALANIR. Sifirdan "aktif" yazsaydik bitis tarihini
+    kaybeder ve suresi gecmis bir aboneligi sonsuza kadar acik birakirdik.
+    """
+    kaynaklar = [u for u in (event.get("transferred_from") or []) if u]
+    hedefler = [u for u in (event.get("transferred_to") or []) if u]
+
+    if not hedefler:
+        logger.warning("TRANSFER olayinda hedef kimlik yok; atlandi.")
+        return {"status": "ignored", "event": _TRANSFER_EVENT}
+
+    kayit: dict[str, Any] | None = None
+    for kaynak in kaynaklar:
+        anlik = _subscription_ref(client, kaynak).get()
+        if anlik.exists and kayit is None:
+            kayit = anlik.to_dict() or None
+        # Erisim iki kimlikte birden acik kalmamali.
+        _subscription_ref(client, kaynak).set(
+            {"active": False, "lastEvent": _TRANSFER_EVENT,
+             "updatedAt": dt.datetime.now(dt.timezone.utc)},
+            merge=True,
+        )
+
+    if kayit is None:
+        # Kaynak dokuman yoksa devredecek bir sey de yok. Uydurma bir kayit
+        # yazmak, odemesi olmayan kullaniciya erisim vermek olurdu.
+        logger.info("TRANSFER: kaynak abonelik kaydi bulunamadi.")
+        return {"status": "ok", "event": _TRANSFER_EVENT, "active": False}
+
+    kayit = {**kayit, "lastEvent": _TRANSFER_EVENT,
+             "updatedAt": dt.datetime.now(dt.timezone.utc)}
+    for hedef in hedefler:
+        _subscription_ref(client, hedef).set(kayit)
+
+    logger.info("Abonelik devredildi: %s -> %s aktif=%s",
+                kaynaklar, hedefler, kayit.get("active"))
+    return {"status": "ok", "event": _TRANSFER_EVENT,
+            "active": bool(kayit.get("active"))}
+
+
 @router.post("/revenuecat")
 async def revenuecat_webhook(
     payload: dict[str, Any],
@@ -101,20 +160,28 @@ async def revenuecat_webhook(
     event_type = str(event.get("type") or "").upper()
     uid = event.get("app_user_id")
 
-    if not uid:
-        raise HTTPException(status_code=400, detail="app_user_id eksik.")
-
+    bilinen = (_ACTIVATING_EVENTS | _DEACTIVATING_EVENTS
+               | _CANCELLATION_EVENTS | {_TRANSFER_EVENT})
     # Bilmedigimiz olay tiplerinde mevcut durumu bozmadan onaylayip geciyoruz;
     # aksi halde RevenueCat tekrar tekrar denerdi.
-    if event_type not in (_ACTIVATING_EVENTS | _DEACTIVATING_EVENTS | _CANCELLATION_EVENTS):
+    if event_type not in bilinen:
         logger.info("Islenmeyen RevenueCat olayi: %s", event_type)
         return {"status": "ignored", "event": event_type}
+
+    # TRANSFER disindaki her olay tek bir kimlige yazilir. Bu kontrol Firestore
+    # erisiminden ONCE yapilir: eksik kimlik istemci hatasidir (400), gecici
+    # altyapi sorunu degil (500).
+    if event_type != _TRANSFER_EVENT and not uid:
+        raise HTTPException(status_code=400, detail="app_user_id eksik.")
 
     client = firestore_client.get_client()
     if client is None:
         # 500 donersek RevenueCat tekrar dener — gecici Firestore sorununda
         # istedigimiz davranis budur.
         raise HTTPException(status_code=500, detail="Firestore erisilemiyor.")
+
+    if event_type == _TRANSFER_EVENT:
+        return _handle_transfer(client, event)
 
     expires_at = _ms_to_datetime(event.get("expiration_at_ms"))
     active = event_type in (_ACTIVATING_EVENTS | _CANCELLATION_EVENTS)
@@ -130,8 +197,7 @@ async def revenuecat_webhook(
         "updatedAt": dt.datetime.now(dt.timezone.utc),
     }
 
-    (client.collection("users").document(uid)
-        .collection("private").document("subscription").set(record))
+    _subscription_ref(client, uid).set(record)
 
     logger.info("Abonelik guncellendi: uid=%s olay=%s aktif=%s", uid, event_type, active)
     return {"status": "ok", "event": event_type, "active": active}

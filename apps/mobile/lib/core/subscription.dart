@@ -73,6 +73,10 @@ class SubscriptionStatus {
 }
 
 /// RevenueCat SDK kurulumu. Anahtar yoksa sessizce atlanır.
+///
+/// Burada **kullanıcı bağlanmaz**: uygulama açılırken Firebase oturumu henüz
+/// geri yüklenmemiş olabilir ve `currentUser` null döner. Kimlik bağlama
+/// [billingIdentityProvider] ile oturum akışına bağlıdır.
 Future<void> initBilling() async {
   if (!billingConfigured) return;
   try {
@@ -83,25 +87,44 @@ Future<void> initBilling() async {
 
     await Purchases.setLogLevel(LogLevel.warn);
     await Purchases.configure(PurchasesConfiguration(key));
-
-    // Satın almanın doğru kullanıcıya bağlanması için RevenueCat'in
-    // app_user_id'si Firebase uid olmalı; webhook da bu kimlikle geliyor.
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) await Purchases.logIn(uid);
   } catch (e) {
     debugPrint('RevenueCat başlatılamadı: $e');
   }
 }
 
-/// Oturum açan kullanıcıyı RevenueCat'e bağlar (giriş sonrası çağrılır).
-Future<void> syncBillingUser(String uid) async {
+/// RevenueCat kimliğini Firebase oturumuna bağlar.
+///
+/// **Bu bağlama olmadan satın alma kaybolur.** RevenueCat oturum açılmamışsa
+/// anonim bir kimlik (`$RCAnonymousID:...`) üretir ve webhook sunucuya o
+/// kimlikle gelir; sunucu aboneliği o dokümana yazar, kullanıcının Firebase
+/// uid'i altında hiçbir şey olmaz. Sonuç: ödeme başarılı görünür ama kilitli
+/// ekran açılmaz ve paywall tekrar tekrar gelir.
+///
+/// Eskiden bağlama yalnızca açılışta bir kez deneniyordu ve Firebase oturumu
+/// asenkron geri yüklendiği için çoğu açılışta `currentUser` henüz null
+/// oluyordu. Bu yüzden kimlik artık oturum AKIŞINA bağlı.
+final billingIdentityProvider = Provider<void>((ref) {
   if (!billingConfigured) return;
-  try {
-    await Purchases.logIn(uid);
-  } catch (e) {
-    debugPrint('RevenueCat kullanıcı eşleştirilemedi: $e');
-  }
-}
+
+  ref.listen<AsyncValue<User?>>(authStateProvider, (previous, next) {
+    final uid = next.value?.uid;
+    final oncekiUid = previous?.value?.uid;
+    if (uid == oncekiUid) return;
+
+    Future<void>(() async {
+      try {
+        if (uid == null) {
+          await Purchases.logOut();
+        } else {
+          await Purchases.logIn(uid);
+        }
+      } catch (e) {
+        debugPrint('RevenueCat kimliği bağlanamadı: $e');
+      }
+      ref.invalidate(subscriptionProvider);
+    });
+  }, fireImmediately: true);
+});
 
 /// Sunucunun gördüğü abonelik durumu — arayüz kilitleri buna bakar.
 final subscriptionProvider =
@@ -144,19 +167,43 @@ final offeringsProvider = FutureProvider<List<Package>>((ref) async {
   }
 });
 
-/// Satın alma. Başarılıysa sunucu durumunu tazeler.
+/// Satın alma. Başarılıysa sunucu yetkiyi görene kadar bekler.
 ///
-/// Yetki webhook üzerinden sunucuya işlendiği için satın alma ile sunucunun
-/// haberdar olması arasında kısa bir gecikme olabilir; bu yüzden durum
-/// sağlayıcısı geçersiz kılınır ve bir kez daha okunur.
+/// Yetki sunucuya **webhook üzerinden** işleniyor: satın almanın bitmesiyle
+/// `/billing/status` uçlarının "aktif" demesi arasında saniyeler olabilir.
+/// Tek seferlik `invalidate` bu yarışı kaybediyordu — kullanıcı ödeme yapıyor,
+/// ekran kapanıyor, kilitli içeriğe dokunuyor ve sunucu henüz haberdar
+/// olmadığı için 402 dönüp paywall yeniden açılıyordu.
+///
+/// Bu yüzden durum kısa aralıklarla birkaç kez okunur. Süre dolarsa yine de
+/// `true` döneriz: satın alma cihazda gerçekleşti, gecikme sunucu tarafındadır
+/// ve kullanıcıyı ödeme ekranına geri göndermek yanlış olur.
 Future<bool> purchasePackage(WidgetRef ref, Package package) async {
   final result = await Purchases.purchase(PurchaseParams.package(package));
   final active =
       result.customerInfo.entitlements.active.containsKey(kPlusEntitlement);
-  if (active) {
+  if (!active) return false;
+
+  await _waitForServerEntitlement(ref);
+  return true;
+}
+
+/// Sunucu aboneliği görene kadar bekler (en fazla ~10 saniye).
+Future<void> _waitForServerEntitlement(WidgetRef ref) async {
+  const gecikmeler = [
+    Duration(milliseconds: 400),
+    Duration(seconds: 1),
+    Duration(seconds: 2),
+    Duration(seconds: 3),
+    Duration(seconds: 4),
+  ];
+  for (final gecikme in gecikmeler) {
     ref.invalidate(subscriptionProvider);
+    final durum = await ref.read(subscriptionProvider.future);
+    if (durum.active) return;
+    await Future<void>.delayed(gecikme);
   }
-  return active;
+  ref.invalidate(subscriptionProvider);
 }
 
 /// Onboarding sonrası paywall'ın bir kez gösterilip gösterilmediği.
@@ -185,6 +232,10 @@ Future<void> markIntroPaywallShown() async {
 Future<bool> restorePurchases(WidgetRef ref) async {
   final info = await Purchases.restorePurchases();
   final active = info.entitlements.active.containsKey(kPlusEntitlement);
-  ref.invalidate(subscriptionProvider);
+  if (active) {
+    await _waitForServerEntitlement(ref);
+  } else {
+    ref.invalidate(subscriptionProvider);
+  }
   return active;
 }

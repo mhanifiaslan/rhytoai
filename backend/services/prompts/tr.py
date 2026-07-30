@@ -195,6 +195,18 @@ SKY_ASPECTS = "- Önemli açılar: {aspects}"
 NONE_LABEL = "yok"
 NO_ASPECTS = "belirgin karşılıklı açı yok"
 
+#: Ay evresi adları. Anahtarlar sky_service._MOON_PHASES ile aynı olmalı.
+MOON_PHASES = {
+    "new_moon": "Yeni Ay",
+    "waxing_crescent": "Hilal (Büyüyen)",
+    "first_quarter": "İlk Dördün",
+    "waxing_gibbous": "Şişkin Ay (Büyüyen)",
+    "full_moon": "Dolunay",
+    "waning_gibbous": "Şişkin Ay (Küçülen)",
+    "last_quarter": "Son Dördün",
+    "waning_crescent": "Hilal (Küçülen)",
+}
+
 DYAD = """
 GÖREV: {name_a} ile {name_b} arasındaki ilişki dinamiğinin BUGÜNE özgü halini
 anlatan 90-130 kelimelik kısa bir metin yaz.

@@ -106,7 +106,7 @@ def horoscope(
         "cached": report.get("cached", False),
         "fallback": report.get("fallback", False),
         "generated_for": report.get("generated_for"),
-        "moon_phase": sky["moon_phase"],
+        "moon_phase": prompts.localize_moon_phase(lang, sky["moon_phase"]),
         "retrogrades": sky["retrogrades"],
     }}
 
@@ -130,7 +130,8 @@ def daily(data: BirthData,
             "reading": report["text"], "cached": report.get("cached", False),
             "sun_sign": natal["sun_sign"], "moon_sign": natal["moon_sign"],
             "ascendant": natal["ascendant"],
-            "moon_phase": sky["moon_phase"], "retrogrades": sky["retrogrades"],
+            "moon_phase": prompts.localize_moon_phase(lang, sky["moon_phase"]),
+            "retrogrades": sky["retrogrades"],
         }}
     except Exception as e:
         raise _internal(e, "daily", lang)

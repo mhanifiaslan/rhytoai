@@ -54,7 +54,7 @@ def _sky_summary(lang: str) -> str:
         return ""
 
     p = prompts.get(lang)
-    moon = sky.get("moon_phase", {}) or {}
+    moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
     retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
     aspects = "; ".join(
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in (sky.get("aspects") or [])[:3]

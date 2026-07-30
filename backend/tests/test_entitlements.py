@@ -278,3 +278,127 @@ def test_webhook_app_user_id_olmadan_reddeder(monkeypatch):
                                json={"event": {"type": "RENEWAL"}},
                                headers={"Authorization": "anahtar"})
     assert response.status_code == 400
+
+
+# --------------------------------------------------------------------------
+# TRANSFER: anonim kimlikten gercek kullaniciya devir
+#
+# Kullanici oturum acmadan (ya da RevenueCat kimligi baglanmadan) satin alma
+# yaparsa kayit `$RCAnonymousID:...` altina yazilir. Sonradan logIn olunca
+# RevenueCat aboneligi devreder ve TRANSFER gonderir. Islenmezse kullanici
+# odeme yapmis olmasina ragmen kilitli kalir ve paywall tekrar tekrar acilir.
+# --------------------------------------------------------------------------
+
+class _SahteFirestore:
+    """Kullanici basina tek abonelik dokumani tutan asgari sahte istemci."""
+
+    def __init__(self, baslangic=None):
+        self.dokumanlar = dict(baslangic or {})
+
+    def collection(self, _):
+        return _SahteKoleksiyon(self, None)
+
+
+class _SahteKoleksiyon:
+    def __init__(self, store, uid):
+        self._store = store
+        self._uid = uid
+
+    def document(self, ad):
+        # users/{uid}/private/subscription — ilk document cagrisi uid'dir.
+        if self._uid is None:
+            return _SahteKoleksiyon(self._store, ad)
+        return _SahteDokuman(self._store, self._uid)
+
+    def collection(self, _):
+        return self
+
+
+class _SahteDokuman:
+    def __init__(self, store, uid):
+        self._store = store
+        self._uid = uid
+
+    def get(self):
+        return _SahteAnlik(self._store.dokumanlar.get(self._uid))
+
+    def set(self, data, merge=False):
+        if merge and self._uid in self._store.dokumanlar:
+            self._store.dokumanlar[self._uid] = {
+                **self._store.dokumanlar[self._uid], **data}
+        else:
+            self._store.dokumanlar[self._uid] = dict(data)
+
+
+class _SahteAnlik:
+    def __init__(self, veri):
+        self._veri = veri
+
+    @property
+    def exists(self):
+        return self._veri is not None
+
+    def to_dict(self):
+        return dict(self._veri or {})
+
+
+def _transfer_gonder(monkeypatch, store, govde):
+    monkeypatch.setattr(config, "REVENUECAT_WEBHOOK_SECRET", "anahtar")
+    monkeypatch.setattr("api.billing.firestore_client.get_client",
+                        lambda: store)
+    with TestClient(app) as client:
+        return client.post("/api/v1/billing/revenuecat", json={"event": govde},
+                           headers={"Authorization": "anahtar"})
+
+
+@uygulama_gerekir
+def test_transfer_aboneligi_gercek_kullaniciya_tasir(monkeypatch):
+    anonim = "$RCAnonymousID:abc123"
+    store = _SahteFirestore({
+        anonim: {"active": True, "productId": "rytho_plus_monthly",
+                 "expiresAt": "2099-01-01", "willRenew": True},
+    })
+
+    yanit = _transfer_gonder(monkeypatch, store, {
+        "type": "TRANSFER",
+        "transferred_from": [anonim],
+        "transferred_to": ["firebase-uid"],
+    })
+
+    assert yanit.status_code == 200
+    yeni = store.dokumanlar["firebase-uid"]
+    assert yeni["active"] is True
+    # Urun ve bitis tarihi kaynaktan kopyalanmali; sifirdan yazsaydik suresi
+    # gecmis bir aboneligi sonsuza kadar acik birakabilirdik.
+    assert yeni["productId"] == "rytho_plus_monthly"
+    assert yeni["expiresAt"] == "2099-01-01"
+    # Eski kimlikte erisim kalmamali.
+    assert store.dokumanlar[anonim]["active"] is False
+
+
+@uygulama_gerekir
+def test_transfer_app_user_id_istemez(monkeypatch):
+    """TRANSFER yukunde app_user_id YOKTUR; 400 donmek sonsuz yeniden
+    denemeye yol acardi."""
+    store = _SahteFirestore({"eski": {"active": True}})
+    yanit = _transfer_gonder(monkeypatch, store, {
+        "type": "TRANSFER",
+        "transferred_from": ["eski"],
+        "transferred_to": ["yeni"],
+    })
+    assert yanit.status_code == 200
+
+
+@uygulama_gerekir
+def test_transfer_kaynaksizsa_erisim_acmaz(monkeypatch):
+    """Devredilecek kayit yoksa uydurma abonelik yazilmamali."""
+    store = _SahteFirestore()
+    yanit = _transfer_gonder(monkeypatch, store, {
+        "type": "TRANSFER",
+        "transferred_from": ["yok"],
+        "transferred_to": ["yeni"],
+    })
+
+    assert yanit.status_code == 200
+    assert yanit.json()["active"] is False
+    assert "yeni" not in store.dokumanlar

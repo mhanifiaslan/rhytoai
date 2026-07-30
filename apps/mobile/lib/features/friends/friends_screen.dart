@@ -439,9 +439,12 @@ Future<void> _showAddFriendSheet(BuildContext context, String myUsername) {
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       side: BorderSide(color: RythoColors.glassStroke),
     ),
-    builder: (_) => Padding(
+    // viewInsets sayfanın KENDİ context'inden okunmalı: dıştaki context
+    // klavye açılınca yeniden kurulmuyor, dolayısıyla dolgu 0 kalıyor ve
+    // giriş alanı klavyenin altında gizleniyordu.
+    builder: (sheetContext) => Padding(
       padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+          bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
       child: _AddFriendSheet(myUsername: myUsername),
     ),
   );
@@ -505,7 +508,7 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(l10n.addFriend.toUpperCase(),

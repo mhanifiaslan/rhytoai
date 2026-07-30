@@ -30,3 +30,26 @@ def get(lang: str | None) -> ModuleType:
 def sign_name(lang: str | None, sign_key: str) -> str:
     """Burç anahtarının (``leo``) o dildeki adı."""
     return get(lang).SIGN_NAMES.get(sign_key, sign_key)
+
+
+def moon_phase_name(lang: str | None, phase_key: str | None) -> str:
+    """Ay evresi anahtarının (``full_moon``) o dildeki adı."""
+    if not phase_key:
+        return ""
+    return get(lang).MOON_PHASES.get(phase_key, phase_key)
+
+
+def localize_moon_phase(lang: str | None, moon: dict | None) -> dict:
+    """Gökyüzü sözlüğündeki ay evresine dile göre ``name`` alanı ekler.
+
+    Hesap paylaşımlı önbellekten geldiği için evre yalnızca anahtar taşır;
+    ada çeviri isteğin dilinde, yanıt üretilirken eklenir.
+    """
+    if not moon:
+        return {}
+    key = moon.get("key")
+    if not key:
+        # Anahtarsız gökyüzü (eski önbellek kaydı ya da test verisi):
+        # elimizdeki ``name`` neyse onunla devam et, boş metin döndürme.
+        return dict(moon)
+    return {**moon, "name": moon_phase_name(lang, key)}

@@ -52,22 +52,31 @@ def _julday_now() -> float:
                       now.hour + now.minute / 60 + now.second / 3600)
 
 
+#: Ay evresi sınırları: (üst açı, dilden bağımsız anahtar, emoji).
+#:
+#: Evre adı burada METİN olarak tutulmaz. Gökyüzü paylaşımlı önbellekten
+#: servis ediliyor ve tüm diller aynı hesabı kullanıyor; ada dil karıştırmak
+#: İngilizce kullanıcıya "Dolunay" göstermek demekti. Ad, isteğin diline göre
+#: services/prompts altındaki MOON_PHASES tablosundan çözülür.
+_MOON_PHASES = [
+    (22.5, "new_moon", "🌑"), (67.5, "waxing_crescent", "🌒"),
+    (112.5, "first_quarter", "🌓"), (157.5, "waxing_gibbous", "🌔"),
+    (202.5, "full_moon", "🌕"), (247.5, "waning_gibbous", "🌖"),
+    (292.5, "last_quarter", "🌗"), (337.5, "waning_crescent", "🌘"),
+    (360.1, "new_moon", "🌑"),
+]
+
+
 def _moon_phase(jd: float) -> dict[str, Any]:
     sun_lon = swe.calc_ut(jd, swe.SUN)[0][0]
     moon_lon = swe.calc_ut(jd, swe.MOON)[0][0]
     angle = (moon_lon - sun_lon) % 360
-    phases = [
-        (22.5, "Yeni Ay", "🌑"), (67.5, "Hilal (Büyüyen)", "🌒"),
-        (112.5, "İlk Dördün", "🌓"), (157.5, "Şişkin Ay (Büyüyen)", "🌔"),
-        (202.5, "Dolunay", "🌕"), (247.5, "Şişkin Ay (Küçülen)", "🌖"),
-        (292.5, "Son Dördün", "🌗"), (337.5, "Hilal (Küçülen)", "🌘"),
-        (360.1, "Yeni Ay", "🌑"),
-    ]
-    for limit, name, emoji in phases:
+    for limit, key, emoji in _MOON_PHASES:
         if angle < limit:
-            return {"angle": round(angle, 1), "name": name, "emoji": emoji,
+            return {"angle": round(angle, 1), "key": key, "emoji": emoji,
                     "illumination": round((1 - abs(angle - 180) / 180) * 100)}
-    return {"angle": round(angle, 1), "name": "Yeni Ay", "emoji": "🌑", "illumination": 0}
+    return {"angle": round(angle, 1), "key": "new_moon", "emoji": "🌑",
+            "illumination": 0}
 
 
 def _horizons_distances() -> dict[str, float]:

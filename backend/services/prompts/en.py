@@ -208,6 +208,18 @@ SKY_ASPECTS = "- Notable aspects: {aspects}"
 NONE_LABEL = "none"
 NO_ASPECTS = "no notable cross-aspects"
 
+#: Moon phase names. Keys must match sky_service._MOON_PHASES.
+MOON_PHASES = {
+    "new_moon": "New Moon",
+    "waxing_crescent": "Waxing Crescent",
+    "first_quarter": "First Quarter",
+    "waxing_gibbous": "Waxing Gibbous",
+    "full_moon": "Full Moon",
+    "waning_gibbous": "Waning Gibbous",
+    "last_quarter": "Last Quarter",
+    "waning_crescent": "Waning Crescent",
+}
+
 DYAD = """
 TASK: Write 90-130 words on the state of the dynamic between {name_a} and
 {name_b} TODAY specifically.

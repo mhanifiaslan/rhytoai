@@ -308,3 +308,64 @@ def test_natal_ve_bazi_onbellegi_dile_gore_ayrisir(monkeypatch):
 
     # İki ayrı üretim olmalı; tek anahtar olsaydı ikincisi önbellekten gelirdi
     assert uretilen == ["tr", "en"]
+
+
+# --------------------------------------------------------------------------
+# Ay evresi adı
+#
+# Evre adı sky_service içinde sabit Türkçe metindi ("Dolunay") ve gökyüzü
+# paylaşımlı önbellekten servis edildiği için İngilizce kullanıcı da onu
+# görüyordu. Hesap dilden bağımsızdır; ad isteğin dilinde çözülür.
+# --------------------------------------------------------------------------
+
+def test_ay_evresi_hesabi_dil_tasimaz():
+    """sky_service metin degil ANAHTAR dondurmeli."""
+    from services import sky_service
+
+    for _, anahtar, _ in sky_service._MOON_PHASES:
+        assert anahtar.islower() and " " not in anahtar
+    anahtarlar = {a for _, a, _ in sky_service._MOON_PHASES}
+    for kod in i18n.SUPPORTED:
+        tablo = prompts.get(kod).MOON_PHASES
+        eksik = anahtarlar - set(tablo)
+        assert not eksik, f"{kod} dilinde eksik ay evresi: {eksik}"
+
+
+def test_ay_evresi_adi_dile_gore():
+    assert prompts.moon_phase_name("tr", "full_moon") == "Dolunay"
+    assert prompts.moon_phase_name("en", "full_moon") == "Full Moon"
+    assert prompts.moon_phase_name("de", "full_moon") == "Dolunay"
+
+
+def test_ay_evresi_yerellestirme_anahtarsiz_veriyi_bozmaz():
+    """Eski onbellek kaydinda `key` yok; elimizdeki ad korunmali."""
+    eski = {"name": "Dolunay", "emoji": "🌕", "illumination": 98}
+    assert prompts.localize_moon_phase("en", eski)["name"] == "Dolunay"
+    assert prompts.localize_moon_phase("en", None) == {}
+
+
+def test_ay_evresi_adlari_iki_dilde_farkli():
+    tr = prompts.get("tr").MOON_PHASES
+    en = prompts.get("en").MOON_PHASES
+    for anahtar in tr:
+        assert tr[anahtar] != en[anahtar], f"{anahtar} cevrilmemis"
+
+
+@uygulama_gerekir
+def test_gokyuzu_ucu_ay_evresini_yerellestirir(monkeypatch):
+    from api import sky as sky_api
+
+    monkeypatch.setattr(sky_api, "get_sky_now", lambda: {
+        "moon_phase": {"key": "full_moon", "emoji": "🌕", "illumination": 98},
+        "retrogrades": [], "aspects": [], "planets": [],
+    })
+
+    with TestClient(app) as client:
+        tr = client.get("/api/v1/sky/now",
+                        headers={"Authorization": "Bearer t-ay-tr"})
+        en = client.get("/api/v1/sky/now",
+                        headers={"Authorization": "Bearer t-ay-en",
+                                 "Accept-Language": "en"})
+
+    assert tr.json()["data"]["moon_phase"]["name"] == "Dolunay"
+    assert en.json()["data"]["moon_phase"]["name"] == "Full Moon"

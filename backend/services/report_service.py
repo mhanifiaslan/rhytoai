@@ -68,7 +68,7 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     aspects = "; ".join(
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
     )
-    moon = sky.get("moon_phase", {})
+    moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
 
     prompt = p.DAILY.format(
         sun_sign=natal.get("sun_sign"), moon_sign=natal.get("moon_sign"),
@@ -142,7 +142,7 @@ def horoscope_reading(sign: str, period: str, sky: dict[str, Any],
     aspects = "; ".join(
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
     ) or "-"
-    moon = sky.get("moon_phase", {})
+    moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
     rag = retrieve_context(f"{sign_name} sign temperament planet transit",
                            lang=lang)
 
@@ -199,7 +199,7 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
         for a in synastry.get("aspects", [])[:6]
     ) or p.NO_ASPECTS
 
-    moon = sky.get("moon_phase", {})
+    moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
     retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
     rag = retrieve_context("synastry relationship communication daily transit",
                            lang=lang)

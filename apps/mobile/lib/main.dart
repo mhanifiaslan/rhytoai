@@ -80,6 +80,11 @@ class _Gate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // RevenueCat kimliğini Firebase oturumuna bağlar. İzlenmezse sağlayıcı
+    // hiç kurulmaz ve satın almalar anonim kimliğe yazılır (bkz.
+    // core/subscription.dart).
+    ref.watch(billingIdentityProvider);
+
     final auth = ref.watch(authStateProvider);
     return auth.when(
       loading: () => const _Splash(),
