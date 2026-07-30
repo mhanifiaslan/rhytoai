@@ -99,7 +99,8 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${_selectedPlanet!['name_tr']} — ${_selectedPlanet!['sign_tr']}',
+                                      planetSignLabel(
+                                          context, _selectedPlanet!),
                                       style: RythoText.body(15,
                                           w: FontWeight.w700),
                                     ),
@@ -132,19 +133,19 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                   .slideY(begin: 0.06, curve: Curves.easeOutCubic),
               // Gezegen konumları
               GlassPanel(
-                label: 'Gezegen Konumları',
+                label: l10n.atlasPlanetPositions,
                 child: _PlanetGrid(points: points),
               ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
                   begin: 0.06, curve: Curves.easeOutCubic),
               // Kişilik özellikleri — animasyonlu çubuklar
               GlassPanel(
-                label: 'Kişilik Özellikleri',
+                label: l10n.atlasTraits,
                 child: _TraitBars(points: points),
               ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
                   begin: 0.06, curve: Curves.easeOutCubic),
               // Açılar (katlanır detay)
               _FoldSection(
-                label: 'Açılar',
+                label: l10n.atlasAspects,
                 initiallyOpen: false,
                 child: Column(children: [
                   for (final a in aspects.take(14))
@@ -183,17 +184,47 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
   }
 }
 
+/// Gezegen + burç etiketi, arayüz diline göre.
+///
+/// Backend her iki adı da döndürüyor (`name` İngilizce, `name_tr` Türkçe);
+/// burç adı yalnızca Türkçe geldiği için indekse çevrilip yerelleştiriliyor.
+String planetSignLabel(BuildContext context, Map<String, dynamic> p) {
+  final l10n = AppLocalizations.of(context);
+  final ingilizce = Localizations.localeOf(context).languageCode == 'en';
+  final signIndex = kSignNamesTr.indexOf(p['sign_tr'] ?? '');
+  final gezegen = (ingilizce ? p['name'] : p['name_tr']) ?? p['name'] ?? '';
+  final burc = signIndex >= 0
+      ? signDisplayName(l10n, signIndex)
+      : (p['sign_tr'] ?? '');
+  return '$gezegen — $burc';
+}
+
+/// Firestore/backend'den gelen Türkçe burç adını ("Kova ♒") arayüz diline
+/// çevirir; tanınmazsa geldiği gibi gösterilir.
+String localizedSign(BuildContext context, Object? raw) {
+  if (raw == null) return '—';
+  final index = signIndexOf(raw.toString());
+  if (index < 0) return raw.toString();
+  return '${signDisplayName(AppLocalizations.of(context), index)} '
+      '${kSignGlyphs[index]}';
+}
+
 /// Kişi kartı: ad, doğum tarihi/saati/yeri.
 class _PersonCard extends StatelessWidget {
   const _PersonCard({required this.profile, required this.chart});
   final Map<String, dynamic> profile;
   final Map<String, dynamic> chart;
 
-  String get _birthDateText {
+  /// Doğum tarihi, arayüz diline göre biçimlenir.
+  ///
+  /// Dil kodu sabit 'tr_TR' idi: İngilizce arayüzde ay adları Türkçe
+  /// çıkıyordu ("12 Mayıs 1990").
+  String _birthDateText(BuildContext context) {
     final raw = profile['birthDate'] as String?;
     if (raw == null) return '—';
     try {
-      return DateFormat('d MMMM yyyy', 'tr_TR').format(DateTime.parse(raw));
+      final dil = Localizations.localeOf(context).languageCode;
+      return DateFormat.yMMMMd(dil).format(DateTime.parse(raw));
     } catch (_) {
       return raw;
     }
@@ -223,20 +254,22 @@ class _PersonCard extends StatelessWidget {
         const SizedBox(width: 14),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(profile['displayName'] ?? 'Gezgin',
+            Text(
+                profile['displayName'] ??
+                    AppLocalizations.of(context).defaultUserName,
                 style: RythoText.body(16, w: FontWeight.w700)),
             const SizedBox(height: 4),
             Text(
-              '$_birthDateText · 🕐 ${profile['birthTime'] ?? '—'} · 📍 ${profile['birthCity'] ?? '—'}',
+              '${_birthDateText(context)} · 🕐 ${profile['birthTime'] ?? '—'} · 📍 ${profile['birthCity'] ?? '—'}',
               style: RythoText.body(12, color: RythoColors.parchmentDim),
             ),
           ]),
         ),
         Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text('☀️ ${chart['sun_sign'] ?? '—'}',
+          Text('☀️ ${localizedSign(context, chart['sun_sign'])}',
               style: RythoText.body(12, w: FontWeight.w600)),
           const SizedBox(height: 2),
-          Text('⬆️ ${chart['ascendant'] ?? '—'}',
+          Text('⬆️ ${localizedSign(context, chart['ascendant'])}',
               style: RythoText.body(12, color: RythoColors.parchmentDim)),
         ]),
       ]),
@@ -264,18 +297,18 @@ class _PlanetGrid extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(children: [
-            Expanded(child: _cell(majors[i])),
+            Expanded(child: _cell(context, majors[i])),
             const SizedBox(width: 8),
             Expanded(
                 child: i + 1 < majors.length
-                    ? _cell(majors[i + 1])
+                    ? _cell(context, majors[i + 1])
                     : const SizedBox()),
           ]),
         ),
     ]);
   }
 
-  Widget _cell(Map<String, dynamic> p) {
+  Widget _cell(BuildContext context, Map<String, dynamic> p) {
     final signIndex = kSignNamesTr.indexOf(p['sign_tr'] ?? '');
     final glyph = signIndex >= 0 ? kSignGlyphs[signIndex] : '';
     final retro = p['retrograde'] == true;
@@ -295,7 +328,7 @@ class _PlanetGrid extends StatelessWidget {
         const SizedBox(width: 7),
         Expanded(
           child: Text(
-            '${p['name_tr']} – ${p['sign_tr']} $glyph${retro ? ' ℞' : ''}',
+            '${planetSignLabel(context, p)} $glyph${retro ? ' ℞' : ''}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: RythoText.body(12, w: FontWeight.w600),
@@ -340,12 +373,13 @@ class _TraitBars extends StatelessWidget {
     int pct(int count) =>
         (30 + (count / total) * 140).round().clamp(20, 97);
 
+    final l10n = AppLocalizations.of(context);
     final traits = [
-      ('Enerji', pct(fire), RythoColors.magenta),
-      ('Kararlılık', pct(fixed), RythoColors.gold),
-      ('İletişim', pct(air), RythoColors.lilac),
-      ('Duyarlılık', pct(water), const Color(0xFF5AC8FA)),
-      ('Pratiklik', pct(earth), RythoColors.celadon),
+      (l10n.traitEnergy, pct(fire), RythoColors.magenta),
+      (l10n.traitDetermination, pct(fixed), RythoColors.gold),
+      (l10n.traitCommunication, pct(air), RythoColors.lilac),
+      (l10n.traitSensitivity, pct(water), const Color(0xFF5AC8FA)),
+      (l10n.traitPracticality, pct(earth), RythoColors.celadon),
     ];
 
     return Column(children: [

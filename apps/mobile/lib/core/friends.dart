@@ -105,13 +105,22 @@ CollectionReference<Map<String, dynamic>> _friendsOf(String uid) =>
 /// Kullanıcı adı kuralları: 3-20 karakter, küçük harf/rakam/alt çizgi.
 final RegExp kUsernamePattern = RegExp(r'^[a-z0-9_]{3,20}$');
 
-String? validateUsername(String value) {
+/// Kullanıcı adı hatası kodları. Bu katman veri katmanıdır ve `BuildContext`
+/// görmez; metin yerine **kod** döndürür, arayüz [UsernameError] üzerinden
+/// kendi dilinde metne çevirir (bkz. friends_screen.dart).
+enum UsernameError { empty, invalid, taken }
+
+UsernameError? validateUsername(String value) {
   final v = value.trim().toLowerCase();
-  if (v.isEmpty) return 'Kullanıcı adı boş olamaz.';
-  if (!kUsernamePattern.hasMatch(v)) {
-    return '3-20 karakter; yalnızca küçük harf, rakam ve alt çizgi.';
-  }
+  if (v.isEmpty) return UsernameError.empty;
+  if (!kUsernamePattern.hasMatch(v)) return UsernameError.invalid;
   return null;
+}
+
+/// Kullanıcı adı işlemlerinin fırlattığı hata. Mesaj taşımaz — kod taşır.
+class UsernameException implements Exception {
+  const UsernameException(this.error);
+  final UsernameError error;
 }
 
 /// Kullanıcı adını rezerve eder ve profile yazar.
@@ -125,7 +134,7 @@ Future<void> claimUsername(String rawUsername) async {
   final username = rawUsername.trim().toLowerCase();
 
   final error = validateUsername(username);
-  if (error != null) throw ArgumentError(error);
+  if (error != null) throw UsernameException(error);
 
   final me = await _db.collection('users').doc(uid).get();
   final previous = me.data()?['username'] as String?;
@@ -138,7 +147,7 @@ Future<void> claimUsername(String rawUsername) async {
     });
   } on FirebaseException catch (e) {
     if (e.code == 'permission-denied') {
-      throw StateError('Bu kullanıcı adı alınmış, başka bir tane dene.');
+      throw const UsernameException(UsernameError.taken);
     }
     rethrow;
   }

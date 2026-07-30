@@ -601,4 +601,186 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get nameLabel => 'Name';
+
+  @override
+  String get signAries => 'Aries';
+
+  @override
+  String get signTaurus => 'Taurus';
+
+  @override
+  String get signGemini => 'Gemini';
+
+  @override
+  String get signCancer => 'Cancer';
+
+  @override
+  String get signLeo => 'Leo';
+
+  @override
+  String get signVirgo => 'Virgo';
+
+  @override
+  String get signLibra => 'Libra';
+
+  @override
+  String get signScorpio => 'Scorpio';
+
+  @override
+  String get signSagittarius => 'Sagittarius';
+
+  @override
+  String get signCapricorn => 'Capricorn';
+
+  @override
+  String get signAquarius => 'Aquarius';
+
+  @override
+  String get signPisces => 'Pisces';
+
+  @override
+  String get atlasPlanetPositions => 'Planetary Positions';
+
+  @override
+  String get atlasTraits => 'Character Traits';
+
+  @override
+  String get atlasAspects => 'Aspects';
+
+  @override
+  String get traitDetermination => 'Determination';
+
+  @override
+  String get traitCommunication => 'Communication';
+
+  @override
+  String get traitSensitivity => 'Sensitivity';
+
+  @override
+  String moonIllumination(Object percent) {
+    return '$percent% illuminated';
+  }
+
+  @override
+  String get reportPostTitle => 'REPORT THIS POST';
+
+  @override
+  String get reportUserTitle => 'REPORT THIS USER';
+
+  @override
+  String get reportNote => 'Our team reviews every report.';
+
+  @override
+  String get reportReasonSpam => 'Spam or misleading content';
+
+  @override
+  String get reportReasonHarassment => 'Insults or harassment';
+
+  @override
+  String get reportReasonInappropriate => 'Inappropriate or disturbing content';
+
+  @override
+  String get reportReasonOther => 'Something else';
+
+  @override
+  String get reportSubmitted =>
+      'Report received — we\'ll look into it shortly. Thank you.';
+
+  @override
+  String get reportFailed => 'The report couldn\'t be sent.';
+
+  @override
+  String get recordLabel => '✨ Your details';
+
+  @override
+  String get aFriend => 'A friend';
+
+  @override
+  String get iChingIntro =>
+      'The 64-hexagram matrix, three thousand years old. Write your question; the coins fall on real probability, and the moving lines bridge to what comes next.';
+
+  @override
+  String get iChingQuestionHint => 'What\'s on your mind?';
+
+  @override
+  String get iChingMethodCoins => 'Three Coins 🪙';
+
+  @override
+  String get iChingMethodYarrow => 'Yarrow Stalks 🌿';
+
+  @override
+  String get iChingCastAction => 'Cast';
+
+  @override
+  String get iChingQuestionRequired => 'Write your question first.';
+
+  @override
+  String get iChingCastFailed => 'The cast couldn\'t be made.';
+
+  @override
+  String get iChingCoinsInAir => 'Coins in the air...';
+
+  @override
+  String iChingHexagramLabel(Object number) {
+    return 'HEXAGRAM $number';
+  }
+
+  @override
+  String iChingTransformedTo(Object name, Object number) {
+    return '→ changing into: $name (#$number)';
+  }
+
+  @override
+  String get iChingOracleNote => 'Rytho\'s note on the cast';
+
+  @override
+  String get baziHeadline => 'The Four Pillars of Destiny';
+
+  @override
+  String baziChineseSign(Object animal, Object dayMaster) {
+    return 'Your Chinese sign: $animal · $dayMaster';
+  }
+
+  @override
+  String get baziFourPillars => 'Four Pillars';
+
+  @override
+  String get baziPillarHour => 'HOUR';
+
+  @override
+  String get baziPillarDay => 'DAY';
+
+  @override
+  String get baziPillarMonth => 'MONTH';
+
+  @override
+  String get baziPillarYear => 'YEAR';
+
+  @override
+  String get baziElementBalance => 'Elemental Balance';
+
+  @override
+  String baziNourish(Object elements) {
+    return 'Element to nourish: $elements';
+  }
+
+  @override
+  String get baziLuckPillars => 'Luck Pillars (Da Yun)';
+
+  @override
+  String baziAgeRange(Object from, Object to) {
+    return 'AGE $from–$to';
+  }
+
+  @override
+  String get baziFateNote => 'Rytho\'s note on your chart';
+
+  @override
+  String get traitEnergy => 'Energy';
+
+  @override
+  String get traitPracticality => 'Practicality';
+
+  @override
+  String get defaultUserName => 'Traveller';
 }

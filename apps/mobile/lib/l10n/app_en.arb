@@ -238,5 +238,112 @@
   "passwordsDoNotMatch": "Passwords don't match.",
   "enterEmailFirst": "Enter your email address first.",
   "resetLinkSent": "Password reset link sent.",
-  "nameLabel": "Name"
+  "nameLabel": "Name",
+  "signAries": "Aries",
+  "signTaurus": "Taurus",
+  "signGemini": "Gemini",
+  "signCancer": "Cancer",
+  "signLeo": "Leo",
+  "signVirgo": "Virgo",
+  "signLibra": "Libra",
+  "signScorpio": "Scorpio",
+  "signSagittarius": "Sagittarius",
+  "signCapricorn": "Capricorn",
+  "signAquarius": "Aquarius",
+  "signPisces": "Pisces",
+  "atlasPlanetPositions": "Planetary Positions",
+  "atlasTraits": "Character Traits",
+  "atlasAspects": "Aspects",
+  "traitDetermination": "Determination",
+  "traitCommunication": "Communication",
+  "traitSensitivity": "Sensitivity",
+  "moonIllumination": "{percent}% illuminated",
+  "@moonIllumination": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportPostTitle": "REPORT THIS POST",
+  "reportUserTitle": "REPORT THIS USER",
+  "reportNote": "Our team reviews every report.",
+  "reportReasonSpam": "Spam or misleading content",
+  "reportReasonHarassment": "Insults or harassment",
+  "reportReasonInappropriate": "Inappropriate or disturbing content",
+  "reportReasonOther": "Something else",
+  "reportSubmitted": "Report received — we'll look into it shortly. Thank you.",
+  "reportFailed": "The report couldn't be sent.",
+  "recordLabel": "✨ Your details",
+  "aFriend": "A friend",
+  "iChingIntro": "The 64-hexagram matrix, three thousand years old. Write your question; the coins fall on real probability, and the moving lines bridge to what comes next.",
+  "iChingQuestionHint": "What's on your mind?",
+  "iChingMethodCoins": "Three Coins 🪙",
+  "iChingMethodYarrow": "Yarrow Stalks 🌿",
+  "iChingCastAction": "Cast",
+  "iChingQuestionRequired": "Write your question first.",
+  "iChingCastFailed": "The cast couldn't be made.",
+  "iChingCoinsInAir": "Coins in the air...",
+  "iChingHexagramLabel": "HEXAGRAM {number}",
+  "@iChingHexagramLabel": {
+    "placeholders": {
+      "number": {
+        "type": "Object"
+      }
+    }
+  },
+  "iChingTransformedTo": "→ changing into: {name} (#{number})",
+  "@iChingTransformedTo": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      },
+      "number": {
+        "type": "Object"
+      }
+    }
+  },
+  "iChingOracleNote": "Rytho's note on the cast",
+  "baziHeadline": "The Four Pillars of Destiny",
+  "baziChineseSign": "Your Chinese sign: {animal} · {dayMaster}",
+  "@baziChineseSign": {
+    "placeholders": {
+      "animal": {
+        "type": "Object"
+      },
+      "dayMaster": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziFourPillars": "Four Pillars",
+  "baziPillarHour": "HOUR",
+  "baziPillarDay": "DAY",
+  "baziPillarMonth": "MONTH",
+  "baziPillarYear": "YEAR",
+  "baziElementBalance": "Elemental Balance",
+  "baziNourish": "Element to nourish: {elements}",
+  "@baziNourish": {
+    "placeholders": {
+      "elements": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziLuckPillars": "Luck Pillars (Da Yun)",
+  "baziAgeRange": "AGE {from}–{to}",
+  "@baziAgeRange": {
+    "placeholders": {
+      "from": {
+        "type": "Object"
+      },
+      "to": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziFateNote": "Rytho's note on your chart",
+  "traitEnergy": "Energy",
+  "traitPracticality": "Practicality",
+  "defaultUserName": "Traveller"
 }

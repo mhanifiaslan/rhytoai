@@ -94,7 +94,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const SizedBox(height: 12),
         Center(
-          child: Text(profile['displayName'] ?? user?.displayName ?? 'Gezgin',
+          child: Text(
+              profile['displayName'] ??
+                  user?.displayName ??
+                  l10n.defaultUserName,
               style: RythoText.display(26)),
         ),
         const SizedBox(height: 4),
@@ -121,6 +124,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 final color = signIndex >= 0
                     ? RythoColors.signColors[signIndex]
                     : RythoColors.lilac;
+                // Firestore'daki değer Türkçe ("Kova ♒"); rozet metni arayüz
+                // diline çevrilir, tanınmazsa geldiği gibi gösterilir.
+                final ad = signIndex >= 0
+                    ? signDisplayName(l10n, signIndex)
+                    : badge.text;
                 return Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
@@ -129,7 +137,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     border: Border.all(color: color.withValues(alpha: 0.5)),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text('${badge.emoji} ${badge.text}',
+                  child: Text('${badge.emoji} $ad',
                       style: RythoText.body(12, w: FontWeight.w700)),
                 );
               }),

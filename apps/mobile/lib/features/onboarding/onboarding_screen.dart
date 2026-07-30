@@ -108,7 +108,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             const SizedBox(height: 16),
-            Text('✨ Kayıt',
+            Text(l10n.recordLabel,
                 style: RythoText.label(12, color: RythoColors.lilac))
                 .animate(delay: next())
                 .fadeIn(duration: 360.ms),

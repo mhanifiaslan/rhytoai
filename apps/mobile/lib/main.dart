@@ -55,10 +55,9 @@ class RythoApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Dil hem arayüzü hem backend'in ürettiği yorumları belirler; ikincisini
+    // apiProvider aynı sağlayıcıyı izleyerek yapar (bkz. core/api.dart).
     final locale = ref.watch(localeProvider);
-    // Dio interceptor'ı ProviderScope dışından çağrıldığı için seçilen dili
-    // ayrıca bildiriyoruz; backend yorumları Accept-Language'e göre üretir.
-    setRequestLanguage(locale);
 
     return MaterialApp(
       title: 'Rytho',

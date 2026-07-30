@@ -52,21 +52,17 @@ class LocaleController extends StateNotifier<Locale?> {
 final localeProvider =
     StateNotifierProvider<LocaleController, Locale?>((_) => LocaleController());
 
-/// Backend'e gönderilecek dil kodu.
-///
-/// Tercih edilen dil yoksa cihazın sistem dili kullanılır; o da desteklenmiyorsa
-/// backend kendi varsayılanına düşer (Türkçe). Bu değer bir Riverpod okuması
-/// yapmadan da erişilebilir olmalı, çünkü Dio interceptor'ı ProviderScope
-/// dışından çağrılıyor.
-String? _tercihEdilenDil;
-
-void setRequestLanguage(Locale? locale) {
-  _tercihEdilenDil = locale?.languageCode;
-}
-
 /// `Accept-Language` başlık değeri.
-String acceptLanguageHeader() {
-  final secilen = _tercihEdilenDil;
+///
+/// [tercih] `null` ise cihazın sistem dili kullanılır; o da desteklenmiyorsa
+/// backend kendi varsayılanına düşer (Türkçe).
+///
+/// Saf fonksiyon olması bilinçli: dil daha önce modül düzeyinde bir değişkende
+/// aynalanıyordu ve `apiProvider` onu izleyemediği için dil değiştiğinde
+/// Riverpod önbellekteki yorumu yenilemiyordu — arayüz İngilizceye geçiyor,
+/// içgörü metni Türkçe kalıyordu. Tek kaynak artık [localeProvider].
+String acceptLanguageHeader(Locale? tercih) {
+  final secilen = tercih?.languageCode;
   if (secilen != null) return secilen;
 
   final sistem = WidgetsBinding.instance.platformDispatcher.locale.languageCode;

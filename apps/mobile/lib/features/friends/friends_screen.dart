@@ -91,19 +91,29 @@ class _UsernameSetupPanelState extends State<_UsernameSetupPanel> {
   }
 
   Future<void> _submit() async {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       _busy = true;
       _error = null;
     });
     try {
       await claimUsername(_controller.text);
+    } on UsernameException catch (e) {
+      if (mounted) setState(() => _error = usernameErrorText(l10n, e.error));
     } catch (e) {
-      final message = e is ArgumentError ? '${e.message}' : '$e';
-      if (mounted) setState(() => _error = message.replaceFirst('Bad state: ', ''));
+      if (mounted) setState(() => _error = friendlyError(e, l10n));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
+
+  /// Veri katmanı kod döndürür, metni burada çözüyoruz.
+  static String usernameErrorText(AppLocalizations l10n, UsernameError e) =>
+      switch (e) {
+        UsernameError.empty => l10n.usernameEmpty,
+        UsernameError.invalid => l10n.usernameInvalid,
+        UsernameError.taken => l10n.usernameTaken,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +223,7 @@ class _InboxPanel extends ConsumerWidget {
       for (final friend in friends) {
         if (friend.uid == uid) return friend.name;
       }
-      return 'Bir arkadaşın';
+      return l10n.aFriend;
     }
 
     return GlassPanel(
@@ -458,28 +468,34 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
   }
 
   Future<void> _send() async {
+    // l10n ve messenger await ÖNCESİ alınır: sonrasında context artık
+    // güvenilir değil (use_build_context_synchronously).
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
     setState(() {
       _busy = true;
       _message = null;
     });
+    final username = _controller.text.trim().toLowerCase();
     try {
-      final username = _controller.text.trim().toLowerCase();
       if (username == widget.myUsername) {
-        throw ArgumentError('Kendini ekleyemezsin.');
+        setState(() => _message = l10n.cannotAddSelf);
+        return;
       }
       final uid = await uidForUsername(username);
       if (uid == null) {
-        throw ArgumentError('@$username bulunamadı.');
+        setState(() => _message = l10n.userNotFound(username));
+        return;
       }
       await sendFriendRequest(uid);
-      if (mounted) {
-        Navigator.of(context).pop();
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('@$username kullanıcısına davet gönderildi.')));
-      }
+      if (!mounted) return;
+      navigator.pop();
+      messenger.showSnackBar(
+          SnackBar(content: Text(l10n.inviteSent(username))));
     } catch (e) {
-      final message = e is ArgumentError ? '${e.message}' : '$e';
-      if (mounted) setState(() => _message = message);
+      if (mounted) setState(() => _message = friendlyError(e, l10n));
     } finally {
       if (mounted) setState(() => _busy = false);
     }

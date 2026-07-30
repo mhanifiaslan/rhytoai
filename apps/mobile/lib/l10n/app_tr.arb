@@ -238,5 +238,112 @@
   "passwordsDoNotMatch": "Şifreler eşleşmiyor.",
   "enterEmailFirst": "Önce e-posta adresini yaz.",
   "resetLinkSent": "Şifre sıfırlama bağlantısı gönderildi.",
-  "nameLabel": "Ad"
+  "nameLabel": "Ad",
+  "signAries": "Koç",
+  "signTaurus": "Boğa",
+  "signGemini": "İkizler",
+  "signCancer": "Yengeç",
+  "signLeo": "Aslan",
+  "signVirgo": "Başak",
+  "signLibra": "Terazi",
+  "signScorpio": "Akrep",
+  "signSagittarius": "Yay",
+  "signCapricorn": "Oğlak",
+  "signAquarius": "Kova",
+  "signPisces": "Balık",
+  "atlasPlanetPositions": "Gezegen Konumları",
+  "atlasTraits": "Kişilik Özellikleri",
+  "atlasAspects": "Açılar",
+  "traitDetermination": "Kararlılık",
+  "traitCommunication": "İletişim",
+  "traitSensitivity": "Duyarlılık",
+  "moonIllumination": "aydınlanma %{percent}",
+  "@moonIllumination": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportPostTitle": "GÖNDERİYİ ŞİKAYET ET",
+  "reportUserTitle": "KULLANICIYI ŞİKAYET ET",
+  "reportNote": "Şikayetin ekibimiz tarafından incelenir.",
+  "reportReasonSpam": "Spam veya yanıltıcı içerik",
+  "reportReasonHarassment": "Hakaret veya taciz",
+  "reportReasonInappropriate": "Uygunsuz / rahatsız edici içerik",
+  "reportReasonOther": "Diğer",
+  "reportSubmitted": "Şikayetin alındı; en kısa sürede incelenecek. Teşekkürler.",
+  "reportFailed": "Şikayet gönderilemedi.",
+  "recordLabel": "✨ Kayıt",
+  "aFriend": "Bir arkadaşın",
+  "iChingIntro": "3000 yıllık 64 heksagram matrisi. Sorunu yaz; paralar gerçek olasılık dağılımıyla atılır, hareketli çizgiler geleceğe köprü kurar.",
+  "iChingQuestionHint": "Sorun nedir?",
+  "iChingMethodCoins": "Üç Para 🪙",
+  "iChingMethodYarrow": "Civanperçemi 🌿",
+  "iChingCastAction": "Çekimi yap",
+  "iChingQuestionRequired": "Önce kalbindeki soruyu yaz.",
+  "iChingCastFailed": "Çekim yapılamadı.",
+  "iChingCoinsInAir": "Paralar havada...",
+  "iChingHexagramLabel": "HEKSAGRAM {number}",
+  "@iChingHexagramLabel": {
+    "placeholders": {
+      "number": {
+        "type": "Object"
+      }
+    }
+  },
+  "iChingTransformedTo": "→ dönüşüm: {name} (#{number})",
+  "@iChingTransformedTo": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      },
+      "number": {
+        "type": "Object"
+      }
+    }
+  },
+  "iChingOracleNote": "Rytho'nun kehanet notu",
+  "baziHeadline": "Kaderin Dört Sütunu",
+  "baziChineseSign": "Çin burcun: {animal} · {dayMaster}",
+  "@baziChineseSign": {
+    "placeholders": {
+      "animal": {
+        "type": "Object"
+      },
+      "dayMaster": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziFourPillars": "Dört Sütun",
+  "baziPillarHour": "SAAT",
+  "baziPillarDay": "GÜN",
+  "baziPillarMonth": "AY",
+  "baziPillarYear": "YIL",
+  "baziElementBalance": "Element Terazisi",
+  "baziNourish": "Beslenecek element: {elements}",
+  "@baziNourish": {
+    "placeholders": {
+      "elements": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziLuckPillars": "Şans Sütunları (Da Yun)",
+  "baziAgeRange": "{from}–{to} YAŞ",
+  "@baziAgeRange": {
+    "placeholders": {
+      "from": {
+        "type": "Object"
+      },
+      "to": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziFateNote": "Rytho'nun kader notu",
+  "traitEnergy": "Enerji",
+  "traitPracticality": "Pratiklik",
+  "defaultUserName": "Gezgin"
 }

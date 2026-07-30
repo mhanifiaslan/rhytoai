@@ -1201,6 +1201,342 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ad'**
   String get nameLabel;
+
+  /// No description provided for @signAries.
+  ///
+  /// In tr, this message translates to:
+  /// **'Koç'**
+  String get signAries;
+
+  /// No description provided for @signTaurus.
+  ///
+  /// In tr, this message translates to:
+  /// **'Boğa'**
+  String get signTaurus;
+
+  /// No description provided for @signGemini.
+  ///
+  /// In tr, this message translates to:
+  /// **'İkizler'**
+  String get signGemini;
+
+  /// No description provided for @signCancer.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yengeç'**
+  String get signCancer;
+
+  /// No description provided for @signLeo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aslan'**
+  String get signLeo;
+
+  /// No description provided for @signVirgo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başak'**
+  String get signVirgo;
+
+  /// No description provided for @signLibra.
+  ///
+  /// In tr, this message translates to:
+  /// **'Terazi'**
+  String get signLibra;
+
+  /// No description provided for @signScorpio.
+  ///
+  /// In tr, this message translates to:
+  /// **'Akrep'**
+  String get signScorpio;
+
+  /// No description provided for @signSagittarius.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yay'**
+  String get signSagittarius;
+
+  /// No description provided for @signCapricorn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oğlak'**
+  String get signCapricorn;
+
+  /// No description provided for @signAquarius.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kova'**
+  String get signAquarius;
+
+  /// No description provided for @signPisces.
+  ///
+  /// In tr, this message translates to:
+  /// **'Balık'**
+  String get signPisces;
+
+  /// No description provided for @atlasPlanetPositions.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gezegen Konumları'**
+  String get atlasPlanetPositions;
+
+  /// No description provided for @atlasTraits.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kişilik Özellikleri'**
+  String get atlasTraits;
+
+  /// No description provided for @atlasAspects.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açılar'**
+  String get atlasAspects;
+
+  /// No description provided for @traitDetermination.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kararlılık'**
+  String get traitDetermination;
+
+  /// No description provided for @traitCommunication.
+  ///
+  /// In tr, this message translates to:
+  /// **'İletişim'**
+  String get traitCommunication;
+
+  /// No description provided for @traitSensitivity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Duyarlılık'**
+  String get traitSensitivity;
+
+  /// No description provided for @moonIllumination.
+  ///
+  /// In tr, this message translates to:
+  /// **'aydınlanma %{percent}'**
+  String moonIllumination(Object percent);
+
+  /// No description provided for @reportPostTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'GÖNDERİYİ ŞİKAYET ET'**
+  String get reportPostTitle;
+
+  /// No description provided for @reportUserTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'KULLANICIYI ŞİKAYET ET'**
+  String get reportUserTitle;
+
+  /// No description provided for @reportNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şikayetin ekibimiz tarafından incelenir.'**
+  String get reportNote;
+
+  /// No description provided for @reportReasonSpam.
+  ///
+  /// In tr, this message translates to:
+  /// **'Spam veya yanıltıcı içerik'**
+  String get reportReasonSpam;
+
+  /// No description provided for @reportReasonHarassment.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hakaret veya taciz'**
+  String get reportReasonHarassment;
+
+  /// No description provided for @reportReasonInappropriate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygunsuz / rahatsız edici içerik'**
+  String get reportReasonInappropriate;
+
+  /// No description provided for @reportReasonOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get reportReasonOther;
+
+  /// No description provided for @reportSubmitted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şikayetin alındı; en kısa sürede incelenecek. Teşekkürler.'**
+  String get reportSubmitted;
+
+  /// No description provided for @reportFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şikayet gönderilemedi.'**
+  String get reportFailed;
+
+  /// No description provided for @recordLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'✨ Kayıt'**
+  String get recordLabel;
+
+  /// No description provided for @aFriend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir arkadaşın'**
+  String get aFriend;
+
+  /// No description provided for @iChingIntro.
+  ///
+  /// In tr, this message translates to:
+  /// **'3000 yıllık 64 heksagram matrisi. Sorunu yaz; paralar gerçek olasılık dağılımıyla atılır, hareketli çizgiler geleceğe köprü kurar.'**
+  String get iChingIntro;
+
+  /// No description provided for @iChingQuestionHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sorun nedir?'**
+  String get iChingQuestionHint;
+
+  /// No description provided for @iChingMethodCoins.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üç Para 🪙'**
+  String get iChingMethodCoins;
+
+  /// No description provided for @iChingMethodYarrow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Civanperçemi 🌿'**
+  String get iChingMethodYarrow;
+
+  /// No description provided for @iChingCastAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çekimi yap'**
+  String get iChingCastAction;
+
+  /// No description provided for @iChingQuestionRequired.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önce kalbindeki soruyu yaz.'**
+  String get iChingQuestionRequired;
+
+  /// No description provided for @iChingCastFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çekim yapılamadı.'**
+  String get iChingCastFailed;
+
+  /// No description provided for @iChingCoinsInAir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paralar havada...'**
+  String get iChingCoinsInAir;
+
+  /// No description provided for @iChingHexagramLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'HEKSAGRAM {number}'**
+  String iChingHexagramLabel(Object number);
+
+  /// No description provided for @iChingTransformedTo.
+  ///
+  /// In tr, this message translates to:
+  /// **'→ dönüşüm: {name} (#{number})'**
+  String iChingTransformedTo(Object name, Object number);
+
+  /// No description provided for @iChingOracleNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun kehanet notu'**
+  String get iChingOracleNote;
+
+  /// No description provided for @baziHeadline.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaderin Dört Sütunu'**
+  String get baziHeadline;
+
+  /// No description provided for @baziChineseSign.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çin burcun: {animal} · {dayMaster}'**
+  String baziChineseSign(Object animal, Object dayMaster);
+
+  /// No description provided for @baziFourPillars.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dört Sütun'**
+  String get baziFourPillars;
+
+  /// No description provided for @baziPillarHour.
+  ///
+  /// In tr, this message translates to:
+  /// **'SAAT'**
+  String get baziPillarHour;
+
+  /// No description provided for @baziPillarDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'GÜN'**
+  String get baziPillarDay;
+
+  /// No description provided for @baziPillarMonth.
+  ///
+  /// In tr, this message translates to:
+  /// **'AY'**
+  String get baziPillarMonth;
+
+  /// No description provided for @baziPillarYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'YIL'**
+  String get baziPillarYear;
+
+  /// No description provided for @baziElementBalance.
+  ///
+  /// In tr, this message translates to:
+  /// **'Element Terazisi'**
+  String get baziElementBalance;
+
+  /// No description provided for @baziNourish.
+  ///
+  /// In tr, this message translates to:
+  /// **'Beslenecek element: {elements}'**
+  String baziNourish(Object elements);
+
+  /// No description provided for @baziLuckPillars.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şans Sütunları (Da Yun)'**
+  String get baziLuckPillars;
+
+  /// No description provided for @baziAgeRange.
+  ///
+  /// In tr, this message translates to:
+  /// **'{from}–{to} YAŞ'**
+  String baziAgeRange(Object from, Object to);
+
+  /// No description provided for @baziFateNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun kader notu'**
+  String get baziFateNote;
+
+  /// No description provided for @traitEnergy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Enerji'**
+  String get traitEnergy;
+
+  /// No description provided for @traitPracticality.
+  ///
+  /// In tr, this message translates to:
+  /// **'Pratiklik'**
+  String get traitPracticality;
+
+  /// No description provided for @defaultUserName.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gezgin'**
+  String get defaultUserName;
 }
 
 class _AppLocalizationsDelegate

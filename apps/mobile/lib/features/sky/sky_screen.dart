@@ -183,7 +183,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                       // buradan tetiklenir (hesap ömründe bir kez).
                       _maybeShowIntroPaywall();
                       return GlassPanel(
-                      label: l10n.signToday(kSignNamesTr[selected]),
+                      label: l10n.signToday(signDisplayName(l10n, selected)),
                       // Buradaki konserve motivasyon cümlesi kaldırıldı:
                       // hemen üstünde AI'ın gerçek gökyüzü verisiyle ürettiği
                       // burç yorumu duruyor, altına hazır bir cümle eklemek
@@ -207,7 +207,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                         description: userSignIndex < 0
                             ? l10n.personalReadingLockedBody
                             : l10n.personalReadingLockedBodyWithSign(
-                                kSignNamesTr[userSignIndex]),
+                                signDisplayName(l10n, userSignIndex)),
                       )
                     : GlassPanel(
                         label:
@@ -241,9 +241,9 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                     // Sinastri kartı da kaldırıldı: giriş noktası Meclis'teki
                     // kullanıcı profilleriydi. Faz 5'te arkadaş katmanının
                     // "günlük ikili dinamik" özelliği olarak geri gelecek.
-                    for (final (i, tool) in const [
-                      ('🪙', 'I Ching', 'Değişimler Kitabı'),
-                      ('🀄', 'BaZi', 'Dört Sütun'),
+                    for (final (i, tool) in [
+                      ('🪙', l10n.iChing, l10n.iChingSubtitle),
+                      ('🀄', l10n.baZi, l10n.baZiSubtitle),
                     ].indexed)
                       Padding(
                         padding: const EdgeInsets.only(right: 12),
@@ -265,7 +265,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               // Canlı gökyüzü
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
-                child: Text('Şu An Gökyüzünde', style: RythoText.display(19)),
+                child: Text(l10n.skyNow, style: RythoText.display(19)),
               ).animate(delay: next()).fadeIn(duration: 360.ms),
               sky.when(
                 loading: () => const SizedBox(
@@ -423,7 +423,9 @@ class _SkyStrip extends StatelessWidget {
               style: RythoText.body(13.5, w: FontWeight.w600)),
           Text('  ·  ',
               style: RythoText.body(13.5, color: RythoColors.parchmentDim)),
-          Text('aydınlanma %${moon['illumination'] ?? '—'}',
+          Text(
+              AppLocalizations.of(context)
+                  .moonIllumination(moon['illumination'] ?? '—'),
               style: RythoText.mono(11.5, color: RythoColors.parchmentDim)),
         ],
       ),
@@ -466,7 +468,7 @@ class _ErrorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassPanel(
       child: Text(
-        'Gökyüzüne şu an ulaşılamıyor.\n$error',
+        '${AppLocalizations.of(context).errorSkyUnavailable}\n$error',
         style: RythoText.body(13, color: RythoColors.parchmentDim),
       ),
     );

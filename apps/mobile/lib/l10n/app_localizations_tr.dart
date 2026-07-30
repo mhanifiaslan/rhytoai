@@ -600,4 +600,186 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get nameLabel => 'Ad';
+
+  @override
+  String get signAries => 'Koç';
+
+  @override
+  String get signTaurus => 'Boğa';
+
+  @override
+  String get signGemini => 'İkizler';
+
+  @override
+  String get signCancer => 'Yengeç';
+
+  @override
+  String get signLeo => 'Aslan';
+
+  @override
+  String get signVirgo => 'Başak';
+
+  @override
+  String get signLibra => 'Terazi';
+
+  @override
+  String get signScorpio => 'Akrep';
+
+  @override
+  String get signSagittarius => 'Yay';
+
+  @override
+  String get signCapricorn => 'Oğlak';
+
+  @override
+  String get signAquarius => 'Kova';
+
+  @override
+  String get signPisces => 'Balık';
+
+  @override
+  String get atlasPlanetPositions => 'Gezegen Konumları';
+
+  @override
+  String get atlasTraits => 'Kişilik Özellikleri';
+
+  @override
+  String get atlasAspects => 'Açılar';
+
+  @override
+  String get traitDetermination => 'Kararlılık';
+
+  @override
+  String get traitCommunication => 'İletişim';
+
+  @override
+  String get traitSensitivity => 'Duyarlılık';
+
+  @override
+  String moonIllumination(Object percent) {
+    return 'aydınlanma %$percent';
+  }
+
+  @override
+  String get reportPostTitle => 'GÖNDERİYİ ŞİKAYET ET';
+
+  @override
+  String get reportUserTitle => 'KULLANICIYI ŞİKAYET ET';
+
+  @override
+  String get reportNote => 'Şikayetin ekibimiz tarafından incelenir.';
+
+  @override
+  String get reportReasonSpam => 'Spam veya yanıltıcı içerik';
+
+  @override
+  String get reportReasonHarassment => 'Hakaret veya taciz';
+
+  @override
+  String get reportReasonInappropriate => 'Uygunsuz / rahatsız edici içerik';
+
+  @override
+  String get reportReasonOther => 'Diğer';
+
+  @override
+  String get reportSubmitted =>
+      'Şikayetin alındı; en kısa sürede incelenecek. Teşekkürler.';
+
+  @override
+  String get reportFailed => 'Şikayet gönderilemedi.';
+
+  @override
+  String get recordLabel => '✨ Kayıt';
+
+  @override
+  String get aFriend => 'Bir arkadaşın';
+
+  @override
+  String get iChingIntro =>
+      '3000 yıllık 64 heksagram matrisi. Sorunu yaz; paralar gerçek olasılık dağılımıyla atılır, hareketli çizgiler geleceğe köprü kurar.';
+
+  @override
+  String get iChingQuestionHint => 'Sorun nedir?';
+
+  @override
+  String get iChingMethodCoins => 'Üç Para 🪙';
+
+  @override
+  String get iChingMethodYarrow => 'Civanperçemi 🌿';
+
+  @override
+  String get iChingCastAction => 'Çekimi yap';
+
+  @override
+  String get iChingQuestionRequired => 'Önce kalbindeki soruyu yaz.';
+
+  @override
+  String get iChingCastFailed => 'Çekim yapılamadı.';
+
+  @override
+  String get iChingCoinsInAir => 'Paralar havada...';
+
+  @override
+  String iChingHexagramLabel(Object number) {
+    return 'HEKSAGRAM $number';
+  }
+
+  @override
+  String iChingTransformedTo(Object name, Object number) {
+    return '→ dönüşüm: $name (#$number)';
+  }
+
+  @override
+  String get iChingOracleNote => 'Rytho\'nun kehanet notu';
+
+  @override
+  String get baziHeadline => 'Kaderin Dört Sütunu';
+
+  @override
+  String baziChineseSign(Object animal, Object dayMaster) {
+    return 'Çin burcun: $animal · $dayMaster';
+  }
+
+  @override
+  String get baziFourPillars => 'Dört Sütun';
+
+  @override
+  String get baziPillarHour => 'SAAT';
+
+  @override
+  String get baziPillarDay => 'GÜN';
+
+  @override
+  String get baziPillarMonth => 'AY';
+
+  @override
+  String get baziPillarYear => 'YIL';
+
+  @override
+  String get baziElementBalance => 'Element Terazisi';
+
+  @override
+  String baziNourish(Object elements) {
+    return 'Beslenecek element: $elements';
+  }
+
+  @override
+  String get baziLuckPillars => 'Şans Sütunları (Da Yun)';
+
+  @override
+  String baziAgeRange(Object from, Object to) {
+    return '$from–$to YAŞ';
+  }
+
+  @override
+  String get baziFateNote => 'Rytho\'nun kader notu';
+
+  @override
+  String get traitEnergy => 'Enerji';
+
+  @override
+  String get traitPracticality => 'Pratiklik';
+
+  @override
+  String get defaultUserName => 'Gezgin';
 }

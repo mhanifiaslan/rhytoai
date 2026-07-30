@@ -44,6 +44,12 @@ const String kApiBaseUrl = String.fromEnvironment(
 );
 
 final apiProvider = Provider<Dio>((ref) {
+  // Dil izleniyor: değiştiğinde bu sağlayıcı yeniden kurulur ve ona bağlı tüm
+  // ağ sağlayıcıları (burç yorumu, gökyüzü, günlük okuma...) tazelenir.
+  // İzlenmezse başlık yalnızca SONRAKİ isteklerde değişir; ekrandaki yorum
+  // eski dilde asılı kalır — dil değiştirmenin en görünür kusuru buydu.
+  final locale = ref.watch(localeProvider);
+
   final dio = Dio(BaseOptions(
     baseUrl: kApiBaseUrl,
     connectTimeout: const Duration(seconds: 20),
@@ -59,7 +65,7 @@ final apiProvider = Provider<Dio>((ref) {
       // Backend yorumları bu başlığa göre üretir (persona, korpus ve önbellek
       // dahil). Gönderilmezse sunucu Türkçe varsayar ve arayüz İngilizce olsa
       // bile yorumlar Türkçe gelir.
-      options.headers['Accept-Language'] = acceptLanguageHeader();
+      options.headers['Accept-Language'] = acceptLanguageHeader(locale);
       handler.next(options);
     },
     onError: (error, handler) {
