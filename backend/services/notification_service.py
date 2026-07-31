@@ -171,16 +171,19 @@ def wants(profile: dict[str, Any], tur: str) -> bool:
 
 def should_send(profile: dict[str, Any], tur: str,
                 now_utc: dt.datetime | None = None,
-                ignore_target_hour: bool = False) -> tuple[bool, str]:
+                ignore_target_hour: bool = False,
+                ignore_dedupe: bool = False) -> tuple[bool, str]:
     """Zamanlayıcı bu kullanıcıya şimdi göndermeli mi?
 
     ``(gonderilsin, gerekce)`` döner. Gerekçe loglama ve test içindir;
     "gönderilmedi" kararlarının neden alındığı görünür olmalı.
 
-    ``ignore_target_hour`` yalnızca duman testi içindir ve **sadece hedef
-    saati** atlar: tercih, sessiz saat ve tekrar koruması yürürlükte kalır.
-    Hepsini atlayan bir bayrak, elinde anahtar olan birinin kullanıcıyı gece
-    yarısı uyandırmasına izin verirdi.
+    ``ignore_target_hour`` ve ``ignore_dedupe`` yalnızca duman testi içindir
+    (yayın sonrası "bildirim gerçekten gidiyor mu" kontrolü).
+
+    **Sessiz saat ve tercih HİÇBİR bayrakla atlanmaz.** Bu ikisi kullanıcının
+    açık iradesi; elinde zamanlayıcı anahtarı olan biri bile kullanıcıyı gece
+    yarısı uyandıramamalı ya da kapattığı bildirimi ona gönderememeli.
     """
     if tur not in SCHEDULED_TYPES:
         return False, "bilinmeyen-tur"
@@ -206,7 +209,8 @@ def should_send(profile: dict[str, Any], tur: str,
         if profile.get("lastSeenDaily") == yerel.date().isoformat():
             return False, "bugun-zaten-okudu"
 
-    if already_sent(profile["uid"], tur, yerel.date().isoformat()):
+    if not ignore_dedupe and already_sent(profile["uid"], tur,
+                                          yerel.date().isoformat()):
         return False, "zaten-gonderildi"
 
     return True, "gonderilecek"

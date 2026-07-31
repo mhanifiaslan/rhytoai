@@ -14,6 +14,10 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // flutter_local_notifications, eski Android surumlerinde java.time
+        // kullanabilmek icin core library desugaring istiyor. Acilmazsa
+        // derleme "requires core library desugaring to be enabled" ile duser.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     defaultConfig {
@@ -34,6 +38,12 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+dependencies {
+    // isCoreLibraryDesugaringEnabled ile birlikte zorunlu: desugaring
+    // kutuphanesi olmadan bayrak tek basina ise yaramaz.
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
 
 kotlin {

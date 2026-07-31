@@ -516,3 +516,52 @@ def test_prova_gondermez_ve_kaydetmez(monkeypatch):
     assert govde["status"] == "dry-run"
     assert govde["queued"] == 1
     assert govde["sent"] == 0
+
+
+def test_ignore_dedupe_yalnizca_tekrar_korumasini_atlar(monkeypatch):
+    monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: True)
+
+    gonder, gerekce = ns.should_send(profil(), "daily", utc(6))
+    assert not gonder and gerekce == "zaten-gonderildi"
+
+    gonder, _ = ns.should_send(profil(), "daily", utc(6), ignore_dedupe=True)
+    assert gonder
+
+
+def test_hicbir_bayrak_sessiz_saati_veya_tercihi_atlamaz(monkeypatch):
+    """Elinde zamanlayici anahtari olan biri bile kullaniciyi gece yarisi
+    uyandiramamali ya da kapattigi bildirimi ona gonderememeli."""
+    monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
+
+    gece = utc(0)  # Istanbul 03:00
+    gonder, gerekce = ns.should_send(profil(), "daily", gece,
+                                     ignore_target_hour=True,
+                                     ignore_dedupe=True)
+    assert not gonder and gerekce == "sessiz-saat"
+
+    gonder, gerekce = ns.should_send(
+        profil(notifyDaily=False, quietFrom=0, quietTo=0), "daily", utc(12),
+        ignore_target_hour=True, ignore_dedupe=True)
+    assert not gonder and gerekce == "tercih-kapali"
+
+
+@uygulama_gerekir
+def test_ignore_dedupe_force_olmadan_reddedilir(monkeypatch):
+    monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
+    with TestClient(app) as client:
+        yanit = client.post(
+            "/api/v1/notify/run?type=daily&ignore_dedupe=true",
+            headers={"Authorization": "dogru"})
+    assert yanit.status_code == 400
+
+
+def test_android_kanal_kimligi_istemciyle_ayni():
+    """Kanal kimlikleri ayrisirsa Android bildirimi varsayilan kanala dusurur
+    ve bildirim ekranin ustunde belirmez."""
+    import pathlib
+    from services import push_service
+
+    dart = (pathlib.Path(__file__).resolve().parents[2] / "apps" / "mobile"
+            / "lib" / "core" / "notifications.dart").read_text(encoding="utf-8")
+    assert f"'{push_service.ANDROID_CHANNEL_ID}'" in dart, (
+        f"Istemcide {push_service.ANDROID_CHANNEL_ID} kanali tanimli degil")

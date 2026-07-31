@@ -20,6 +20,11 @@ logger = logging.getLogger(__name__)
 #: FCM'in tek çağrıda kabul ettiği en fazla token sayısı.
 FCM_BATCH_SIZE = 500
 
+#: Android bildirim kanalı. İstemcide tanımlı kanalla AYNI olmak zorunda
+#: (apps/mobile/lib/core/notifications.dart, `_kChannel`). Eşleşmezse Android
+#: bildirimi varsayılan kanala düşürür ve ekranın üstünde belirmez.
+ANDROID_CHANNEL_ID = "rytho_default"
+
 #: Token'ın artık geçersiz olduğunu gösteren hata kodları. Bunlar dışındaki
 #: hatalar geçici sayılır ve token silinmez.
 _DEAD_TOKEN_ERRORS = {
@@ -104,12 +109,27 @@ def send(messages: list[Message]) -> SendResult:
 
     for i in range(0, len(messages), FCM_BATCH_SIZE):
         parti = messages[i:i + FCM_BATCH_SIZE]
+        # Kanal kimligi istemcideki kanalla AYNI olmak zorunda
+        # (apps/mobile/lib/core/notifications.dart). Farkli olsaydi Android
+        # bildirimi varsayilan kanala dusurur ve ekranin ustunde belirmezdi.
+        #
+        # Oncelik "high": "normal" oncelikli bildirimler cihaz uyku modundayken
+        # toplanip geciktirilebiliyor. Gunluk okuma bildirimi sabah 09:00'da
+        # anlamli; ogleden sonra gelmesi degerini kaybettirir.
         fcm_mesajlari = [
             messaging.Message(
                 token=m.token,
                 notification=messaging.Notification(title=m.title, body=m.body),
                 data=m.data,
-                android=messaging.AndroidConfig(priority="normal"),
+                android=messaging.AndroidConfig(
+                    priority="high",
+                    notification=messaging.AndroidNotification(
+                        channel_id=ANDROID_CHANNEL_ID),
+                ),
+                apns=messaging.APNSConfig(
+                    payload=messaging.APNSPayload(
+                        aps=messaging.Aps(sound="default")),
+                ),
             )
             for m in parti
         ]

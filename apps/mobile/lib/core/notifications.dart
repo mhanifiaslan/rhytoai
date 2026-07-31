@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -182,6 +183,96 @@ void listenForTokenRefresh() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Ön plan bildirimi
+//
+// Android'de FCM'in `notification` yükü YALNIZCA uygulama arka plandayken
+// sistem tepsisinde gösterilir. Uygulama açıkken bildirim `onMessage`'a
+// teslim edilir ve göstermek uygulamanın işidir — bu yapılmazsa bildirim
+// sessizce düşer ve kullanıcı hiçbir şey görmez.
+//
+// Kanal ayrıca arka plan için de önemli: Android 8+ bildirimi bir kanala
+// bağlar ve FCM'in varsayılan kanalı "default" öneme sahiptir. Yüksek
+// öncelikli kanal olmadan bildirim ekranın üstünde belirmez, sessizce
+// tepsiye düşer.
+// ---------------------------------------------------------------------------
+
+const AndroidNotificationChannel _kChannel = AndroidNotificationChannel(
+  'rytho_default',
+  'Rytho',
+  description: 'Günlük okuma, seri hatırlatması ve arkadaş tepkileri.',
+  importance: Importance.high,
+);
+
+final FlutterLocalNotificationsPlugin _localNotifications =
+    FlutterLocalNotificationsPlugin();
+
+bool _yerelBildirimHazir = false;
+
+/// Yerel bildirim altyapısını kurar (kanal + dokunma yönlendirmesi).
+Future<void> _initLocalNotifications(ValueChanged<int> onSelectTab) async {
+  if (_yerelBildirimHazir) return;
+  _yerelBildirimHazir = true;
+
+  try {
+    await _localNotifications.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+        iOS: DarwinInitializationSettings(),
+      ),
+      onDidReceiveNotificationResponse: (yanit) {
+        final ham = yanit.payload;
+        if (ham == null || ham.isEmpty) return;
+        // Yük, gönderildiği gibi düz `anahtar=deger` çiftleri.
+        final veri = <String, dynamic>{};
+        for (final parca in ham.split('&')) {
+          final i = parca.indexOf('=');
+          if (i > 0) veri[parca.substring(0, i)] = parca.substring(i + 1);
+        }
+        onSelectTab(tabForNotification(veri));
+      },
+    );
+
+    await _localNotifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(_kChannel);
+  } catch (e) {
+    debugPrint('Yerel bildirim kurulamadı: $e');
+  }
+}
+
+/// Ön planda gelen bildirimi ekranda gösterir.
+Future<void> _showForeground(RemoteMessage mesaj) async {
+  final bildirim = mesaj.notification;
+  if (bildirim == null) return;
+
+  final yuk = mesaj.data.entries.map((e) => '${e.key}=${e.value}').join('&');
+  try {
+    await _localNotifications.show(
+      // Kimlik olarak zaman damgası: aynı anda birden fazla bildirim
+      // gelirse birbirinin üstüne yazmasın. 32 bit sınırına sığması için
+      // saniye çözünürlüğünde ve mod alınmış.
+      id: (DateTime.now().millisecondsSinceEpoch ~/ 1000) % 0x7FFFFFFF,
+      title: bildirim.title,
+      body: bildirim.body,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          _kChannel.id,
+          _kChannel.name,
+          channelDescription: _kChannel.description,
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: yuk,
+    );
+  } catch (e) {
+    debugPrint('Ön plan bildirimi gösterilemedi: $e');
+  }
+}
+
 /// Bildirime dokunulduğunda hangi sekmenin açılacağı.
 ///
 /// Sunucu her bildirime `type` alanı koyuyor (daily / streak / friend).
@@ -198,9 +289,20 @@ int tabForNotification(Map<String, dynamic> data) {
   }
 }
 
-/// Uygulama bir bildirime dokunularak açıldıysa ilgili sekmeye yönlendirir.
+/// Bildirim alımını ve dokunma yönlendirmesini kurar.
+///
+/// Üç yol da bağlanır, çünkü Android üçünü farklı ele alıyor:
+/// - **Ön plan:** sistem hiçbir şey göstermez, biz gösteririz.
+/// - **Arka plan:** sistem gösterir, dokunma `onMessageOpenedApp`'e gelir.
+/// - **Kapalı:** sistem gösterir, dokunma uygulamayı açar ve
+///   `getInitialMessage` ile okunur.
 Future<void> handleNotificationTaps(
     ValueChanged<int> onSelectTab) async {
+  await _initLocalNotifications(onSelectTab);
+
+  // Ön planda gelen bildirim: göstermezsek kullanıcı hiçbir şey görmez.
+  FirebaseMessaging.onMessage.listen(_showForeground);
+
   try {
     final ilk = await FirebaseMessaging.instance.getInitialMessage();
     if (ilk != null) onSelectTab(tabForNotification(ilk.data));

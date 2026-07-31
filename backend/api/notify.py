@@ -138,6 +138,7 @@ class RunResult(BaseModel):
 def run(type: Literal["daily", "streak"] = "daily",
         dry_run: bool = False,
         force: bool = False,
+        ignore_dedupe: bool = False,
         authorization: str | None = Header(default=None)) -> RunResult:
     """Cloud Scheduler tetikli toplu gönderim.
 
@@ -150,12 +151,19 @@ def run(type: Literal["daily", "streak"] = "daily",
     - ``dry_run``: her şey hesaplanır ama **hiçbir bildirim gönderilmez** ve
       gönderim kaydı yazılmaz. Deploy sonrası "kime gidecekti" sorusunu
       cevaplar; sıfır riskli.
-    - ``force``: yalnızca **hedef saat** kontrolünü atlar. Tercih, sessiz saat
-      ve tekrar koruması yürürlükte kalır — yani zorlansa bile kullanıcıya
-      günde birden fazla bildirim gitmez ve gece gönderilmez. Yayın sonrası
-      duman testi için.
+    - ``force``: yalnızca **hedef saat** kontrolünü atlar.
+    - ``ignore_dedupe``: yalnızca **tekrar koruması** kontrolünü atlar; tek
+      başına anlamsız olduğu için ``force`` ile birlikte kullanılmalıdır.
+      Aynı gün ikinci bir duman testi yapabilmek için var.
+
+    **Sessiz saat ve kullanıcı tercihi hiçbir bayrakla atlanmaz.**
     """
     _verify_scheduler(authorization)
+
+    if ignore_dedupe and not force:
+        raise HTTPException(
+            status_code=400,
+            detail="ignore_dedupe yalnizca force ile birlikte kullanilir.")
 
     now_utc = dt.datetime.now(dt.timezone.utc)
     # Gökyüzü bir kez okunur ve tüm kullanıcılar için paylaşılır.
@@ -176,7 +184,8 @@ def run(type: Literal["daily", "streak"] = "daily",
     for profil in _iter_profiles():
         taranan += 1
         gonder, gerekce = notification_service.should_send(
-            profil, type, now_utc, ignore_target_hour=force)
+            profil, type, now_utc, ignore_target_hour=force,
+            ignore_dedupe=ignore_dedupe)
         if not gonder:
             atlanan[gerekce] = atlanan.get(gerekce, 0) + 1
             continue
