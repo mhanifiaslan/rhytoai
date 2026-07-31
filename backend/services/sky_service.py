@@ -34,10 +34,13 @@ _PLANETS = [
     ("Pluto", "Plüton", swe.PLUTO, "999"),
 ]
 
+#: (dilden bağımsız burç anahtarı, sembol). Ad tutulmaz — gökyüzü paylaşımlı
+#: önbellekten servis ediliyor, ad isteğin dilinde çözülür.
 _SIGNS = [
-    ("Koç", "♈"), ("Boğa", "♉"), ("İkizler", "♊"), ("Yengeç", "♋"),
-    ("Aslan", "♌"), ("Başak", "♍"), ("Terazi", "♎"), ("Akrep", "♏"),
-    ("Yay", "♐"), ("Oğlak", "♑"), ("Kova", "♒"), ("Balık", "♓"),
+    ("aries", "♈"), ("taurus", "♉"), ("gemini", "♊"), ("cancer", "♋"),
+    ("leo", "♌"), ("virgo", "♍"), ("libra", "♎"), ("scorpio", "♏"),
+    ("sagittarius", "♐"), ("capricorn", "♑"), ("aquarius", "♒"),
+    ("pisces", "♓"),
 ]
 
 #: (açı, dilden bağımsız anahtar, orb). Ad değil ANAHTAR tutulur — gökyüzü
@@ -141,7 +144,7 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
         pos, _flags = swe.calc_ut(jd, planet_id, swe.FLG_SPEED)
         lon, speed = pos[0] % 360, pos[3]
         sign_idx = int(lon // 30)
-        sign_name, sign_symbol = _SIGNS[sign_idx]
+        sign_key, sign_symbol = _SIGNS[sign_idx]
         retro = speed < 0
         if retro:
             # Gezegen ADI değil anahtarı; ada çeviri isteğin dilinde yapılır.
@@ -150,7 +153,7 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
         planets.append({
             "name": name, "name_tr": name_tr,
             "longitude": round(lon, 2),
-            "sign": sign_name, "symbol": sign_symbol,
+            "sign": sign_key, "symbol": sign_symbol,
             "degree_in_sign": round(lon % 30, 1),
             "retrograde": retro,
             "speed": round(speed, 4),

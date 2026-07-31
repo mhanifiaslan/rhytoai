@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from core.auth import get_current_user
 from core.i18n import get_language
 from core.messages import text
-from services import astro_service
+from services import astro_service, prompts
 
 logger = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -53,7 +53,7 @@ def natal_chart(data: NatalChartRequest, lang: str = Depends(get_language)):
         chart = astro_service.get_natal_chart(
             **_birth_kwargs(data), zodiac_type=data.zodiac_type
         )
-        return {"status": "success", "data": chart}
+        return {"status": "success", "data": prompts.localize_chart(lang, chart)}
     except Exception as e:
         raise _internal(e, "natal-chart", lang)
 

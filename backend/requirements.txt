@@ -20,3 +20,7 @@ firebase-admin
 # başlatma süresi için kritik).
 numpy
 pillow
+
+# ZoneInfo veritabani. Debian slim imajinda ve Windows'ta sistem zoneinfo
+# bulunmuyor; BaZi hesabi ZoneInfo("Europe/Istanbul") ile cokuyordu.
+tzdata

@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 from core.auth import get_current_user
 from core.i18n import get_language
 from core.messages import text
+from services import prompts
 from services.bazi_service import get_bazi_chart
 
 logger = logging.getLogger(__name__)
@@ -34,7 +35,7 @@ def bazi_chart(data: BaziRequest, lang: str = Depends(get_language)):
             city=data.city, nation=data.nation,
             gender=data.gender, name=data.name,
         )
-        return {"status": "success", "data": chart}
+        return {"status": "success", "data": prompts.localize_bazi(lang, chart)}
     except Exception as e:
         logger.exception("BaZi ucunda hata", exc_info=e)
         raise HTTPException(status_code=500, detail=text("internal", lang))

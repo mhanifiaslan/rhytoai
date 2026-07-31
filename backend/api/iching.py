@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from core.auth import get_current_user
 from core.i18n import get_language
 from core.messages import text
+from services import prompts
 from services.iching_service import cast_iching, get_hexagram
 
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -17,11 +18,13 @@ class IChingQuery(BaseModel):
 
 
 @router.post("/cast")
-def cast(query: Optional[IChingQuery] = None):
+def cast(query: Optional[IChingQuery] = None,
+         lang: str = Depends(get_language)):
     q = query.question if query and query.question else "Geleceğim"
     method = query.method if query else "coins"
     result = cast_iching(q, method=method)
-    return {"status": "success", "hexagram": result}
+    return {"status": "success",
+            "hexagram": prompts.localize_iching(lang, result)}
 
 
 @router.get("/hexagram/{number}")

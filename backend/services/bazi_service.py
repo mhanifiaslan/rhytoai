@@ -22,48 +22,52 @@ import swisseph as swe
 from services.geo_service import resolve_city
 
 STEMS = [
-    {"pinyin": "Jia", "cn": "甲", "element": "Ahşap", "polarity": "Yang"},
-    {"pinyin": "Yi", "cn": "乙", "element": "Ahşap", "polarity": "Yin"},
-    {"pinyin": "Bing", "cn": "丙", "element": "Ateş", "polarity": "Yang"},
-    {"pinyin": "Ding", "cn": "丁", "element": "Ateş", "polarity": "Yin"},
-    {"pinyin": "Wu", "cn": "戊", "element": "Toprak", "polarity": "Yang"},
-    {"pinyin": "Ji", "cn": "己", "element": "Toprak", "polarity": "Yin"},
-    {"pinyin": "Geng", "cn": "庚", "element": "Metal", "polarity": "Yang"},
-    {"pinyin": "Xin", "cn": "辛", "element": "Metal", "polarity": "Yin"},
-    {"pinyin": "Ren", "cn": "壬", "element": "Su", "polarity": "Yang"},
-    {"pinyin": "Gui", "cn": "癸", "element": "Su", "polarity": "Yin"},
+    {"pinyin": "Jia", "cn": "甲", "element": "wood", "polarity": "Yang"},
+    {"pinyin": "Yi", "cn": "乙", "element": "wood", "polarity": "Yin"},
+    {"pinyin": "Bing", "cn": "丙", "element": "fire", "polarity": "Yang"},
+    {"pinyin": "Ding", "cn": "丁", "element": "fire", "polarity": "Yin"},
+    {"pinyin": "Wu", "cn": "戊", "element": "earth", "polarity": "Yang"},
+    {"pinyin": "Ji", "cn": "己", "element": "earth", "polarity": "Yin"},
+    {"pinyin": "Geng", "cn": "庚", "element": "metal", "polarity": "Yang"},
+    {"pinyin": "Xin", "cn": "辛", "element": "metal", "polarity": "Yin"},
+    {"pinyin": "Ren", "cn": "壬", "element": "water", "polarity": "Yang"},
+    {"pinyin": "Gui", "cn": "癸", "element": "water", "polarity": "Yin"},
 ]
 
 BRANCHES = [
-    {"pinyin": "Zi", "cn": "子", "animal": "Sıçan", "element": "Su"},
-    {"pinyin": "Chou", "cn": "丑", "animal": "Öküz", "element": "Toprak"},
-    {"pinyin": "Yin", "cn": "寅", "animal": "Kaplan", "element": "Ahşap"},
-    {"pinyin": "Mao", "cn": "卯", "animal": "Tavşan", "element": "Ahşap"},
-    {"pinyin": "Chen", "cn": "辰", "animal": "Ejderha", "element": "Toprak"},
-    {"pinyin": "Si", "cn": "巳", "animal": "Yılan", "element": "Ateş"},
-    {"pinyin": "Wu", "cn": "午", "animal": "At", "element": "Ateş"},
-    {"pinyin": "Wei", "cn": "未", "animal": "Keçi", "element": "Toprak"},
-    {"pinyin": "Shen", "cn": "申", "animal": "Maymun", "element": "Metal"},
-    {"pinyin": "You", "cn": "酉", "animal": "Horoz", "element": "Metal"},
-    {"pinyin": "Xu", "cn": "戌", "animal": "Köpek", "element": "Toprak"},
-    {"pinyin": "Hai", "cn": "亥", "animal": "Domuz", "element": "Su"},
+    {"pinyin": "Zi", "cn": "子", "animal": "rat", "element": "water"},
+    {"pinyin": "Chou", "cn": "丑", "animal": "ox", "element": "earth"},
+    {"pinyin": "Yin", "cn": "寅", "animal": "tiger", "element": "wood"},
+    {"pinyin": "Mao", "cn": "卯", "animal": "rabbit", "element": "wood"},
+    {"pinyin": "Chen", "cn": "辰", "animal": "dragon", "element": "earth"},
+    {"pinyin": "Si", "cn": "巳", "animal": "snake", "element": "fire"},
+    {"pinyin": "Wu", "cn": "午", "animal": "horse", "element": "fire"},
+    {"pinyin": "Wei", "cn": "未", "animal": "goat", "element": "earth"},
+    {"pinyin": "Shen", "cn": "申", "animal": "monkey", "element": "metal"},
+    {"pinyin": "You", "cn": "酉", "animal": "rooster", "element": "metal"},
+    {"pinyin": "Xu", "cn": "戌", "animal": "dog", "element": "earth"},
+    {"pinyin": "Hai", "cn": "亥", "animal": "pig", "element": "water"},
 ]
 
-# Element üretim döngüsü: Ahşap -> Ateş -> Toprak -> Metal -> Su -> Ahşap
-_ELEMENT_ORDER = ["Ahşap", "Ateş", "Toprak", "Metal", "Su"]
+# Element uretim dongusu: wood -> fire -> earth -> metal -> water -> wood
+# Degerler dilden bagimsiz ANAHTARDIR; adlar services/prompts altinda.
+_ELEMENT_ORDER = ["wood", "fire", "earth", "metal", "water"]
 
-# On Tanrı (Ten Gods) — Day Master ile diğer gövdeler arasındaki ilişki
+# On Tanri (Ten Gods) — Day Master ile diger govdeler arasindaki iliski.
+#
+# Pinyin ad dilden bagimsizdir; ACIKLAMA metni tasinmaz, yerine anahtar
+# doner (services/prompts altindaki TEN_GOD_MEANINGS tablosundan cozulur).
 _TEN_GODS = {
-    ("same", True): ("Bi Jian", "Omuz Omuza (Dostluk, benlik gücü)"),
-    ("same", False): ("Jie Cai", "Servet Ortağı (Rekabet, paylaşım)"),
-    ("produces_me", True): ("Pian Yin", "Dolaylı Kaynak (Sezgi, alternatif bilgelik)"),
-    ("produces_me", False): ("Zheng Yin", "Doğrudan Kaynak (Öğrenme, koruma, anne)"),
-    ("i_produce", True): ("Shi Shen", "Yetenek Yıldızı (Üretkenlik, ifade)"),
-    ("i_produce", False): ("Shang Guan", "Parlak Zeka (Yaratıcılık, kural tanımazlık)"),
-    ("i_control", True): ("Pian Cai", "Dolaylı Servet (Fırsat, girişimcilik)"),
-    ("i_control", False): ("Zheng Cai", "Doğrudan Servet (Birikim, istikrarlı kazanç)"),
-    ("controls_me", True): ("Qi Sha", "Yedi Katil (Hırs, disiplin, meydan okuma)"),
-    ("controls_me", False): ("Zheng Guan", "Doğrudan Otorite (Statü, sorumluluk)"),
+    ("same", True): ("Bi Jian", "bi_jian"),
+    ("same", False): ("Jie Cai", "jie_cai"),
+    ("produces_me", True): ("Pian Yin", "pian_yin"),
+    ("produces_me", False): ("Zheng Yin", "zheng_yin"),
+    ("i_produce", True): ("Shi Shen", "shi_shen"),
+    ("i_produce", False): ("Shang Guan", "shang_guan"),
+    ("i_control", True): ("Pian Cai", "pian_cai"),
+    ("i_control", False): ("Zheng Cai", "zheng_cai"),
+    ("controls_me", True): ("Qi Sha", "qi_sha"),
+    ("controls_me", False): ("Zheng Guan", "zheng_guan"),
 }
 
 
@@ -84,8 +88,8 @@ def _ten_god(day_stem: int, other_stem: int) -> dict[str, str]:
     me, other = STEMS[day_stem], STEMS[other_stem]
     relation = _element_relation(me["element"], other["element"])
     same_polarity = me["polarity"] == other["polarity"]
-    name, desc = _TEN_GODS[(relation, same_polarity)]
-    return {"name": name, "meaning": desc}
+    name, meaning_key = _TEN_GODS[(relation, same_polarity)]
+    return {"name": name, "meaning_key": meaning_key}
 
 
 def _sun_longitude(when_utc: dt.datetime) -> float:
@@ -175,13 +179,10 @@ def get_bazi_chart(
     }
 
     # --- Day Master ve On Tanrı ---
-    day_master = {
-        **STEMS[day_stem],
-        "description": (
-            f"Günün Efendisi: {STEMS[day_stem]['polarity']} {STEMS[day_stem]['element']} "
-            f"({STEMS[day_stem]['cn']} {STEMS[day_stem]['pinyin']})"
-        ),
-    }
+    # Aciklama metni burada KURULMAZ: "Gunun Efendisi: Yang Ahsap" gibi bir
+    # cumle dili yuke gomerdi. Bilesenler doner, cumle isteğin dilinde
+    # services/prompts icinde kurulur.
+    day_master = {**STEMS[day_stem]}
     ten_gods = {
         "year": _ten_god(day_stem, year_stem),
         "month": _ten_god(day_stem, month_stem),
@@ -217,7 +218,7 @@ def get_bazi_chart(
 
     return {
         "name": name,
-        "gender": "Erkek" if is_male else "Kadın",
+        "gender": "male" if is_male else "female",
         "birth_local": local.isoformat(),
         "timezone": loc.tz_str,
         "pillars": pillars,

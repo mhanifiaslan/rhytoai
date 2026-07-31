@@ -106,7 +106,8 @@ def chat(request: ChatRequest, background: BackgroundTasks,
 
         # Kullanıcının haritası: sohbet bunu daha önce hiç görmüyordu, yani
         # Rytho kullanıcı kendi burcunu söylemedikçe habersiz konuşuyordu.
-        chart = profile_service.chart_summary(profile_service.get_profile(user.uid))
+        chart = profile_service.chart_summary(
+            profile_service.get_profile(user.uid), lang=lang)
 
         # Bugünün gökyüzü paylaşımlı önbellekten gelir (kullanıcı başına
         # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.

@@ -55,9 +55,16 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     # üretilmiş yorumu görür.
     cache_key = f"daily-{user_id}-{today}-{lang}"
 
+    # Burç adları da dile göre: "Aslan" yazan bir İngilizce prompt modeli
+    # Türkçeye kaydırıyor.
+    yerel_harita = prompts.localize_chart(lang, natal)
+    sun_sign = yerel_harita.get("sun_sign_local") or natal.get("sun_sign")
+    moon_sign = yerel_harita.get("moon_sign_local") or natal.get("moon_sign")
+    ascendant = yerel_harita.get("ascendant_local") or natal.get("ascendant")
+
     rag = retrieve_context(
-        f"{natal.get('sun_sign', '')} güneş {natal.get('moon_sign', '')} ay burcu "
-        f"gezegen transit yorumu mizaç",
+        f"{sun_sign or ''} sun {moon_sign or ''} moon sign "
+        f"planet transit interpretation temperament",
         lang=lang,
     )
     # Kullanıcı hafızası: günlük okumayı gerçekten kişisel yapan şey natal
@@ -71,16 +78,16 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
 
     prompt = p.DAILY.format(
-        sun_sign=natal.get("sun_sign"), moon_sign=natal.get("moon_sign"),
-        ascendant=natal.get("ascendant"), today=today,
+        sun_sign=sun_sign, moon_sign=moon_sign,
+        ascendant=ascendant, today=today,
         moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
         illumination=moon.get("illumination"), retros=retros, aspects=aspects,
         rag=rag, memory=_memory_block(memory, lang),
     )
     fallback = p.DAILY_FALLBACK.format(
         moon_name=moon.get("name") or "-",
-        sun_sign=natal.get("sun_sign") or "-",
-        ascendant=natal.get("ascendant") or "-",
+        sun_sign=sun_sign or "-",
+        ascendant=ascendant or "-",
     )
     return _cached_generate(cache_key, prompt, fallback, lang=lang)
 
@@ -194,9 +201,11 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
     if cached is not None:
         return {"text": cached, "cached": True, "generated_for": today.isoformat()}
 
+    yerel_sinastri = prompts.localize_synastry(lang, synastry)
     aspects = "\n".join(
-        f"- {a['p1_tr']} ({name_a}) {a['aspect_tr']} {a['p2_tr']} ({name_b}) orb {a['orbit']}°"
-        for a in synastry.get("aspects", [])[:6]
+        f"- {a['p1_local']} ({name_a}) {a['aspect_local']} {a['p2_local']} "
+        f"({name_b}) orb {a['orbit']}°"
+        for a in yerel_sinastri.get("aspects", [])[:6]
     ) or p.NO_ASPECTS
 
     moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
@@ -226,27 +235,34 @@ def natal_report(user_id: str, natal: dict[str, Any],
     cache_key = (f"natal-report-{user_id}-{natal.get('sun_sign')}"
                  f"-{natal.get('ascendant')}-{lang}")
 
+    # Harita adları isteğin diline çevrilir: koşulsuz `_tr` seçmek İngilizce
+    # prompt'a Türkçe gezegen ve burç adları sokuyordu.
+    yerel = prompts.localize_chart(lang, natal)
+    sun_sign = yerel.get("sun_sign_local") or natal.get("sun_sign")
+    moon_sign = yerel.get("moon_sign_local") or natal.get("moon_sign")
+    ascendant = yerel.get("ascendant_local") or natal.get("ascendant")
+
     points = "\n".join(
-        f"- {pt['name_tr']}: {pt['sign_tr']} {pt['position']}° "
-        f"(Ev {pt.get('house') or '?'}{', Retro' if pt.get('retrograde') else ''})"
-        for pt in natal.get("points", [])[:12]
+        f"- {pt['name_local']}: {pt['sign_local']} {pt['position']}° "
+        f"({p.HOUSE_LABEL} {pt.get('house') or '?'}"
+        f"{', ' + p.RETROGRADE_LABEL if pt.get('retrograde') else ''})"
+        for pt in yerel.get("points", [])[:12]
     )
     aspects = "\n".join(
-        f"- {a['p1_tr']} {a['aspect_tr']} {a['p2_tr']} (orb {a['orbit']}°)"
-        for a in natal.get("aspects", [])[:10]
+        f"- {a['p1_local']} {a['aspect_local']} {a['p2_local']} (orb {a['orbit']}°)"
+        for a in yerel.get("aspects", [])[:10]
     )
     rag = retrieve_context(
-        f"{natal.get('sun_sign')} sun sign temperament house placement character",
+        f"{sun_sign} sun sign temperament house placement character",
         lang=lang,
     )
 
     prompt = p.NATAL.format(
-        sun_sign=natal.get("sun_sign"), moon_sign=natal.get("moon_sign"),
-        ascendant=natal.get("ascendant"), points=points, aspects=aspects, rag=rag,
+        sun_sign=sun_sign, moon_sign=moon_sign,
+        ascendant=ascendant, points=points, aspects=aspects, rag=rag,
     )
     fallback = p.NATAL_FALLBACK.format(
-        sun_sign=natal.get("sun_sign"), moon_sign=natal.get("moon_sign"),
-        ascendant=natal.get("ascendant"),
+        sun_sign=sun_sign, moon_sign=moon_sign, ascendant=ascendant,
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang)
@@ -296,6 +312,10 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
     p = prompts.get(lang)
     cache_key = f"bazi-report-{user_id}-{bazi['pillars']['day']['label']}-{lang}"
 
+    # Element, hayvan ve On Tanri adlari hesap motorunda anahtar olarak
+    # duruyor; prompt'a girmeden once istegin diline cevrilir.
+    bazi = prompts.localize_bazi(lang, bazi)
+
     pillars = " | ".join(f"{k}: {v['label']}" for k, v in bazi["pillars"].items())
     luck = "; ".join(
         f"{lp['from_age']}-{lp['to_age']}: {lp['label']} ({lp['ten_god']['name']})"
@@ -330,17 +350,20 @@ def iching_reading(user_id: str, cast: dict[str, Any],
     """I Ching çekimini kullanıcının sorusuna bağlayan yorum."""
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
-    primary = cast["primary"]
+    # Heksagram metinleri veri katmanında iki dilde tutuluyor; burada isteğin
+    # diline indirgenir (name_local / judgment / image).
+    yerel = prompts.localize_iching(lang, cast)
+    primary = yerel["primary"]
     cache_key = (f"iching-{user_id}-{primary['number']}"
                  f"-{cast.get('question', '')[:48]}"
                  f"-{'-'.join(map(str, cast.get('moving_lines', [])))}-{lang}")
 
     transformed_text = ""
-    if cast.get("transformed"):
-        t = cast["transformed"]
+    if yerel.get("transformed"):
+        t = yerel["transformed"]
         transformed_text = p.ICHING_TRANSFORMED.format(
             lines=cast["moving_lines"], number=t["number"],
-            name_tr=t["name_tr"], name=t["name"], judgment=t["judgment"],
+            name_tr=t["name_local"], name=t["name"], judgment=t["judgment"],
         )
 
     rag = retrieve_context(
@@ -348,16 +371,16 @@ def iching_reading(user_id: str, cast: dict[str, Any],
 
     prompt = p.ICHING.format(
         question=cast.get("question"), method=cast.get("method"),
-        number=primary["number"], name_tr=primary["name_tr"],
+        number=primary["number"], name_tr=primary["name_local"],
         name=primary["name"], name_cn=primary["name_cn"],
         unicode=primary["unicode"], judgment=primary["judgment"],
         image=primary["image"],
-        lower=primary["lower_trigram"]["name_tr"],
-        upper=primary["upper_trigram"]["name_tr"],
+        lower=primary["lower_trigram"]["name"],
+        upper=primary["upper_trigram"]["name"],
         transformed=transformed_text, rag=rag,
     )
     fallback = (
-        f"#{primary['number']} {primary['name_tr']} {primary['unicode']}: "
+        f"#{primary['number']} {primary['name_local']} {primary['unicode']}: "
         f"{primary['judgment']}"
     )
     return _cached_generate(cache_key, prompt, fallback, ttl_seconds=3600,
@@ -374,25 +397,28 @@ def synastry_report(user_id: str, synastry: dict[str, Any],
     """
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
-    p1, p2 = synastry["person1"], synastry["person2"]
+    yerel = prompts.localize_synastry(lang, synastry)
+    p1, p2 = yerel["person1"], yerel["person2"]
     cache_key = f"synastry-{user_id}-{p1['name']}-{p2['name']}-{lang}"
 
     aspects = "\n".join(
-        f"- {a['p1_tr']} ({p1['name']}) {a['aspect_tr']} {a['p2_tr']} "
+        f"- {a['p1_local']} ({p1['name']}) {a['aspect_local']} {a['p2_local']} "
         f"({p2['name']}) orb {a['orbit']}°"
-        for a in synastry.get("aspects", [])[:8]
+        for a in yerel.get("aspects", [])[:8]
     ) or p.NO_ASPECTS
     rag = retrieve_context("synastry compatibility love relationship aspects",
                            lang=lang)
 
     prompt = p.SYNASTRY.format(
-        name1=p1["name"], sun1=p1["sun"]["sign_tr"], moon1=p1["moon"]["sign_tr"],
-        name2=p2["name"], sun2=p2["sun"]["sign_tr"], moon2=p2["moon"]["sign_tr"],
+        name1=p1["name"], sun1=p1["sun"]["sign_local"],
+        moon1=p1["moon"]["sign_local"],
+        name2=p2["name"], sun2=p2["sun"]["sign_local"],
+        moon2=p2["moon"]["sign_local"],
         aspects=aspects, rag=rag,
     )
     fallback = p.SYNASTRY_FALLBACK.format(
-        name1=p1["name"], sun1=p1["sun"]["sign_tr"],
-        name2=p2["name"], sun2=p2["sun"]["sign_tr"],
+        name1=p1["name"], sun1=p1["sun"]["sign_local"],
+        name2=p2["name"], sun2=p2["sun"]["sign_local"],
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=7 * 24 * 3600, lang=lang)

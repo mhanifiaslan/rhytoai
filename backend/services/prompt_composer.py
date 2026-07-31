@@ -21,9 +21,15 @@ MAX_PASSAGE_CHARS = 280
 
 # Bilgi tabanının kapsadığı kadim sistem terimleri (kök bazlı, küçük harf).
 # Mesajda bunlardan biri geçiyorsa korpus araması değerlidir.
+#
+# Terimler İKİ DİLDE birden aranır ve mesajın dili sorulmaz: liste yalnızca
+# Türkçe olduğu sürece İngilizce yazan kullanıcı için RAG hiç tetiklenmiyordu
+# ("what does my Mercury retrograde mean" korpusa hiç uğramıyordu). Fazladan
+# arama maliyeti düşük, eksik arama ise cevabın kalitesini doğrudan düşürür.
 _DOMAIN_TERMS = (
+    # Türkçe
     "burc", "burç", "yükselen", "yukselen", "astroloji", "gezegen", "retro",
-    "merkür", "merkur", "venüs", "venus", "mars", "jüpiter", "jupiter",
+    "merkür", "merkur", "venüs", "venus", "jüpiter", "jupiter",
     "satürn", "saturn", "plüton", "pluton", "neptün", "neptun", "uranüs",
     "uranus", "natal", "harita", "transit", "sinastri", "nakshatra", "dasha",
     "bazi", "day master", "on tanrı", "on tanri", "heksagram", "i ching",
@@ -32,21 +38,38 @@ _DOMAIN_TERMS = (
     "dolunay", "yeniay", "tutulma", "ev yerleş", "ev yerles", "açı", "orb",
     "koç", "boğa", "ikizler", "yengeç", "yengec", "aslan", "başak", "basak",
     "terazi", "akrep", "yay", "oğlak", "oglak", "kova", "balık",
+    # İngilizce
+    "zodiac", "sign", "rising", "ascendant", "astrolog", "planet",
+    "retrograde", "mercury", "venus", "mars", "jupiter", "saturn", "pluto",
+    "neptune", "uranus", "chart", "synastry", "hexagram", "horoscope",
+    "house", "aspect", "conjunction", "sextile", "square", "trine",
+    "opposition", "moon phase", "full moon", "new moon", "eclipse",
+    "temperament", "four humours", "four humors", "physiognomy",
+    "aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra",
+    "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
 )
 
 # Derinlemesine açıklama isteyen soru kalıpları (tam kelime olarak aranır ki
 # "nasılsın" içindeki "nasıl" tetiklemesin).
-_QUESTION_WORDS = {"neden", "nasıl", "nasil", "niye", "anlat", "anlatır",
-                   "anlatir", "nedir", "açıkla", "acikla", "ne demek"}
+_QUESTION_WORDS = {
+    "neden", "nasıl", "nasil", "niye", "anlat", "anlatır",
+    "anlatir", "nedir", "açıkla", "acikla", "ne demek",
+    "why", "how", "explain", "meaning", "means", "what",
+}
 
 # Selamlaşma / duygu / kısa onay işaretleri — RAG'e gerek yok.
-_SMALL_TALK = {"selam", "merhaba", "günaydın", "gunaydin", "nasılsın",
-               "nasilsin", "naber", "teşekkür", "tesekkur", "teşekkürler",
-               "tesekkurler", "sağol", "sagol", "evet", "hayır", "hayir",
-               "tamam", "peki", "olur", "harika", "süper", "super", "eyvallah",
-               "keyifsiz", "üzgün", "uzgun", "mutlu", "yorgun", "moral",
-               "canım", "canim", "sıkıldım", "sikildim", "iyiyim", "kötüyüm",
-               "kotuyum", "görüşürüz", "gorusuruz", "iyi geceler"}
+_SMALL_TALK = {
+    "selam", "merhaba", "günaydın", "gunaydin", "nasılsın",
+    "nasilsin", "naber", "teşekkür", "tesekkur", "teşekkürler",
+    "tesekkurler", "sağol", "sagol", "evet", "hayır", "hayir",
+    "tamam", "peki", "olur", "harika", "süper", "super", "eyvallah",
+    "keyifsiz", "üzgün", "uzgun", "mutlu", "yorgun", "moral",
+    "canım", "canim", "sıkıldım", "sikildim", "iyiyim", "kötüyüm",
+    "kotuyum", "görüşürüz", "gorusuruz", "iyi geceler",
+    "hi", "hello", "hey", "thanks", "thank", "ok", "okay", "sure",
+    "yes", "no", "great", "awesome", "bye", "goodnight", "tired",
+    "sad", "happy", "lonely", "bored",
+}
 
 
 def _words(message: str) -> list[str]:

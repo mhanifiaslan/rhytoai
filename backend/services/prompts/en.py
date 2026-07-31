@@ -207,6 +207,44 @@ SKY_ASPECTS = "- Notable aspects: {aspects}"
 
 NONE_LABEL = "none"
 NO_ASPECTS = "no notable cross-aspects"
+HOUSE_LABEL = "House"
+RETROGRADE_LABEL = "Rx"
+WU_XING_LABEL = "Wu Xing element"
+TEMPERAMENT_LABEL = "Temperament (four humours)"
+
+#: BaZi elements. Keys must match bazi_service._ELEMENT_ORDER.
+BAZI_ELEMENTS = {
+    "wood": "Wood", "fire": "Fire", "earth": "Earth",
+    "metal": "Metal", "water": "Water",
+}
+
+#: Chinese zodiac animals. Keys must match bazi_service.BRANCHES.
+BAZI_ANIMALS = {
+    "rat": "Rat", "ox": "Ox", "tiger": "Tiger", "rabbit": "Rabbit",
+    "dragon": "Dragon", "snake": "Snake", "horse": "Horse", "goat": "Goat",
+    "monkey": "Monkey", "rooster": "Rooster", "dog": "Dog", "pig": "Pig",
+}
+
+#: Ten Gods meanings. Keys must match bazi_service._TEN_GODS.
+TEN_GOD_MEANINGS = {
+    "bi_jian": "Shoulder to Shoulder (friendship, strength of self)",
+    "jie_cai": "Wealth Partner (rivalry, sharing)",
+    "pian_yin": "Indirect Resource (intuition, unorthodox wisdom)",
+    "zheng_yin": "Direct Resource (learning, protection, the mother)",
+    "shi_shen": "Eating God (productivity, expression)",
+    "shang_guan": "Hurting Officer (creativity, disregard for rules)",
+    "pian_cai": "Indirect Wealth (opportunity, enterprise)",
+    "zheng_cai": "Direct Wealth (savings, steady earning)",
+    "qi_sha": "Seven Killings (ambition, discipline, challenge)",
+    "zheng_guan": "Direct Officer (status, responsibility)",
+}
+
+POLARITY_NAMES = {"Yang": "Yang", "Yin": "Yin"}
+
+GENDER_NAMES = {"male": "Male", "female": "Female"}
+
+#: Day Master sentence. bazi_service no longer composes this.
+DAY_MASTER_DESCRIPTION = "Day Master: {polarity} {element} ({cn} {pinyin})"
 
 #: Planet names. Keys must match sky_service._PLANETS.
 PLANET_NAMES = {
@@ -215,10 +253,21 @@ PLANET_NAMES = {
     "Uranus": "Uranus", "Neptune": "Neptune", "Pluto": "Pluto",
 }
 
-#: Aspect names. Keys must match sky_service._MAJOR_ASPECTS.
+#: Extra points in the natal chart (kerykeion naming).
+PLANET_NAMES.update({
+    "Chiron": "Chiron", "Mean_Lilith": "Lilith",
+    "True_North_Lunar_Node": "North Node",
+    "True_South_Lunar_Node": "South Node",
+    "Ascendant": "Ascendant", "Medium_Coeli": "Midheaven (MC)",
+    "Descendant": "Descendant", "Imum_Coeli": "IC",
+})
+
+#: Aspect names. Must cover sky_service._MAJOR_ASPECTS keys; the extra
+#: aspects that appear in a natal chart are here too.
 ASPECT_NAMES = {
     "conjunction": "Conjunction", "sextile": "Sextile", "square": "Square",
     "trine": "Trine", "opposition": "Opposition",
+    "quintile": "Quintile", "quincunx": "Quincunx",
 }
 
 #: Moon phase names. Keys must match sky_service._MOON_PHASES.

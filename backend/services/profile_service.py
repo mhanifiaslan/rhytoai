@@ -14,6 +14,7 @@ import logging
 from typing import Any
 
 from core import firestore as firestore_client
+from services import prompts
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,8 @@ def birth_kwargs(profile: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def chart_summary(profile: dict[str, Any] | None) -> str:
+def chart_summary(profile: dict[str, Any] | None,
+                  lang: str | None = None) -> str:
     """Sohbete iliştirilecek kompakt harita özeti.
 
     Sohbet ucu daha önce bu bilgiyi HİÇ almıyordu: istemci yalnızca mesaj ve
@@ -80,22 +82,48 @@ def chart_summary(profile: dict[str, Any] | None) -> str:
     if not profile:
         return ""
 
+    # Etiketler ve burç adları isteğin dilinde. Profildeki değer Türkçe ve
+    # sembollü ("Kova ♒") tutuluyor (mobil eşleştirmesi buna bağlı), bu yüzden
+    # gösterilecek ada burada çevrilir.
+    p = prompts.get(lang)
     satirlar = []
     ucler = [
-        ("Güneş", profile.get("sunSign")),
-        ("Ay", profile.get("moonSign")),
-        ("Yükselen", profile.get("ascendant")),
+        (p.PLANET_NAMES["Sun"], _yerel_burc(lang, profile.get("sunSign"))),
+        (p.PLANET_NAMES["Moon"], _yerel_burc(lang, profile.get("moonSign"))),
+        (p.PLANET_NAMES["Ascendant"],
+         _yerel_burc(lang, profile.get("ascendant"))),
     ]
     buyuk_uclu = ", ".join(f"{ad}: {deger}" for ad, deger in ucler if deger)
     if buyuk_uclu:
         satirlar.append(f"- {buyuk_uclu}")
 
     if profile.get("wuXingElement"):
-        satirlar.append(f"- Wu Xing elementi: {profile['wuXingElement']}")
+        satirlar.append(f"- {p.WU_XING_LABEL}: {profile['wuXingElement']}")
     if profile.get("mizac"):
-        satirlar.append(f"- Mizaç (Ahlat-ı Erbaa): {profile['mizac']}")
+        satirlar.append(f"- {p.TEMPERAMENT_LABEL}: {profile['mizac']}")
 
     return "\n".join(satirlar)
+
+
+#: Türkçe burç adı -> dilden bağımsız anahtar. Profildeki değer sembol de
+#: içerebildiği için ("Kova ♒") önek eşleşmesi yapılır.
+_BURC_ANAHTARLARI = {
+    "Koç": "aries", "Boğa": "taurus", "İkizler": "gemini", "Yengeç": "cancer",
+    "Aslan": "leo", "Başak": "virgo", "Terazi": "libra", "Akrep": "scorpio",
+    "Yay": "sagittarius", "Oğlak": "capricorn", "Kova": "aquarius",
+    "Balık": "pisces",
+}
+
+
+def _yerel_burc(lang: str | None, deger: Any) -> str:
+    """Profildeki Türkçe burç değerini isteğin diline çevirir."""
+    if not deger:
+        return ""
+    metin = str(deger).strip()
+    for ad, anahtar in _BURC_ANAHTARLARI.items():
+        if metin == ad or metin.startswith(f"{ad} "):
+            return prompts.sign_name(lang, anahtar)
+    return metin
 
 
 def are_friends(uid: str, other_uid: str) -> bool:

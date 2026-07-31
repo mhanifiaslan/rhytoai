@@ -406,8 +406,10 @@ def test_gokyuzu_yerellestirme():
     assert en["aspects"][0]["aspect"] == "Sextile"
     assert tr["moon_phase"]["name"] == "Dolunay"
     assert en["moon_phase"]["name"] == "Full Moon"
-    # Dokunulmayan alanlar korunmali
-    assert en["planets"] == ham["planets"]
+    # Gezegenlere yerelleştirilmiş adlar EKLENİR, mevcut alanlar korunur.
+    assert en["planets"][0]["name"] == "Sun"
+    assert en["planets"][0]["name_local"] == "Sun"
+    assert tr["planets"][0]["name_local"] == "Güneş"
     assert en["aspects"][0]["orb"] == 1.2
     # Ham veri degismemeli
     assert ham["retrogrades"] == ["Saturn", "Neptune", "Pluto"]

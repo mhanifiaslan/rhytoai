@@ -144,7 +144,10 @@ def natal(data: BirthData,
     try:
         chart = astro_service.get_natal_chart(**_natal_kwargs(data))
         report = report_service.natal_report(user.uid, chart, lang=lang)
-        return {"status": "success", "data": {"chart": chart, "report": report["text"]}}
+        return {"status": "success", "data": {
+            "chart": prompts.localize_chart(lang, chart),
+            "report": report["text"],
+        }}
     except Exception as e:
         raise _internal(e, "natal", lang)
 
@@ -160,7 +163,11 @@ def bazi(data: BirthData,
             gender=data.gender, name=data.name,
         )
         report = report_service.bazi_report(user.uid, chart, lang=lang)
-        return {"status": "success", "data": {"chart": chart, "report": report["text"]}}
+        # Ekranda gosterilen element/hayvan/On Tanri adlari da dile gore.
+        return {"status": "success", "data": {
+            "chart": prompts.localize_bazi(lang, chart),
+            "report": report["text"],
+        }}
     except Exception as e:
         raise _internal(e, "bazi", lang)
 
@@ -178,7 +185,10 @@ def iching(req: IChingReportRequest,
     try:
         cast = cast_iching(req.question, method=req.method)
         report = report_service.iching_reading(user.uid, cast, lang=lang)
-        return {"status": "success", "data": {"cast": cast, "report": report["text"]}}
+        return {"status": "success", "data": {
+            "cast": prompts.localize_iching(lang, cast),
+            "report": report["text"],
+        }}
     except Exception as e:
         raise _internal(e, "iching", lang)
 
@@ -222,8 +232,10 @@ def dyad(req: DyadRequest,
         "fallback": report.get("fallback", False),
         "generated_for": report.get("generated_for"),
         # Yalnızca türetilmiş, hassas olmayan alanlar döner — ham doğum verisi asla.
-        "friend_sun_sign": synastry["person2"]["sun"].get("sign_tr"),
-        "my_sun_sign": synastry["person1"]["sun"].get("sign_tr"),
+        "friend_sun_sign": prompts.sign_from_point(
+            lang, synastry["person2"].get("sun")),
+        "my_sun_sign": prompts.sign_from_point(
+            lang, synastry["person1"].get("sun")),
     }}
 
 

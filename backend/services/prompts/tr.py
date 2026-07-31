@@ -194,6 +194,45 @@ SKY_ASPECTS = "- Önemli açılar: {aspects}"
 
 NONE_LABEL = "yok"
 NO_ASPECTS = "belirgin karşılıklı açı yok"
+HOUSE_LABEL = "Ev"
+RETROGRADE_LABEL = "Retro"
+WU_XING_LABEL = "Wu Xing elementi"
+TEMPERAMENT_LABEL = "Mizaç (Ahlat-ı Erbaa)"
+
+#: BaZi elementleri. Anahtarlar bazi_service._ELEMENT_ORDER ile aynı olmalı.
+BAZI_ELEMENTS = {
+    "wood": "Ahşap", "fire": "Ateş", "earth": "Toprak",
+    "metal": "Metal", "water": "Su",
+}
+
+#: Çin zodyak hayvanları. Anahtarlar bazi_service.BRANCHES ile aynı olmalı.
+BAZI_ANIMALS = {
+    "rat": "Sıçan", "ox": "Öküz", "tiger": "Kaplan", "rabbit": "Tavşan",
+    "dragon": "Ejderha", "snake": "Yılan", "horse": "At", "goat": "Keçi",
+    "monkey": "Maymun", "rooster": "Horoz", "dog": "Köpek", "pig": "Domuz",
+}
+
+#: On Tanrı açıklamaları. Anahtarlar bazi_service._TEN_GODS ile aynı olmalı.
+TEN_GOD_MEANINGS = {
+    "bi_jian": "Omuz Omuza (Dostluk, benlik gücü)",
+    "jie_cai": "Servet Ortağı (Rekabet, paylaşım)",
+    "pian_yin": "Dolaylı Kaynak (Sezgi, alternatif bilgelik)",
+    "zheng_yin": "Doğrudan Kaynak (Öğrenme, koruma, anne)",
+    "shi_shen": "Yetenek Yıldızı (Üretkenlik, ifade)",
+    "shang_guan": "Parlak Zeka (Yaratıcılık, kural tanımazlık)",
+    "pian_cai": "Dolaylı Servet (Fırsat, girişimcilik)",
+    "zheng_cai": "Doğrudan Servet (Birikim, istikrarlı kazanç)",
+    "qi_sha": "Yedi Katil (Hırs, disiplin, meydan okuma)",
+    "zheng_guan": "Doğrudan Otorite (Statü, sorumluluk)",
+}
+
+#: Yin/Yang. Terim evrensel ama cümle içinde dile uyması için tabloda.
+POLARITY_NAMES = {"Yang": "Yang", "Yin": "Yin"}
+
+GENDER_NAMES = {"male": "Erkek", "female": "Kadın"}
+
+#: Day Master cümlesi. bazi_service artık bu cümleyi kurmuyor.
+DAY_MASTER_DESCRIPTION = "Günün Efendisi: {polarity} {element} ({cn} {pinyin})"
 
 #: Gezegen adları. Anahtarlar sky_service._PLANETS ile aynı olmalı.
 PLANET_NAMES = {
@@ -202,10 +241,21 @@ PLANET_NAMES = {
     "Uranus": "Uranüs", "Neptune": "Neptün", "Pluto": "Plüton",
 }
 
-#: Açı adları. Anahtarlar sky_service._MAJOR_ASPECTS ile aynı olmalı.
+#: Natal haritadaki ek noktalar (kerykeion adlandırması).
+PLANET_NAMES.update({
+    "Chiron": "Kiron", "Mean_Lilith": "Lilith",
+    "True_North_Lunar_Node": "Kuzey Ay Düğümü",
+    "True_South_Lunar_Node": "Güney Ay Düğümü",
+    "Ascendant": "Yükselen", "Medium_Coeli": "Tepe Noktası (MC)",
+    "Descendant": "Alçalan", "Imum_Coeli": "IC",
+})
+
+#: Açı adları. sky_service._MAJOR_ASPECTS anahtarlarını kapsamalı; natal
+#: haritada geçen ek açılar da burada.
 ASPECT_NAMES = {
     "conjunction": "Kavuşum", "sextile": "Altmışlık", "square": "Kare",
     "trine": "Üçgen", "opposition": "Karşıt",
+    "quintile": "Beşlik", "quincunx": "Yüzelli",
 }
 
 #: Ay evresi adları. Anahtarlar sky_service._MOON_PHASES ile aynı olmalı.

@@ -209,9 +209,8 @@ class _HexagramView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    // Heksagram adları backend'de yalnızca Türkçe tutuluyor (`name_tr`);
-    // İngilizce arayüzde pinyin adı (`name`) gösterilir.
-    final ingilizce = Localizations.localeOf(context).languageCode == 'en';
+    // Backend heksagram adını isteğin dilinde `name_local` alanında döndürür
+    // (Accept-Language'e göre). Eski yanıtlar için `name_tr`e düşülür.
     final cast = Map<String, dynamic>.from(result['cast']);
     final primary = Map<String, dynamic>.from(cast['primary']);
     final transformed = cast['transformed'] != null
@@ -229,21 +228,15 @@ class _HexagramView extends StatelessWidget {
             Text(l10n.iChingHexagramLabel(primary['number']),
                 style: RythoText.mono(11, color: RythoColors.parchmentDim)),
             const SizedBox(height: 4),
-            Text(
-                '${ingilizce ? primary['name'] : primary['name_tr']}',
+            Text('${primary['name_local'] ?? primary['name_tr']}',
                 style: RythoText.display(26)),
-            Text(
-                ingilizce
-                    ? '${primary['name_cn']}'
-                    : '${primary['name']} ${primary['name_cn']}',
+            Text('${primary['name']} ${primary['name_cn']}',
                 style: RythoText.body(13, color: RythoColors.parchmentDim)),
             if (transformed != null) ...[
               const SizedBox(height: 8),
               Text(
                 l10n.iChingTransformedTo(
-                    ingilizce
-                        ? transformed['name']
-                        : transformed['name_tr'],
+                    transformed['name_local'] ?? transformed['name_tr'],
                     transformed['number']),
                 style: RythoText.mono(12, color: RythoColors.copper),
               ),
