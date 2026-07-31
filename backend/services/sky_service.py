@@ -40,9 +40,11 @@ _SIGNS = [
     ("Yay", "♐"), ("Oğlak", "♑"), ("Kova", "♒"), ("Balık", "♓"),
 ]
 
+#: (açı, dilden bağımsız anahtar, orb). Ad değil ANAHTAR tutulur — gökyüzü
+#: paylaşımlı önbellekten servis ediliyor ve tüm diller aynı hesabı kullanıyor.
 _MAJOR_ASPECTS = [
-    (0, "Kavuşum", 6), (60, "Altmışlık", 4), (90, "Kare", 6),
-    (120, "Üçgen", 6), (180, "Karşıt", 8),
+    (0, "conjunction", 6), (60, "sextile", 4), (90, "square", 6),
+    (120, "trine", 6), (180, "opposition", 8),
 ]
 
 
@@ -118,8 +120,14 @@ def _horizons_distances() -> dict[str, float]:
     return distances
 
 
+#: Önbellek anahtarı sürümlü: yükün biçimi değiştiğinde (Türkçe adlar ->
+#: dilden bağımsız anahtarlar) eski kayıtlar okunmaya devam ederse İngilizce
+#: kullanıcı bir saat boyunca Türkçe gökyüzü görürdü.
+_SKY_CACHE_KEY = "sky-now-v2"
+
+
 def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
-    cached = cache.get("sky-now")
+    cached = cache.get(_SKY_CACHE_KEY)
     if cached is not None:
         return cached
 
@@ -136,7 +144,8 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
         sign_name, sign_symbol = _SIGNS[sign_idx]
         retro = speed < 0
         if retro:
-            retrogrades.append(name_tr)
+            # Gezegen ADI değil anahtarı; ada çeviri isteğin dilinde yapılır.
+            retrogrades.append(name)
         positions[name] = lon
         planets.append({
             "name": name, "name_tr": name_tr,
@@ -156,10 +165,10 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
             n1, n2 = names[i], names[j]
             diff = abs(positions[n1[0]] - positions[n2[0]])
             diff = min(diff, 360 - diff)
-            for angle, aspect_tr, orb in _MAJOR_ASPECTS:
+            for angle, aspect_key, orb in _MAJOR_ASPECTS:
                 if abs(diff - angle) <= orb:
                     aspects.append({
-                        "p1": n1[1], "p2": n2[1], "aspect": aspect_tr,
+                        "p1": n1[0], "p2": n2[0], "aspect": aspect_key,
                         "orb": round(abs(diff - angle), 1),
                     })
                     break
@@ -173,5 +182,5 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
         "aspects": sorted(aspects, key=lambda a: a["orb"])[:12],
         "nasa_data_available": bool(nasa_distances),
     }
-    cache.set("sky-now", result, ttl_seconds=3600)
+    cache.set(_SKY_CACHE_KEY, result, ttl_seconds=3600)
     return result

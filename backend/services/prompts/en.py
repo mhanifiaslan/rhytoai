@@ -208,6 +208,19 @@ SKY_ASPECTS = "- Notable aspects: {aspects}"
 NONE_LABEL = "none"
 NO_ASPECTS = "no notable cross-aspects"
 
+#: Planet names. Keys must match sky_service._PLANETS.
+PLANET_NAMES = {
+    "Sun": "Sun", "Moon": "Moon", "Mercury": "Mercury", "Venus": "Venus",
+    "Mars": "Mars", "Jupiter": "Jupiter", "Saturn": "Saturn",
+    "Uranus": "Uranus", "Neptune": "Neptune", "Pluto": "Pluto",
+}
+
+#: Aspect names. Keys must match sky_service._MAJOR_ASPECTS.
+ASPECT_NAMES = {
+    "conjunction": "Conjunction", "sextile": "Sextile", "square": "Square",
+    "trine": "Trine", "opposition": "Opposition",
+}
+
 #: Moon phase names. Keys must match sky_service._MOON_PHASES.
 MOON_PHASES = {
     "new_moon": "New Moon",

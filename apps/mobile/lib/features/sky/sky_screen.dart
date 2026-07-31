@@ -437,7 +437,9 @@ class _SkyStrip extends StatelessWidget {
           alignment: WrapAlignment.center,
           children: [
             for (final r in retros)
-              InfoChip(text: '↩️ $r retro', color: RythoColors.magenta),
+              InfoChip(
+                  text: '↩️ ${AppLocalizations.of(context).retrogradeChip(r)}',
+                  color: RythoColors.magenta),
           ],
         ),
       ],

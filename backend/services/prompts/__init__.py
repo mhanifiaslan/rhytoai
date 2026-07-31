@@ -53,3 +53,42 @@ def localize_moon_phase(lang: str | None, moon: dict | None) -> dict:
         # elimizdeki ``name`` neyse onunla devam et, boş metin döndürme.
         return dict(moon)
     return {**moon, "name": moon_phase_name(lang, key)}
+
+
+def planet_name(lang: str | None, key: str | None) -> str:
+    """Gezegen anahtarının (``Saturn``) o dildeki adı."""
+    if not key:
+        return ""
+    return get(lang).PLANET_NAMES.get(key, key)
+
+
+def aspect_name(lang: str | None, key: str | None) -> str:
+    """Açı anahtarının (``square``) o dildeki adı."""
+    if not key:
+        return ""
+    return get(lang).ASPECT_NAMES.get(key, key)
+
+
+def localize_sky(lang: str | None, sky: dict | None) -> dict:
+    """Gökyüzü yükünü isteğin diline çevirir.
+
+    Hesap dilden bağımsızdır ve paylaşımlı önbellekten servis edilir; bu
+    yüzden retro listesi, açılar ve ay evresi anahtar taşır. Çeviri **yanıt
+    üretilirken** yapılır — aksi halde önbelleği ilk dolduran dil herkese
+    servis edilirdi (İngilizce kullanıcı "Satürn retro" görüyordu).
+    """
+    if not sky:
+        return {}
+    return {
+        **sky,
+        "moon_phase": localize_moon_phase(lang, sky.get("moon_phase")),
+        "retrogrades": [planet_name(lang, p)
+                        for p in (sky.get("retrogrades") or [])],
+        "aspects": [
+            {**a,
+             "p1": planet_name(lang, a.get("p1")),
+             "p2": planet_name(lang, a.get("p2")),
+             "aspect": aspect_name(lang, a.get("aspect"))}
+            for a in (sky.get("aspects") or [])
+        ],
+    }

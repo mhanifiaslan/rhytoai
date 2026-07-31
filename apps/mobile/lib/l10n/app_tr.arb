@@ -345,5 +345,14 @@
   "baziFateNote": "Rytho'nun kader notu",
   "traitEnergy": "Enerji",
   "traitPracticality": "Pratiklik",
-  "defaultUserName": "Gezgin"
+  "defaultUserName": "Gezgin",
+  "retrogradeChip": "{planet} retro",
+  "@retrogradeChip": {
+    "placeholders": {
+      "planet": {
+        "type": "Object"
+      }
+    }
+  },
+  "atlasReadingNote": "✨ Rytho'nun okuma notu"
 }

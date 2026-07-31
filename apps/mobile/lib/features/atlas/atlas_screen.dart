@@ -153,10 +153,10 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 5),
                       child: Row(children: [
                         Expanded(
-                          child: Text('${a['p1_tr']} — ${a['p2_tr']}',
+                          child: Text(aspectPairLabel(context, a),
                               style: RythoText.body(13)),
                         ),
-                        Text(a['aspect_tr'] ?? '',
+                        Text(aspectKindLabel(context, a),
                             style: RythoText.body(13,
                                 color: RythoColors.parchmentDim)),
                         const SizedBox(width: 12),
@@ -170,7 +170,7 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
               const SectionDivider(),
               // Tam AI raporu
               GlassPanel(
-                label: '✨ Rytho\'nun okuma notu',
+                label: l10n.atlasReadingNote,
                 child: Text(data['report'] ?? '',
                     style: RythoText.body(14.5, height: 1.65)),
               ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
@@ -197,6 +197,28 @@ String planetSignLabel(BuildContext context, Map<String, dynamic> p) {
       ? signDisplayName(l10n, signIndex)
       : (p['sign_tr'] ?? '');
   return '$gezegen — $burc';
+}
+
+/// Açıdaki iki gezegen: "Güneş — Satürn" / "Sun — Saturn".
+///
+/// Natal harita ucu her iki adı da döndürüyor (`p1` İngilizce, `p1_tr`).
+String aspectPairLabel(BuildContext context, Map<String, dynamic> a) {
+  final ingilizce = Localizations.localeOf(context).languageCode == 'en';
+  final p1 = (ingilizce ? a['p1'] : a['p1_tr']) ?? a['p1'] ?? '';
+  final p2 = (ingilizce ? a['p2'] : a['p2_tr']) ?? a['p2'] ?? '';
+  return '$p1 — $p2';
+}
+
+/// Açı türü: "Kare" / "Square".
+///
+/// İngilizce alan kerykeion'dan küçük harfle geliyor ("square"), gösterirken
+/// baş harfi büyütülür.
+String aspectKindLabel(BuildContext context, Map<String, dynamic> a) {
+  final ingilizce = Localizations.localeOf(context).languageCode == 'en';
+  if (!ingilizce) return (a['aspect_tr'] ?? a['aspect'] ?? '').toString();
+  final ham = (a['aspect'] ?? '').toString();
+  if (ham.isEmpty) return '';
+  return ham[0].toUpperCase() + ham.substring(1);
 }
 
 /// Firestore/backend'den gelen Türkçe burç adını ("Kova ♒") arayüz diline

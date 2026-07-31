@@ -94,7 +94,7 @@ def horoscope(
     Kimlik doğrulaması istemci tarafında zaten mevcut (anonim Firebase oturumu
     dahil) ve ucu kötüye kullanıma karşı korur; abonelik gerektirmez.
     """
-    sky = get_sky_now()
+    sky = prompts.localize_sky(lang, get_sky_now())
     report = report_service.horoscope_reading(sign, period, sky, lang=lang)
     return {"status": "success", "data": {
         "sign": sign,
@@ -106,7 +106,7 @@ def horoscope(
         "cached": report.get("cached", False),
         "fallback": report.get("fallback", False),
         "generated_for": report.get("generated_for"),
-        "moon_phase": prompts.localize_moon_phase(lang, sky["moon_phase"]),
+        "moon_phase": sky["moon_phase"],
         "retrogrades": sky["retrogrades"],
     }}
 
@@ -124,13 +124,13 @@ def daily(data: BirthData,
     """
     try:
         natal = astro_service.get_natal_chart(**_natal_kwargs(data))
-        sky = get_sky_now()
+        sky = prompts.localize_sky(lang, get_sky_now())
         report = report_service.daily_reading(user.uid, natal, sky, lang=lang)
         return {"status": "success", "data": {
             "reading": report["text"], "cached": report.get("cached", False),
             "sun_sign": natal["sun_sign"], "moon_sign": natal["moon_sign"],
             "ascendant": natal["ascendant"],
-            "moon_phase": prompts.localize_moon_phase(lang, sky["moon_phase"]),
+            "moon_phase": sky["moon_phase"],
             "retrogrades": sky["retrogrades"],
         }}
     except Exception as e:
@@ -209,7 +209,7 @@ def dyad(req: DyadRequest,
     synastry = astro_service.get_synastry(
         profile_service.birth_kwargs(me), profile_service.birth_kwargs(friend)
     )
-    sky = get_sky_now()
+    sky = prompts.localize_sky(lang, get_sky_now())
     report = report_service.dyad_reading(
         user.uid, req.friend_uid,
         me.get("displayName") or "Gezgin", friend.get("displayName") or "Gezgin",

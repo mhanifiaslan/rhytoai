@@ -15,14 +15,10 @@ router = APIRouter(dependencies=[Depends(get_current_user)])
 @router.get("/now")
 def sky_now(lang: str = Depends(get_language)):
     try:
-        sky = get_sky_now()
-        # Hesap paylaşımlı önbellekten geliyor ve dilden bağımsız; ay evresinin
-        # adı isteğin dilinde burada ekleniyor.
-        return {"status": "success", "data": {
-            **sky,
-            "moon_phase": prompts.localize_moon_phase(
-                lang, sky.get("moon_phase")),
-        }}
+        # Hesap paylaşımlı önbellekten geliyor ve dilden bağımsız anahtarlar
+        # taşıyor; adlar isteğin dilinde burada çözülüyor.
+        return {"status": "success",
+                "data": prompts.localize_sky(lang, get_sky_now())}
     except Exception as e:
         # Ham istisna metni kullanıcıya gösterilmez (bkz. core/messages.py).
         logger.exception("Gökyüzü ucunda hata", exc_info=e)

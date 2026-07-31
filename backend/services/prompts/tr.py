@@ -195,6 +195,19 @@ SKY_ASPECTS = "- Önemli açılar: {aspects}"
 NONE_LABEL = "yok"
 NO_ASPECTS = "belirgin karşılıklı açı yok"
 
+#: Gezegen adları. Anahtarlar sky_service._PLANETS ile aynı olmalı.
+PLANET_NAMES = {
+    "Sun": "Güneş", "Moon": "Ay", "Mercury": "Merkür", "Venus": "Venüs",
+    "Mars": "Mars", "Jupiter": "Jüpiter", "Saturn": "Satürn",
+    "Uranus": "Uranüs", "Neptune": "Neptün", "Pluto": "Plüton",
+}
+
+#: Açı adları. Anahtarlar sky_service._MAJOR_ASPECTS ile aynı olmalı.
+ASPECT_NAMES = {
+    "conjunction": "Kavuşum", "sextile": "Altmışlık", "square": "Kare",
+    "trine": "Üçgen", "opposition": "Karşıt",
+}
+
 #: Ay evresi adları. Anahtarlar sky_service._MOON_PHASES ile aynı olmalı.
 MOON_PHASES = {
     "new_moon": "Yeni Ay",

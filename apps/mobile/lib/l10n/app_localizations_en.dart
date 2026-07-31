@@ -783,4 +783,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get defaultUserName => 'Traveller';
+
+  @override
+  String retrogradeChip(Object planet) {
+    return '$planet retrograde';
+  }
+
+  @override
+  String get atlasReadingNote => '✨ Rytho\'s note on your chart';
 }

@@ -314,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Expanded(child: Divider()),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('ya da',
+                  child: Text(l10n.orDivider,
                       style:
                           RythoText.body(11, color: RythoColors.parchmentDim)),
                 ),

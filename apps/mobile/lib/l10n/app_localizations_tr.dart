@@ -782,4 +782,12 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get defaultUserName => 'Gezgin';
+
+  @override
+  String retrogradeChip(Object planet) {
+    return '$planet retro';
+  }
+
+  @override
+  String get atlasReadingNote => '✨ Rytho\'nun okuma notu';
 }

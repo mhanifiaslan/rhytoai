@@ -369,3 +369,76 @@ def test_gokyuzu_ucu_ay_evresini_yerellestirir(monkeypatch):
 
     assert tr.json()["data"]["moon_phase"]["name"] == "Dolunay"
     assert en.json()["data"]["moon_phase"]["name"] == "Full Moon"
+
+
+def test_gokyuzu_hesabi_ad_degil_anahtar_tasir():
+    """Retro listesi ve acilar da dilden bagimsiz olmali.
+
+    Gokyuzu paylasimli onbellekten servis ediliyor: onbellegi ilk dolduran
+    dilin adlari herkese gidiyordu ve Ingilizce kullanici "Saturn retro" degil
+    "Saturn retro" yerine "Satürn retro" goruyordu.
+    """
+    from services import sky_service
+
+    gezegen_anahtarlari = {ad for ad, _, _, _ in sky_service._PLANETS}
+    aci_anahtarlari = {a for _, a, _ in sky_service._MAJOR_ASPECTS}
+    for kod in i18n.SUPPORTED:
+        modul = prompts.get(kod)
+        assert not gezegen_anahtarlari - set(modul.PLANET_NAMES)
+        assert not aci_anahtarlari - set(modul.ASPECT_NAMES)
+
+
+def test_gokyuzu_yerellestirme():
+    ham = {
+        "moon_phase": {"key": "full_moon", "emoji": "🌕", "illumination": 93},
+        "retrogrades": ["Saturn", "Neptune", "Pluto"],
+        "aspects": [{"p1": "Neptune", "p2": "Pluto", "aspect": "sextile",
+                     "orb": 1.2}],
+        "planets": [{"name": "Sun"}],
+    }
+
+    tr = prompts.localize_sky("tr", ham)
+    en = prompts.localize_sky("en", ham)
+
+    assert tr["retrogrades"] == ["Satürn", "Neptün", "Plüton"]
+    assert en["retrogrades"] == ["Saturn", "Neptune", "Pluto"]
+    assert tr["aspects"][0]["aspect"] == "Altmışlık"
+    assert en["aspects"][0]["aspect"] == "Sextile"
+    assert tr["moon_phase"]["name"] == "Dolunay"
+    assert en["moon_phase"]["name"] == "Full Moon"
+    # Dokunulmayan alanlar korunmali
+    assert en["planets"] == ham["planets"]
+    assert en["aspects"][0]["orb"] == 1.2
+    # Ham veri degismemeli
+    assert ham["retrogrades"] == ["Saturn", "Neptune", "Pluto"]
+
+
+def test_gokyuzu_yerellestirme_bos_veri():
+    """Gökyüzü alınamadığında çeviri patlamamalı; sohbet gökyüzsüz devam eder."""
+    assert prompts.localize_sky("en", None) == {}
+    assert prompts.localize_sky("en", {}) == {}
+    # Alanları eksik ama var olan bir yük normalize edilmeli.
+    assert prompts.localize_sky("en", {"planets": []})["retrogrades"] == []
+
+
+@uygulama_gerekir
+def test_gokyuzu_ucu_retro_ve_acilari_yerellestirir(monkeypatch):
+    from api import sky as sky_api
+
+    monkeypatch.setattr(sky_api, "get_sky_now", lambda: {
+        "moon_phase": {"key": "full_moon", "emoji": "🌕", "illumination": 93},
+        "retrogrades": ["Saturn"],
+        "aspects": [{"p1": "Venus", "p2": "Mars", "aspect": "square",
+                     "orb": 2.0}],
+        "planets": [],
+    })
+
+    with TestClient(app) as client:
+        en = client.get("/api/v1/sky/now",
+                        headers={"Authorization": "Bearer t-sky-en",
+                                 "Accept-Language": "en"})
+
+    veri = en.json()["data"]
+    assert veri["retrogrades"] == ["Saturn"]
+    assert veri["aspects"][0]["aspect"] == "Square"
+    assert veri["moon_phase"]["name"] == "Full Moon"

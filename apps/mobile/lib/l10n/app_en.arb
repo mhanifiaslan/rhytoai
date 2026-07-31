@@ -345,5 +345,14 @@
   "baziFateNote": "Rytho's note on your chart",
   "traitEnergy": "Energy",
   "traitPracticality": "Practicality",
-  "defaultUserName": "Traveller"
+  "defaultUserName": "Traveller",
+  "retrogradeChip": "{planet} retrograde",
+  "@retrogradeChip": {
+    "placeholders": {
+      "planet": {
+        "type": "Object"
+      }
+    }
+  },
+  "atlasReadingNote": "✨ Rytho's note on your chart"
 }

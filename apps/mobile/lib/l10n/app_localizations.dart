@@ -1537,6 +1537,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Gezgin'**
   String get defaultUserName;
+
+  /// No description provided for @retrogradeChip.
+  ///
+  /// In tr, this message translates to:
+  /// **'{planet} retro'**
+  String retrogradeChip(Object planet);
+
+  /// No description provided for @atlasReadingNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'✨ Rytho\'nun okuma notu'**
+  String get atlasReadingNote;
 }
 
 class _AppLocalizationsDelegate

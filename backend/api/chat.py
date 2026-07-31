@@ -48,13 +48,13 @@ def _sky_summary(lang: str) -> str:
     içinde Türkçe etiketler modelin dili karıştırmasına yol açıyordu.
     """
     try:
-        sky = get_sky_now()
+        sky = prompts.localize_sky(lang, get_sky_now())
     except Exception as exc:
         logger.warning("Gökyüzü alınamadı: %s", exc)
         return ""
 
     p = prompts.get(lang)
-    moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
+    moon = sky.get("moon_phase") or {}
     retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
     aspects = "; ".join(
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in (sky.get("aspects") or [])[:3]
