@@ -25,12 +25,18 @@ gcloud run deploy $SERVICE `
     --timeout 300 `
     --max-instances 3 `
     --set-env-vars "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT" `
-    --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest"
+    --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest"
 
 # REVENUECAT_WEBHOOK_SECRET olmadan /api/v1/billing/revenuecat 503 doner ve
 # hicbir kullanici abone olarak isaretlenemez (dogrulamasiz abonelik yazmaya
 # izin verilmiyor). Ayni deger RevenueCat panelindeki webhook'un Authorization
 # basligina da yazilmali.
+#
+# NOTIFY_SCHEDULER_SECRET, Cloud Scheduler'in toplu bildirim ucunu tetiklerken
+# tasidigi anahtardir. Anahtar ve zamanlayici isleri ./create-scheduler.ps1
+# ile kurulur; bu deploy o anahtari konteynere tasir. Tanimsizken uc 503
+# doner — acik birakmak, herkesin tum kullanicilara bildirim gonderebilmesi
+# demek olurdu.
 #
 # Gelistirme sirasinda odemesiz test icin --set-env-vars satirina
 # RYTHO_FORCE_PLUS=1 eklenebilir; uretimde ASLA acik birakilmamali.

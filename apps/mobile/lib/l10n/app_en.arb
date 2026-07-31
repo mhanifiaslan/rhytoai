@@ -354,5 +354,28 @@
       }
     }
   },
-  "atlasReadingNote": "✨ Rytho's note on your chart"
+  "atlasReadingNote": "✨ Rytho's note on your chart",
+  "notifications": "Notifications",
+  "notifyDaily": "Daily reading",
+  "notifyDailyBody": "Let me know each morning when today's sky is ready.",
+  "notifyStreak": "Streak reminder",
+  "notifyStreakBody": "A short evening nudge before your streak breaks.",
+  "notifyFriends": "Friend reactions",
+  "notifyFriendsBody": "Let me know when a friend sends you a reaction.",
+  "quietHours": "Quiet hours",
+  "quietHoursBody": "No notifications are sent during this window.",
+  "quietHoursRange": "{from} – {to}",
+  "@quietHoursRange": {
+    "placeholders": {
+      "from": {
+        "type": "Object"
+      },
+      "to": {
+        "type": "Object"
+      }
+    }
+  },
+  "quietHoursOff": "Off",
+  "notificationsDisabledHint": "Notifications are off in your device settings. Turn them on there to receive them.",
+  "enableNotifications": "Turn on notifications"
 }

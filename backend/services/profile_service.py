@@ -115,6 +115,25 @@ _BURC_ANAHTARLARI = {
 }
 
 
+def sun_sign_key(profile: dict[str, Any] | None) -> str | None:
+    """Profildeki güneş burcunun dilden bağımsız anahtarı ("leo").
+
+    Profilde değer Türkçe ve sembollü tutuluyor ("Kova ♒"); bildirim metni
+    burç anahtarıyla önbelleklendiği için burada anahtara çevrilir.
+    Tanınmazsa ``None`` döner — uydurma bir burçla bildirim göndermektense
+    hiç göndermemek doğru.
+    """
+    if not profile:
+        return None
+    metin = str(profile.get("sunSign") or "").strip()
+    if not metin:
+        return None
+    for ad, anahtar in _BURC_ANAHTARLARI.items():
+        if metin == ad or metin.startswith(f"{ad} "):
+            return anahtar
+    return None
+
+
 def _yerel_burc(lang: str | None, deger: Any) -> str:
     """Profildeki Türkçe burç değerini isteğin diline çevirir."""
     if not deger:

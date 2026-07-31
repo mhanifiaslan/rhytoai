@@ -212,6 +212,44 @@ RETROGRADE_LABEL = "Rx"
 WU_XING_LABEL = "Wu Xing element"
 TEMPERAMENT_LABEL = "Temperament (four humours)"
 
+# --- Notifications ---
+#
+# Titles and bodies are TEMPLATES: the streak and friend-reaction pushes never
+# call the LLM. Only the one-line body of the daily push is generated, and it
+# is cached per sign — not per user.
+
+PUSH_DAILY_TITLE = "Today's sky is ready"
+#: Used when the generated line is unavailable.
+PUSH_DAILY_FALLBACK = "Your reading for {sign} is waiting."
+
+PUSH_STREAK_TITLE = "🔥 {days}-day streak"
+PUSH_STREAK_BODY = (
+    "You haven't opened today's reading yet. Keeping the streak takes seconds."
+)
+
+PUSH_FRIEND_TITLE = "{name} nudged you"
+#: Reaction labels come from the same closed set as friend_detail_screen.
+PUSH_FRIEND_BODY = "{emoji} {label}"
+
+#: Prompt for the daily push line. The length limit is strict: the
+#: notification shade truncates long text, and a half sentence reads as sloppy.
+PUSH_DAILY_PROMPT = """
+TASK: Write a single-sentence notification line for {sign}, specific to TODAY.
+
+TODAY'S ACTUAL SKY ({today}):
+- Moon phase: {moon_name} ({illumination}% illuminated)
+- Retrograde planets: {retros}
+
+RULES (strict):
+- 85 CHARACTERS MAXIMUM. One sentence. End with a full stop.
+- No emoji, no quotation marks, do not repeat the sign name.
+- Spark curiosity without promising; no empty praise like "a wonderful day".
+- No dated prophecy, no health, money or relationship guarantees.
+- Touch at least one of the sky facts above.
+
+Write only the sentence, nothing else.
+"""
+
 #: BaZi elements. Keys must match bazi_service._ELEMENT_ORDER.
 BAZI_ELEMENTS = {
     "wood": "Wood", "fire": "Fire", "earth": "Earth",

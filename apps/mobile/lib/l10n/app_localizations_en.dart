@@ -791,4 +791,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get atlasReadingNote => '✨ Rytho\'s note on your chart';
+
+  @override
+  String get notifications => 'Notifications';
+
+  @override
+  String get notifyDaily => 'Daily reading';
+
+  @override
+  String get notifyDailyBody =>
+      'Let me know each morning when today\'s sky is ready.';
+
+  @override
+  String get notifyStreak => 'Streak reminder';
+
+  @override
+  String get notifyStreakBody =>
+      'A short evening nudge before your streak breaks.';
+
+  @override
+  String get notifyFriends => 'Friend reactions';
+
+  @override
+  String get notifyFriendsBody =>
+      'Let me know when a friend sends you a reaction.';
+
+  @override
+  String get quietHours => 'Quiet hours';
+
+  @override
+  String get quietHoursBody => 'No notifications are sent during this window.';
+
+  @override
+  String quietHoursRange(Object from, Object to) {
+    return '$from – $to';
+  }
+
+  @override
+  String get quietHoursOff => 'Off';
+
+  @override
+  String get notificationsDisabledHint =>
+      'Notifications are off in your device settings. Turn them on there to receive them.';
+
+  @override
+  String get enableNotifications => 'Turn on notifications';
 }

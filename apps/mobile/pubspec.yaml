@@ -25,6 +25,10 @@ dependencies:
   firebase_auth: ^6.4.0
   cloud_firestore: ^6.1.2
   firebase_messaging: ^16.1.0
+  # Cihazın IANA saat dilimi ("Europe/Istanbul"). Bildirimin kullanıcının
+  # sabahına denk gelmesi için sunucunun buna ihtiyacı var; DateTime'ın
+  # döndürdüğü kısaltmalar ("+03") sunucuda çözülemiyor.
+  flutter_timezone: ^5.1.0
   firebase_crashlytics: ^5.0.7
   firebase_analytics: ^12.0.4
   google_sign_in: ^7.2.0

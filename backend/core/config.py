@@ -52,3 +52,8 @@ GEONAMES_USERNAME: str | None = os.getenv("GEONAMES_USERNAME")
 # tum istekleri reddeder — abonelik durumu yazan tek yol bu oldugu icin
 # dogrulamasiz calismasina izin verilmez.
 REVENUECAT_WEBHOOK_SECRET: str | None = os.getenv("REVENUECAT_WEBHOOK_SECRET")
+
+# Cloud Scheduler'in toplu bildirim ucunu tetiklerken tasidigi paylasilan
+# gizli anahtar. Tanimsizken uc 503 doner: acik birakmak, herkesin tum
+# kullanicilara bildirim gonderebilmesi demek olurdu.
+NOTIFY_SCHEDULER_SECRET: str | None = os.getenv("NOTIFY_SCHEDULER_SECRET")

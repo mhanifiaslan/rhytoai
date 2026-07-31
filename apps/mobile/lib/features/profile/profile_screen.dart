@@ -1,12 +1,11 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/friends.dart' show setStreakVisible;
 import '../../core/locale.dart';
+import 'notification_settings.dart';
 import '../../core/providers.dart';
 import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
@@ -34,27 +33,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _registerFcm();
+    // Bildirim izni buradan İSTENMİYOR: profil ekranını açmak izin sormak için
+    // yanlış an. İzin, kullanıcı ilk değeri gördükten sonra ana ekranda
+    // isteniyor (bkz. core/notifications.dart ve sky_screen).
     SoundFx.loadEnabled().then((v) {
       if (mounted) setState(() => _soundsEnabled = v);
     });
-  }
-
-  Future<void> _registerFcm() async {
-    try {
-      final messaging = FirebaseMessaging.instance;
-      await messaging.requestPermission();
-      final token = await messaging.getToken();
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (token != null && uid != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .set({'fcmToken': token}, SetOptions(merge: true));
-      }
-    } catch (_) {
-      // Web/emülatörde izin yoksa sessizce geç
-    }
   }
 
   @override
@@ -234,6 +218,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               }),
           ]),
         ),
+        // Bildirimler. Metinler sunucuda üretiliyor ve zamanlama kullanıcının
+        // YEREL saatine göre yapılıyor (bkz. core/notifications.dart).
+        const NotificationSettings(),
         // Gizlilik: arkadaşlara ne göründüğü. Tüm görünürlük ayarları
         // varsayılan olarak KAPALIDIR ve yalnızca buradan açılır.
         Plaque(
@@ -345,4 +332,3 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 }
-

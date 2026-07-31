@@ -790,4 +790,49 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get atlasReadingNote => '✨ Rytho\'nun okuma notu';
+
+  @override
+  String get notifications => 'Bildirimler';
+
+  @override
+  String get notifyDaily => 'Günlük okuma';
+
+  @override
+  String get notifyDailyBody =>
+      'Sabahları bugünün gökyüzü hazır olduğunda haber ver.';
+
+  @override
+  String get notifyStreak => 'Seri hatırlatması';
+
+  @override
+  String get notifyStreakBody =>
+      'Akşam, serin kırılmadan önce kısa bir hatırlatma.';
+
+  @override
+  String get notifyFriends => 'Arkadaş tepkileri';
+
+  @override
+  String get notifyFriendsBody =>
+      'Bir arkadaşın sana tepki gönderdiğinde haber ver.';
+
+  @override
+  String get quietHours => 'Sessiz saatler';
+
+  @override
+  String get quietHoursBody => 'Bu aralıkta bildirim gönderilmez.';
+
+  @override
+  String quietHoursRange(Object from, Object to) {
+    return '$from:00 – $to:00';
+  }
+
+  @override
+  String get quietHoursOff => 'Kapalı';
+
+  @override
+  String get notificationsDisabledHint =>
+      'Bildirimler cihaz ayarlarından kapalı. Açmak için sistem ayarlarına git.';
+
+  @override
+  String get enableNotifications => 'Bildirimleri aç';
 }

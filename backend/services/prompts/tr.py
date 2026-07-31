@@ -199,6 +199,44 @@ RETROGRADE_LABEL = "Retro"
 WU_XING_LABEL = "Wu Xing elementi"
 TEMPERAMENT_LABEL = "Mizaç (Ahlat-ı Erbaa)"
 
+# --- Bildirimler ---
+#
+# Başlıklar ve gövdeler ŞABLONDUR: seri ve arkadaş tepkisi bildirimleri hiç
+# LLM çağırmaz. Yalnızca günlük bildirimin tek satırlık gövdesi üretilir ve o
+# da burç başına önbelleklenir (kullanıcı başına değil).
+
+PUSH_DAILY_TITLE = "Bugünün gökyüzü hazır"
+#: Günlük bildirimin gövdesi üretilemezse kullanılacak metin.
+PUSH_DAILY_FALLBACK = "{sign} için bugünün okuması seni bekliyor."
+
+PUSH_STREAK_TITLE = "🔥 {days} günlük serin"
+PUSH_STREAK_BODY = (
+    "Bugün okumanı henüz açmadın. Seriyi sürdürmek birkaç saniye alır."
+)
+
+PUSH_FRIEND_TITLE = "{name} seni dürttü"
+#: Tepki etiketleri friend_detail_screen ile aynı kümeden gelir.
+PUSH_FRIEND_BODY = "{emoji} {label}"
+
+#: Günlük bildirim satırını üreten prompt. Uzunluk sınırı sert: bildirim
+#: gölgesi uzun metni kesiyor ve yarım cümle güvensizlik veriyor.
+PUSH_DAILY_PROMPT = """
+GÖREV: {sign} burcu için BUGÜNE özgü, tek cümlelik bir bildirim metni yaz.
+
+BUGÜNÜN GERÇEK GÖKYÜZÜ ({today}):
+- Ay evresi: {moon_name} (aydınlanma %{illumination})
+- Retro gezegenler: {retros}
+
+KURALLAR (kesin):
+- EN FAZLA 85 karakter. Tek cümle. Nokta ile bitir.
+- Emoji kullanma, tırnak kullanma, burç adını tekrar etme.
+- Merak uyandır ama vaat etme; "harika bir gün" gibi boş övgü YOK.
+- Kesin tarihli kehanet, sağlık, para ve ilişki garantisi YOK.
+- Yukarıdaki gökyüzü verisinden en az birine dokun.
+
+Yalnızca cümleyi yaz, başka hiçbir şey yazma.
+"""
+
 #: BaZi elementleri. Anahtarlar bazi_service._ELEMENT_ORDER ile aynı olmalı.
 BAZI_ELEMENTS = {
     "wood": "Ahşap", "fire": "Ateş", "earth": "Toprak",

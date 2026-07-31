@@ -42,7 +42,18 @@ service cloud.firestore {
           // Günlük seri (motivasyon): son görülen gün + seri sayacı
           'lastSeenDaily', 'streakCount',
           // Serimi arkadaşlarım görebilsin mi (varsayılan: kapalı)
-          'streakVisible'
+          'streakVisible',
+          // ---------- Bildirimler ----------
+          // Saat dilimi IANA adıdır ("Europe/Istanbul"); sunucu kullanıcının
+          // YEREL saatini bununla hesaplar. Doğum şehri kullanılamaz: kişi
+          // doğduğu yerde yaşamıyor olabilir.
+          'timezone',
+          // Arayüz dili: bildirim metni sunucuda üretildiği için istemcinin
+          // Accept-Language başlığı burada yok; dil profilde tutulur.
+          'language',
+          // Tercihler (varsayılan açık) ve sessiz saat aralığı (yerel saat).
+          'notifyDaily', 'notifyStreak', 'notifyFriends',
+          'quietFrom', 'quietTo'
         ]);
       allow delete: if isOwner(uid);
 
@@ -51,8 +62,12 @@ service cloud.firestore {
         allow read, create, delete: if isOwner(uid);
       }
 
-      // Kullanıcı hafızası (services/memory_service.py) — yalnızca sunucu
+      // Kullanıcı hafızası (memory_service), abonelik kaydı (billing) ve
+      // bildirim gönderim kaydı (notification_service) — yalnızca sunucu
       // (Admin SDK) erişir; Admin SDK bu kuralları atlar.
+      //
+      // Gönderim kaydının istemciye kapalı olması şart: açık olsaydı kullanıcı
+      // "bugün gönderildi" kaydını silip aynı bildirimi tekrar tetikleyebilirdi.
       match /private/{document=**} {
         allow read, write: if false;
       }

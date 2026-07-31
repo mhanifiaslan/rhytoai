@@ -364,3 +364,72 @@ def test_ingilizce_sohbet_promptu_turkce_icermez(monkeypatch, temiz_onbellek):
         f"Ingilizce sohbet promptunda Turkce: {turkce_kalinti(mesaj)}"
     assert not turkce_kelime_kalintisi(mesaj), \
         f"Ingilizce sohbet promptunda Turkce ad: {turkce_kelime_kalintisi(mesaj)}"
+
+
+# --------------------------------------------------------------------------
+# 5. Bildirimler
+#
+# Bildirim metni SUNUCUDA uretiliyor ve kullanicinin diline gore secilmesi
+# profildeki `language` alanina bagli. Sablonlardan biri tek dilde kalirsa
+# kullanici yanlis dilde bildirim alir ve bunu bize bildirmesinin yolu yok.
+# --------------------------------------------------------------------------
+
+PUSH_SABLONLARI = [
+    "PUSH_DAILY_TITLE", "PUSH_DAILY_FALLBACK", "PUSH_STREAK_TITLE",
+    "PUSH_STREAK_BODY", "PUSH_FRIEND_TITLE", "PUSH_FRIEND_BODY",
+    "PUSH_DAILY_PROMPT",
+]
+
+
+@pytest.mark.parametrize("sablon", PUSH_SABLONLARI)
+def test_push_sablonlari_her_dilde_var(sablon):
+    for kod in i18n.SUPPORTED:
+        assert getattr(prompts.get(kod), sablon), f"{kod}/{sablon} eksik"
+
+
+def test_push_sablonlari_gercekten_cevrilmis():
+    tr, en = prompts.get("tr"), prompts.get("en")
+    for sablon in PUSH_SABLONLARI:
+        # PUSH_FRIEND_BODY salt yer tutucudan ibaret ("{emoji} {label}"),
+        # dogal olarak iki dilde ayni.
+        if sablon == "PUSH_FRIEND_BODY":
+            continue
+        assert getattr(tr, sablon) != getattr(en, sablon), \
+            f"{sablon} cevrilmemis"
+
+
+def test_ingilizce_push_promptu_turkce_icermez():
+    from services import notification_service as ns
+
+    sky = prompts.localize_sky("en", sky_service.get_sky_now(include_nasa=False))
+    moon = sky.get("moon_phase") or {}
+    prompt = prompts.get("en").PUSH_DAILY_PROMPT.format(
+        sign=prompts.sign_name("en", "leo"), today="2026-06-15",
+        moon_name=moon.get("name") or "-",
+        illumination=moon.get("illumination"),
+        retros=", ".join(sky.get("retrogrades") or []) or
+        prompts.get("en").NONE_LABEL,
+    )
+    assert not turkce_kalinti(prompt), \
+        f"Ingilizce push promptunda Turkce: {turkce_kalinti(prompt)}"
+    assert not turkce_kelime_kalintisi(prompt), \
+        f"Ingilizce push promptunda Turkce ad: {turkce_kelime_kalintisi(prompt)}"
+    assert ns.MAX_PUSH_BODY > 0
+
+
+def test_ingilizce_sablon_bildirimleri_turkce_icermez():
+    from services import notification_service as ns
+
+    baslik, govde = ns.streak_push({"streakCount": 5}, "en")
+    assert not turkce_kalinti(baslik + govde)
+
+    baslik, govde = ns.friend_push("Ada", "🔥", "Keep the streak", "en")
+    assert not turkce_kalinti(baslik + govde)
+
+
+def test_tepki_etiketleri_dile_gore_farkli():
+    from api import notify
+
+    tr, en = notify.REACTION_LABELS["tr"], notify.REACTION_LABELS["en"]
+    for anahtar in tr:
+        assert tr[anahtar] != en[anahtar], f"{anahtar} cevrilmemis"

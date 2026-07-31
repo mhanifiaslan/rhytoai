@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'providers.dart';
@@ -261,6 +263,23 @@ Future<void> sendReaction(String toUid, String reaction) async {
     'reaction': reaction,
     'createdAt': FieldValue.serverTimestamp(),
   });
+}
+
+/// Tepkinin push bildirimini tetikler.
+///
+/// Firestore yazımından AYRI bir adım: bildirim gitmese bile tepki
+/// kaydedilmiş olmalı ve arkadaşın gelen kutusunda görünmeli. Bu yüzden
+/// hata yutuluyor — push bir ek, tepkinin kendisi değil.
+///
+/// Metni sunucu üretir ve arkadaşlığı sunucu doğrular; istemci yalnızca
+/// "şu arkadaşa şu tepkiyi gönderdim" der.
+Future<void> notifyReaction(Dio dio, String toUid, String reaction) async {
+  try {
+    await dio.post('/api/v1/notify/reaction',
+        data: {'friend_uid': toUid, 'reaction': reaction});
+  } catch (e) {
+    debugPrint('Tepki bildirimi gönderilemedi: $e');
+  }
 }
 
 /// Gelen tepkiyi okundu sayıp siler.

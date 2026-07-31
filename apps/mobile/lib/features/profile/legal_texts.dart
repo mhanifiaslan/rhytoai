@@ -65,6 +65,20 @@ const LegalSections kPrivacyPolicyTr = [
         'yapılabilir. Rehberine erişilmez.'
   ),
   (
+    'Bildirimler',
+    'Bildirimleri açtığında cihazının bildirim kimliği (FCM token), saat '
+        'dilimin ve seçtiğin arayüz dili hesabına bağlı olarak saklanır. Saat '
+        'dilimi, bildirimin senin yerel sabahına denk gelmesi için gerekir; '
+        'konum bilgin alınmaz, yalnızca cihazının bildirdiği saat dilimi adı '
+        '(örneğin "Europe/Istanbul") kaydedilir. Bildirim metinleri '
+        'sunucumuzda üretilir ve burcuna göre hazırlanır; bu metinler kişiye '
+        'özel değildir ve sohbet geçmişin bildirim üretiminde kullanılmaz. '
+        'Bildirim türlerini ve sessiz saatleri Profil > Bildirimler '
+        'bölümünden kapatabilir, cihaz ayarlarından tümüyle kaldırabilirsin. '
+        'Uygulamayı sildiğinde bildirim kimliği geçersizleşir ve ilk '
+        'başarısız gönderimde kaydımızdan silinir.'
+  ),
+  (
     'Abonelik',
     'Satın alma işlemi cihazının uygulama mağazası üzerinden yürütülür; '
         'ödeme bilgilerini biz görmeyiz ve saklamayız. Abonelik durumunu '
@@ -216,6 +230,20 @@ const LegalSections kPrivacyPolicyEn = [
         'preset reactions you send. Users cannot send each other free text in '
         'this app; interaction is limited to a fixed set of reactions. We do '
         'not access your contacts.'
+  ),
+  (
+    'Notifications',
+    'If you turn notifications on, we store your device\'s notification token '
+        '(FCM), your time zone and your chosen interface language against your '
+        'account. The time zone is what lets a notification land in your own '
+        'morning; we do not collect your location, only the time zone name '
+        'your device reports (for example "Europe/Istanbul"). Notification '
+        'text is generated on our servers per sun sign — it is not '
+        'individually personalised, and your chat history is never used to '
+        'produce it. You can switch types off and set quiet hours under '
+        'Profile > Notifications, or turn them off entirely in your device '
+        'settings. If you delete the app the token stops working and we drop '
+        'it on the first failed delivery.'
   ),
   (
     'Subscriptions',

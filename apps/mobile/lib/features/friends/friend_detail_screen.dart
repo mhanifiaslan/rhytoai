@@ -60,8 +60,12 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
 
   Future<void> _react(String key) async {
     setState(() => _sentReaction = key);
+    final dio = ref.read(apiProvider);
     try {
       await sendReaction(widget.friend.uid, key);
+      // Bildirimi tetikle. Başarısız olsa bile tepki gönderilmiş sayılır;
+      // arkadaş uygulamayı açtığında gelen kutusunda görecek.
+      await notifyReaction(dio, widget.friend.uid, key);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(AppLocalizations.of(context)

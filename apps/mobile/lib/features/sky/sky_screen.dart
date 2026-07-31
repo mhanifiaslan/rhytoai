@@ -17,6 +17,11 @@ import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
 import '../shell/app_shell.dart';
 import '../../core/api.dart' show friendlyError;
+import '../../core/notifications.dart'
+    show
+        markNotificationPromptShown,
+        notificationPromptShown,
+        requestNotificationPermission;
 import '../../l10n/app_localizations.dart';
 
 /// GÖKYÜZÜ — ana ekran v3: selamlama, burç çipleri, promo banner,
@@ -56,23 +61,39 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   /// göstermemek ise kilitli karta dokunmayan kullanıcıya Rytho+'ın varlığını
   /// hiç duyurmuyor. Bu yüzden tetikleyici, ücretsiz günlük yorumun ekrana
   /// gelmesidir.
+  /// İlk değer ekrana geldikten sonraki tek seferlik akış.
+  ///
+  /// Sıra önemli: paywall gösterilecekse bildirim izni BU AÇILIŞTA
+  /// istenmez. Kullanıcıyı arka arkaya iki modalla karşılamak ikisinin de
+  /// reddedilme olasılığını artırır; bildirim izni bir sonraki açılışta
+  /// sorulur ve o zaman tek başına görünür.
   void _maybeShowIntroPaywall() {
     if (_introPaywallHandled) return;
     _introPaywallHandled = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
-      // Abone olan kullanıcıya satış ekranı gösterilmez.
-      if (ref.read(subscriptionProvider).value?.active ?? false) return;
-      if (await introPaywallShown()) return;
-      if (!mounted) return;
 
-      await markIntroPaywallShown();
-      if (!mounted) return;
-      await Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => const PaywallScreen(),
-        fullscreenDialog: true,
-      ));
+      final abone = ref.read(subscriptionProvider).value?.active ?? false;
+      final paywallGosterilecek =
+          !abone && !(await introPaywallShown());
+
+      if (paywallGosterilecek) {
+        await markIntroPaywallShown();
+        if (!mounted) return;
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const PaywallScreen(),
+          fullscreenDialog: true,
+        ));
+        return;
+      }
+
+      // Bildirim izni: kullanıcı ilk değeri gördü, artık neyin bildirimini
+      // alacağını biliyor. Değer görmeden sorulan izin reddediliyor ve
+      // sistem bir daha sormaya izin vermiyor.
+      if (await notificationPromptShown()) return;
+      await markNotificationPromptShown();
+      await requestNotificationPermission();
     });
   }
 

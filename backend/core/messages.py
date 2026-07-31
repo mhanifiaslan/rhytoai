@@ -87,6 +87,11 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "en": "This reading is only produced for people who have added each "
               "other as friends.",
     },
+    "reaction.unknown": {
+        "tr": "Bilinmeyen tepki.",
+        "en": "Unknown reaction.",
+    },
+
     "dyad.profile_missing": {
         "tr": "Okuma için gereken doğum kaydı bulunamadı.",
         "en": "The birth details needed for this reading are missing.",

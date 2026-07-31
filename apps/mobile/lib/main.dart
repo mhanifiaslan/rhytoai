@@ -8,6 +8,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/api.dart';
 import 'core/locale.dart';
+import 'core/notifications.dart';
 import 'core/providers.dart';
 import 'core/subscription.dart';
 import 'features/auth/login_screen.dart';
@@ -84,6 +85,9 @@ class _Gate extends ConsumerWidget {
     // hiç kurulmaz ve satın almalar anonim kimliğe yazılır (bkz.
     // core/subscription.dart).
     ref.watch(billingIdentityProvider);
+    // Bildirim altyapısı: FCM token, saat dilimi ve dil sunucuya yazılır,
+    // bildirime dokunma yönlendirmesi kurulur (bkz. core/notifications.dart).
+    ref.watch(notificationSyncProvider);
 
     final auth = ref.watch(authStateProvider);
     return auth.when(

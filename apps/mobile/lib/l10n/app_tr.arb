@@ -354,5 +354,28 @@
       }
     }
   },
-  "atlasReadingNote": "✨ Rytho'nun okuma notu"
+  "atlasReadingNote": "✨ Rytho'nun okuma notu",
+  "notifications": "Bildirimler",
+  "notifyDaily": "Günlük okuma",
+  "notifyDailyBody": "Sabahları bugünün gökyüzü hazır olduğunda haber ver.",
+  "notifyStreak": "Seri hatırlatması",
+  "notifyStreakBody": "Akşam, serin kırılmadan önce kısa bir hatırlatma.",
+  "notifyFriends": "Arkadaş tepkileri",
+  "notifyFriendsBody": "Bir arkadaşın sana tepki gönderdiğinde haber ver.",
+  "quietHours": "Sessiz saatler",
+  "quietHoursBody": "Bu aralıkta bildirim gönderilmez.",
+  "quietHoursRange": "{from}:00 – {to}:00",
+  "@quietHoursRange": {
+    "placeholders": {
+      "from": {
+        "type": "Object"
+      },
+      "to": {
+        "type": "Object"
+      }
+    }
+  },
+  "quietHoursOff": "Kapalı",
+  "notificationsDisabledHint": "Bildirimler cihaz ayarlarından kapalı. Açmak için sistem ayarlarına git.",
+  "enableNotifications": "Bildirimleri aç"
 }

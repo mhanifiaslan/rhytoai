@@ -34,8 +34,11 @@ WINDOW_SECONDS = 60.0
 # RevenueCat webhook'u da muaftır: tüm olaylar aynı Authorization başlığıyla
 # gelir, yani tek bir kovayı paylaşırlar ve yoğun anlarda abonelik olayları
 # düşerdi. Uç zaten paylaşılan gizli anahtarla korunuyor.
+# Zamanlayıcının toplu gönderim ucu da muaftır: tek bir Authorization başlığı
+# taşıdığı için tüm çağrıları aynı kovayı paylaşır ve saatlik işler yoğun bir
+# dakikada birbirini düşürebilirdi. Uç zaten paylaşılan gizli anahtarla korunuyor.
 EXEMPT_PATHS = {"/", "/healthz", "/health", "/docs", "/openapi.json", "/redoc",
-                "/api/v1/billing/revenuecat"}
+                "/api/v1/billing/revenuecat", "/api/v1/notify/run"}
 
 # Kota mesajı dile göre core/messages.py'den gelir. Burası middleware olduğu
 # için FastAPI bağımlılığı kullanılamaz; başlık doğrudan okunur.

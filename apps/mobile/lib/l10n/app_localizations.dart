@@ -1549,6 +1549,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'✨ Rytho\'nun okuma notu'**
   String get atlasReadingNote;
+
+  /// No description provided for @notifications.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler'**
+  String get notifications;
+
+  /// No description provided for @notifyDaily.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük okuma'**
+  String get notifyDaily;
+
+  /// No description provided for @notifyDailyBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sabahları bugünün gökyüzü hazır olduğunda haber ver.'**
+  String get notifyDailyBody;
+
+  /// No description provided for @notifyStreak.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seri hatırlatması'**
+  String get notifyStreak;
+
+  /// No description provided for @notifyStreakBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Akşam, serin kırılmadan önce kısa bir hatırlatma.'**
+  String get notifyStreakBody;
+
+  /// No description provided for @notifyFriends.
+  ///
+  /// In tr, this message translates to:
+  /// **'Arkadaş tepkileri'**
+  String get notifyFriends;
+
+  /// No description provided for @notifyFriendsBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir arkadaşın sana tepki gönderdiğinde haber ver.'**
+  String get notifyFriendsBody;
+
+  /// No description provided for @quietHours.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sessiz saatler'**
+  String get quietHours;
+
+  /// No description provided for @quietHoursBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu aralıkta bildirim gönderilmez.'**
+  String get quietHoursBody;
+
+  /// No description provided for @quietHoursRange.
+  ///
+  /// In tr, this message translates to:
+  /// **'{from}:00 – {to}:00'**
+  String quietHoursRange(Object from, Object to);
+
+  /// No description provided for @quietHoursOff.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapalı'**
+  String get quietHoursOff;
+
+  /// No description provided for @notificationsDisabledHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler cihaz ayarlarından kapalı. Açmak için sistem ayarlarına git.'**
+  String get notificationsDisabledHint;
+
+  /// No description provided for @enableNotifications.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimleri aç'**
+  String get enableNotifications;
 }
 
 class _AppLocalizationsDelegate
