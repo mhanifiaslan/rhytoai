@@ -1,4 +1,28 @@
 {
+  "hosting": {
+    "public": "web",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/i/**",
+        "destination": "/i/index.html"
+      }
+    ],
+    "headers": [
+      {
+        "source": "/.well-known/assetlinks.json",
+        "headers": [
+          { "key": "Content-Type", "value": "application/json" }
+        ]
+      },
+      {
+        "source": "/.well-known/apple-app-site-association",
+        "headers": [
+          { "key": "Content-Type", "value": "application/json" }
+        ]
+      }
+    ]
+  },
   "firestore": {
     "rules": "infra/firestore.rules",
     "indexes": "infra/firestore.indexes.json"

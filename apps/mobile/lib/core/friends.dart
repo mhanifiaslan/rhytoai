@@ -289,9 +289,10 @@ Future<void> dismissNudge(String nudgeId) async {
   await _db.collection('users').doc(uid).collection('nudges').doc(nudgeId).delete();
 }
 
-/// Paylaşılabilir davet bağlantısı. Uygulama derin bağlantıyı yakalayınca
-/// kullanıcı adını çözüp davet akışını başlatır.
-String inviteLinkFor(String username) => 'https://rytho.ai/davet/$username';
+// Davet bağlantısı üretimi core/deep_links.dart'a taşındı: bağlantının
+// üretildiği yer ile yakalandığı yer aynı sabiti kullanmak zorunda. Buradaki
+// eski hâli var olmayan bir alan adına (rytho.ai) işaret ediyordu — panoya
+// kopyalanan bağlantı hiçbir yere gitmiyordu.
 
 // ---------------------------------------------------------------------------
 // Sağlayıcılar

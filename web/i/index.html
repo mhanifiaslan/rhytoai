@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rytho — Davet</title>
+  <meta name="description" content="Rytho'da seni bekleyen bir davet var.">
+
+  <!-- Uygulama kuruluysa isletim sistemi bu sayfayi hic acmaz; dogrudan
+       uygulamaya gider (Android App Links / iOS Universal Links). Bu sayfa
+       yalnizca uygulama KURULU DEGILSE gorunur. -->
+
+  <meta property="og:title" content="Rytho — bir davetin var">
+  <meta property="og:description"
+        content="Gercek gokyuzu hesabina dayanan gunluk okuma. Arkadasin seni ekledi.">
+  <meta property="og:type" content="website">
+
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(180deg, #13091F 0%, #241038 55%, #0B0713 100%);
+      color: #EFE7DA;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+      text-align: center;
+    }
+    main { max-width: 420px; width: 100%; }
+    .glyph { font-size: 56px; color: #F2C14E; margin-bottom: 12px; }
+    h1 { font-size: 28px; margin: 0 0 10px; letter-spacing: -0.3px; }
+    p { color: #B9AFC4; line-height: 1.6; margin: 0 0 28px; font-size: 15px; }
+    .username { color: #F2C14E; font-weight: 600; }
+    a.store {
+      display: block;
+      padding: 15px 20px;
+      margin-bottom: 12px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 15px;
+      background: linear-gradient(135deg, #7B4BC9, #C8479B);
+      color: #fff;
+    }
+    a.secondary {
+      background: transparent;
+      border: 1px solid rgba(239, 231, 218, 0.22);
+      color: #EFE7DA;
+    }
+    .note { font-size: 12px; color: #7E7490; margin-top: 22px; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="glyph">✦</div>
+    <h1>Rytho'da bir davetin var</h1>
+    <p>
+      <span class="username" id="username"></span>
+      seni arkadaş olarak ekledi. Daveti kabul etmek için uygulamayı aç.
+    </p>
+
+    <a class="store" id="play"
+       href="https://play.google.com/store/apps/details?id=ai.rytho">
+      Google Play'den indir
+    </a>
+    <a class="store secondary" id="appstore" href="#">
+      App Store'dan indir
+    </a>
+
+    <p class="note">
+      Uygulama zaten kuruluysa bu bağlantı doğrudan Rytho'da açılır.
+    </p>
+  </main>
+
+  <script>
+    // Kullanici adi yoldan okunur: /i/gezgin
+    var parcalar = window.location.pathname.split('/').filter(Boolean);
+    var kullanici = parcalar.length > 1 ? decodeURIComponent(parcalar[1]) : '';
+    if (kullanici) {
+      document.getElementById('username').textContent = '@' + kullanici;
+    } else {
+      document.getElementById('username').textContent = 'Bir arkadaşın';
+    }
+
+    // Platforma gore dogru magazayi one cikar.
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (ios) {
+      var play = document.getElementById('play');
+      var app = document.getElementById('appstore');
+      play.className = 'store secondary';
+      app.className = 'store';
+      app.parentNode.insertBefore(app, play);
+    }
+  </script>
+</body>
+</html>

@@ -137,3 +137,23 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [ ] Davet bağlantısı deep-link'i (Firebase Dynamic Links kapandı; yaklaşım
       seçilmedi)
 - [ ] Rehber eşleştirme — kendi turunda, varsayılan kapalı (bkz. plan)
+
+## 12. Davet baglantisi (App Links / Universal Links)
+
+- [x] Firebase Hosting yayinda: `https://rhytoai.web.app`
+- [x] `/.well-known/assetlinks.json` (Android dogrulama) — 200, JSON tipi
+- [x] `/i/{kullanici}` karsilama sayfasi (uygulama kurulu degilse magazaya)
+- [x] Manifest intent-filter + `android:autoVerify="true"`
+- [x] Uygulama baglantiyi yakaliyor, kullanici adi arkadas ekleme kutusuna
+      doluyor; gecersiz ad reddediliyor
+- [ ] **Release imza parmak izi eklenmeli.** `web/.well-known/assetlinks.json`
+      su an DEBUG anahtarinin SHA-256'sini tasiyor. Yayin anahtari
+      uretildikten sonra onun parmak izi eklenmeli (ikisi birden durabilir),
+      yoksa magazadan inen uygulamada baglanti dogrulanmaz.
+      `keytool -list -v -keystore <yol> -alias <alias>`
+- [ ] **iOS Team ID eklenmeli.** `web/.well-known/apple-app-site-association`
+      icindeki `TEAMID.ai.rytho` gercek Team ID ile degistirilmeli
+      (Apple Developer hesabi gerekiyor).
+- [ ] Kendi alan adi alinirsa: `core/deep_links.dart` icindeki `kInviteHost`,
+      `AndroidManifest.xml` icindeki `android:host` ve Firebase Hosting
+      ozel alan adi ayari birlikte guncellenir.

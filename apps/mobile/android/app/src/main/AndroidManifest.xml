@@ -26,6 +26,26 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+
+            <!-- Davet baglantisi (Android App Links).
+                 android:autoVerify sayesinde isletim sistemi
+                 https://rhytoai.web.app/.well-known/assetlinks.json dosyasini
+                 dogrular ve dogrulama gecerse baglanti TARAYICI SORMADAN
+                 dogrudan uygulamada acilir.
+
+                 Firebase Dynamic Links Agustos 2025'te kapandi; yerine
+                 platformun kendi mekanizmasi kullaniliyor.
+
+                 Alan adi degisirse burasi ve core/deep_links.dart icindeki
+                 kInviteHost birlikte guncellenmeli. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"
+                      android:host="rhytoai.web.app"
+                      android:pathPrefix="/i/"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

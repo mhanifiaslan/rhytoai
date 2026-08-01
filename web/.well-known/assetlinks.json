@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ai.rytho",
+      "sha256_cert_fingerprints": [
+        "4E:29:8B:F0:7A:68:C6:C6:F1:AD:86:27:97:F5:CD:79:D1:31:85:65:E1:4D:F7:CC:F4:85:00:9D:35:49:DF:70"
+      ]
+    }
+  }
+]

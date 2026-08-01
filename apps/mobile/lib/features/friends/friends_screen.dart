@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/analytics.dart';
+import '../../core/deep_links.dart';
 import '../../core/friends.dart';
 import '../../core/providers.dart';
 import '../../core/safety.dart';
@@ -31,6 +32,11 @@ class FriendsScreen extends ConsumerWidget {
     final profile = ref.watch(profileProvider).value;
     final friendsAsync = ref.watch(friendsProvider);
     final username = profile?['username'] as String?;
+
+    // Davet bağlantısıyla açıldıysa ekleme sayfasını kullanıcı adı dolu
+    // olarak aç. Bağlantı uygulama açılırken de gelebildiği için burada
+    // ele alınıyor: bu noktada oturum ve onboarding tamamlanmış oluyor.
+    _handlePendingInvite(context, ref, username);
 
     return CosmicScaffold(
       appBar: AppBar(
@@ -431,7 +437,26 @@ class _PendingTile extends StatelessWidget {
 // Arkadaş ekleme
 // ---------------------------------------------------------------------------
 
-Future<void> _showAddFriendSheet(BuildContext context, String myUsername) {
+/// Bekleyen daveti ekleme sayfasını açarak ele alır.
+///
+/// Kendi davetini açmak anlamsız olduğu için sessizce yok sayılır — kullanıcı
+/// kendi bağlantısını test ederken hata mesajıyla karşılaşmamalı.
+void _handlePendingInvite(
+    BuildContext context, WidgetRef ref, String? myUsername) {
+  final invite = ref.watch(pendingInviteProvider);
+  if (invite == null || myUsername == null) return;
+
+  // Durum değişikliği build sırasında yapılamaz.
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (!context.mounted) return;
+    ref.read(pendingInviteProvider.notifier).clear();
+    if (invite == myUsername) return;
+    _showAddFriendSheet(context, myUsername, prefill: invite);
+  });
+}
+
+Future<void> _showAddFriendSheet(BuildContext context, String myUsername,
+    {String? prefill}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -446,15 +471,18 @@ Future<void> _showAddFriendSheet(BuildContext context, String myUsername) {
     builder: (sheetContext) => Padding(
       padding: EdgeInsets.only(
           bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
-      child: _AddFriendSheet(myUsername: myUsername),
+      child: _AddFriendSheet(myUsername: myUsername, prefill: prefill),
     ),
   );
 }
 
 class _AddFriendSheet extends StatefulWidget {
-  const _AddFriendSheet({required this.myUsername});
+  const _AddFriendSheet({required this.myUsername, this.prefill});
 
   final String myUsername;
+
+  /// Davet baglantisindan gelen kullanici adi; kutu dolu acilir.
+  final String? prefill;
 
   @override
   State<_AddFriendSheet> createState() => _AddFriendSheetState();
@@ -464,6 +492,12 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
   final _controller = TextEditingController();
   String? _message;
   bool _busy = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.prefill != null) _controller.text = widget.prefill!;
+  }
 
   @override
   void dispose() {

@@ -7,6 +7,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/api.dart';
+import 'core/deep_links.dart';
 import 'core/locale.dart';
 import 'core/notifications.dart';
 import 'core/providers.dart';
@@ -88,6 +89,8 @@ class _Gate extends ConsumerWidget {
     // Bildirim altyapısı: FCM token, saat dilimi ve dil sunucuya yazılır,
     // bildirime dokunma yönlendirmesi kurulur (bkz. core/notifications.dart).
     ref.watch(notificationSyncProvider);
+    // Davet bağlantılarını yakalar (bkz. core/deep_links.dart).
+    ref.watch(deepLinkProvider);
 
     final auth = ref.watch(authStateProvider);
     return auth.when(
