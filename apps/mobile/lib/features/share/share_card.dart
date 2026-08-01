@@ -42,14 +42,88 @@ class ShareCard extends StatelessWidget {
   static const double width = 1080;
   static const double height = 1920;
 
-  /// Karta girecek alıntı. Tam metin 9:16 karta sığmıyor; cümle sınırından
-  /// kesiliyor ki yarım cümle görünmesin.
-  static String excerpt(String text, {int maxChars = 320}) {
+  /// Metin alanının genişliği ve yüksekliği (dolgu düşülmüş hâliyle).
+  static const double _textWidth = width - 96 * 2;
+  static const double _textHeight = 900;
+
+  /// Yorumun sığdırılacağı yazı boyutu aralığı.
+  static const double _maxFontSize = 52;
+  static const double _minFontSize = 26;
+
+  /// Gövde metninin stili. Ölçüm ve çizim AYNI stili kullanmak zorunda;
+  /// aksi halde sığdığı hesaplanan metin ekranda taşar.
+  static TextStyle bodyStyle(double size) =>
+      RythoText.body(size, height: 1.5);
+
+  /// Metin verilen boyutta alana sığıyor mu?
+  ///
+  /// [styleBuilder] enjekte edilebilir: uygulamada gerçek yazı tipi kullanılır,
+  /// testte ağ erişimi olmadığı için yedek stil verilir. Sığdırma MANTIĞI
+  /// yazı tipi kaynağından bağımsız olmalı.
+  static bool fitsAt(
+    String text,
+    double fontSize, {
+    double maxWidth = _textWidth,
+    double maxHeight = _textHeight,
+    TextStyle Function(double)? styleBuilder,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(
+          text: text, style: (styleBuilder ?? bodyStyle)(fontSize)),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: maxWidth);
+    return painter.height <= maxHeight;
+  }
+
+  /// Yorumu **kesmeden** karta sığdıran yazı boyutunu bulur.
+  ///
+  /// Önceki yaklaşım metni kırpıyordu. Cümle sınırından kesmek yarım cümleyi
+  /// önlüyordu ama asıl sorunu çözmüyordu: 90-130 kelimelik bir okumadan
+  /// birkaç cümle göstermek, paylaşılan şeyin eksik olması demek. Okumayı
+  /// bölmek yerine yazıyı küçültüyoruz — kart dışa açılan yüz, orada eksik
+  /// bir metin uygulamanın kendisini eksik gösterir.
+  ///
+  /// İkili arama: en büyük sığan boyut bulunur. Ölçüm gerçek yazı tipiyle
+  /// yapıldığı için tahmin değil.
+  static double fittedFontSize(
+    String text, {
+    double maxWidth = _textWidth,
+    double maxHeight = _textHeight,
+    double maxSize = _maxFontSize,
+    double minSize = _minFontSize,
+    TextStyle Function(double)? styleBuilder,
+  }) {
+    if (text.trim().isEmpty) return maxSize;
+
+    bool sigar(double boyut) => fitsAt(text, boyut,
+        maxWidth: maxWidth, maxHeight: maxHeight, styleBuilder: styleBuilder);
+
+    if (sigar(maxSize)) return maxSize;
+
+    var alt = minSize;
+    var ust = maxSize;
+    // 0.5 punto çözünürlük gözle fark edilmez; 8 tur yeter.
+    for (var i = 0; i < 8; i++) {
+      final orta = (alt + ust) / 2;
+      if (sigar(orta)) {
+        alt = orta;
+      } else {
+        ust = orta;
+      }
+    }
+    return alt;
+  }
+
+  /// En küçük boyutta bile sığmayan metin için son çare kırpma.
+  ///
+  /// Normal bir günlük yorumda (90-130 kelime) buraya HİÇ girilmez; bu yol
+  /// yalnızca beklenmedik uzunluktaki bir metnin kartı taşırmasını engeller.
+  /// Kırpma yine cümle sınırından yapılır.
+  static String clampToSentence(String text, int maxChars) {
     final temiz = text.trim();
     if (temiz.length <= maxChars) return temiz;
 
     final kesit = temiz.substring(0, maxChars);
-    // Son tamamlanmış cümlenin sonunu bul.
     var son = -1;
     for (final isaret in ['. ', '! ', '? ', '.\n']) {
       final i = kesit.lastIndexOf(isaret);
@@ -57,9 +131,35 @@ class ShareCard extends StatelessWidget {
     }
     if (son > maxChars ~/ 3) return kesit.substring(0, son + 1).trim();
 
-    // Cümle sınırı yoksa kelime sınırından kes.
     final bosluk = kesit.lastIndexOf(' ');
     return '${kesit.substring(0, bosluk > 0 ? bosluk : maxChars).trim()}…';
+  }
+
+  /// Karta girecek metin: kural olarak **TAM okuma**.
+  ///
+  /// Yalnızca en küçük yazı boyutunda bile sığmayan olağandışı uzunlukta bir
+  /// metin kırpılır. Normal bir günlük yorumda buraya hiç girilmez.
+  static String bodyText(String reading,
+      {TextStyle Function(double)? styleBuilder}) {
+    final temiz = reading.trim();
+    if (temiz.isEmpty) return temiz;
+
+    if (fitsAt(temiz, _minFontSize, styleBuilder: styleBuilder)) return temiz;
+
+    // Sığan en uzun kırpmayı ikili aramayla bul. Orantı tahmini (yükseklik
+    // oranı × karakter sayısı) uzun metinlerde şişiyor ve kart yine taşıyordu.
+    var alt = 0;
+    var ust = temiz.length;
+    while (alt < ust) {
+      final orta = (alt + ust + 1) ~/ 2;
+      if (fitsAt(clampToSentence(temiz, orta), _minFontSize,
+          styleBuilder: styleBuilder)) {
+        alt = orta;
+      } else {
+        ust = orta - 1;
+      }
+    }
+    return clampToSentence(temiz, alt);
   }
 
   @override
@@ -96,11 +196,15 @@ class ShareCard extends StatelessWidget {
                 ),
               ]),
               const SizedBox(height: 64),
+              // Okuma KESİLMEZ: sığmıyorsa yazı küçülür. Sabit bir boyutla
+              // kesmek, paylaşılan şeyin eksik olması demekti.
               Expanded(
-                child: Text(
-                  excerpt(reading),
-                  style: RythoText.body(48, height: 1.5),
-                ),
+                child: Builder(builder: (_) {
+                  final metin = bodyText(reading);
+                  // Çizim, ölçümle AYNI stil üreticisini kullanır; ayrışırsa
+                  // sığdığı hesaplanan metin kartta taşar.
+                  return Text(metin, style: bodyStyle(fittedFontSize(metin)));
+                }),
               ),
               if (moonName != null) ...[
                 Text('${moonEmoji ?? ''} $moonName'.trim(),
