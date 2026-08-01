@@ -50,3 +50,8 @@ node_modules/
 backend/cache/
 .gradle/
 apps/mobile/android/key.properties
+
+# Ham kaynak metinler (referans). Korpusa donusturulmus hali
+# knowledge/corpus/ altinda ve o izleniyor; ham dosyayi depoya koymak
+# gereksiz agirlik. Ureten: backend/scripts/ingest_*.py
+knowledge/raw/

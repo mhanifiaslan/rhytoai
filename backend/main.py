@@ -118,3 +118,22 @@ def health():
     konteynır içi kontroller için duruyor.
     """
     return {"status": "ok"}
+
+
+@app.get("/health/rag")
+def health_rag():
+    """Bilgi tabanının durumu.
+
+    Anlamsal aramanın anahtar kelime moduna düşmesi bir kez **haftalarca**
+    fark edilmedi: hiçbir yerde görünmüyordu, hata da vermiyordu. Korpus
+    büyüdükçe (kitaplar) bu sessiz bozulma daha pahalı hale geliyor, çünkü
+    eksik artefakt her soğuk başlatmada yeniden vektörleme faturası demek.
+
+    Kullanıcı verisi içermez; yalnızca parça sayısı, mod ve artefakt durumu.
+    """
+    from services.rag_service import diagnostics
+
+    durum = diagnostics()
+    saglikli = all(d["mode"] == "vector" and d["artifact"]
+                   for d in durum.values())
+    return {"status": "ok" if saglikli else "degraded", "bases": durum}

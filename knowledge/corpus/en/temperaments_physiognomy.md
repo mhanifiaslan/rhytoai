@@ -1,3 +1,7 @@
+---
+book: Temperaments and Physiognomy
+license: rytho-original
+---
 # The Kiyafetname Tradition and the Four Temperaments
 
 ## Philosophical Basis

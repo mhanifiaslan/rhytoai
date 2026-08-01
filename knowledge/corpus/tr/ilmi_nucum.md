@@ -1,3 +1,7 @@
+---
+book: Ilm-i Nucum
+license: rytho-original
+---
 # İlm-i Nücum ve Klasik İslam Astrolojisi
 
 ## Temel Çerçeve

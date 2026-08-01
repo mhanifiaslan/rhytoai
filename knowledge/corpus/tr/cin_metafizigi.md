@@ -1,3 +1,7 @@
+---
+book: Cin Metafizigi (BaZi, Wu Xing)
+license: rytho-original
+---
 # Çin Metafiziği: BaZi, I Ching ve Mian Xiang
 
 ## BaZi (Kaderin Dört Sütunu)

@@ -1,3 +1,7 @@
+---
+book: Ilm al-Nujum
+license: rytho-original
+---
 # Ilm al-Nujum: Classical Islamic Astrology
 
 ## The Basic Framework

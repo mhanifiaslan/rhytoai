@@ -1,6 +1,7 @@
 # Derinleştirme planı — jenerik cevap sorununu kökten kapatma
 
-**Durum:** Faz A tamamlandı (2026-08-01). Faz B–E onay bekliyor.
+**Durum:** Faz A, B ve C (İngilizce tarafı) tamamlandı (2026-08-01).
+Sıradaki: Tetrabiblos'un Türkçe aktarımı, ardından Faz D.
 
 Bu plan tek bir şikâyeti hedefliyor: *"cevaplar jenerik."* O şikâyetin üç ayrı
 teknik sebebi var ve üçü de ayrı ayrı ölçüldü. Sırayla kapatılıyorlar.
@@ -121,6 +122,30 @@ görünür olmalı.
 **B'nin kabul ölçütü:** korpus 900 parçaya çıktığında soğuk başlatma süresi
 değişmiyor, `search_mode()` `vector` diyor, arama gecikmesi < 50 ms.
 
+### ✅ Faz B sonucu (2026-08-01)
+
+| Ölçüt | Sonuç |
+|---|---|
+| Arama gecikmesi (900 parça × 3.072 boyut) | **0,2 ms** (saf Python: 266 ms — ~1300 kat) |
+| Soğuk başlatmada embedding çağrısı | **0** (artefakt imajda) |
+| Tek parça eklenince yeniden vektörlenen | **1** (önceden: tüm korpus) |
+| Artefakt boyutu (900 parça tahmini) | ~11 MB `.npy` (JSON olsaydı ~55 MB) |
+| `/health/rag` | mod, parça sayısı, kapsama, artefakt durumu |
+
+Uygulama sırasında iki karar değişti:
+
+- **Artefakt biçimi JSON değil `.npy` + küçük bir JSON künye.** JSON'da her
+  float ~20 karakter tutuyor; 900 parça × 3.072 boyut 55 MB metin ederdi.
+  float32 ikili biçimde aynı veri ~11 MB. Kitap gelmeden düzeltildi, sonradan
+  yapılsaydı tüm korpusun yeniden vektörlenmesi gerekirdi.
+- **Deploy betiği artık artefakt kapsamasını doğruluyor** (`--check`).
+  Uyumsuzsa deploy durur; aksi halde üretimde sessizce yeniden vektörleme
+  faturası çıkardı.
+
+Ayrıca `_split_body` yazılırken çıkan bir kusur: örtüşme kuyruğu boyut
+bütçesine sayılmıyordu, noktalamasız uzun pasajlarda üst sınır aşılıyordu.
+Test yakaladı.
+
 ---
 
 ## Faz C — İlk kitap: *Tetrabiblos*
@@ -168,6 +193,59 @@ Tamamı değil, hesapladığımızla örtüşen kısım:
 
 Yaklaşık 25–30 bin kelime → ~700–900 parça. Kitap II (ülke/iklim astrolojisi)
 ve Kitap IV'ün büyük kısmı ürünle ilgisiz; alınmayacak.
+
+### ✅ Faz C sonucu (2026-08-01)
+
+Kaynak: Project Gutenberg #70850, Ashmand 1822. `ingest_tetrabiblos.py`
+betiğiyle dönüştürüldü (elle düzenlenmedi — kapsam kararları kodda görünür ve
+kaynak güncellenirse tekrar üretilebilir).
+
+| Ölçüt | Öncesi | Sonrası |
+|---|---|---|
+| EN korpus | 13 parça / ~9 KB | **136 parça / ~105 KB** |
+| TR korpus | 13 parça / ~9 KB | **33 parça / ~28 KB** |
+| Alınan bölüm (EN) | — | 26 |
+| Kapsam dışı | — | 30 (gerekçeleri betikte) |
+| Vektör artefaktı | 0,2 MB | 1,6 MB (en) + 0,4 MB (tr) |
+| Arama modu | vector | vector |
+
+Türkçe tarafı **birebir çeviri değil, Rytho aktarımı**: kamu malı bir Türkçe
+Tetrabiblos çevirisi yok, makine çevirisi de 1822 İngilizcesinden okunmaz bir
+metin çıkarırdı. Aktarım hem telifi bize bırakıyor hem tonu kontrol
+ettiriyor. Parça sayısı İngilizceden az çünkü aktarım daha yoğun — doktrin
+kapsaması aynı, kelime sayısı değil.
+
+Getirme kalitesi (gerçek sorgular, iki dilde):
+
+| Sorgu | Dönen bölüm |
+|---|---|
+| "Saturn in the tenth house, career and vocation" | The Quality of Employment |
+| "Mercury square Mars — how I think" | The Quality of the Mind |
+| "Virgo ascendant, earth dominant, no air" | Signs and the Four Temperaments + The Triplicities |
+| "Satürn onuncu evde, meslek ve kariyer" | Mesleğin Niteliği + Gezegenlerin Evleri |
+| "Merkür Mars kare — nasıl düşündüğüm" | Aklın Niteliği + Fayda ve Zarar Verenler |
+| "yükselenim Başak, toprak baskın, hiç hava yok" | Üçgenler — Dört Element + Burçların Mizaç Karşılıkları |
+
+**Uygulama sırasında çıkan üç şey:**
+
+1. **Korpus bir güvenlik yüzeyidir.** Ptolemaios'un ömür süresi, ölüm biçimi,
+   hastalık ve servet bölümleri var. Bunları almak, yasak alan kapısını
+   *arkadan delmek* olurdu: kapı kullanıcının SORUSUNU süzüyor, ama masum bir
+   soruya getirilen "ölüm süresi" pasajı cevabı oraya sürükleyebilir. Yasak
+   alan artık korpus seviyesinde de uygulanıyor — savunma iki katmanlı.
+2. **Kaynağın tonu ürünün tonu değil.** Ptolemaios'un karakter tarifleri
+   bugünün ölçüsüyle çok sert ("thoroughly depraved", "assassins"). Persona
+   güçlendirildi: kaynağın ahlaki yargısı aktarılmaz, altındaki gözlem
+   alınır. **Yağcılık yok ilkesi zor olanı söylemektir, birini aşağılamak
+   değil.**
+3. **Bölüm çeşitliliği gerekti.** Uzun bölümler çok parçaya bölündüğü için
+   komşu parçalar benzer skor alıyor ve ilk iki sonucun ikisi de aynı
+   bölümden çıkıyordu — 2 pasajlık bütçenin yarısı boşa gidiyordu. Arama artık
+   farklı bölüm tercih ediyor.
+
+**Ölçülen ama çözülmemiş:** sorgu embedding'i sohbet turuna **~0,8–1,4 sn**
+ekliyor. Arama 0,2 ms; gecikme tamamen embedding API çağrısı. LRU önbelleği
+yalnızca tekrar eden sorguları yakalıyor. Faz D/E'de ele alınacak.
 
 ### Alıntı ve atıf kuralı
 

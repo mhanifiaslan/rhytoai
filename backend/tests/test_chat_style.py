@@ -75,9 +75,21 @@ def test_bilgi_sorusunda_rag_cagrilir_ve_kirpilir(monkeypatch):
 
     msg = captured["msg"]
     assert "ARKA PLAN FISILTISI" in msg
-    # En fazla 2 pasaj, her biri ~280 karaktere kırpılmış olmalı
-    assert msg.count("- x") == 2
-    assert len(msg) < 2 * (prompt_composer.MAX_PASSAGE_CHARS + 50) + 400
+
+    # Kırpmanın ölçüsü PASAJLARIN kendisidir, prompt'un tamamı değil.
+    #
+    # Bu iddia eskiden `len(msg)` üzerindeydi ve sabit persona etiketleriyle
+    # değişken pasaj içeriğini aynı bütçede topluyordu. Sonuç: etiketlere
+    # bilinçli olarak bir cümle eklemek (harita fısıltısına "spesifik ol",
+    # kaynak fısıltısına "kaynağın ahlaki yargısını aktarma") kırpma testini
+    # kırıyordu — oysa kırpma kusursuz çalışıyordu. Test artık yalnızca
+    # kendi konusunu ölçüyor.
+    pasaj_satirlari = [s for s in msg.splitlines() if s.startswith("- x")]
+    assert len(pasaj_satirlari) == 2, "en fazla 2 pasaj eklenmeli"
+    for satir in pasaj_satirlari:
+        # "- " öneki ve kırpma göstergesi "…" haricinde sınıra uymalı
+        assert len(satir) <= prompt_composer.MAX_PASSAGE_CHARS + 4, (
+            f"pasaj kırpılmamış: {len(satir)} karakter")
 
 
 def test_api_semasi_degismedi(monkeypatch):

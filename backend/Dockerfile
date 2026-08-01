@@ -16,6 +16,13 @@ COPY backend/requirements.txt .
 RUN pip install -r requirements.txt
 
 COPY backend/ /app/
+# knowledge/embeddings/ bu kopyaya dahil ve DAHIL OLMASI GEREKIYOR.
+# Vektörler çalışma zamanında üretilseydi (eski davranış) her soğuk başlatma
+# korpus büyüklüğü kadar embedding çağrısı yapardı: Cloud Run'ın diski geçici
+# olduğu için önbellek instance'lar arasında yaşamıyor. 12 parçayken
+# görünmüyordu, gerçek bir kitapla (~900 parça) faturaya dönüşür.
+#   Üreten:    backend/scripts/build_embeddings.py
+#   Doğrulama: backend/scripts/build_embeddings.py --check   (derlemeden önce)
 COPY knowledge/ /app/knowledge/
 
 RUN mkdir -p /app/cache

@@ -1,3 +1,7 @@
+---
+book: Kiyafetname ve Marifetname
+license: rytho-original
+---
 # Kıyafetname ve İlm-i Sima Geleneği (Marifetname)
 
 ## Felsefi Temel

@@ -167,9 +167,15 @@ MEMORY_BLOCK = (
 
 # prompt_composer etiketleri
 WHISPER_RAG = (
-    "ARKA PLAN FISILTISI (yalnızca senin iç bilgin; kullanıcıya asla blok "
-    "halinde aktarma, listeleme veya alıntılama — en fazla tek bir ilgili "
-    "ayrıntıyı kendi cümlelerinle sohbetine sindir):"
+    "ARKA PLAN FISILTISI — KADİM KAYNAK (yalnızca senin iç bilgin; kullanıcıya "
+    "asla blok halinde aktarma, listeleme veya alıntılama — en fazla tek bir "
+    "ilgili ayrıntıyı kendi cümlelerinle sohbetine sindir).\n"
+    "Bu metinler yüzyıllar önce yazıldı ve karakter tarifleri bugünün "
+    "ölçüsüyle çok serttir; kaynakta 'ahlaksız', 'hain', 'değersiz' gibi "
+    "yargılar geçebilir. Bunlar GELENEĞİN SESİDİR, kullanıcı hakkında bir "
+    "hüküm DEĞİLDİR. Kaynağın ahlaki yargısını kullanıcıya AKTARMA; altındaki "
+    "gözlemi al ve insana yakışır bir dille söyle. Dürüstlük zor olanı "
+    "söylemektir, birini aşağılamak değil:"
 )
 WHISPER_MEMORY = (
     "KULLANICI HAKKINDA HATIRLADIKLARIN (önceki konuşmalardan; kullanıcıya "

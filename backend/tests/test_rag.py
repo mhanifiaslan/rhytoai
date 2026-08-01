@@ -1,14 +1,26 @@
-"""RAG testleri: toplu embedding paketleme ve sessiz bozulmaya karşı korumalar.
+"""RAG testleri: parçalama, vektör artefaktı ve sessiz bozulmaya karşı korumalar.
+
+Bu katmanın kusurlarının ortak özelliği **sessiz** olmaları: hiçbiri hata
+vermiyor, yalnızca cevap kalitesi düşüyor. Testlerin çoğu tam da onları
+görünür kılmak için var.
 
 Çalıştırma:  .venv\\Scripts\\python.exe -m pytest tests/test_rag.py -q
 """
 import json
 
+import numpy as np
 import pytest
 
 from core import config
 from services import rag_service
-from services.rag_service import _KnowledgeBase, _as_contents
+from services.rag_service import Chunk, _as_contents, _KnowledgeBase
+
+
+@pytest.fixture
+def gecici_artefakt(tmp_path, monkeypatch):
+    """Testler gerçek artefakta dokunmaz."""
+    monkeypatch.setattr(config, "KNOWLEDGE_DIR", tmp_path)
+    return tmp_path
 
 
 # --------------------------------------------------------------------------
@@ -31,82 +43,280 @@ def test_bos_liste_bos_paket_uretir():
     assert _as_contents([]) == []
 
 
+def test_embed_texts_anahtar_yokken_none_doner(monkeypatch):
+    monkeypatch.setattr(config, "GEMINI_API_KEY", None)
+    assert _KnowledgeBase()._embed_texts(["deneme"]) is None
+
+
 # --------------------------------------------------------------------------
-# Kısmi sonuç koruması
+# Parçalama — kitap için yeniden kuruldu
 # --------------------------------------------------------------------------
 
-def _sahte_korpus(kb: _KnowledgeBase, adet: int) -> list:
-    from services.rag_service import Chunk
-    return [Chunk(doc="d", title=f"b{i}", text=f"metin {i}") for i in range(adet)]
+def test_uzun_govde_boyut_sinirinda_bolunur():
+    """Bölme yalnızca ## başlıklarındanken bir kitap bölümü tek parçada
+    binlerce kelime oluyordu; embedding o parçanın ORTALAMASINI alır ve
+    arama körelir."""
+    cumle = "Satürn burada ağır ve yavaş bir etki bırakır. "
+    govde = cumle * 120  # ~5.400 karakter
+    parcalar = rag_service._split_body(govde)
+
+    assert len(parcalar) > 1
+    assert all(len(p) <= rag_service.MAX_CHUNK_CHARS for p in parcalar)
 
 
-def test_eksik_vektor_onbellege_yazilmaz(tmp_path, monkeypatch):
-    """Kısmi embedding yazılırsa her açılışta yeniden denenir ve arama sessizce
-    anahtar kelime modunda kalır."""
-    onbellek = tmp_path / "rag_embeddings.json"
-    monkeypatch.setattr(rag_service, "_embed_cache_file", lambda lang: onbellek)
+def test_kisa_govde_bolunmez():
+    govde = "Kısa bir bölüm."
+    assert rag_service._split_body(govde) == [govde]
+
+
+def test_parcalar_ortusur():
+    """Bir cümlenin tam ortasından bölünmesi anlamı öldürür; sınırdaki cümle
+    iki parçada da bulunmalı."""
+    cumleler = [f"Bu {i} numarali cumledir ve yeterince uzundur."
+                for i in range(60)]
+    parcalar = rag_service._split_body(" ".join(cumleler))
+
+    assert len(parcalar) > 1
+    for onceki, sonraki in zip(parcalar, parcalar[1:]):
+        kuyruk = onceki[-rag_service.CHUNK_OVERLAP_CHARS:]
+        ortak = [k for k in kuyruk.split() if k and k in sonraki]
+        assert ortak, "ardışık parçalar hiç örtüşmüyor"
+
+
+def test_noktalamasiz_uzun_metin_de_bolunur():
+    """Kaynak metinlerde noktalama olmadan uzayan pasajlar var; bölünmezse
+    tek bir dev parça bütün aramayı çarpıtır."""
+    govde = " ".join(["kelime"] * 2000)
+    parcalar = rag_service._split_body(govde)
+    assert all(len(p) <= rag_service.MAX_CHUNK_CHARS for p in parcalar)
+
+
+def test_parca_kimligi_metne_bagli():
+    """Vektör önbelleği buna göre anahtarlanıyor: metin değişmedikçe vektör
+    yeniden üretilmemeli, parça yer değiştirse bile."""
+    assert rag_service._chunk_id("ayni") == rag_service._chunk_id("ayni")
+    assert rag_service._chunk_id("ayni") != rag_service._chunk_id("baska")
+
+
+# --------------------------------------------------------------------------
+# Künye — lisans savunması buna bağlı
+# --------------------------------------------------------------------------
+
+def test_kunye_okunur_ve_parcaya_islenir(tmp_path, monkeypatch):
+    """Eser kamu malı olsa bile ÇEVİRİSİ ayrı telif taşır; hangi baskının
+    kullanıldığı korpusun içinde kayıtlı olmalı."""
+    korpus = tmp_path / "corpus" / "en"
+    korpus.mkdir(parents=True)
+    (korpus / "kitap.md").write_text(
+        "---\n"
+        "book: Tetrabiblos\n"
+        "translator: J.M. Ashmand (1822)\n"
+        "license: public-domain\n"
+        "---\n"
+        "# Tetrabiblos\n\n"
+        "## Of the Influence of the Planets\n"
+        "Saturn is cold and dry, and his influence is chiefly heavy.\n",
+        encoding="utf-8")
+    monkeypatch.setattr(config, "KNOWLEDGE_DIR", tmp_path)
+
+    parcalar = rag_service._load_chunks("en")
+
+    assert parcalar
+    kunye = parcalar[0].source
+    assert kunye["book"] == "Tetrabiblos"
+    assert kunye["license"] == "public-domain"
+    # Künye metnin kendisine karışmamalı
+    assert "license" not in parcalar[0].text
+    # Kitap adı parçanın başlığına girmeli: parça tek başına vektörleniyor
+    assert parcalar[0].text.startswith("Tetrabiblos — ")
+
+
+def test_kunyesiz_dosya_da_yuklenir(tmp_path, monkeypatch):
+    """Kendi yazdığımız sentez dosyalarında künye isteğe bağlı."""
+    korpus = tmp_path / "corpus" / "tr"
+    korpus.mkdir(parents=True)
+    (korpus / "sentez.md").write_text(
+        "# Kadim Notlar\n\n## Ay evresi\nDolunay tamamlanma vaktidir ve "
+        "geriye bakmayı kolaylaştırır.\n", encoding="utf-8")
+    monkeypatch.setattr(config, "KNOWLEDGE_DIR", tmp_path)
+
+    parcalar = rag_service._load_chunks("tr")
+    assert parcalar
+    assert parcalar[0].source == {}
+
+
+# --------------------------------------------------------------------------
+# Vektör artefaktı — çalışma zamanı vektörlemesinin yerini aldı
+# --------------------------------------------------------------------------
+
+def test_artefakt_yazilip_okunur(gecici_artefakt):
+    vektorler = {"a": np.array([1.0, 0.0], dtype=np.float32),
+                 "b": np.array([0.0, 1.0], dtype=np.float32)}
+    rag_service.write_artifact("tr", vektorler)
+
+    geri = rag_service.read_artifact("tr")
+    assert set(geri) == {"a", "b"}
+    assert np.allclose(geri["a"], [1.0, 0.0])
+
+
+def test_artefakt_npy_olarak_saklanir(gecici_artefakt):
+    """JSON'a yazılsaydı 900 parça x 3072 boyut ~55 MB metin ederdi; aynı veri
+    float32 .npy olarak ~11 MB."""
+    meta_path, vec_path = rag_service.embedding_files("tr")
+    rag_service.write_artifact("tr", {"a": np.zeros(8, dtype=np.float32)})
+
+    assert vec_path.suffix == ".npy"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    assert meta["ids"] == ["a"]
+    assert meta["dim"] == 8
+    # Vektörlerin kendisi JSON'da OLMAMALI
+    assert "vectors" not in meta
+
+
+def test_model_degisince_artefakt_yok_sayilir(gecici_artefakt, monkeypatch):
+    """Aynı uzayda olmayan iki vektörün kosinüsü anlamsızdır; eski vektörlerle
+    devam etmek sessiz bir kalite kaybı olurdu."""
+    rag_service.write_artifact("tr", {"a": np.ones(4, dtype=np.float32)})
+    assert rag_service.read_artifact("tr")
+
+    monkeypatch.setattr(config, "EMBEDDING_MODEL", "baska-model")
+    assert rag_service.read_artifact("tr") == {}
+
+
+def test_bozuk_artefakt_yok_sayilir(gecici_artefakt):
+    meta_path, vec_path = rag_service.embedding_files("tr")
+    rag_service.write_artifact("tr", {"a": np.ones(4, dtype=np.float32)})
+    # Kimlik sayısı ile satır sayısını ayrıştır
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["ids"] = ["a", "b", "c"]
+    meta_path.write_text(json.dumps(meta), encoding="utf-8")
+
+    assert rag_service.read_artifact("tr") == {}
+
+
+def test_artefakt_dil_basina_ayri():
+    """Tek dosya olsaydı bir dilin korpusu değişince diğerinin vektörleri de
+    boşa düşerdi."""
+    assert rag_service.embedding_files("tr") != rag_service.embedding_files("en")
+
+
+# --------------------------------------------------------------------------
+# Kısmi vektör koruması
+# --------------------------------------------------------------------------
+
+def _sahte_korpus(adet: int) -> list[Chunk]:
+    parcalar = []
+    for i in range(adet):
+        metin = f"metin {i}"
+        parcalar.append(Chunk(doc="d", title=f"b{i}", text=metin,
+                              keywords=rag_service._tokenize(metin),
+                              chunk_id=rag_service._chunk_id(metin)))
+    return parcalar
+
+
+def test_eksik_vektor_anlamsal_aramayi_kapatir(gecici_artefakt, monkeypatch):
+    """Kısmi vektörle kosinüs araması yapılamaz: embedding'i olmayan parçalar
+    skorlamaya giremez ve sonuçlar sessizce çarpıtılır."""
+    parcalar = _sahte_korpus(5)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
 
     kb = _KnowledgeBase()
-    parcalar = _sahte_korpus(kb, 5)
-    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
     # 5 parça istenirken 2 vektör dönmüş gibi davran
     monkeypatch.setattr(kb, "_embed_texts", lambda texts: [[0.1], [0.2]])
-
     kb._ensure_loaded()
 
-    assert not onbellek.exists(), "eksik embedding önbelleğe yazılmamalı"
     assert kb.semantic_ready() is False
 
 
-def test_tam_vektor_onbellege_yazilir(tmp_path, monkeypatch):
-    onbellek = tmp_path / "rag_embeddings.json"
-    monkeypatch.setattr(rag_service, "_embed_cache_file", lambda lang: onbellek)
+def test_tam_vektor_artefakta_yazilir(gecici_artefakt, monkeypatch):
+    parcalar = _sahte_korpus(3)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
 
     kb = _KnowledgeBase()
-    parcalar = _sahte_korpus(kb, 3)
-    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
     monkeypatch.setattr(kb, "_embed_texts",
-                        lambda texts: [[float(i)] for i in range(len(texts))])
-
+                        lambda texts: [[float(i), 1.0] for i in range(len(texts))])
     kb._ensure_loaded()
 
-    assert onbellek.exists()
-    kayit = json.loads(onbellek.read_text(encoding="utf-8"))
-    assert len(kayit["embeddings"]) == 3
+    assert kb.semantic_ready() is True
+    assert rag_service.read_artifact("tr")
+    assert len(rag_service.read_artifact("tr")) == 3
+
+
+def test_artefakt_varken_yeniden_vektorlenmez(gecici_artefakt, monkeypatch):
+    """Asıl kazanç bu: soğuk başlatmada embedding çağrısı YAPILMAMALI."""
+    parcalar = _sahte_korpus(4)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
+    rag_service.write_artifact("tr", {
+        c.chunk_id: np.array([1.0, float(i)], dtype=np.float32)
+        for i, c in enumerate(parcalar)})
+
+    kb = _KnowledgeBase()
+    monkeypatch.setattr(kb, "_embed_texts",
+                        lambda texts: pytest.fail(
+                            "artefakt varken embedding cagrisi yapildi"))
+    kb._ensure_loaded()
     assert kb.semantic_ready() is True
 
 
-def test_embed_texts_anahtar_yokken_none_doner(monkeypatch):
-    monkeypatch.setattr(config, "GEMINI_API_KEY", None)
+def test_korpusa_tek_parca_eklenince_sadece_o_vektorlenir(gecici_artefakt,
+                                                          monkeypatch):
+    """Önbellek TÜM korpusun sağlamasıyla anahtarlandığı sürece tek satırlık
+    bir düzeltme 900 parçayı yeniden vektörletiyordu."""
+    eski = _sahte_korpus(3)
+    rag_service.write_artifact("tr", {
+        c.chunk_id: np.array([1.0, 0.0], dtype=np.float32) for c in eski})
+
+    yeni = eski + _sahte_korpus(4)[3:]  # 4. parça eklendi
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: yeni)
+
+    istenen: list[list[str]] = []
+
+    def sahte_embed(texts):
+        istenen.append(list(texts))
+        return [[1.0, 0.0] for _ in texts]
+
     kb = _KnowledgeBase()
-    assert kb._embed_texts(["deneme"]) is None
+    monkeypatch.setattr(kb, "_embed_texts", sahte_embed)
+    kb._ensure_loaded()
+
+    assert istenen == [["metin 3"]], f"gereksiz vektorleme: {istenen}"
 
 
 # --------------------------------------------------------------------------
-# Arama modu gözlemlenebilir olmalı
+# Arama
 # --------------------------------------------------------------------------
 
-def test_arama_modu_disa_acik(monkeypatch):
-    """Anlamsal aramanın anahtar kelimeye düşmesi görünür olmalı; daha önce
-    hiçbir yerde görünmediği için fark edilmemişti."""
-    monkeypatch.setattr(rag_service.knowledge_base, "semantic_ready", lambda: True)
-    assert rag_service.search_mode() == "vector"
+def test_vektor_araması_en_yakini_bulur(gecici_artefakt, monkeypatch):
+    parcalar = _sahte_korpus(3)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
+    rag_service.write_artifact("tr", {
+        parcalar[0].chunk_id: np.array([1.0, 0.0], dtype=np.float32),
+        parcalar[1].chunk_id: np.array([0.0, 1.0], dtype=np.float32),
+        parcalar[2].chunk_id: np.array([-1.0, 0.0], dtype=np.float32),
+    })
 
-    monkeypatch.setattr(rag_service.knowledge_base, "semantic_ready", lambda: False)
-    assert rag_service.search_mode() == "keyword"
-
-
-def test_vektor_yoksa_arama_anahtar_kelimeye_duser(monkeypatch):
     kb = _KnowledgeBase()
-    from services.rag_service import Chunk, _tokenize
+    monkeypatch.setattr(kb, "_embed_query",
+                        lambda q: np.array([0.0, 1.0], dtype=np.float32))
+    sonuc = kb.search("herhangi", top_k=2)
 
+    assert sonuc[0]["title"] == "b1"
+    # Negatif skorlu parça hiç dönmemeli
+    assert all(s["score"] > 0 for s in sonuc)
+
+
+def test_vektor_yoksa_arama_anahtar_kelimeye_duser(gecici_artefakt, monkeypatch):
     parcalar = [
         Chunk(doc="d", title="ay", text="ay evresi dolunay yorumu",
-              keywords=_tokenize("ay evresi dolunay yorumu")),
+              keywords=rag_service._tokenize("ay evresi dolunay yorumu"),
+              chunk_id="1"),
         Chunk(doc="d", title="mars", text="mars retro gerilim",
-              keywords=_tokenize("mars retro gerilim")),
+              keywords=rag_service._tokenize("mars retro gerilim"),
+              chunk_id="2"),
     ]
     monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
+
+    kb = _KnowledgeBase()
     monkeypatch.setattr(kb, "_embed_texts", lambda texts: None)
     monkeypatch.setattr(kb, "_embed_query",
                         lambda q: pytest.fail("vektör yokken sorgu gömülmemeli"))
@@ -116,6 +326,63 @@ def test_vektor_yoksa_arama_anahtar_kelimeye_duser(monkeypatch):
     assert kb.semantic_ready() is False
     assert sonuc, "anahtar kelime modunda da sonuç dönmeli"
     assert sonuc[0]["title"] == "ay"
+
+
+def test_arama_kunyeyi_de_dondurur(gecici_artefakt, monkeypatch):
+    """Atıf gösterilebilmesi için kaynak pasajla birlikte taşınmalı."""
+    parca = Chunk(doc="d", title="t", text="satürn ağır",
+                  keywords=rag_service._tokenize("satürn ağır"),
+                  chunk_id="1", source={"book": "Tetrabiblos"})
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: [parca])
+
+    kb = _KnowledgeBase()
+    monkeypatch.setattr(kb, "_embed_texts", lambda texts: None)
+    sonuc = kb.search("satürn")
+    assert sonuc[0]["source"]["book"] == "Tetrabiblos"
+
+
+def test_top_k_korpustan_buyuk_olabilir(gecici_artefakt, monkeypatch):
+    """argpartition k > n olduğunda patlar; korpus küçükken bu gerçek bir yol."""
+    parcalar = _sahte_korpus(2)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
+    kb = _KnowledgeBase()
+    monkeypatch.setattr(kb, "_embed_texts", lambda texts: None)
+    assert len(kb.search("metin", top_k=10)) <= 2
+
+
+def test_bos_korpus_bos_doner(gecici_artefakt, monkeypatch):
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: [])
+    kb = _KnowledgeBase()
+    assert kb.search("herhangi") == []
+    assert kb.semantic_ready() is False
+
+
+# --------------------------------------------------------------------------
+# Teşhis — sessiz bozulma görünür olmalı
+# --------------------------------------------------------------------------
+
+def test_arama_modu_disa_acik(monkeypatch):
+    """Anlamsal aramanın anahtar kelimeye düşmesi görünür olmalı; daha önce
+    hiçbir yerde görünmediği için haftalarca fark edilmedi."""
+    monkeypatch.setattr(rag_service.knowledge_base, "semantic_ready", lambda: True)
+    assert rag_service.search_mode() == "vector"
+
+    monkeypatch.setattr(rag_service.knowledge_base, "semantic_ready", lambda: False)
+    assert rag_service.search_mode() == "keyword"
+
+
+def test_teshis_kapsama_bilgisi_verir(gecici_artefakt, monkeypatch):
+    parcalar = _sahte_korpus(3)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
+    rag_service.write_artifact("tr", {
+        c.chunk_id: np.array([1.0, 0.0], dtype=np.float32) for c in parcalar})
+
+    rapor = _KnowledgeBase("tr").diagnostics()
+    assert rapor["chunks"] == 3
+    assert rapor["vectors"] == 3
+    assert rapor["dim"] == 2
+    assert rapor["mode"] == "vector"
+    assert rapor["artifact"] is True
 
 
 # --------------------------------------------------------------------------
@@ -130,7 +397,6 @@ def test_her_dil_ayri_taban_kullanir():
 
     assert tr is not en
     assert tr.lang == "tr" and en.lang == "en"
-    # Aynı dil için aynı örnek dönmeli (tembel önbellek)
     assert rag_service.base_for("en") is en
 
 
@@ -139,17 +405,9 @@ def test_desteklenmeyen_dil_varsayilana_duser():
     assert rag_service.base_for(None).lang == "tr"
 
 
-def test_embedding_onbellegi_dil_basina_ayri():
-    """Tek dosya olsaydı diller birbirinin vektörlerini geçersiz kılardı."""
-    assert (rag_service._embed_cache_file("tr")
-            != rag_service._embed_cache_file("en"))
-
-
 def test_korpus_dizini_dile_gore_secilir():
-    tr_dizin = rag_service._corpus_dir("tr")
-    en_dizin = rag_service._corpus_dir("en")
-    assert tr_dizin.name == "tr"
-    assert en_dizin.name == "en"
+    assert rag_service._corpus_dir("tr").name == "tr"
+    assert rag_service._corpus_dir("en").name == "en"
     # Korpusu olmayan dil varsayılana düşer, boş bağlamla çalışmaz
     assert rag_service._corpus_dir("de").name == "tr"
 
@@ -157,13 +415,35 @@ def test_korpus_dizini_dile_gore_secilir():
 def test_ingilizce_korpus_yuklenir_ve_turkce_degil():
     """İngilizce korpus gerçekten var ve içeriği İngilizce olmalı."""
     parcalar = rag_service._load_chunks("en")
-    assert parcalar, "İngilizce korpus boş"
+    assert parcalar
 
     metin = " ".join(c.text for c in parcalar).lower()
     assert "day master" in metin
     assert "temperament" in metin
-    # Türkçe korpustan sızma olmamalı
     assert "ahlat-ı erbaa" not in metin
+
+
+# --------------------------------------------------------------------------
+# Lisans — ticari üründe bu bir muhafız, bir tercih değil
+# --------------------------------------------------------------------------
+
+@pytest.mark.parametrize("lang", ["tr", "en"])
+def test_her_korpus_dosyasi_lisans_beyan_eder(lang):
+    """Eser kamu malı olsa bile ÇEVİRİSİ ayrı telif taşır (Ashmand 1822 kamu
+    malı, Robbins 1940 değil; Wilhelm/Baynes I Ching de telifli). Korpusa
+    künyesiz bir dosya eklemek, kaynağı bilinmeyen metni ticari bir ürüne
+    sokmak demek. Kayıt: knowledge/SOURCES.md
+    """
+    dizin = rag_service._corpus_dir(lang)
+    dosyalar = sorted(dizin.glob("*.md"))
+    assert dosyalar, f"{lang} korpusu boş"
+
+    for md in dosyalar:
+        kunye, _ = rag_service._parse_front_matter(
+            md.read_text(encoding="utf-8"))
+        assert kunye.get("license"), (
+            f"{md.name} lisans beyan etmiyor. knowledge/SOURCES.md'ye künyesi "
+            f"yazılmalı ve dosya başına 'license:' eklenmeli.")
 
 
 def test_turkce_korpus_hala_yuklenir():

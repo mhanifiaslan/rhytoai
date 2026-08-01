@@ -1,3 +1,7 @@
+---
+book: Chinese Metaphysics (BaZi, Wu Xing)
+license: rytho-original
+---
 # Chinese Metaphysics: BaZi, I Ching and Mian Xiang
 
 ## BaZi (Four Pillars of Destiny)

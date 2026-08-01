@@ -180,9 +180,15 @@ MEMORY_BLOCK = (
 
 # prompt_composer labels
 WHISPER_RAG = (
-    "BACKGROUND WHISPER (your private context only; never relay it to the "
-    "reader as a block, a list or a quotation — at most fold one relevant "
-    "detail into your own words):"
+    "BACKGROUND WHISPER — ANCIENT SOURCE (your private context only; never "
+    "relay it to the reader as a block, a list or a quotation — at most fold "
+    "one relevant detail into your own words).\n"
+    "These texts were written centuries ago and their character delineations "
+    "are harsh by today's standards; the source may call someone 'depraved', "
+    "'treacherous' or 'worthless'. That is THE VOICE OF THE TRADITION, not a "
+    "verdict on this reader. Do NOT pass the source's moral judgement on to "
+    "them; take the observation underneath it and say it in a way fit for a "
+    "person. Honesty means naming the hard thing, not demeaning someone:"
 )
 WHISPER_MEMORY = (
     "WHAT YOU REMEMBER ABOUT THIS READER (from earlier conversations; do NOT "

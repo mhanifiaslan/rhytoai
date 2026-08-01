@@ -9,6 +9,20 @@ $IMAGE = "us-central1-docker.pkg.dev/$PROJECT/rytho/backend:latest"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 
+# Vektor artefakti imaja gomuluyor; korpusla uyumsuzsa her sogut baslatma
+# yeniden vektorleme faturasi cikarir ve ilk istekler anahtar kelime moduna
+# duser. Bu yuzden deploy'dan ONCE kapsama dogrulanir.
+Write-Host "0/2 Vektor artefakti dogrulaniyor..."
+$pythonExe = Join-Path $repoRoot "backend\.venv\Scripts\python.exe"
+if (Test-Path $pythonExe) {
+    & $pythonExe (Join-Path $repoRoot "backend\scripts\build_embeddings.py") --check
+    if ($LASTEXITCODE -ne 0) {
+        throw "Vektor artefakti korpusla uyumsuz. Once su komutu calistir: backend\scripts\build_embeddings.py"
+    }
+} else {
+    Write-Warning "backend\.venv bulunamadi; artefakt kapsamasi DOGRULANMADI."
+}
+
 Write-Host "1/2 Cloud Build ile imaj derleniyor..."
 gcloud builds submit $repoRoot `
     --project $PROJECT `
