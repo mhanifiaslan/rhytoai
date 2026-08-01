@@ -887,4 +887,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get shareFailed => 'The share card could not be created.';
+
+  @override
+  String get signInWithApple => 'Sign in with Apple';
+
+  @override
+  String get consentPrefix => 'By continuing you accept the ';
+
+  @override
+  String get consentAnd => ' and the ';
+
+  @override
+  String get consentSuffix => '.';
+
+  @override
+  String get insightNote =>
+      'Readings are for insight; they are not medical, legal or financial advice.';
+
+  @override
+  String get ageConfirm => 'I am over 13 years old';
+
+  @override
+  String get ageRequired => 'Please confirm your age to continue.';
+
+  @override
+  String get passwordRuleHint =>
+      'At least 8 characters, with letters and numbers.';
+
+  @override
+  String get passwordTooShort => 'Password must be at least 8 characters.';
+
+  @override
+  String get passwordTooSimple =>
+      'Password must mix letters with numbers or symbols.';
+
+  @override
+  String verificationSent(Object email) {
+    return 'A verification link was sent to $email. Please check your inbox.';
+  }
+
+  @override
+  String get resetLinkSentNeutral =>
+      'If this address is registered, a reset link has been sent.';
+
+  @override
+  String get useGoogleInstead =>
+      'Sign-in failed. Your password may be wrong, or this account may have been created with Google/Apple — try the buttons below.';
 }

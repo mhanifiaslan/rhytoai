@@ -1717,6 +1717,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Paylaşım kartı oluşturulamadı.'**
   String get shareFailed;
+
+  /// No description provided for @signInWithApple.
+  ///
+  /// In tr, this message translates to:
+  /// **'Apple ile giriş'**
+  String get signInWithApple;
+
+  /// No description provided for @consentPrefix.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam ederek '**
+  String get consentPrefix;
+
+  /// No description provided for @consentAnd.
+  ///
+  /// In tr, this message translates to:
+  /// **' ve '**
+  String get consentAnd;
+
+  /// No description provided for @consentSuffix.
+  ///
+  /// In tr, this message translates to:
+  /// **' metinlerini kabul etmiş olursun.'**
+  String get consentSuffix;
+
+  /// No description provided for @insightNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yorumlar içgörü amaçlıdır; tıbbi, hukuki veya finansal tavsiye değildir.'**
+  String get insightNote;
+
+  /// No description provided for @ageConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'13 yaşından büyüğüm'**
+  String get ageConfirm;
+
+  /// No description provided for @ageRequired.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam etmek için yaş beyanını onaylaman gerekiyor.'**
+  String get ageRequired;
+
+  /// No description provided for @passwordRuleHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az 8 karakter, harf ve rakam içermeli.'**
+  String get passwordRuleHint;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre en az 8 karakter olmalı.'**
+  String get passwordTooShort;
+
+  /// No description provided for @passwordTooSimple.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre harf ve rakam (veya sembol) içermeli.'**
+  String get passwordTooSimple;
+
+  /// No description provided for @verificationSent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrulama bağlantısı {email} adresine gönderildi. Gelen kutunu kontrol et.'**
+  String verificationSent(Object email);
+
+  /// No description provided for @resetLinkSentNeutral.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi.'**
+  String get resetLinkSentNeutral;
+
+  /// No description provided for @useGoogleInstead.
+  ///
+  /// In tr, this message translates to:
+  /// **'Giriş yapılamadı. Şifren hatalı olabilir ya da bu hesap Google/Apple ile açılmış olabilir — aşağıdaki düğmeleri dene.'**
+  String get useGoogleInstead;
 }
 
 class _AppLocalizationsDelegate

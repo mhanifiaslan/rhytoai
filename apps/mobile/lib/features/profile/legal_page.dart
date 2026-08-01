@@ -4,7 +4,8 @@ import '../../theme/rytho_theme.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 
-export 'legal_texts.dart' show privacyPolicySections, termsOfUseSections;
+export 'legal_texts.dart'
+    show LegalSections, privacyPolicySections, termsOfUseSections;
 
 /// Sade cam panelli hukuki metin görüntüleyici.
 /// Metinler dile göre `legal_texts.dart` içinden gelir.

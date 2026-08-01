@@ -885,4 +885,49 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get shareFailed => 'Paylaşım kartı oluşturulamadı.';
+
+  @override
+  String get signInWithApple => 'Apple ile giriş';
+
+  @override
+  String get consentPrefix => 'Devam ederek ';
+
+  @override
+  String get consentAnd => ' ve ';
+
+  @override
+  String get consentSuffix => ' metinlerini kabul etmiş olursun.';
+
+  @override
+  String get insightNote =>
+      'Yorumlar içgörü amaçlıdır; tıbbi, hukuki veya finansal tavsiye değildir.';
+
+  @override
+  String get ageConfirm => '13 yaşından büyüğüm';
+
+  @override
+  String get ageRequired =>
+      'Devam etmek için yaş beyanını onaylaman gerekiyor.';
+
+  @override
+  String get passwordRuleHint => 'En az 8 karakter, harf ve rakam içermeli.';
+
+  @override
+  String get passwordTooShort => 'Şifre en az 8 karakter olmalı.';
+
+  @override
+  String get passwordTooSimple => 'Şifre harf ve rakam (veya sembol) içermeli.';
+
+  @override
+  String verificationSent(Object email) {
+    return 'Doğrulama bağlantısı $email adresine gönderildi. Gelen kutunu kontrol et.';
+  }
+
+  @override
+  String get resetLinkSentNeutral =>
+      'Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi.';
+
+  @override
+  String get useGoogleInstead =>
+      'Giriş yapılamadı. Şifren hatalı olabilir ya da bu hesap Google/Apple ile açılmış olabilir — aşağıdaki düğmeleri dene.';
 }

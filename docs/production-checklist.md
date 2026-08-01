@@ -157,3 +157,32 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [ ] Kendi alan adi alinirsa: `core/deep_links.dart` icindeki `kInviteHost`,
       `AndroidManifest.xml` icindeki `android:host` ve Firebase Hosting
       ozel alan adi ayari birlikte guncellenir.
+
+## 13. Giris ekrani
+
+- [x] Apple ile Giris (Guideline 4.8) — yalnizca iOS'ta gorunur, nonce ile
+      yeniden oynatma korumasi, Apple'in ilk giriste dondurdugu ad yakalaniyor
+- [x] Hukuki metinlere TIKLANABILIR baglanti (Kullanim Sartlari + Gizlilik)
+- [x] Kayitta 13 yas beyani
+- [x] Kayittan sonra e-posta dogrulama baglantisi gonderiliyor
+- [x] Sifre kurali: 8 karakter + harf/rakam-sembol karisimi (eski kural
+      Firebase'in alt siniri 6 idi ve "123456"yi geciriyordu)
+- [x] Sifre sifirlamada kullanici sayimi sizintisi kapatildi — sonuc ne
+      olursa olsun ayni notr mesaj
+- [x] Saglayici cakismasi cikmazi: sifreyle giris basarisiz olunca her iki
+      olasilik birden soyleniyor
+- [x] Sosyal girisler formun ALTINDA, iOS'ta Apple ustte
+- [x] autofillHints + AutofillGroup (sifre yoneticileri artik taniyor)
+- [x] Odak zinciri (klavye "Sonraki" tusu calisiyor)
+- [x] Sekme degisince form ve hatalar temizleniyor
+- [x] Eszamanli giris engellendi
+- [x] ios/Runner/Runner.entitlements: applesignin + associated-domains
+- [ ] **Apple Developer hesabi gerekiyor.** Yapilacaklar:
+      1. App ID (`ai.rytho`) uzerinde "Sign in with Apple" yetenegini AC.
+      2. Firebase Console > Authentication > Sign-in method > Apple'i etkinlestir;
+         Service ID, Team ID ve Key (.p8) gir.
+      3. Xcode > Runner > Signing & Capabilities > "Sign in with Apple" ekle
+         (entitlements dosyasi hazir, Xcode'un projeye baglamasi gerekiyor).
+      4. `web/.well-known/apple-app-site-association` icindeki TEAMID'yi
+         gercek Team ID ile degistir ve hosting'i yeniden deploy et.
+      Bu adimlar tamamlanmadan Apple dugmesi iOS'ta gorunur ama calismaz.

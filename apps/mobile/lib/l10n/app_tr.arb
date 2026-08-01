@@ -392,5 +392,25 @@
   "insightDisclaimer": "Rytho gerçek gökyüzü hesabına dayanır ama yorum bir öngörü yöntemi değildir. Okumalar içgörü içindir; tıbbi, hukuki veya finansal tavsiye yerine geçmez. 13 yaş ve üzeri içindir.",
   "shareReading": "Paylaş",
   "shareCardTagline": "gerçek gökyüzü hesabıyla",
-  "shareFailed": "Paylaşım kartı oluşturulamadı."
+  "shareFailed": "Paylaşım kartı oluşturulamadı.",
+  "signInWithApple": "Apple ile giriş",
+  "consentPrefix": "Devam ederek ",
+  "consentAnd": " ve ",
+  "consentSuffix": " metinlerini kabul etmiş olursun.",
+  "insightNote": "Yorumlar içgörü amaçlıdır; tıbbi, hukuki veya finansal tavsiye değildir.",
+  "ageConfirm": "13 yaşından büyüğüm",
+  "ageRequired": "Devam etmek için yaş beyanını onaylaman gerekiyor.",
+  "passwordRuleHint": "En az 8 karakter, harf ve rakam içermeli.",
+  "passwordTooShort": "Şifre en az 8 karakter olmalı.",
+  "passwordTooSimple": "Şifre harf ve rakam (veya sembol) içermeli.",
+  "verificationSent": "Doğrulama bağlantısı {email} adresine gönderildi. Gelen kutunu kontrol et.",
+  "@verificationSent": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "resetLinkSentNeutral": "Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi.",
+  "useGoogleInstead": "Giriş yapılamadı. Şifren hatalı olabilir ya da bu hesap Google/Apple ile açılmış olabilir — aşağıdaki düğmeleri dene."
 }

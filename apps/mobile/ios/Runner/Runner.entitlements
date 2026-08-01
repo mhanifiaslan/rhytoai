@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Apple ile Giris (App Store Guideline 4.8 geregi zorunlu).
+	     Bu yetenegin Apple Developer portalinda da App ID uzerinde
+	     ACIK olmasi gerekir; yalnizca bu dosya yetmez. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+
+	<!-- Davet baglantisi (Universal Links).
+	     apple-app-site-association dosyasi rhytoai.web.app altinda
+	     yayinda; icindeki TEAMID gercek Team ID ile degistirilmeli. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:rhytoai.web.app</string>
+	</array>
+</dict>
+</plist>

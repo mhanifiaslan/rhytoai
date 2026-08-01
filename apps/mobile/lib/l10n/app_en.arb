@@ -392,5 +392,25 @@
   "insightDisclaimer": "Rytho is built on real ephemeris calculation, but interpretation is not a method of prediction. Readings are for insight; they are not medical, legal or financial advice. For ages 13 and up.",
   "shareReading": "Share",
   "shareCardTagline": "from real ephemeris calculation",
-  "shareFailed": "The share card could not be created."
+  "shareFailed": "The share card could not be created.",
+  "signInWithApple": "Sign in with Apple",
+  "consentPrefix": "By continuing you accept the ",
+  "consentAnd": " and the ",
+  "consentSuffix": ".",
+  "insightNote": "Readings are for insight; they are not medical, legal or financial advice.",
+  "ageConfirm": "I am over 13 years old",
+  "ageRequired": "Please confirm your age to continue.",
+  "passwordRuleHint": "At least 8 characters, with letters and numbers.",
+  "passwordTooShort": "Password must be at least 8 characters.",
+  "passwordTooSimple": "Password must mix letters with numbers or symbols.",
+  "verificationSent": "A verification link was sent to {email}. Please check your inbox.",
+  "@verificationSent": {
+    "placeholders": {
+      "email": {
+        "type": "Object"
+      }
+    }
+  },
+  "resetLinkSentNeutral": "If this address is registered, a reset link has been sent.",
+  "useGoogleInstead": "Sign-in failed. Your password may be wrong, or this account may have been created with Google/Apple — try the buttons below."
 }
