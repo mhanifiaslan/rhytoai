@@ -13,19 +13,35 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+from core.i18n import resolve_language
+from core.messages import text
+
 # LLM'e giden pahalı uçlar: daha sıkı kota
-LLM_PREFIXES = ("/api/v1/reports", "/api/v1/chat", "/api/v1/face-reading")
+LLM_PREFIXES = ("/api/v1/reports", "/api/v1/chat")
+
+# LLM kotasından muaf tutulan uçlar.
+# Burç yorumu kullanıcıdan bağımsızdır ve paylaşımlı önbellekten servis edilir:
+# dönem başına burç başına en fazla bir LLM çağrısı yapılır, gerisi önbellek
+# okumasıdır. Kullanıcı burç şeridinde çiplere dokundukça saniyeler içinde
+# 10 isteği geçebiliyor; ücretsiz katmanın omurgasını buna kurban etmemek için
+# genel kotaya (dakikada 60) tabi tutulur.
+LLM_EXEMPT_PREFIXES = ("/api/v1/reports/horoscope",)
 LLM_LIMIT_PER_MINUTE = 10
 DEFAULT_LIMIT_PER_MINUTE = 60
 WINDOW_SECONDS = 60.0
 
-# Kota dışı tutulan hafif uçlar
-EXEMPT_PATHS = {"/", "/healthz", "/docs", "/openapi.json", "/redoc"}
+# Kota dışı tutulan hafif uçlar.
+# RevenueCat webhook'u da muaftır: tüm olaylar aynı Authorization başlığıyla
+# gelir, yani tek bir kovayı paylaşırlar ve yoğun anlarda abonelik olayları
+# düşerdi. Uç zaten paylaşılan gizli anahtarla korunuyor.
+# Zamanlayıcının toplu gönderim ucu da muaftır: tek bir Authorization başlığı
+# taşıdığı için tüm çağrıları aynı kovayı paylaşır ve saatlik işler yoğun bir
+# dakikada birbirini düşürebilirdi. Uç zaten paylaşılan gizli anahtarla korunuyor.
+EXEMPT_PATHS = {"/", "/healthz", "/health", "/docs", "/openapi.json", "/redoc",
+                "/api/v1/billing/revenuecat", "/api/v1/notify/run"}
 
-RATE_LIMIT_MESSAGE = (
-    "Gökyüzü biraz nefes istiyor: kısa sürede çok fazla istek gönderdin. "
-    "Lütfen bir dakika sonra tekrar dene."
-)
+# Kota mesajı dile göre core/messages.py'den gelir. Burası middleware olduğu
+# için FastAPI bağımlılığı kullanılamaz; başlık doğrudan okunur.
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
@@ -63,7 +79,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or path in EXEMPT_PATHS:
             return await call_next(request)
 
-        is_llm = path.startswith(LLM_PREFIXES)
+        is_llm = (path.startswith(LLM_PREFIXES)
+                  and not path.startswith(LLM_EXEMPT_PREFIXES))
         limit = LLM_LIMIT_PER_MINUTE if is_llm else DEFAULT_LIMIT_PER_MINUTE
         # LLM ve genel kotalar ayrı sayaçlarda tutulur
         key = f"{'llm' if is_llm else 'std'}:{self._client_key(request)}"
@@ -76,9 +93,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         if len(dq) >= limit:
             retry_after = max(1, int(WINDOW_SECONDS - (now - dq[0])) + 1)
+            lang = resolve_language(request.headers.get("accept-language"))
             return JSONResponse(
                 status_code=429,
-                content={"status": "error", "detail": RATE_LIMIT_MESSAGE},
+                content={"status": "error", "detail": text("rate_limited", lang)},
                 headers={"Retry-After": str(retry_after)},
             )
 

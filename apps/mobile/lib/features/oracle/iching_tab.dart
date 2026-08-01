@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../core/sound.dart';
+import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 
@@ -26,10 +27,12 @@ class _IChingTabState extends ConsumerState<IChingTab> {
   Map<String, dynamic>? _result;
 
   Future<void> _cast() async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
     final question = _controller.text.trim();
     if (question.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Önce kalbindeki soruyu yaz.')));
+      messenger.showSnackBar(
+          SnackBar(content: Text(l10n.iChingQuestionRequired)));
       return;
     }
     setState(() {
@@ -45,8 +48,8 @@ class _IChingTabState extends ConsumerState<IChingTab> {
       Analytics.ichingCast(_method);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Çekim başarısız: $e')));
+        messenger.showSnackBar(
+            SnackBar(content: Text(friendlyError(e, l10n))));
       }
     } finally {
       if (mounted) setState(() => _busy = false);
@@ -55,25 +58,28 @@ class _IChingTabState extends ConsumerState<IChingTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
         children: [
-      Text('Değişimler Kitabı', style: RythoText.display(28)),
+      Text(l10n.iChingSubtitle, style: RythoText.display(28)),
       const SizedBox(height: 8),
       Text(
-        '3000 yıllık 64 heksagram matrisi. Sorunu yaz; paralar gerçek '
-        'olasılık dağılımıyla atılır, hareketli çizgiler geleceğe köprü kurar.',
+        l10n.iChingIntro,
         style: RythoText.body(13.5, color: RythoColors.parchmentDim),
       ),
       const SizedBox(height: 20),
       TextField(
         controller: _controller,
         style: RythoText.body(15),
-        decoration: const InputDecoration(hintText: 'Sorun nedir?'),
+        decoration: InputDecoration(hintText: l10n.iChingQuestionHint),
       ),
       const SizedBox(height: 12),
       Row(children: [
-        for (final m in const [('coins', 'Üç Para 🪙'), ('yarrow', 'Civanperçemi 🌿')]) ...[
+        for (final m in [
+          ('coins', l10n.iChingMethodCoins),
+          ('yarrow', l10n.iChingMethodYarrow)
+        ]) ...[
           Expanded(
             child: GestureDetector(
               onTap: () => setState(() => _method = m.$1),
@@ -104,13 +110,13 @@ class _IChingTabState extends ConsumerState<IChingTab> {
         ],
       ]),
       const SizedBox(height: 16),
-      GoldButton(text: 'Çekimi yap', busy: _busy, onPressed: _cast),
+      GoldButton(text: l10n.iChingCastAction, busy: _busy, onPressed: _cast),
       if (_busy) ...[
         const SizedBox(height: 36),
         const Center(child: _CoinToss()),
         const SizedBox(height: 12),
         Center(
-          child: Text('Paralar havada...',
+          child: Text(l10n.iChingCoinsInAir,
               style: RythoText.mono(12, color: RythoColors.parchmentDim)),
         ),
       ],
@@ -202,6 +208,9 @@ class _HexagramView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    // Backend heksagram adını isteğin dilinde `name_local` alanında döndürür
+    // (Accept-Language'e göre). Eski yanıtlar için `name_tr`e düşülür.
     final cast = Map<String, dynamic>.from(result['cast']);
     final primary = Map<String, dynamic>.from(cast['primary']);
     final transformed = cast['transformed'] != null
@@ -216,16 +225,19 @@ class _HexagramView extends StatelessWidget {
         const SizedBox(width: 20),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('HEKSAGRAM ${primary['number']}',
+            Text(l10n.iChingHexagramLabel(primary['number']),
                 style: RythoText.mono(11, color: RythoColors.parchmentDim)),
             const SizedBox(height: 4),
-            Text('${primary['name_tr']}', style: RythoText.display(26)),
+            Text('${primary['name_local'] ?? primary['name_tr']}',
+                style: RythoText.display(26)),
             Text('${primary['name']} ${primary['name_cn']}',
                 style: RythoText.body(13, color: RythoColors.parchmentDim)),
             if (transformed != null) ...[
               const SizedBox(height: 8),
               Text(
-                '→ dönüşüm: ${transformed['name_tr']} (#${transformed['number']})',
+                l10n.iChingTransformedTo(
+                    transformed['name_local'] ?? transformed['name_tr'],
+                    transformed['number']),
                 style: RythoText.mono(12, color: RythoColors.copper),
               ),
             ],
@@ -233,7 +245,7 @@ class _HexagramView extends StatelessWidget {
         ),
       ]),
       const SizedBox(height: 20),
-      MarginNote(title: 'Rytho\'nun kehanet notu', text: result['report'] ?? ''),
+      MarginNote(title: l10n.iChingOracleNote, text: result['report'] ?? ''),
     ]);
   }
 }

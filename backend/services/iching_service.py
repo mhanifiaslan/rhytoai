@@ -60,17 +60,33 @@ def _hexagram_info(lines: list[int]) -> dict[str, Any]:
     hexagram = _lines_index()[tuple(lines)]
     trigrams = data["trigrams"]
     lower, upper = trigrams[hexagram["lower"]], trigrams[hexagram["upper"]]
+    # Her dil ayri alanda doner; secim yaniti ureten katmanda yapilir
+    # (services/prompts.localize_iching). Burada "judgment" gibi tek bir
+    # alanda Turkce metin dondurmek, Ingilizce prompt'a Turkce kaynak
+    # besliyordu ve yorumun dilini bozuyordu.
     return {
         "number": hexagram["number"],
         "name": hexagram["pinyin"],
         "name_cn": hexagram["cn"],
         "name_en": hexagram["name_en"],
         "name_tr": hexagram["name_tr"],
-        "judgment": hexagram["judgment_tr"],
-        "image": hexagram["image_tr"],
-        "lower_trigram": {"name_tr": lower["name_tr"], "symbol": lower["symbol"], "element": lower["element"]},
-        "upper_trigram": {"name_tr": upper["name_tr"], "symbol": upper["symbol"], "element": upper["element"]},
+        "judgment_tr": hexagram["judgment_tr"],
+        "judgment_en": hexagram["judgment_en"],
+        "image_tr": hexagram["image_tr"],
+        "image_en": hexagram["image_en"],
+        "lower_trigram": _trigram_info(lower),
+        "upper_trigram": _trigram_info(upper),
         "unicode": chr(0x4DC0 + hexagram["number"] - 1),
+    }
+
+
+def _trigram_info(trigram: dict[str, Any]) -> dict[str, Any]:
+    """Trigram: iki dilde ad + dilden bagimsiz element anahtari."""
+    return {
+        "name_tr": trigram["name_tr"],
+        "name_en": trigram["name_en"],
+        "symbol": trigram["symbol"],
+        "element": trigram["element"],
     }
 
 

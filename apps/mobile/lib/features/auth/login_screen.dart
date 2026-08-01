@@ -8,6 +8,7 @@ import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
+import '../../l10n/app_localizations.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -46,31 +47,33 @@ class _LoginScreenState extends State<LoginScreen> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  /// FirebaseAuthException kodlarını kullanıcı dostu Türkçe mesajlara çevirir.
+  /// FirebaseAuthException kodlarını kullanıcı dostu mesajlara çevirir.
   String _authErrorMessage(FirebaseAuthException e) {
+    final l10n = AppLocalizations.of(context);
     switch (e.code) {
       case 'user-not-found':
       case 'wrong-password':
       case 'invalid-credential':
-        return 'E-posta veya şifre hatalı.';
+        return l10n.authWrongCredentials;
       case 'email-already-in-use':
-        return 'Bu e-posta zaten kayıtlı. Giriş yapmayı deneyin.';
+        return l10n.authEmailInUse;
       case 'weak-password':
-        return 'Şifre en az 6 karakter olmalı.';
+        return l10n.authWeakPassword;
       case 'invalid-email':
-        return 'Geçerli bir e-posta yaz.';
+        return l10n.authInvalidEmail;
       case 'too-many-requests':
-        return 'Çok fazla deneme. Biraz sonra tekrar dene.';
+        return l10n.authTooManyRequests;
       case 'operation-not-allowed':
-        return 'E-posta ile giriş şu an kapalı.';
+        return l10n.authDisabled;
       case 'network-request-failed':
-        return 'Bağlantı kurulamadı. İnternetini kontrol et.';
+        return l10n.authNetwork;
       default:
-        return 'Bir şeyler ters gitti. Tekrar dene.';
+        return l10n.authFailed;
     }
   }
 
   Future<void> _signInWithGoogle() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _googleBusy = true);
     try {
       if (kIsWeb) {
@@ -85,7 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       _showSnack(_authErrorMessage(e));
     } catch (e) {
-      _showSnack('Giriş başarısız: $e');
+      _showSnack(l10n.authFailed);
     } finally {
       if (mounted) setState(() => _googleBusy = false);
     }
@@ -93,6 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Segmente göre e-posta ile giriş yapar ya da yeni hesap oluşturur.
   Future<void> _submitEmail() async {
+    final l10n = AppLocalizations.of(context);
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _emailBusy = true);
@@ -113,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       _showSnack(_authErrorMessage(e));
     } catch (_) {
-      _showSnack('Bir şeyler ters gitti. Tekrar dene.');
+      _showSnack(l10n.authFailed);
     } finally {
       if (mounted) setState(() => _emailBusy = false);
     }
@@ -121,14 +125,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
   /// Şifre sıfırlama e-postası gönderir.
   Future<void> _resetPassword() async {
+    final l10n = AppLocalizations.of(context);
     final email = _emailCtrl.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      _showSnack('Önce e-posta adresini yaz.');
+      _showSnack(l10n.enterEmailFirst);
       return;
     }
     try {
       await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      _showSnack('Şifre sıfırlama bağlantısı $email adresine gönderildi.');
+      _showSnack(l10n.resetLinkSent);
     } on FirebaseAuthException catch (e) {
       _showSnack(_authErrorMessage(e));
     }
@@ -151,6 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Widget _buildEmailForm() {
+    final l10n = AppLocalizations.of(context);
     final isRegister = _segment == 1;
     return Form(
       key: _formKey,
@@ -164,9 +170,9 @@ class _LoginScreenState extends State<LoginScreen> {
               textCapitalization: TextCapitalization.words,
               keyboardType: TextInputType.name,
               textInputAction: TextInputAction.next,
-              decoration: _fieldDecoration('Ad'),
+              decoration: _fieldDecoration(l10n.nameLabel),
               validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Adını yaz.' : null,
+                  (v == null || v.trim().isEmpty) ? l10n.authNameRequired : null,
             ),
             const SizedBox(height: 12),
           ],
@@ -176,11 +182,11 @@ class _LoginScreenState extends State<LoginScreen> {
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
             textInputAction: TextInputAction.next,
-            decoration: _fieldDecoration('E-posta'),
+            decoration: _fieldDecoration(l10n.email),
             validator: (v) {
               final value = v?.trim() ?? '';
               if (value.isEmpty || !value.contains('@')) {
-                return 'Geçerli bir e-posta yaz.';
+                return l10n.authInvalidEmail;
               }
               return null;
             },
@@ -194,12 +200,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 isRegister ? TextInputAction.next : TextInputAction.done,
             onFieldSubmitted: isRegister ? null : (_) => _submitEmail(),
             decoration: _fieldDecoration(
-              'Şifre',
+              l10n.password,
               suffixIcon: _obscureToggle(
                   _obscurePass, () => setState(() => _obscurePass = !_obscurePass)),
             ),
             validator: (v) =>
-                (v == null || v.length < 6) ? 'Şifre en az 6 karakter olmalı.' : null,
+                (v == null || v.length < 6) ? l10n.authWeakPassword : null,
           ),
           if (isRegister) ...[
             const SizedBox(height: 12),
@@ -210,17 +216,17 @@ class _LoginScreenState extends State<LoginScreen> {
               textInputAction: TextInputAction.done,
               onFieldSubmitted: (_) => _submitEmail(),
               decoration: _fieldDecoration(
-                'Şifre (tekrar)',
+                l10n.passwordRepeat,
                 suffixIcon: _obscureToggle(_obscurePass2,
                     () => setState(() => _obscurePass2 = !_obscurePass2)),
               ),
               validator: (v) =>
-                  v != _passCtrl.text ? 'Şifreler eşleşmiyor.' : null,
+                  v != _passCtrl.text ? l10n.passwordsDoNotMatch : null,
             ),
           ],
           const SizedBox(height: 18),
           GoldButton(
-            text: isRegister ? 'Üye ol' : 'Giriş yap',
+            text: isRegister ? l10n.signUp : l10n.signIn,
             busy: _emailBusy,
             onPressed: _submitEmail,
           ),
@@ -229,7 +235,7 @@ class _LoginScreenState extends State<LoginScreen> {
             Center(
               child: TextButton(
                 onPressed: _resetPassword,
-                child: Text('Şifremi unuttum',
+                child: Text(l10n.forgotPassword,
                     style: RythoText.body(13, color: RythoColors.parchmentDim)
                         .copyWith(decoration: TextDecoration.underline,
                             decorationColor: RythoColors.parchmentDim)),
@@ -243,6 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     var stagger = 0;
     Duration next() => Duration(milliseconds: 70 * stagger++);
 
@@ -282,21 +289,20 @@ class _LoginScreenState extends State<LoginScreen> {
             ).animate(delay: next()).fadeIn(duration: 400.ms),
             const SizedBox(height: 8),
             Center(
-              child: Text('Kişisel Kozmik Zekân',
+              child: Text(l10n.appHeadline,
                   textAlign: TextAlign.center,
                   style: RythoText.display(30)),
             ).animate(delay: next()).fadeIn(duration: 400.ms).slideY(
                 begin: 0.1, curve: Curves.easeOutCubic),
             const SizedBox(height: 12),
             Text(
-              'Kadim bilgelik, hassas gökyüzü hesabıyla buluşur.\n'
-              'Haritan çizilir, yüzün okunur, yolun aydınlanır. ✨',
+              l10n.appTagline,
               textAlign: TextAlign.center,
               style: RythoText.body(14.5, color: RythoColors.parchmentDim),
             ).animate(delay: next()).fadeIn(duration: 400.ms),
             const SizedBox(height: 26),
             GoldButton(
-              text: 'Google ile giriş',
+              text: l10n.signInWithGoogle,
               busy: _googleBusy,
               onPressed: _signInWithGoogle,
             ).animate(delay: next()).fadeIn(duration: 400.ms).slideY(
@@ -308,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Expanded(child: Divider()),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('ya da',
+                  child: Text(l10n.orDivider,
                       style:
                           RythoText.body(11, color: RythoColors.parchmentDim)),
                 ),
@@ -324,7 +330,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   GlassSegments(
-                    labels: const ['Giriş yap', 'Üye ol'],
+                    labels: [l10n.signIn, l10n.signUp],
                     index: _segment,
                     onChanged: (i) {
                       if (i == _segment) return;
@@ -342,8 +348,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 begin: 0.06, curve: Curves.easeOutCubic),
             const SizedBox(height: 20),
             Text(
-              'Devam ederek gizlilik ilkelerini kabul etmiş olursun.\n'
-              'Yorumlar içgörü amaçlıdır; tıbbi/finansal tavsiye değildir.',
+              l10n.consentNote,
               textAlign: TextAlign.center,
               style: RythoText.body(11, color: RythoColors.parchmentDim),
             ).animate(delay: next()).fadeIn(duration: 400.ms),

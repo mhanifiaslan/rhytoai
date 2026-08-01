@@ -8,6 +8,7 @@ import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../../l10n/app_localizations.dart';
 
 /// Rytho AI sohbeti — v3: kullanıcı sağda beyaz balon, Rytho solda mor
 /// degrade balon; öneri çipleri, "yazıyor" üç noktası, yaylanan giriş
@@ -25,13 +26,14 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _scrollController = ScrollController();
   bool _busy = false;
 
-  static const _suggestions = [
-    'Kariyer 💼',
-    'Aşk hayatı ❤️',
-    'Bu ay beni ne bekliyor?',
-    'Finansal şans 💰',
-    'Evlilik zamanı 💍',
-  ];
+  /// Öneri çipleri dile göre üretildiği için const olamaz.
+  List<String> _suggestions(AppLocalizations l10n) => [
+        l10n.suggestCareer,
+        l10n.suggestLove,
+        l10n.suggestMonth,
+        l10n.suggestFinance,
+        l10n.suggestMarriage,
+      ];
 
   Future<void> _send([String? preset]) async {
     final text = (preset ?? _controller.text).trim();
@@ -59,7 +61,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     } catch (e) {
       setState(() => _messages.add((
             sender: 'AI',
-            text: 'Kozmik bağlantı koptu. Lütfen tekrar dene. ($e)'
+            text: friendlyError(e)
           )));
     } finally {
       setState(() => _busy = false);
@@ -81,6 +83,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return CosmicScaffold(
       appBar: AppBar(
         title: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -143,12 +146,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _suggestions.length,
+            itemCount: _suggestions(l10n).length,
             separatorBuilder: (_, _) => const SizedBox(width: 8),
             itemBuilder: (_, i) => Center(
               child: SuggestionChip(
-                text: _suggestions[i],
-                onTap: () => _send(_suggestions[i]),
+                text: _suggestions(l10n)[i],
+                onTap: () => _send(_suggestions(l10n)[i]),
               ),
             ),
           ),
@@ -179,7 +182,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   minLines: 1,
                   maxLines: 4,
                   decoration: InputDecoration(
-                    hintText: 'Geleceğinle ilgili her şeyi sor...',
+                    hintText: l10n.chatHint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide:
@@ -274,6 +277,7 @@ class _EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -304,8 +308,7 @@ class _EmptyState extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 48),
             child: Text(
-              'Haritan, yüzün, kaderin... Aklından geçen her soruyu '
-              'kadim kaynaklarla harmanlayarak yanıtlarım.',
+              l10n.chatEmptyBody,
               textAlign: TextAlign.center,
               style: RythoText.body(14, color: RythoColors.parchmentDim),
             ),

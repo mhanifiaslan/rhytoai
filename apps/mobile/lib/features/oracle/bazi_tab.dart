@@ -5,6 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../paywall/plus_locked_card.dart';
+import '../../core/api.dart' show friendlyError;
+import '../../l10n/app_localizations.dart';
 
 /// BaZi — Dört Sütun tablosu, Day Master, element dağılımı, şans dönemleri.
 class BaziTab extends ConsumerWidget {
@@ -12,16 +15,24 @@ class BaziTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final bazi = ref.watch(baziReportProvider);
 
     return bazi.when(
       loading: () => const Center(child: AstrolabeSpinner()),
       error: (e, _) => Center(
-        child: Text('BaZi hesaplanamadı: $e',
+        child: Text(friendlyError(e, l10n),
             style: RythoText.body(13, color: RythoColors.parchmentDim)),
       ),
       data: (data) {
-        if (data == null) return const SizedBox.shrink();
+        if (data == null) {
+          return PlusLockedCard(
+            emoji: '🀄',
+            title: l10n.baziLockedTitle,
+            description: l10n.baziLockedBody,
+            centered: true,
+          );
+        }
         final chart = Map<String, dynamic>.from(data['chart']);
         final pillars = Map<String, dynamic>.from(chart['pillars']);
         final elements =
@@ -33,26 +44,26 @@ class BaziTab extends ConsumerWidget {
             children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('Kaderin Dört Sütunu', style: RythoText.display(28)),
+            child: Text(l10n.baziHeadline, style: RythoText.display(28)),
           ),
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
-              'Çin burcun: ${chart['zodiac_animal']} · '
-              '${chart['day_master']['description']}',
+              l10n.baziChineseSign(chart['zodiac_animal'],
+                  chart['day_master']['description']),
               style: RythoText.body(13, color: RythoColors.parchmentDim),
             ),
           ),
           Plaque(
-            label: 'Dört Sütun',
+            label: l10n.baziFourPillars,
             padding: const EdgeInsets.all(12),
             child: Row(children: [
-              for (final (i, key) in const [
-                ('hour', 'SAAT'),
-                ('day', 'GÜN'),
-                ('month', 'AY'),
-                ('year', 'YIL'),
+              for (final (i, key) in [
+                ('hour', l10n.baziPillarHour),
+                ('day', l10n.baziPillarDay),
+                ('month', l10n.baziPillarMonth),
+                ('year', l10n.baziPillarYear),
               ].indexed)
                 Expanded(
                   child: _PillarColumn(
@@ -67,7 +78,7 @@ class BaziTab extends ConsumerWidget {
             ]),
           ),
           Plaque(
-            label: 'Element Terazisi',
+            label: l10n.baziElementBalance,
             child: Column(children: [
               for (final e in elements.entries)
                 Padding(
@@ -100,7 +111,8 @@ class BaziTab extends ConsumerWidget {
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
-                    'Beslenecek element: ${(chart['missing_elements'] as List).join(', ')}',
+                    l10n.baziNourish(
+                        (chart['missing_elements'] as List).join(', ')),
                     style: RythoText.mono(11, color: RythoColors.copper),
                   ),
                 ),
@@ -108,7 +120,7 @@ class BaziTab extends ConsumerWidget {
             ]),
           ),
           Plaque(
-            label: 'Şans Sütunları (Da Yun)',
+            label: l10n.baziLuckPillars,
             padding: const EdgeInsets.all(8),
             child: SizedBox(
               height: 92,
@@ -128,7 +140,7 @@ class BaziTab extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('${lp['from_age']}–${lp['to_age']} YAŞ',
+                        Text(l10n.baziAgeRange(lp['from_age'], lp['to_age']),
                             style: RythoText.mono(10,
                                 color: RythoColors.parchmentDim)),
                         const SizedBox(height: 4),
@@ -152,7 +164,7 @@ class BaziTab extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: MarginNote(
-                title: 'Rytho\'nun kader notu', text: data['report'] ?? ''),
+                title: l10n.baziFateNote, text: data['report'] ?? ''),
           ),
           const SizedBox(height: 32),
         ]);

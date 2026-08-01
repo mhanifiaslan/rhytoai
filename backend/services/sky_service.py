@@ -34,15 +34,20 @@ _PLANETS = [
     ("Pluto", "Plüton", swe.PLUTO, "999"),
 ]
 
+#: (dilden bağımsız burç anahtarı, sembol). Ad tutulmaz — gökyüzü paylaşımlı
+#: önbellekten servis ediliyor, ad isteğin dilinde çözülür.
 _SIGNS = [
-    ("Koç", "♈"), ("Boğa", "♉"), ("İkizler", "♊"), ("Yengeç", "♋"),
-    ("Aslan", "♌"), ("Başak", "♍"), ("Terazi", "♎"), ("Akrep", "♏"),
-    ("Yay", "♐"), ("Oğlak", "♑"), ("Kova", "♒"), ("Balık", "♓"),
+    ("aries", "♈"), ("taurus", "♉"), ("gemini", "♊"), ("cancer", "♋"),
+    ("leo", "♌"), ("virgo", "♍"), ("libra", "♎"), ("scorpio", "♏"),
+    ("sagittarius", "♐"), ("capricorn", "♑"), ("aquarius", "♒"),
+    ("pisces", "♓"),
 ]
 
+#: (açı, dilden bağımsız anahtar, orb). Ad değil ANAHTAR tutulur — gökyüzü
+#: paylaşımlı önbellekten servis ediliyor ve tüm diller aynı hesabı kullanıyor.
 _MAJOR_ASPECTS = [
-    (0, "Kavuşum", 6), (60, "Altmışlık", 4), (90, "Kare", 6),
-    (120, "Üçgen", 6), (180, "Karşıt", 8),
+    (0, "conjunction", 6), (60, "sextile", 4), (90, "square", 6),
+    (120, "trine", 6), (180, "opposition", 8),
 ]
 
 
@@ -52,22 +57,31 @@ def _julday_now() -> float:
                       now.hour + now.minute / 60 + now.second / 3600)
 
 
+#: Ay evresi sınırları: (üst açı, dilden bağımsız anahtar, emoji).
+#:
+#: Evre adı burada METİN olarak tutulmaz. Gökyüzü paylaşımlı önbellekten
+#: servis ediliyor ve tüm diller aynı hesabı kullanıyor; ada dil karıştırmak
+#: İngilizce kullanıcıya "Dolunay" göstermek demekti. Ad, isteğin diline göre
+#: services/prompts altındaki MOON_PHASES tablosundan çözülür.
+_MOON_PHASES = [
+    (22.5, "new_moon", "🌑"), (67.5, "waxing_crescent", "🌒"),
+    (112.5, "first_quarter", "🌓"), (157.5, "waxing_gibbous", "🌔"),
+    (202.5, "full_moon", "🌕"), (247.5, "waning_gibbous", "🌖"),
+    (292.5, "last_quarter", "🌗"), (337.5, "waning_crescent", "🌘"),
+    (360.1, "new_moon", "🌑"),
+]
+
+
 def _moon_phase(jd: float) -> dict[str, Any]:
     sun_lon = swe.calc_ut(jd, swe.SUN)[0][0]
     moon_lon = swe.calc_ut(jd, swe.MOON)[0][0]
     angle = (moon_lon - sun_lon) % 360
-    phases = [
-        (22.5, "Yeni Ay", "🌑"), (67.5, "Hilal (Büyüyen)", "🌒"),
-        (112.5, "İlk Dördün", "🌓"), (157.5, "Şişkin Ay (Büyüyen)", "🌔"),
-        (202.5, "Dolunay", "🌕"), (247.5, "Şişkin Ay (Küçülen)", "🌖"),
-        (292.5, "Son Dördün", "🌗"), (337.5, "Hilal (Küçülen)", "🌘"),
-        (360.1, "Yeni Ay", "🌑"),
-    ]
-    for limit, name, emoji in phases:
+    for limit, key, emoji in _MOON_PHASES:
         if angle < limit:
-            return {"angle": round(angle, 1), "name": name, "emoji": emoji,
+            return {"angle": round(angle, 1), "key": key, "emoji": emoji,
                     "illumination": round((1 - abs(angle - 180) / 180) * 100)}
-    return {"angle": round(angle, 1), "name": "Yeni Ay", "emoji": "🌑", "illumination": 0}
+    return {"angle": round(angle, 1), "key": "new_moon", "emoji": "🌑",
+            "illumination": 0}
 
 
 def _horizons_distances() -> dict[str, float]:
@@ -109,8 +123,14 @@ def _horizons_distances() -> dict[str, float]:
     return distances
 
 
+#: Önbellek anahtarı sürümlü: yükün biçimi değiştiğinde (Türkçe adlar ->
+#: dilden bağımsız anahtarlar) eski kayıtlar okunmaya devam ederse İngilizce
+#: kullanıcı bir saat boyunca Türkçe gökyüzü görürdü.
+_SKY_CACHE_KEY = "sky-now-v2"
+
+
 def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
-    cached = cache.get("sky-now")
+    cached = cache.get(_SKY_CACHE_KEY)
     if cached is not None:
         return cached
 
@@ -124,15 +144,16 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
         pos, _flags = swe.calc_ut(jd, planet_id, swe.FLG_SPEED)
         lon, speed = pos[0] % 360, pos[3]
         sign_idx = int(lon // 30)
-        sign_name, sign_symbol = _SIGNS[sign_idx]
+        sign_key, sign_symbol = _SIGNS[sign_idx]
         retro = speed < 0
         if retro:
-            retrogrades.append(name_tr)
+            # Gezegen ADI değil anahtarı; ada çeviri isteğin dilinde yapılır.
+            retrogrades.append(name)
         positions[name] = lon
         planets.append({
             "name": name, "name_tr": name_tr,
             "longitude": round(lon, 2),
-            "sign": sign_name, "symbol": sign_symbol,
+            "sign": sign_key, "symbol": sign_symbol,
             "degree_in_sign": round(lon % 30, 1),
             "retrograde": retro,
             "speed": round(speed, 4),
@@ -147,10 +168,10 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
             n1, n2 = names[i], names[j]
             diff = abs(positions[n1[0]] - positions[n2[0]])
             diff = min(diff, 360 - diff)
-            for angle, aspect_tr, orb in _MAJOR_ASPECTS:
+            for angle, aspect_key, orb in _MAJOR_ASPECTS:
                 if abs(diff - angle) <= orb:
                     aspects.append({
-                        "p1": n1[1], "p2": n2[1], "aspect": aspect_tr,
+                        "p1": n1[0], "p2": n2[0], "aspect": aspect_key,
                         "orb": round(abs(diff - angle), 1),
                     })
                     break
@@ -164,5 +185,5 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
         "aspects": sorted(aspects, key=lambda a: a["orb"])[:12],
         "nasa_data_available": bool(nasa_distances),
     }
-    cache.set("sky-now", result, ttl_seconds=3600)
+    cache.set(_SKY_CACHE_KEY, result, ttl_seconds=3600)
     return result

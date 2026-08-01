@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/rytho_theme.dart';
 
 /// Basınca 0.96'ya küçülen + hafif haptic veren sarmalayıcı — v3 hareket
@@ -45,10 +46,58 @@ class _PressableState extends State<Pressable> {
 const kSignGlyphs = ['♈', '♉', '♊', '♋', '♌', '♍', '♎', '♏', '♐', '♑', '♒', '♓'];
 
 /// Türkçe burç adları (Koç→Balık).
+///
+/// Bu liste **eşleştirme içindir, ekranda gösterim için değildir**: backend
+/// ve Firestore profilleri burç adını Türkçe tutuyor (`sign_tr`, `sunSign`),
+/// dolayısıyla gelen veriyi indekse çevirmek için Türkçe tabloya ihtiyaç var.
+/// Kullanıcıya gösterilecek ad için [signDisplayName] kullanılır.
 const kSignNamesTr = [
   'Koç', 'Boğa', 'İkizler', 'Yengeç', 'Aslan', 'Başak',
   'Terazi', 'Akrep', 'Yay', 'Oğlak', 'Kova', 'Balık',
 ];
+
+/// Burç adının kullanıcının dilindeki karşılığı (0 = Koç).
+///
+/// ARB tarafında harita tutulamadığı için indeksten anahtara eşleme burada.
+String signDisplayName(AppLocalizations l10n, int index) =>
+    switch (index % 12) {
+      0 => l10n.signAries,
+      1 => l10n.signTaurus,
+      2 => l10n.signGemini,
+      3 => l10n.signCancer,
+      4 => l10n.signLeo,
+      5 => l10n.signVirgo,
+      6 => l10n.signLibra,
+      7 => l10n.signScorpio,
+      8 => l10n.signSagittarius,
+      9 => l10n.signCapricorn,
+      10 => l10n.signAquarius,
+      _ => l10n.signPisces,
+    };
+
+/// Backend'in burç anahtarları — [kSignNamesTr] ile AYNI SIRADA.
+/// /api/v1/reports/horoscope/{sign} bu anahtarları bekler.
+const kSignKeys = [
+  'aries', 'taurus', 'gemini', 'cancer', 'leo', 'virgo',
+  'libra', 'scorpio', 'sagittarius', 'capricorn', 'aquarius', 'pisces',
+];
+
+/// Burç adını indekse çevirir; bulunamazsa -1.
+///
+/// Backend `sun_sign` alanını ad + sembol olarak döndürüyor ("Kova ♒") ve bu
+/// biçim profillerde kayıtlı. Birebir karşılaştırma yapılırsa hiçbir kullanıcının
+/// kendi burcu tanınmaz ve ana ekranda herkese Koç gösterilir. Bu yüzden
+/// eşleştirme sembole toleranslıdır.
+int signIndexOf(String? name) {
+  if (name == null) return -1;
+  final cleaned = name.trim();
+  for (var i = 0; i < kSignNamesTr.length; i++) {
+    if (cleaned == kSignNamesTr[i] || cleaned.startsWith('${kSignNamesTr[i]} ')) {
+      return i;
+    }
+  }
+  return -1;
+}
 
 /// Yuvarlak burç çipi: renkli degrade daire içinde glif + altta ad.
 class ZodiacChip extends StatelessWidget {
@@ -99,7 +148,7 @@ class ZodiacChip extends StatelessWidget {
               style: TextStyle(fontSize: size * 0.42, color: color)),
         ),
         const SizedBox(height: 5),
-        Text(kSignNamesTr[signIndex % 12],
+        Text(signDisplayName(AppLocalizations.of(context), signIndex),
             style: RythoText.body(10.5,
                 color: selected ? RythoColors.parchment : RythoColors.parchmentDim,
                 w: selected ? FontWeight.w700 : FontWeight.w500)),
@@ -330,7 +379,7 @@ class StreakBadge extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         Text('🔥', style: TextStyle(fontSize: compact ? 12 : 15)),
         const SizedBox(width: 4),
-        Text('$count gün',
+        Text(AppLocalizations.of(context).streakDays(count),
             style: RythoText.label(compact ? 11 : 13, color: RythoColors.goldBright)),
       ]),
     ).animate().scale(

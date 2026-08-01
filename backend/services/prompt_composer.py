@@ -13,15 +13,23 @@ from __future__ import annotations
 
 import re
 
+from services import prompts
+
 # Pasaj başına karakter sınırı ve en fazla pasaj sayısı
 MAX_PASSAGES = 2
 MAX_PASSAGE_CHARS = 280
 
 # Bilgi tabanının kapsadığı kadim sistem terimleri (kök bazlı, küçük harf).
 # Mesajda bunlardan biri geçiyorsa korpus araması değerlidir.
+#
+# Terimler İKİ DİLDE birden aranır ve mesajın dili sorulmaz: liste yalnızca
+# Türkçe olduğu sürece İngilizce yazan kullanıcı için RAG hiç tetiklenmiyordu
+# ("what does my Mercury retrograde mean" korpusa hiç uğramıyordu). Fazladan
+# arama maliyeti düşük, eksik arama ise cevabın kalitesini doğrudan düşürür.
 _DOMAIN_TERMS = (
+    # Türkçe
     "burc", "burç", "yükselen", "yukselen", "astroloji", "gezegen", "retro",
-    "merkür", "merkur", "venüs", "venus", "mars", "jüpiter", "jupiter",
+    "merkür", "merkur", "venüs", "venus", "jüpiter", "jupiter",
     "satürn", "saturn", "plüton", "pluton", "neptün", "neptun", "uranüs",
     "uranus", "natal", "harita", "transit", "sinastri", "nakshatra", "dasha",
     "bazi", "day master", "on tanrı", "on tanri", "heksagram", "i ching",
@@ -30,21 +38,38 @@ _DOMAIN_TERMS = (
     "dolunay", "yeniay", "tutulma", "ev yerleş", "ev yerles", "açı", "orb",
     "koç", "boğa", "ikizler", "yengeç", "yengec", "aslan", "başak", "basak",
     "terazi", "akrep", "yay", "oğlak", "oglak", "kova", "balık",
+    # İngilizce
+    "zodiac", "sign", "rising", "ascendant", "astrolog", "planet",
+    "retrograde", "mercury", "venus", "mars", "jupiter", "saturn", "pluto",
+    "neptune", "uranus", "chart", "synastry", "hexagram", "horoscope",
+    "house", "aspect", "conjunction", "sextile", "square", "trine",
+    "opposition", "moon phase", "full moon", "new moon", "eclipse",
+    "temperament", "four humours", "four humors", "physiognomy",
+    "aries", "taurus", "gemini", "cancer", "leo", "virgo", "libra",
+    "scorpio", "sagittarius", "capricorn", "aquarius", "pisces",
 )
 
 # Derinlemesine açıklama isteyen soru kalıpları (tam kelime olarak aranır ki
 # "nasılsın" içindeki "nasıl" tetiklemesin).
-_QUESTION_WORDS = {"neden", "nasıl", "nasil", "niye", "anlat", "anlatır",
-                   "anlatir", "nedir", "açıkla", "acikla", "ne demek"}
+_QUESTION_WORDS = {
+    "neden", "nasıl", "nasil", "niye", "anlat", "anlatır",
+    "anlatir", "nedir", "açıkla", "acikla", "ne demek",
+    "why", "how", "explain", "meaning", "means", "what",
+}
 
 # Selamlaşma / duygu / kısa onay işaretleri — RAG'e gerek yok.
-_SMALL_TALK = {"selam", "merhaba", "günaydın", "gunaydin", "nasılsın",
-               "nasilsin", "naber", "teşekkür", "tesekkur", "teşekkürler",
-               "tesekkurler", "sağol", "sagol", "evet", "hayır", "hayir",
-               "tamam", "peki", "olur", "harika", "süper", "super", "eyvallah",
-               "keyifsiz", "üzgün", "uzgun", "mutlu", "yorgun", "moral",
-               "canım", "canim", "sıkıldım", "sikildim", "iyiyim", "kötüyüm",
-               "kotuyum", "görüşürüz", "gorusuruz", "iyi geceler"}
+_SMALL_TALK = {
+    "selam", "merhaba", "günaydın", "gunaydin", "nasılsın",
+    "nasilsin", "naber", "teşekkür", "tesekkur", "teşekkürler",
+    "tesekkurler", "sağol", "sagol", "evet", "hayır", "hayir",
+    "tamam", "peki", "olur", "harika", "süper", "super", "eyvallah",
+    "keyifsiz", "üzgün", "uzgun", "mutlu", "yorgun", "moral",
+    "canım", "canim", "sıkıldım", "sikildim", "iyiyim", "kötüyüm",
+    "kotuyum", "görüşürüz", "gorusuruz", "iyi geceler",
+    "hi", "hello", "hey", "thanks", "thank", "ok", "okay", "sure",
+    "yes", "no", "great", "awesome", "bye", "goodnight", "tired",
+    "sad", "happy", "lonely", "bored",
+}
 
 
 def _words(message: str) -> list[str]:
@@ -74,29 +99,45 @@ def should_use_rag(message: str) -> bool:
     return False
 
 
-def compose_chat_message(message: str, passages: list[dict]) -> str:
-    """Pasajları kırpılmış arka plan fısıltısı olarak mesaja iliştirir.
+def compose_chat_message(message: str, passages: list[dict],
+                         memory: str = "", chart: str = "",
+                         sky: str = "", lang: str | None = None) -> str:
+    """Bilgi tabanı pasajlarını, kullanıcı hafızasını, haritasını ve bugünün
+    gökyüzünü mesaja iliştirir.
 
-    Pasaj yoksa mesaj olduğu gibi döner; API şeması ve model arayüzü değişmez.
+    İkisi de "arka plan fısıltısı" olarak verilir: model bunları blok halinde
+    aktarmaz, en fazla tek bir ilgili ayrıntıyı kendi cümlesine sindirir.
+    Hafızayı olduğu gibi döktürmek, kullanıcıya "hakkında tuttuğum notlar"
+    okumak gibi olur ve ürkütücüdür.
+
+    Hiçbiri yoksa mesaj olduğu gibi döner; API şeması ve model arayüzü değişmez.
     """
-    if not passages:
-        return message
-
     whispers = []
-    for p in passages[:MAX_PASSAGES]:
-        text = re.sub(r"\s+", " ", p.get("text", "")).strip()
+    for passage in passages[:MAX_PASSAGES]:
+        text = re.sub(r"\s+", " ", passage.get("text", "")).strip()
         if len(text) > MAX_PASSAGE_CHARS:
             text = text[:MAX_PASSAGE_CHARS].rsplit(" ", 1)[0] + "…"
         if text:
             whispers.append(f"- {text}")
 
-    if not whispers:
+    memory = (memory or "").strip()
+    chart = (chart or "").strip()
+    sky = (sky or "").strip()
+    if not whispers and not memory and not chart and not sky:
         return message
 
-    return (
-        "ARKA PLAN FISILTISI (yalnızca senin iç bilgin; kullanıcıya asla blok "
-        "halinde aktarma, listeleme veya alıntılama — en fazla tek bir ilgili "
-        "ayrıntıyı kendi cümlelerinle sohbetine sindir):\n"
-        + "\n".join(whispers)
-        + f"\n\nKULLANICININ MESAJI: {message}"
-    )
+    # Etiketler dile göre gelir: İngilizce sohbette Türkçe başlık görmek modeli
+    # dil karıştırmaya iter.
+    labels = prompts.get(lang)
+    parts = []
+    if chart:
+        parts.append(labels.WHISPER_CHART + "\n" + chart)
+    if sky:
+        parts.append(labels.WHISPER_SKY + "\n" + sky)
+    if whispers:
+        parts.append(labels.WHISPER_RAG + "\n" + "\n".join(whispers))
+    if memory:
+        parts.append(labels.WHISPER_MEMORY + "\n" + memory)
+
+    return ("\n\n".join(parts)
+            + f"\n\n{labels.USER_MESSAGE_LABEL}: {message}")

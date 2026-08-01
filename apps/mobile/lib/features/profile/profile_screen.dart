@@ -1,20 +1,26 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../core/friends.dart' show setStreakVisible;
+import '../../core/locale.dart';
+import 'delete_account.dart';
+import 'notification_settings.dart';
 import '../../core/providers.dart';
 import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/nebula_widgets.dart';
-import '../council/feed_tab.dart' show PostCard;
+import '../../l10n/app_localizations.dart';
 import 'legal_page.dart';
 
-/// SİCİL — birleşik profil: başkalarının gördüğü sayfa (rozetler, sayaçlar,
-/// gönderiler) + kendi ayarların (doğum kaydı, bildirim, oturum).
+/// SİCİL — kendi profilin: rozetler, günlük seri, doğum kaydı, gizlilik ve
+/// uygulama ayarları, hukuki metinler ve oturum işlemleri.
+///
+/// Bu ekran yalnızca kullanıcının kendisine gösterilir; `users/{uid}` dokümanı
+/// doğum verisi içerdiği için Firestore'da da yalnızca sahibine okunabilir.
+/// Arkadaşların gördüğü alanlar ayrı bir karttan gelir (`publicProfiles/{uid}`).
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
 
@@ -28,38 +34,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _registerFcm();
+    // Bildirim izni buradan İSTENMİYOR: profil ekranını açmak izin sormak için
+    // yanlış an. İzin, kullanıcı ilk değeri gördükten sonra ana ekranda
+    // isteniyor (bkz. core/notifications.dart ve sky_screen).
     SoundFx.loadEnabled().then((v) {
       if (mounted) setState(() => _soundsEnabled = v);
     });
-  }
-
-  Future<void> _registerFcm() async {
-    try {
-      final messaging = FirebaseMessaging.instance;
-      await messaging.requestPermission();
-      final token = await messaging.getToken();
-      final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (token != null && uid != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(uid)
-            .set({'fcmToken': token}, SetOptions(merge: true));
-      }
-    } catch (_) {
-      // Web/emülatörde izin yoksa sessizce geç
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileProvider).value ?? {};
     final user = FirebaseAuth.instance.currentUser;
-    final uid = user?.uid;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: const Text('Sicil')),
+      appBar: AppBar(title: Text(l10n.profileTitle)),
       body: ListView(
           padding: const EdgeInsets.only(top: 8, bottom: 110),
           children: [
@@ -88,7 +79,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const SizedBox(height: 12),
         Center(
-          child: Text(profile['displayName'] ?? user?.displayName ?? 'Gezgin',
+          child: Text(
+              profile['displayName'] ??
+                  user?.displayName ??
+                  l10n.defaultUserName,
               style: RythoText.display(26)),
         ),
         const SizedBox(height: 4),
@@ -108,10 +102,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 (emoji: '⬆️', text: profile['ascendant'] as String),
             ])
               Builder(builder: (_) {
-                final signIndex = kSignNamesTr.indexOf(badge.text);
+                // Profildeki değerler sembol içeriyor ("Kova ♒"), birebir
+                // eşleşme tutmaz — rozet rengi bu yüzden hep varsayılana
+                // düşüyordu.
+                final signIndex = signIndexOf(badge.text);
                 final color = signIndex >= 0
                     ? RythoColors.signColors[signIndex]
                     : RythoColors.lilac;
+                // Firestore'daki değer Türkçe ("Kova ♒"); rozet metni arayüz
+                // diline çevrilir, tanınmazsa geldiği gibi gösterilir.
+                final ad = signIndex >= 0
+                    ? signDisplayName(l10n, signIndex)
+                    : badge.text;
                 return Container(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 12, vertical: 6),
@@ -120,19 +122,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     border: Border.all(color: color.withValues(alpha: 0.5)),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: Text('${badge.emoji} ${badge.text}',
+                  child: Text('${badge.emoji} $ad',
                       style: RythoText.body(12, w: FontWeight.w700)),
                 );
               }),
           ]),
         ),
-        if (uid != null) ...[
-          const SizedBox(height: 14),
-          _FollowCounters(uid: uid),
-        ],
+        // Takipçi/takip sayaçları kaldırıldı: tek yönlü takip yerine karşılıklı
+        // arkadaşlık modeli kullanılıyor (bkz. features/friends).
         // Günlük seri kartı 🔥
         Plaque(
-          label: 'Günlük Seri',
+          label: l10n.dailyStreak,
           child: Row(children: [
             const Text('🔥', style: TextStyle(fontSize: 30)),
             const SizedBox(width: 14),
@@ -141,12 +141,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${(profile['streakCount'] as num?)?.toInt() ?? 0} gün',
+                      l10n.streakDays(
+                          (profile['streakCount'] as num?)?.toInt() ?? 0),
                       style: RythoText.display(20),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Günlük okumayı her gün aç, serin büyüsün.',
+                      l10n.streakBody,
                       style: RythoText.body(12,
                           color: RythoColors.parchmentDim),
                     ),
@@ -157,23 +158,23 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           ]),
         ),
         Plaque(
-          label: 'Doğum Kaydı',
+          label: l10n.birthRecord,
           child: Column(children: [
-            _row('Tarih', profile['birthDate'] ?? '—'),
-            _row('Saat', profile['birthTime'] ?? '—'),
-            _row('Şehir', profile['birthCity'] ?? '—'),
+            _row(l10n.birthDate, profile['birthDate'] ?? '—'),
+            _row(l10n.birthTime, profile['birthTime'] ?? '—'),
+            _row(l10n.birthCity, profile['birthCity'] ?? '—'),
           ]),
         ),
         // Ayarlar: sesler aç/kapa
         Plaque(
-          label: 'Ayarlar',
+          label: l10n.settings,
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           child: Row(children: [
             const Icon(Icons.music_note_outlined,
                 size: 18, color: RythoColors.lilac),
             const SizedBox(width: 10),
             Expanded(
-                child: Text('Sesler', style: RythoText.body(14))),
+                child: Text(l10n.sounds, style: RythoText.body(14))),
             Switch(
               value: _soundsEnabled,
               activeThumbColor: RythoColors.magenta,
@@ -186,35 +187,106 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ]),
         ),
+        // Dil: arayüz metinlerini VE backend'in ürettiği yorumların dilini
+        // birlikte belirler (Accept-Language ile taşınır, bkz. core/locale.dart).
         Plaque(
-          label: 'Hakkında',
+          label: l10n.language,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Column(children: [
+            for (final secim in <(String, Locale?)>[
+              (l10n.languageSystem, null),
+              (l10n.languageTurkish, const Locale('tr')),
+              (l10n.languageEnglish, const Locale('en')),
+            ])
+              Builder(builder: (_) {
+                final secili = ref.watch(localeProvider)?.languageCode ==
+                    secim.$2?.languageCode;
+                return ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(secim.$1, style: RythoText.body(14)),
+                  trailing: Icon(
+                    secili
+                        ? Icons.radio_button_checked_rounded
+                        : Icons.radio_button_unchecked_rounded,
+                    size: 20,
+                    color: secili
+                        ? RythoColors.magenta
+                        : RythoColors.parchmentDim,
+                  ),
+                  onTap: () => ref.read(localeProvider.notifier).set(secim.$2),
+                );
+              }),
+          ]),
+        ),
+        // Bildirimler. Metinler sunucuda üretiliyor ve zamanlama kullanıcının
+        // YEREL saatine göre yapılıyor (bkz. core/notifications.dart).
+        const NotificationSettings(),
+        // Gizlilik: arkadaşlara ne göründüğü. Tüm görünürlük ayarları
+        // varsayılan olarak KAPALIDIR ve yalnızca buradan açılır.
+        Plaque(
+          label: l10n.privacy,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          child: Column(children: [
+            Row(children: [
+              const Icon(Icons.local_fire_department_outlined,
+                  size: 18, color: RythoColors.lilac),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.streakVisibleSetting,
+                          style: RythoText.body(14)),
+                      Text(
+                        l10n.streakVisibleSettingBody,
+                        style: RythoText.body(11.5,
+                            color: RythoColors.parchmentDim),
+                      ),
+                    ]),
+              ),
+              Switch(
+                value: profile['streakVisible'] == true,
+                activeThumbColor: RythoColors.magenta,
+                activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
+                onChanged: (v) => setStreakVisible(v),
+              ),
+            ]),
+          ]),
+        ),
+        Plaque(
+          label: l10n.about,
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(
-              'Rytho; Batı astrolojisi, BaZi, I Ching ve İlm-i Sima geleneklerini '
-              'hassas efemeris hesabıyla birleştirir. Yorumlar içgörü amaçlıdır; '
-              'tıbbi, hukuki veya finansal tavsiye değildir.',
+              l10n.aboutBody,
               style: RythoText.body(13, color: RythoColors.parchmentDim),
             ),
             const SizedBox(height: 10),
-            Text('Efemeris: Swiss Ephemeris © Astrodienst AG',
+            Text(l10n.ephemerisCredit,
                 style: RythoText.mono(10, color: RythoColors.parchmentDim)),
             const SizedBox(height: 12),
             const Divider(height: 1),
-            _legalLink(context, 'Gizlilik Politikası',
-                () => const LegalPage(
-                    title: 'Gizlilik Politikası',
-                    sections: kPrivacyPolicySections)),
+            _legalLink(
+                context,
+                l10n.privacyPolicy,
+                () => LegalPage(
+                    title: l10n.privacyPolicy,
+                    sections: privacyPolicySections(
+                        Localizations.localeOf(context).languageCode))),
             const Divider(height: 1),
-            _legalLink(context, 'Kullanım Şartları',
-                () => const LegalPage(
-                    title: 'Kullanım Şartları',
-                    sections: kTermsOfUseSections)),
+            _legalLink(
+                context,
+                l10n.termsOfUse,
+                () => LegalPage(
+                    title: l10n.termsOfUse,
+                    sections: termsOfUseSections(
+                        Localizations.localeOf(context).languageCode))),
           ]),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
           child: GoldButton(
-            text: 'Oturumu kapat',
+            text: l10n.signOut,
             onPressed: () async {
               try {
                 await GoogleSignIn.instance.signOut();
@@ -223,39 +295,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             },
           ),
         ),
-        if (uid != null) ...[
-          const SectionDivider(),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Text('Gönderilerin', style: RythoText.display(20)),
+        // Hesap silme (Apple 5.1.1(v) / Google Play zorunluluğu).
+        // Çıkış yapmakla karıştırılmaması için ayrı ve sönük duruyor; ama
+        // "gömülü olmamalı" kuralı gereği ana profil ekranında, ek bir
+        // menünün arkasında değil.
+        Center(
+          child: TextButton(
+            onPressed: () => showDeleteAccountSheet(context),
+            child: Text(
+              l10n.deleteAccount,
+              style: RythoText.label(12, color: RythoColors.parchmentDim),
+            ),
           ),
-          const SizedBox(height: 6),
-          StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-            stream: FirebaseFirestore.instance
-                .collection('posts')
-                .where('authorId', isEqualTo: uid)
-                .orderBy('createdAt', descending: true)
-                .limit(20)
-                .snapshots(),
-            builder: (_, snapshot) {
-              final docs = snapshot.data?.docs ?? [];
-              if (docs.isEmpty) {
-                return Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Center(
-                    child: Text('Meclis\'te henüz söz almadın.',
-                        style: RythoText.body(13,
-                            color: RythoColors.parchmentDim)),
-                  ),
-                );
-              }
-              return Column(children: [
-                for (final doc in docs)
-                  PostCard(postId: doc.id, post: doc.data()),
-              ]);
-            },
-          ),
-        ],
+        ),
+        // "Gönderilerin" bölümü kaldırıldı: kullanıcı üretimi serbest metin
+        // v1 kapsamı dışında. Yerine Faz 5'te arkadaş katmanı (seri, hazır
+        // tepkiler, günlük ikili dinamik) gelecek.
         const SizedBox(height: 24),
       ]),
     );
@@ -288,36 +343,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 style: RythoText.mono(10, color: RythoColors.parchmentDim))),
         Text(value, style: RythoText.body(14)),
       ]),
-    );
-  }
-}
-
-class _FollowCounters extends StatelessWidget {
-  const _FollowCounters({required this.uid});
-  final String uid;
-
-  Widget _counter(String label, Stream<int> stream) {
-    return StreamBuilder<int>(
-      stream: stream,
-      builder: (_, snapshot) => Column(children: [
-        Text('${snapshot.data ?? 0}', style: RythoText.display(20)),
-        Text(label, style: RythoText.mono(10, color: RythoColors.parchmentDim)),
-      ]),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final users = FirebaseFirestore.instance.collection('users').doc(uid);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _counter('TAKİPÇİ',
-            users.collection('followers').snapshots().map((s) => s.size)),
-        const SizedBox(width: 40),
-        _counter('TAKİP',
-            users.collection('following').snapshots().map((s) => s.size)),
-      ],
     );
   }
 }

@@ -1,6 +1,40 @@
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../features/paywall/paywall_screen.dart';
+import '../l10n/app_localizations.dart';
+import 'locale.dart';
+
+/// Paywall'ı herhangi bir ekrandan açabilmek için kök navigatör.
+final GlobalKey<NavigatorState> rythoNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Kilitli özellik için sunucunun döndürdüğü HTTP kodu.
+const int kPaywallStatus = 402;
+
+bool _paywallOpen = false;
+
+/// Sunucu 402 döndüğünde paywall'ı açar.
+///
+/// Kilit kararı tek yerde — sunucuda — verilir; istemci hangi ekranda olursa
+/// olsun aynı davranışı gösterir. Böylece her ekrana ayrı kilit mantığı
+/// yazmak gerekmez ve arayüz ile sunucu birbirinden ayrışamaz.
+Future<void> _showPaywall(String? reason) async {
+  if (_paywallOpen) return;
+  final navigator = rythoNavigatorKey.currentState;
+  if (navigator == null) return;
+
+  _paywallOpen = true;
+  try {
+    await navigator.push(MaterialPageRoute(
+      builder: (_) => PaywallScreen(reason: reason),
+      fullscreenDialog: true,
+    ));
+  } finally {
+    _paywallOpen = false;
+  }
+}
 
 /// Backend adresi: --dart-define=RYTHO_API_URL=... ile geçilir;
 /// verilmezse Cloud Run üretim adresi kullanılır.
@@ -10,6 +44,12 @@ const String kApiBaseUrl = String.fromEnvironment(
 );
 
 final apiProvider = Provider<Dio>((ref) {
+  // Dil izleniyor: değiştiğinde bu sağlayıcı yeniden kurulur ve ona bağlı tüm
+  // ağ sağlayıcıları (burç yorumu, gökyüzü, günlük okuma...) tazelenir.
+  // İzlenmezse başlık yalnızca SONRAKİ isteklerde değişir; ekrandaki yorum
+  // eski dilde asılı kalır — dil değiştirmenin en görünür kusuru buydu.
+  final locale = ref.watch(localeProvider);
+
   final dio = Dio(BaseOptions(
     baseUrl: kApiBaseUrl,
     connectTimeout: const Duration(seconds: 20),
@@ -22,11 +62,46 @@ final apiProvider = Provider<Dio>((ref) {
         final token = await user.getIdToken();
         options.headers['Authorization'] = 'Bearer $token';
       }
+      // Backend yorumları bu başlığa göre üretir (persona, korpus ve önbellek
+      // dahil). Gönderilmezse sunucu Türkçe varsayar ve arayüz İngilizce olsa
+      // bile yorumlar Türkçe gelir.
+      options.headers['Accept-Language'] = acceptLanguageHeader(locale);
       handler.next(options);
+    },
+    onError: (error, handler) {
+      if (error.response?.statusCode == kPaywallStatus) {
+        final detail = error.response?.data is Map
+            ? (error.response!.data as Map)['detail'] as String?
+            : null;
+        _showPaywall(detail);
+      }
+      handler.next(error);
     },
   ));
   return dio;
 });
+
+/// Hata mesajını kullanıcıya gösterilebilir hale getirir.
+///
+/// Backend her hatada Türkçe ve anlaşılır bir `detail` döndürüyor (kota,
+/// paywall, sunucu hatası). Ham `DioException` metnini ekrana basmak
+/// kullanıcıya HTTP durum kodu ve MDN bağlantısı göstermek demek.
+String friendlyError(Object error, [AppLocalizations? l10n]) {
+  if (error is DioException) {
+    // Sunucunun `detail` alani zaten kullanicinin dilinde uretiliyor
+    // (Accept-Language ile), o yuzden oldugu gibi gosterilir.
+    final data = error.response?.data;
+    if (data is Map && data['detail'] is String) return data['detail'] as String;
+    if (error.type == DioExceptionType.connectionTimeout ||
+        error.type == DioExceptionType.receiveTimeout ||
+        error.type == DioExceptionType.connectionError) {
+      return l10n?.errorConnection ??
+          'Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.';
+    }
+  }
+  return l10n?.errorGeneric ??
+      'Beklenmeyen bir sorun oluştu. Lütfen biraz sonra tekrar dene.';
+}
 
 /// Kullanıcının doğum verisini backend'in beklediği gövdeye çevirir.
 Map<String, dynamic> birthPayload(Map<String, dynamic> profile) {

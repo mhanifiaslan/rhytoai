@@ -1,0 +1,393 @@
+{
+  "@@locale": "en",
+  "appTagline": "Ancient wisdom, met with precise sky calculation.\nYour chart is drawn; your path lights up. ✨",
+  "signInWithGoogle": "Sign in with Google",
+  "orDivider": "or",
+  "signIn": "Sign in",
+  "signUp": "Sign up",
+  "email": "Email",
+  "password": "Password",
+  "forgotPassword": "Forgot password",
+  "tabSky": "Sky",
+  "tabAtlas": "Atlas",
+  "tabFriends": "Friends",
+  "tabProfile": "Profile",
+  "greetingMorning": "Good morning",
+  "greetingDay": "Good afternoon",
+  "greetingEvening": "Good evening",
+  "greetingNight": "Good night",
+  "todaysInsight": "Today's Insight",
+  "signToday": "{sign} · today",
+  "@signToday": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      }
+    }
+  },
+  "oracleTools": "Oracle Tools",
+  "skyNow": "In the Sky Right Now",
+  "iChing": "I Ching",
+  "iChingSubtitle": "Book of Changes",
+  "baZi": "BaZi",
+  "baZiSubtitle": "Four Pillars",
+  "personalReadingLocked": "Your personal daily reading",
+  "personalReadingLockedBody": "With Rytho+, readings are built from your own chart.",
+  "personalReadingLockedBodyWithSign": "The reading above is for every {sign}. With Rytho+ it also accounts for your Moon and Rising.",
+  "@personalReadingLockedBodyWithSign": {
+    "placeholders": {
+      "sign": {
+        "type": "String"
+      }
+    }
+  },
+  "personalReadingTitle": "For you",
+  "natalLockedTitle": "Birth chart analysis",
+  "natalLockedBody": "The full reading of your placements, houses and aspects unlocks with Rytho+.",
+  "baziLockedTitle": "BaZi — Four Pillars",
+  "baziLockedBody": "Day Master, Ten Gods and luck pillars unlock with Rytho+.",
+  "friendsTitle": "Friends",
+  "addFriend": "Add friend",
+  "usernameLabel": "USERNAME",
+  "usernameHeadline": "Let your friends find you",
+  "usernameBody": "Pick a username. We don't touch your contacts — friends are added by username or invite link only.",
+  "usernameHint": "username",
+  "claimUsername": "Claim username",
+  "usernameInvalid": "3-20 characters; lowercase letters, numbers and underscore only.",
+  "usernameEmpty": "Username can't be empty.",
+  "usernameTaken": "That username is taken — try another.",
+  "youLabel": "YOU",
+  "streakVisibleOn": "Friends can see your streak and whether you've read today.",
+  "streakVisibleOff": "Your streak is hidden from friends.",
+  "copyInviteLink": "Copy invite link",
+  "inviteLinkCopied": "Invite link copied.",
+  "shareInviteInstead": "Share my invite link instead",
+  "sendInvite": "Send invite",
+  "inviteSent": "Invite sent to @{username}.",
+  "@inviteSent": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "userNotFound": "@{username} not found.",
+  "@userNotFound": {
+    "placeholders": {
+      "username": {
+        "type": "String"
+      }
+    }
+  },
+  "cannotAddSelf": "You can't add yourself.",
+  "inboxLabel": "SENT TO YOU",
+  "noFriendsYet": "No one here yet",
+  "noFriendsBody": "Add a friend by username — see each other's streaks and read the dynamic between you every day.",
+  "incomingRequests": "Incoming invites",
+  "yourFriends": "Your friends",
+  "pendingInvites": "Invites awaiting a reply",
+  "accept": "Accept",
+  "ignore": "Ignore",
+  "pending": "Pending",
+  "withdrawInvite": "Withdraw invite",
+  "readToday": "Has read today",
+  "notReadToday": "Hasn't read yet today",
+  "streakHidden": "Streak hidden",
+  "friendLabel": "YOUR FRIEND",
+  "streakHiddenByFriend": "Keeps their streak private",
+  "readTodayDone": "Has done today's reading",
+  "dyadLabel": "BETWEEN YOU TODAY",
+  "dyadDisclaimer": "This reading holds for today only and changes tomorrow. We don't give a fixed compatibility score.",
+  "dyadFailed": "Couldn't load the reading.",
+  "sendReaction": "Send a reaction",
+  "sendReactionBody": "Pick one of the ready reactions — no writing, just a small hello.",
+  "reactionSent": "{emoji} sent.",
+  "@reactionSent": {
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      }
+    }
+  },
+  "removeFriend": "Remove friend",
+  "blockUser": "Block",
+  "reportUser": "Report",
+  "reactionStreak": "Keep the streak",
+  "reactionThinkingOfYou": "Thinking of you",
+  "reactionShine": "You're shining",
+  "reactionKeepGoing": "Keep going",
+  "reactionCongrats": "Congratulations",
+  "reactionSameFrequency": "Same frequency",
+  "reactionGoodNight": "Good night",
+  "reactionCheckToday": "Check today",
+  "paywallTitle": "Rytho+",
+  "paywallHeadline": "The stars are the same for everyone.\nYou are not.",
+  "paywallBody": "Your daily sign reading and the real sky data stay open on the free tier, always. Rytho+ builds every reading from your own chart.",
+  "paywallContinue": "Continue with Rytho+",
+  "paywallChoosePlan": "Choose a plan",
+  "restorePurchases": "Restore purchases",
+  "noActiveSubscription": "No active subscription found to restore.",
+  "purchaseFailed": "The purchase couldn't be completed.",
+  "billingUnavailable": "Purchases aren't available right now",
+  "billingNoPackages": "No packages are configured in the store.",
+  "billingNotConfigured": "Subscription keys aren't set in this build.",
+  "planWeekly": "Weekly",
+  "planMonthly": "Monthly",
+  "planAnnual": "Annual",
+  "bestValue": "BEST VALUE",
+  "trialThenPrice": "{count} {unit} free, then {price}",
+  "@trialThenPrice": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "unit": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "unitDay": "days",
+  "unitWeek": "weeks",
+  "unitMonth": "months",
+  "unitYear": "years",
+  "subscriptionTerms": "Your subscription renews automatically unless cancelled at least 24 hours before the period ends. If there is a free trial and you cancel before it ends, you won't be charged. You can cancel in your device's store account settings.",
+  "benefitDailyTitle": "A daily reading built for you",
+  "benefitDailyBody": "Your natal chart collided with today's sky — not a generic sun-sign horoscope.",
+  "benefitNatalTitle": "Full birth chart report",
+  "benefitNatalBody": "Planets, houses and aspects — not a one-off surface summary.",
+  "benefitDyadTitle": "Daily dynamic with your friends",
+  "benefitDyadBody": "A shared reading that renews each day. No fixed compatibility score.",
+  "benefitChatTitle": "Unlimited chat",
+  "benefitChatBody": "The more Rytho knows you, the deeper it goes.",
+  "benefitBaziTitle": "BaZi and synastry",
+  "benefitBaziBody": "Four Pillars analysis and chart-to-chart comparison.",
+  "profileTitle": "Profile",
+  "settings": "Settings",
+  "sounds": "Sounds",
+  "privacy": "Privacy",
+  "streakVisibleSetting": "Let friends see my streak",
+  "streakVisibleSettingBody": "When off, neither your streak nor whether you've read today is shared.",
+  "language": "Language",
+  "languageSystem": "System language",
+  "languageTurkish": "Türkçe",
+  "languageEnglish": "English",
+  "about": "About",
+  "aboutBody": "Rytho joins Western astrology, BaZi and the I Ching to precise ephemeris calculation. Readings are for insight; they are not medical, legal or financial advice.",
+  "ephemerisCredit": "Ephemeris: Swiss Ephemeris © Astrodienst AG",
+  "privacyPolicy": "Privacy Policy",
+  "termsOfUse": "Terms of Use",
+  "signOut": "Sign out",
+  "dailyStreak": "Daily Streak",
+  "streakDays": "{count} days",
+  "@streakDays": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "streakBody": "Open your daily reading every day and watch the streak grow.",
+  "birthRecord": "Birth Record",
+  "birthDate": "Date",
+  "birthTime": "Time",
+  "birthCity": "City",
+  "retry": "Try again",
+  "errorGeneric": "Something unexpected happened. Please try again shortly.",
+  "errorConnection": "Couldn't connect. Check your internet and try again.",
+  "errorSkyUnavailable": "The sky is out of reach right now.",
+  "promoTitle": "Go beyond the stars ✨",
+  "promoBody": "Explore the full analysis of your birth chart.",
+  "promoAction": "Explore",
+  "chatTitle": "Rytho AI",
+  "chatHint": "Ask anything about what's ahead...",
+  "chatEmptyBody": "Your chart, your patterns, your path — ask whatever is on your mind.",
+  "chatFailed": "The connection dropped. Please try again.",
+  "suggestCareer": "Career 💼",
+  "suggestLove": "Love life ❤️",
+  "suggestMonth": "What does this month hold?",
+  "suggestFinance": "Money and work 💰",
+  "suggestMarriage": "Commitment 💍",
+  "oracleTitle": "Oracle Room",
+  "tabIChing": "I CHING 🪙",
+  "tabBaZi": "BAZI 🀄",
+  "onboardingTitle": "Your Birth Moment",
+  "onboardingBody": "Your chart needs the exact arrangement of the sky at that moment. The more precise the time, the more accurate your rising sign.",
+  "onboardingCity": "Birth city",
+  "genderFemale": "Female",
+  "genderMale": "Male",
+  "genderOther": "Other",
+  "onboardingSubmit": "Draw my chart ✨",
+  "onboardingFailed": "Couldn't save your details.",
+  "atlasTitle": "Birth Chart Analysis",
+  "appHeadline": "Your Personal Cosmic Intelligence",
+  "consentNote": "By continuing you accept our privacy terms.\nReadings are for insight; they are not medical or financial advice.",
+  "authNameRequired": "Enter your name.",
+  "authInvalidEmail": "Enter a valid email address.",
+  "authWrongCredentials": "Email or password is incorrect.",
+  "authEmailInUse": "That email is already registered. Try signing in.",
+  "authWeakPassword": "Password must be at least 6 characters.",
+  "authTooManyRequests": "Too many attempts. Please try again shortly.",
+  "authDisabled": "Email sign-in is currently unavailable.",
+  "authNetwork": "Couldn't connect. Check your internet.",
+  "authFailed": "Something went wrong. Please try again.",
+  "displayName": "Your name",
+  "passwordRepeat": "Password (repeat)",
+  "passwordsDoNotMatch": "Passwords don't match.",
+  "enterEmailFirst": "Enter your email address first.",
+  "resetLinkSent": "Password reset link sent.",
+  "nameLabel": "Name",
+  "signAries": "Aries",
+  "signTaurus": "Taurus",
+  "signGemini": "Gemini",
+  "signCancer": "Cancer",
+  "signLeo": "Leo",
+  "signVirgo": "Virgo",
+  "signLibra": "Libra",
+  "signScorpio": "Scorpio",
+  "signSagittarius": "Sagittarius",
+  "signCapricorn": "Capricorn",
+  "signAquarius": "Aquarius",
+  "signPisces": "Pisces",
+  "atlasPlanetPositions": "Planetary Positions",
+  "atlasTraits": "Character Traits",
+  "atlasAspects": "Aspects",
+  "traitDetermination": "Determination",
+  "traitCommunication": "Communication",
+  "traitSensitivity": "Sensitivity",
+  "moonIllumination": "{percent}% illuminated",
+  "@moonIllumination": {
+    "placeholders": {
+      "percent": {
+        "type": "Object"
+      }
+    }
+  },
+  "reportPostTitle": "REPORT THIS POST",
+  "reportUserTitle": "REPORT THIS USER",
+  "reportNote": "Our team reviews every report.",
+  "reportReasonSpam": "Spam or misleading content",
+  "reportReasonHarassment": "Insults or harassment",
+  "reportReasonInappropriate": "Inappropriate or disturbing content",
+  "reportReasonOther": "Something else",
+  "reportSubmitted": "Report received — we'll look into it shortly. Thank you.",
+  "reportFailed": "The report couldn't be sent.",
+  "recordLabel": "✨ Your details",
+  "aFriend": "A friend",
+  "iChingIntro": "The 64-hexagram matrix, three thousand years old. Write your question; the coins fall on real probability, and the moving lines bridge to what comes next.",
+  "iChingQuestionHint": "What's on your mind?",
+  "iChingMethodCoins": "Three Coins 🪙",
+  "iChingMethodYarrow": "Yarrow Stalks 🌿",
+  "iChingCastAction": "Cast",
+  "iChingQuestionRequired": "Write your question first.",
+  "iChingCastFailed": "The cast couldn't be made.",
+  "iChingCoinsInAir": "Coins in the air...",
+  "iChingHexagramLabel": "HEXAGRAM {number}",
+  "@iChingHexagramLabel": {
+    "placeholders": {
+      "number": {
+        "type": "Object"
+      }
+    }
+  },
+  "iChingTransformedTo": "→ changing into: {name} (#{number})",
+  "@iChingTransformedTo": {
+    "placeholders": {
+      "name": {
+        "type": "Object"
+      },
+      "number": {
+        "type": "Object"
+      }
+    }
+  },
+  "iChingOracleNote": "Rytho's note on the cast",
+  "baziHeadline": "The Four Pillars of Destiny",
+  "baziChineseSign": "Your Chinese sign: {animal} · {dayMaster}",
+  "@baziChineseSign": {
+    "placeholders": {
+      "animal": {
+        "type": "Object"
+      },
+      "dayMaster": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziFourPillars": "Four Pillars",
+  "baziPillarHour": "HOUR",
+  "baziPillarDay": "DAY",
+  "baziPillarMonth": "MONTH",
+  "baziPillarYear": "YEAR",
+  "baziElementBalance": "Elemental Balance",
+  "baziNourish": "Element to nourish: {elements}",
+  "@baziNourish": {
+    "placeholders": {
+      "elements": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziLuckPillars": "Luck Pillars (Da Yun)",
+  "baziAgeRange": "AGE {from}–{to}",
+  "@baziAgeRange": {
+    "placeholders": {
+      "from": {
+        "type": "Object"
+      },
+      "to": {
+        "type": "Object"
+      }
+    }
+  },
+  "baziFateNote": "Rytho's note on your chart",
+  "traitEnergy": "Energy",
+  "traitPracticality": "Practicality",
+  "defaultUserName": "Traveller",
+  "retrogradeChip": "{planet} retrograde",
+  "@retrogradeChip": {
+    "placeholders": {
+      "planet": {
+        "type": "Object"
+      }
+    }
+  },
+  "atlasReadingNote": "✨ Rytho's note on your chart",
+  "notifications": "Notifications",
+  "notifyDaily": "Daily reading",
+  "notifyDailyBody": "Let me know each morning when today's sky is ready.",
+  "notifyStreak": "Streak reminder",
+  "notifyStreakBody": "A short evening nudge before your streak breaks.",
+  "notifyFriends": "Friend reactions",
+  "notifyFriendsBody": "Let me know when a friend sends you a reaction.",
+  "quietHours": "Quiet hours",
+  "quietHoursBody": "No notifications are sent during this window.",
+  "quietHoursRange": "{from} – {to}",
+  "@quietHoursRange": {
+    "placeholders": {
+      "from": {
+        "type": "Object"
+      },
+      "to": {
+        "type": "Object"
+      }
+    }
+  },
+  "quietHoursOff": "Off",
+  "notificationsDisabledHint": "Notifications are off in your device settings. Turn them on there to receive them.",
+  "enableNotifications": "Turn on notifications",
+  "deleteAccount": "Delete account",
+  "deleteAccountTitle": "You're about to delete your account",
+  "deleteAccountBody": "This cannot be undone. We will delete your birth record, the notes we built up from your conversations, your friendships, your username and every reading generated for you.",
+  "deleteAccountKeeps": "Reports you filed are kept — they concern other people's safety, so we do not remove them.",
+  "deleteAccountSubscription": "If you have a subscription you must also cancel it in your app store; deleting the account does not stop the billing.",
+  "deleteAccountConfirmHint": "Type DELETE to confirm",
+  "deleteAccountConfirmWord": "DELETE",
+  "deleteAccountAction": "Permanently delete my account",
+  "deleteAccountFailed": "The account could not be deleted. Please retry.",
+  "deleteAccountReauth": "For security you need to sign in again. Sign out, sign back in, and repeat this step.",
+  "cancel": "Cancel",
+  "insightDisclaimer": "Rytho is built on real ephemeris calculation, but interpretation is not a method of prediction. Readings are for insight; they are not medical, legal or financial advice. For ages 13 and up."
+}

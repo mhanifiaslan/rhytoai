@@ -8,11 +8,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 WORKDIR /app
 
-# mediapipe/opencv için sistem kütüphaneleri
-# (libgles2 + libegl1: mediapipe >=0.10.30 libmediapipe.so, libGLESv2.so.2 ve libEGL.so.1'e bağlıdır)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libgl1 libglib2.0-0 libgles2 libegl1 \
-    && rm -rf /var/lib/apt/lists/*
+# Yüz analizi v1 kapsamı dışında olduğu için mediapipe/opencv sistem
+# kütüphaneleri (libgl1, libgles2, libegl1 ...) ve FaceLandmarker model
+# indirmesi imajdan çıkarıldı — imaj boyutu ve soğuk başlatma süresi düşer.
 
 COPY backend/requirements.txt .
 RUN pip install -r requirements.txt
@@ -20,8 +18,7 @@ RUN pip install -r requirements.txt
 COPY backend/ /app/
 COPY knowledge/ /app/knowledge/
 
-# FaceLandmarker modelini imaja göm (runtime'da indirme gerekmesin)
-RUN mkdir -p /app/cache && python -c "import urllib.request; urllib.request.urlretrieve('https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/latest/face_landmarker.task', '/app/cache/face_landmarker.task')"
+RUN mkdir -p /app/cache
 
 EXPOSE 8080
 CMD exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}

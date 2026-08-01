@@ -1,0 +1,8 @@
+{
+  "_comment": "Kopyala: dart_defines.local.json (gitignore'da). Calistirma: flutter run --dart-define-from-file=dart_defines.local.json",
+  "_uyari": "test_ onekli anahtarlar RevenueCat Test Store icindir ve satin almalari SIMULE eder. Yayin oncesi gercek magaza anahtarlariyla (appl_... / goog_...) degistirilmelidir.",
+  "_entitlement": "RevenueCat panelindeki Entitlements > Identifier ile BIREBIR ayni olmali (bosluk ve buyuk/kucuk harf dahil). Yanlissa satin alma basarili olur ama uygulama aboneligi gormez.",
+  "REVENUECAT_ANDROID_KEY": "goog_XXXXXXXXXXXXXXXX",
+  "REVENUECAT_IOS_KEY": "appl_XXXXXXXXXXXXXXXX",
+  "RYTHO_PLUS_ENTITLEMENT": "RhytoAI Pro"
+}

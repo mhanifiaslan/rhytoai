@@ -5,13 +5,24 @@ import 'package:intl/intl.dart';
 
 import '../../core/motivation.dart';
 import '../../core/providers.dart';
+import '../../core/subscription.dart'
+    show introPaywallShown, markIntroPaywallShown, subscriptionProvider;
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../chat/chat_screen.dart';
 import '../oracle/oracle_screen.dart';
+import '../paywall/paywall_screen.dart';
+import '../paywall/plus_locked_card.dart';
 import '../shell/app_shell.dart';
+import '../../core/api.dart' show friendlyError;
+import '../../core/notifications.dart'
+    show
+        markNotificationPromptShown,
+        notificationPromptShown,
+        requestNotificationPermission;
+import '../../l10n/app_localizations.dart';
 
 /// GÖKYÜZÜ — ana ekran v3: selamlama, burç çipleri, promo banner,
 /// günün içgörüsü (+ seri ve kişisel nudge), kehanet araçları karuseli
@@ -26,13 +37,14 @@ class SkyScreen extends ConsumerStatefulWidget {
 class _SkyScreenState extends ConsumerState<SkyScreen> {
   int? _selectedSign;
   bool _streakTouched = false;
+  bool _introPaywallHandled = false;
 
-  String get _greeting {
+  String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
-    if (hour >= 5 && hour < 12) return 'Günaydın';
-    if (hour >= 12 && hour < 18) return 'İyi günler';
-    if (hour >= 18 && hour < 23) return 'İyi akşamlar';
-    return 'İyi geceler';
+    if (hour >= 5 && hour < 12) return l10n.greetingMorning;
+    if (hour >= 12 && hour < 18) return l10n.greetingDay;
+    if (hour >= 18 && hour < 23) return l10n.greetingEvening;
+    return l10n.greetingNight;
   }
 
   /// Günlük seri: profil geldiğinde bir kez işlenir.
@@ -42,16 +54,59 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
     DailyStreak.touch(profile).catchError((_) => 0);
   }
 
+  /// Tanıtım paywall'ı: hesap ömründe **bir kez**, kullanıcı ilk değerini
+  /// gördükten sonra.
+  ///
+  /// Onboarding biter bitmez göstermek erken terk oranını artırıyor; hiç
+  /// göstermemek ise kilitli karta dokunmayan kullanıcıya Rytho+'ın varlığını
+  /// hiç duyurmuyor. Bu yüzden tetikleyici, ücretsiz günlük yorumun ekrana
+  /// gelmesidir.
+  /// İlk değer ekrana geldikten sonraki tek seferlik akış.
+  ///
+  /// Sıra önemli: paywall gösterilecekse bildirim izni BU AÇILIŞTA
+  /// istenmez. Kullanıcıyı arka arkaya iki modalla karşılamak ikisinin de
+  /// reddedilme olasılığını artırır; bildirim izni bir sonraki açılışta
+  /// sorulur ve o zaman tek başına görünür.
+  void _maybeShowIntroPaywall() {
+    if (_introPaywallHandled) return;
+    _introPaywallHandled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+
+      final abone = ref.read(subscriptionProvider).value?.active ?? false;
+      final paywallGosterilecek =
+          !abone && !(await introPaywallShown());
+
+      if (paywallGosterilecek) {
+        await markIntroPaywallShown();
+        if (!mounted) return;
+        await Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const PaywallScreen(),
+          fullscreenDialog: true,
+        ));
+        return;
+      }
+
+      // Bildirim izni: kullanıcı ilk değeri gördü, artık neyin bildirimini
+      // alacağını biliyor. Değer görmeden sorulan izin reddediliyor ve
+      // sistem bir daha sormaya izin vermiyor.
+      if (await notificationPromptShown()) return;
+      await markNotificationPromptShown();
+      await requestNotificationPermission();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final sky = ref.watch(skyNowProvider);
     final daily = ref.watch(dailyReadingProvider);
     final profile = ref.watch(profileProvider).value ?? {};
     if (profile.isNotEmpty) _touchStreak(profile);
 
     final sunSign = profile['sunSign'] as String?;
-    final userSignIndex =
-        sunSign != null ? kSignNamesTr.indexOf(sunSign) : -1;
+    final userSignIndex = signIndexOf(sunSign);
     final selected = _selectedSign ?? (userSignIndex >= 0 ? userSignIndex : 0);
     final streak = (profile['streakCount'] as num?)?.toInt() ?? 0;
 
@@ -74,7 +129,11 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
           backgroundColor: RythoColors.inkLight,
           onRefresh: () async {
             ref.invalidate(skyNowProvider);
+            ref.invalidate(signHoroscopeProvider(kSignKeys[selected]));
             ref.invalidate(dailyReadingProvider);
+            // Abonelik durumu da tazelensin: satın alma sonrası webhook
+            // sunucuya islenene kadar kisa bir gecikme olabiliyor.
+            ref.invalidate(subscriptionProvider);
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -82,7 +141,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
             children: [
               const SizedBox(height: 10),
               _Header(
-                greeting: _greeting,
+                greeting: _greeting(l10n),
                 name: profile['displayName'] ?? 'Gezgin',
                 photoUrl: profile['photoUrl'],
                 streak: streak,
@@ -109,10 +168,9 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               const SizedBox(height: 8),
               // Premium/upsell banner'ı → Atlas'ın derin raporu
               PromoBanner(
-                title: 'Yıldızların ötesine geç ✨',
-                subtitle:
-                    'Doğum haritanın derin analizini ve kişilik raporunu keşfet.',
-                buttonText: 'Keşfet',
+                title: l10n.promoTitle,
+                subtitle: l10n.promoBody,
+                buttonText: l10n.promoAction,
                 onTap: () =>
                     ref.read(shellTabProvider.notifier).state = 1,
               ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
@@ -121,60 +179,78 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
                 child: Row(children: [
-                  Text('Bugünün İçgörüsü', style: RythoText.display(19)),
+                  Text(l10n.todaysInsight, style: RythoText.display(19)),
                   const Spacer(),
                   Text(
-                    DateFormat('d MMMM', 'tr_TR').format(DateTime.now()),
+                    // Tarih biçimi de dile bağlı: sabit 'tr_TR' İngilizce
+                    // arayüzde Türkçe ay adı gösteriyordu.
+                    DateFormat('d MMMM', Localizations.localeOf(context)
+                        .toLanguageTag()).format(DateTime.now()),
                     style: RythoText.mono(11, color: RythoColors.parchmentDim),
                   ),
                 ]),
               ).animate(delay: next()).fadeIn(duration: 360.ms),
+              // Ücretsiz katman: seçili burcun günlük yorumu. Paylaşımlı
+              // önbellekten geldiği için her zaman doludur ve kullanıcı
+              // sayısından bağımsız maliyettedir.
+              ref.watch(signHoroscopeProvider(kSignKeys[selected])).when(
+                    loading: () => const Padding(
+                      padding: EdgeInsets.all(28),
+                      child: Center(child: AstrolabeSpinner()),
+                    ),
+                    error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
+                    data: (data) {
+                      // Kullanıcı ilk değerini gördü: tanıtım paywall'ı
+                      // buradan tetiklenir (hesap ömründe bir kez).
+                      _maybeShowIntroPaywall();
+                      return GlassPanel(
+                      label: l10n.signToday(signDisplayName(l10n, selected)),
+                      // Buradaki konserve motivasyon cümlesi kaldırıldı:
+                      // hemen üstünde AI'ın gerçek gökyüzü verisiyle ürettiği
+                      // burç yorumu duruyor, altına hazır bir cümle eklemek
+                      // yorumu ucuzlatıyordu.
+                      child: TypewriterText(
+                        text: data['reading'] ?? '',
+                        style: RythoText.body(14.5, height: 1.6),
+                      ),
+                    ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
+                          begin: 0.06, curve: Curves.easeOutCubic);
+                    },
+                  ),
+              // Rytho+: kişiye özel okuma. Abone değilse istek atılmaz;
+              // kilitli kart gösterilir ve paywall ancak dokununca açılır.
               daily.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(28),
-                  child: Center(child: AstrolabeSpinner()),
-                ),
-                error: (e, _) => _ErrorCard(error: '$e'),
+                loading: () => const SizedBox.shrink(),
+                error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
                 data: (data) => data == null
-                    ? const SizedBox.shrink()
+                    ? PlusLockedCard(
+                        title: l10n.personalReadingLocked,
+                        description: userSignIndex < 0
+                            ? l10n.personalReadingLockedBody
+                            : l10n.personalReadingLockedBodyWithSign(
+                                signDisplayName(l10n, userSignIndex)),
+                      )
                     : GlassPanel(
                         label:
                             '☀️ ${data['sun_sign']} · 🌙 ${data['moon_sign']} · ⬆️ ${data['ascendant']}',
+                        glow: true,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            TypewriterText(
-                              text: data['reading'] ?? '',
-                              style: RythoText.body(14.5, height: 1.6),
-                            ),
-                            const SizedBox(height: 14),
-                            // Kişisel nudge: burca özel motive edici cümle
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                color: RythoColors.violet.withValues(alpha: 0.14),
-                                border: Border.all(
-                                    color: RythoColors.lilac
-                                        .withValues(alpha: 0.25)),
-                              ),
-                              child: Text(
-                                nudgeForSign(sunSign),
-                                style: RythoText.body(13,
-                                    color: RythoColors.lilac,
-                                    w: FontWeight.w600),
-                              ),
-                            ),
+                            Text(l10n.personalReadingTitle,
+                                style: RythoText.label(
+                                    11, color: RythoColors.goldBright)),
+                            const SizedBox(height: 8),
+                            Text(data['reading'] ?? '',
+                                style: RythoText.body(14.5, height: 1.6)),
                           ],
                         ),
-                      ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
-                          begin: 0.06, curve: Curves.easeOutCubic),
+                      ).animate(delay: next()).fadeIn(duration: 380.ms),
               ),
               // Kehanet araçları karuseli
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-                child: Text('Kehanet Araçları', style: RythoText.display(19)),
+                child: Text(l10n.oracleTools, style: RythoText.display(19)),
               ).animate(delay: next()).fadeIn(duration: 360.ms),
               SizedBox(
                 height: 118,
@@ -182,11 +258,13 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    for (final (i, tool) in const [
-                      ('🪙', 'I Ching', 'Değişimler Kitabı'),
-                      ('🀄', 'BaZi', 'Dört Sütun'),
-                      ('🔮', 'Yüz Okuma', 'İlm-i Sima'),
-                      ('💞', 'Sinastri', 'Kozmik uyum'),
+                    // Yüz Okuma kartı v1 kapsamı dışında (biyometrik veri).
+                    // Sinastri kartı da kaldırıldı: giriş noktası Meclis'teki
+                    // kullanıcı profilleriydi. Faz 5'te arkadaş katmanının
+                    // "günlük ikili dinamik" özelliği olarak geri gelecek.
+                    for (final (i, tool) in [
+                      ('🪙', l10n.iChing, l10n.iChingSubtitle),
+                      ('🀄', l10n.baZi, l10n.baZiSubtitle),
                     ].indexed)
                       Padding(
                         padding: const EdgeInsets.only(right: 12),
@@ -194,17 +272,9 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                           emoji: tool.$1,
                           title: tool.$2,
                           subtitle: tool.$3,
-                          onTap: () {
-                            if (i < 3) {
-                              Navigator.of(context).push(MaterialPageRoute(
-                                  builder: (_) =>
-                                      OracleScreen(initialTab: i)));
-                            } else {
-                              // Sinastri: Meclis'te bir profile girip
-                              // "Kozmik uyum" ile hesaplanır.
-                              ref.read(shellTabProvider.notifier).state = 2;
-                            }
-                          },
+                          onTap: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => OracleScreen(initialTab: i))),
                         )
                             .animate(delay: Duration(milliseconds: 70 * stagger + i * 70))
                             .fadeIn(duration: 360.ms)
@@ -216,12 +286,12 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               // Canlı gökyüzü
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
-                child: Text('Şu An Gökyüzünde', style: RythoText.display(19)),
+                child: Text(l10n.skyNow, style: RythoText.display(19)),
               ).animate(delay: next()).fadeIn(duration: 360.ms),
               sky.when(
                 loading: () => const SizedBox(
                     height: 180, child: Center(child: AstrolabeSpinner())),
-                error: (e, _) => _ErrorCard(error: '$e'),
+                error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
                 data: (data) => GlassPanel(
                   child: Column(children: [
                     Center(
@@ -374,7 +444,9 @@ class _SkyStrip extends StatelessWidget {
               style: RythoText.body(13.5, w: FontWeight.w600)),
           Text('  ·  ',
               style: RythoText.body(13.5, color: RythoColors.parchmentDim)),
-          Text('aydınlanma %${moon['illumination'] ?? '—'}',
+          Text(
+              AppLocalizations.of(context)
+                  .moonIllumination(moon['illumination'] ?? '—'),
               style: RythoText.mono(11.5, color: RythoColors.parchmentDim)),
         ],
       ),
@@ -386,7 +458,9 @@ class _SkyStrip extends StatelessWidget {
           alignment: WrapAlignment.center,
           children: [
             for (final r in retros)
-              InfoChip(text: '↩️ $r retro', color: RythoColors.magenta),
+              InfoChip(
+                  text: '↩️ ${AppLocalizations.of(context).retrogradeChip(r)}',
+                  color: RythoColors.magenta),
           ],
         ),
       ],
@@ -417,7 +491,7 @@ class _ErrorCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassPanel(
       child: Text(
-        'Gökyüzüne şu an ulaşılamıyor.\n$error',
+        '${AppLocalizations.of(context).errorSkyUnavailable}\n$error',
         style: RythoText.body(13, color: RythoColors.parchmentDim),
       ),
     );

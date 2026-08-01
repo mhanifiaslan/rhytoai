@@ -1,11 +1,16 @@
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from core.auth import get_current_user
+from core.i18n import get_language
+from core.messages import text
+from services import prompts
 from services.bazi_service import get_bazi_chart
 
+logger = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
@@ -22,7 +27,7 @@ class BaziRequest(BaseModel):
 
 
 @router.post("/chart")
-def bazi_chart(data: BaziRequest):
+def bazi_chart(data: BaziRequest, lang: str = Depends(get_language)):
     try:
         chart = get_bazi_chart(
             year=data.year, month=data.month, day=data.day,
@@ -30,6 +35,7 @@ def bazi_chart(data: BaziRequest):
             city=data.city, nation=data.nation,
             gender=data.gender, name=data.name,
         )
-        return {"status": "success", "data": chart}
+        return {"status": "success", "data": prompts.localize_bazi(lang, chart)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception("BaZi ucunda hata", exc_info=e)
+        raise HTTPException(status_code=500, detail=text("internal", lang))

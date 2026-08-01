@@ -6,10 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'core/api.dart';
+import 'core/locale.dart';
+import 'core/notifications.dart';
 import 'core/providers.dart';
+import 'core/subscription.dart';
 import 'features/auth/login_screen.dart';
 import 'features/onboarding/onboarding_screen.dart';
 import 'features/shell/app_shell.dart';
+import 'l10n/app_localizations.dart';
 import 'theme/rytho_theme.dart';
 import 'widgets/atlas_widgets.dart';
 import 'widgets/cosmic_scaffold.dart';
@@ -39,18 +44,32 @@ Future<void> main() async {
   } catch (_) {
     // Web'de serverClientId gerekmez; sessizce geç.
   }
+  // Abonelik SDK'sı: anahtar tanımlı değilse sessizce atlanır, uygulama
+  // ücretsiz katmanla normal çalışır.
+  await initBilling();
+
   runApp(const ProviderScope(child: RythoApp()));
 }
 
-class RythoApp extends StatelessWidget {
+class RythoApp extends ConsumerWidget {
   const RythoApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Dil hem arayüzü hem backend'in ürettiği yorumları belirler; ikincisini
+    // apiProvider aynı sağlayıcıyı izleyerek yapar (bkz. core/api.dart).
+    final locale = ref.watch(localeProvider);
+
     return MaterialApp(
       title: 'Rytho',
       debugShowCheckedModeBanner: false,
       theme: buildRythoTheme(),
+      // Sunucu 402 döndüğünde paywall'ı hangi ekranda olursak olalım
+      // açabilmek için (bkz. core/api.dart).
+      navigatorKey: rythoNavigatorKey,
+      locale: locale,
+      supportedLocales: kSupportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: const _Gate(),
     );
   }
@@ -62,6 +81,14 @@ class _Gate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // RevenueCat kimliğini Firebase oturumuna bağlar. İzlenmezse sağlayıcı
+    // hiç kurulmaz ve satın almalar anonim kimliğe yazılır (bkz.
+    // core/subscription.dart).
+    ref.watch(billingIdentityProvider);
+    // Bildirim altyapısı: FCM token, saat dilimi ve dil sunucuya yazılır,
+    // bildirime dokunma yönlendirmesi kurulur (bkz. core/notifications.dart).
+    ref.watch(notificationSyncProvider);
+
     final auth = ref.watch(authStateProvider);
     return auth.when(
       loading: () => const _Splash(),

@@ -2,18 +2,30 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/rytho_theme.dart';
 
 /// Kullanıcı güvenliği yardımcıları: şikayet (report) ve engelleme (block).
 /// Şikayetler `reports` koleksiyonuna yazılır ve yalnızca konsoldan incelenir;
 /// engellenenler `users/{uid}/blocked/{targetUid}` altında tutulur.
 
+/// Şikayet sebepleri. Anahtar Firestore'a yazılır ve **dilden bağımsızdır**;
+/// kullanıcıya gösterilen etiket [reportReasonLabel] ile çözülür. Etiketi
+/// kaydetseydik aynı sebep dile göre iki farklı değerle birikirdi ve
+/// incelemede gruplanamazdı.
 const List<String> kReportReasons = [
-  'Spam veya yanıltıcı içerik',
-  'Hakaret veya taciz',
-  'Uygunsuz / rahatsız edici içerik',
-  'Diğer',
+  'spam',
+  'harassment',
+  'inappropriate',
+  'other',
 ];
+
+String reportReasonLabel(AppLocalizations l10n, String key) => switch (key) {
+      'spam' => l10n.reportReasonSpam,
+      'harassment' => l10n.reportReasonHarassment,
+      'inappropriate' => l10n.reportReasonInappropriate,
+      _ => l10n.reportReasonOther,
+    };
 
 /// Şikayeti Firestore'a yazar. targetType: 'post' | 'user'.
 Future<void> submitReport({
@@ -38,6 +50,7 @@ Future<void> showReportSheet(
   required String targetId,
 }) async {
   final messenger = ScaffoldMessenger.of(context);
+  final l10n = AppLocalizations.of(context);
   await showModalBottomSheet<void>(
     context: context,
     backgroundColor: RythoColors.inkLight,
@@ -50,11 +63,11 @@ Future<void> showReportSheet(
         padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Text(
-            targetType == 'post' ? 'GÖNDERİYİ ŞİKAYET ET' : 'KULLANICIYI ŞİKAYET ET',
+            targetType == 'post' ? l10n.reportPostTitle : l10n.reportUserTitle,
             style: RythoText.mono(11, color: RythoColors.parchmentDim),
           ),
           const SizedBox(height: 6),
-          Text('Şikayetin ekibimiz tarafından incelenir.',
+          Text(l10n.reportNote,
               style: RythoText.body(12.5, color: RythoColors.parchmentDim)),
           const SizedBox(height: 10),
           for (final reason in kReportReasons)
@@ -64,7 +77,8 @@ Future<void> showReportSheet(
                   borderRadius: BorderRadius.circular(12)),
               leading: const Text('⚑',
                   style: TextStyle(color: RythoColors.copper, fontSize: 15)),
-              title: Text(reason, style: RythoText.body(14)),
+              title: Text(reportReasonLabel(l10n, reason),
+                  style: RythoText.body(14)),
               onTap: () async {
                 Navigator.of(sheetContext).pop();
                 try {
@@ -73,12 +87,11 @@ Future<void> showReportSheet(
                     targetId: targetId,
                     reason: reason,
                   );
-                  messenger.showSnackBar(const SnackBar(
-                      content: Text(
-                          'Şikayetin alındı; en kısa sürede incelenecek. Teşekkürler.')));
-                } catch (e) {
                   messenger.showSnackBar(
-                      SnackBar(content: Text('Şikayet gönderilemedi: $e')));
+                      SnackBar(content: Text(l10n.reportSubmitted)));
+                } catch (_) {
+                  messenger.showSnackBar(
+                      SnackBar(content: Text(l10n.reportFailed)));
                 }
               },
             ),

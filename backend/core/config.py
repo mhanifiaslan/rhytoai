@@ -31,4 +31,29 @@ else:
 CACHE_DIR = Path(os.getenv("RYTHO_CACHE_DIR", str(BACKEND_DIR / "cache")))
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
+# Önbellek arka ucu: "firestore" | "file".
+# Cloud Run'da instance diski geçici ve instance'lar arası paylaşımsızdır; burç
+# yorumu gibi kullanıcıdan bağımsız içerikler ancak paylaşımlı bir arka uçla
+# "tüm kullanıcılar için tek LLM çağrısı" garantisini verebilir.
+# Varsayılan DEV_MODE'a bağlanır: lokalde dosya, üretimde Firestore.
+CACHE_BACKEND: str = os.getenv(
+    "RYTHO_CACHE_BACKEND", "file" if DEV_MODE else "firestore"
+).strip().lower()
+
+# Firestore önbellek koleksiyonu. Bu koleksiyona `expiresAt` alanı üzerinden
+# native TTL politikası tanımlanmalıdır; aksi halde süresi dolan dokümanlar
+# yalnızca okuma anında temizlenir.
+CACHE_COLLECTION: str = os.getenv("RYTHO_CACHE_COLLECTION", "aiCache")
+
 GEONAMES_USERNAME: str | None = os.getenv("GEONAMES_USERNAME")
+
+# RevenueCat webhook'u icin paylasilan gizli anahtar. RevenueCat panelinde
+# webhook'a "Authorization" basligi olarak tanimlanir. Tanimsizsa webhook ucu
+# tum istekleri reddeder — abonelik durumu yazan tek yol bu oldugu icin
+# dogrulamasiz calismasina izin verilmez.
+REVENUECAT_WEBHOOK_SECRET: str | None = os.getenv("REVENUECAT_WEBHOOK_SECRET")
+
+# Cloud Scheduler'in toplu bildirim ucunu tetiklerken tasidigi paylasilan
+# gizli anahtar. Tanimsizken uc 503 doner: acik birakmak, herkesin tum
+# kullanicilara bildirim gonderebilmesi demek olurdu.
+NOTIFY_SCHEDULER_SECRET: str | None = os.getenv("NOTIFY_SCHEDULER_SECRET")

@@ -1,58 +1,139 @@
-# Üretim Yayın Kontrol Listesi (Faz 4)
+# Üretim Yayın Kontrol Listesi
 
-## Lisans ve Hukuk
-- [ ] **Swiss Ephemeris ticari lisansı** — kerykeion/pyswisseph AGPLv3'tür.
+Bu liste **v1 kapsamına** göre yazıldı. Kapsam dışı bırakılanlar burada da
+yok: yüz okuma, gönderi akışı, birebir mesajlaşma, takip ilişkileri.
+Gerekçeler: `docs/store-review-notes.md`.
+
+İşaretli maddeler **kodda doğrulanabilir**. İşaretsiz olanların çoğu
+konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
+
+---
+
+## 1. Lisans ve hukuk
+
+- [ ] **Swiss Ephemeris ticari lisansı** — kerykeion/pyswisseph AGPLv3.
       Kapalı kaynak mağaza yayını öncesi Astrodienst AG'den ticari lisans
       alınmalı (~750 CHF, tek seferlik): https://www.astro.com/swisseph/
-      **→ SATIN ALMA, UYGULAMA SAHİBİNİN İŞİDİR; yayından önce zorunlu.**
-- [x] KVKK/GDPR aydınlatma metni ve gizlilik politikası
-      (docs/legal/gizlilik-politikasi.md — yüz fotoğrafının analiz sonrası
-      **anında silindiği** açıkça yazılı; uygulama içinden Sicil → Hakkında
-      bölümünde okunabilir)
-- [x] Kullanım şartları (docs/legal/kullanim-sartlari.md — eğlence/içgörü
-      ibaresi, topluluk kuralları; uygulama içinde Sicil → Hakkında)
-- [x] Apple 5.3.1 / Google Play "fal" kategori kuralları incelemesi
-      (notlar: docs/store-launch.md §4)
+      **→ Yayından önce zorunlu, uygulama sahibinin işi.**
+- [x] Gizlilik politikası ve kullanım şartları **iki dilde, uygulama içinde**
+      (`apps/mobile/lib/features/profile/legal_texts.dart`; Profil → Hakkında
+      ve satın alma ekranından erişilebilir)
+- [x] Metinler gerçek ürünü anlatıyor: bildirim katmanı, kullanıcı hafızası,
+      abonelik ve arkadaş katmanı yazılı; kaldırılan özellikler (yüz analizi,
+      gönderi, DM) metinlerden çıkarıldı
+- [ ] **Hukukçu incelemesi** — metinler mühendislik taslağıdır; KVKK/GDPR
+      açısından yayın öncesi gözden geçirilmeli
 - [ ] Hukuki metinleri bir web adresinde yayınla (mağaza formları URL ister;
-      Firebase Hosting önerilir)
+      Firebase Hosting yeterli)
+- [x] Gizlilik etiketleri beyanı hazır (`docs/store-privacy-labels.md`)
+- [ ] Beyan iki konsola girildi
 
-## Güvenlik
-- [x] Firebase Auth ID token doğrulaması (backend, `RYTHO_DEV_MODE=0`;
-      üretimde 401 doğrulandı)
-- [x] Firestore güvenlik kuralları (owner-only yazma, katılımcı-only DM,
-      reports create-only, blocked owner-only) — deploy edildi
-- [x] Gemini anahtarı Secret Manager'da; API-kısıtlı anahtar kullanılıyor
+## 2. Güvenlik
+
+- [x] Firebase Auth ID token doğrulaması (üretimde `RYTHO_DEV_MODE=0`;
+      401 canlıda doğrulandı)
+- [x] Firestore kuralları deploy edildi. `users/{uid}` **yalnızca sahibine
+      okunabilir** (doğum verisi içerir); arkadaşların gördüğü alanlar ayrı
+      `publicProfiles/{uid}` kartında
+- [x] `users/{uid}/private/**` istemciye tamamen kapalı (hafıza, abonelik,
+      bildirim gönderim kaydı) — yalnızca Admin SDK erişir
+- [x] Gemini anahtarı, RevenueCat webhook anahtarı ve bildirim zamanlayıcı
+      anahtarı Secret Manager'da
+- [x] Rate limiting (`backend/core/ratelimit.py`) — LLM uçları 10/dk,
+      diğerleri 60/dk
+- [x] Ham istisna metni kullanıcıya sızmıyor (`core/messages.py`); güvenlik
+      başlıkları yayında
+- [x] Toplu bildirim ucu yalnızca paylaşılan zamanlayıcı anahtarıyla çalışıyor
 - [ ] Firebase App Check (Play Integrity) — **konsol tarafı uygulama
-      sahibinde**; SDK entegrasyonu bilinçli olarak eklenmedi, adımlar:
-      docs/store-launch.md §3
-- [x] Storage kuralları deploy edildi (`firebase deploy --only storage`)
-- [ ] Cloud Run min-instance=0 maliyet / cold-start dengesi gözden geçir
-- [x] Rate limiting: uygulama içi kayan pencere kotası
-      (backend/core/ratelimit.py — LLM uçları 10/dk, diğerleri 60/dk, 429 +
-      Türkçe mesaj; Cloud Run'da yayında)
-- [x] Global exception handler (stack trace sızdırmayan Türkçe 500) +
-      güvenlik başlıkları (nosniff, X-Frame-Options, HSTS) — yayında
+      sahibinde**; adımlar `docs/store-launch.md` §3
+- [ ] Cloud Run soğuk başlatma / maliyet dengesi gözden geçir
 
-## Moderasyon
-- [x] `/api/v1/chat/moderate` ucu mevcut (Gemini tabanlı)
-- [x] Akış gönderilerinde yayın öncesi moderasyon çağrısı (composer;
-      uygunsuz içerikte nazik uyarı, ağ hatasında fail-open + log)
-- [x] Kullanıcı şikayet akışı (gönderi kartı ⋯ menüsü + profil sayfası →
-      `reports` koleksiyonu) + engelleme (users/{uid}/blocked; akış ve
-      mesajlarda istemci tarafı filtre)
+## 3. Hesap ve veri hakları
 
-## Kalite
-- [x] Crashlytics entegrasyonu (firebase_crashlytics; FlutterError +
-      PlatformDispatcher.onError bağlı, debug/web'de devre dışı)
-- [x] Analytics olay şeması (lib/core/analytics.dart: report_generated,
-      post_published, user_followed, channel_subscribed, iching_cast,
-      face_analyzed)
-- [ ] Yük testi: rapor uçları LLM'e bağlı — önbellek isabet oranını izle
+- [x] **Uygulama içi hesap silme** (Apple 5.1.1(v) / Play zorunluluğu) —
+      Profil → Hesabı sil. Ne silineceği ve ne silinmeyeceği yazılı, yazarak
+      onay isteniyor
+- [x] Silme tüm yayılımı kapsıyor: alt koleksiyonlar, **karşı taraftaki
+      arkadaşlık kayıtları**, gönderilen tepkiler, kullanıcı adı rezervasyonu,
+      herkese açık kart, kişiye özel yapay zeka üretimleri, Firebase kimliği
+      (`backend/services/account_service.py`)
+- [x] Şikayet kayıtları bilinçli olarak korunuyor (başkalarının güvenliği) —
+      gizlilik metninde ve silme onayında yazılı
+
+## 4. Ürün ilkeleri (kodda korunuyor)
+
+- [x] Hiçbir gök verisi uydurulmuyor; her konum Swiss Ephemeris ile hesaplanıyor
+- [x] Yasak alan kapısı (sağlık/hamilelik/ölüm/finans) **iki dilde** çalışıyor
+      ve modele hiç gitmiyor
+- [x] Persona yağcılık yapmıyor; testle korunuyor
+- [x] Kullanıcılar arası **serbest metin yok** — kapalı tepki kümesi
+- [x] Kalıcı uyum skoru yok; ikili dinamik günlük
+
+## 5. Birim ekonomi
+
+- [x] Ücretsiz katman paylaşımlı önbellekten okuyor: burç yorumu dil × burç ×
+      dönem başına tek LLM çağrısı
+- [x] Bildirim metni burç başına üretiliyor — günde en fazla 24 çağrı,
+      kullanıcı sayısından bağımsız
+- [x] Kişiye özel uçlar abonelik veya günlük kotayla korunuyor
+      (`backend/core/entitlements.py`)
+- [ ] Önbellek isabet oranını canlıda izle (maliyet öngörüsü buna bağlı)
+
+## 6. Çok dillilik
+
+- [x] TR + EN: arayüz, backend yorumları, hata metinleri, bildirimler
+- [x] Hesap motorları dilden bağımsız anahtar döndürüyor; ad isteğin dilinde
+      çözülüyor
+- [x] Dil sızıntısı muhafızı (`backend/tests/test_language_isolation.py`)
+- [x] Mobil sabit metin tarayıcısı (`apps/mobile/tool/scan_hardcoded_strings.py`)
+
+## 7. Bildirimler
+
+- [x] Cloud Scheduler → saatlik toplu gönderim; yerel saat, sessiz saat,
+      tercih ve tekrar koruması
+- [x] Yüksek öncelikli Android kanalı; uygulama ön plandayken de gösteriliyor
+- [x] Saat dilimi ve dil profile yazılıyor (`flutter_timezone`)
+- [x] Geçersiz token ilk başarısız gönderimde temizleniyor
+- [x] Cihazda gerçek push doğrulandı
+- [ ] Canlıda ilk gerçek sabah gönderimini izle (log: `api.notify`)
+
+## 8. Kalite
+
+- [x] Crashlytics bağlı (debug/web'de devre dışı)
+- [x] Backend test takımı — 300+ test
+- [ ] **Analytics olay şeması bayat**: `apps/mobile/lib/core/analytics.dart`
+      hâlâ kaldırılmış özelliklerin olaylarını taşıyor (`post_published`,
+      `user_followed`, `channel_subscribed`, `face_analyzed`). Temizlenmeli;
+      yerine bildirim ve abonelik olayları eklenmeli
 - [ ] iOS derlemesi (macOS gerektirir) + TestFlight
 - [ ] Android imzalama anahtarı üret, Play Console iç test kanalı
-      (adımlar: docs/store-launch.md §1-2 — **uygulama sahibinin işi**)
+      (adımlar: `docs/store-launch.md` §1-2)
+- [ ] Yük testi: rapor uçları LLM'e bağlı
 
-## Monetizasyon (öneri — plan: docs/store-launch.md §5)
-- [ ] Ücretsiz: günlük okuma, temel harita, sınırlı sohbet
-- [ ] Premium: sınırsız sohbet, derin raporlar (natal/BaZi tam), sinastri,
-      yüz okuma; RevenueCat ile abonelik
+## 9. Monetizasyon
+
+- [x] Freemium abonelik, **yalnızca aylık** (RevenueCat)
+- [x] Satın alma ekranında: plan adı, fiyat, deneme koşulu, otomatik yenileme
+      ve iptal bilgisi, Gizlilik ve Şartlar bağlantıları, içgörü ibaresi
+- [x] Paywall ilk değerden sonra açılıyor; abone olmayan kullanıcı için
+      kilitli uçlara istek atılmıyor
+- [x] RevenueCat kimliği Firebase oturumuna bağlı; TRANSFER olayı işleniyor
+- [ ] **Gerçek mağaza ürünleri ve 3 gün deneme** — App Store Connect / Play
+      Console tarafı, uygulama sahibinin işi
+- [ ] `test_` önekli RevenueCat anahtarları gerçek anahtarlarla değiştirildi
+
+## 10. Mağaza inceleme
+
+- [ ] Test hesabı hazır (onboarding tamam + Rytho+ yetkisi)
+- [ ] İnceleme notu yapıştırıldı (`docs/store-review-notes.md` §3)
+- [ ] Ekran görüntülerinde gerçek harita/gökyüzü görünüyor — 4.3 savunmasının
+      görsel karşılığı
+- [ ] Yaş derecelendirmesi: App Store 12+, Play Teen
+- [ ] Mağaza açıklamasında sağlık iddiası veya kesin kehanet dili yok
+
+## 11. Henüz yapılmamış ürün işleri
+
+- [ ] Dışa paylaşım kartı (günlük yorumun görsel hâli) — Faz 5 artığı
+- [ ] Davet bağlantısı deep-link'i (Firebase Dynamic Links kapandı; yaklaşım
+      seçilmedi)
+- [ ] Rehber eşleştirme — kendi turunda, varsayılan kapalı (bkz. plan)

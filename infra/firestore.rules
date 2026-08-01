@@ -2,6 +2,22 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // =====================================================================
+    // v1 KAPSAMI
+    //
+    // Serbest metinli kullanıcı içeriği (gönderi, yorum, kanal, DM) v1'de
+    // YOKTUR. Gerekçe: App Store 1.2 (UGC) 24 saat içinde insan müdahalesi
+    // taahhüdü, AB DSA yükümlülükleri ve CSAM tespit sorumluluğu sürekli bir
+    // moderasyon operasyonu gerektiriyor.
+    //
+    // Sosyal katman serbest metin içermez: arkadaşlık, seri görünürlüğü,
+    // KAPALI BİR KÜMEDEN seçilen hazır tepkiler ve günlük ikili dinamik.
+    //
+    // Kaldırılan koleksiyonlar (posts, comments, likes, channels,
+    // subscribers, chats, following, followers) bu dosyada bilinçli olarak
+    // ele alınmıyor: Firestore'da eşleşmeyen yol varsayılan olarak reddedilir.
+    // =====================================================================
+
     function signedIn() {
       return request.auth != null;
     }
@@ -10,43 +26,115 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
-    // ---------- Kullanıcı profilleri ----------
+    // ---------- Kullanıcı profili (HASSAS — yalnızca sahibi) ----------
+    // Doğum tarihi + saati + yeri hassas bir üçlüdür (kimlik doğrulama
+    // sorularında kullanılır). Firestore kuralları okumada alan filtreleyemediği
+    // için bu doküman tamamen sahibine kapatıldı; arkadaşların görmesi gereken
+    // alanlar ayrıca `publicProfiles/{uid}` altında tutulur.
     match /users/{uid} {
-      allow read: if signedIn();
+      allow read: if isOwner(uid);
       allow create, update: if isOwner(uid)
         && request.resource.data.keys().hasOnly([
-          'uid', 'displayName', 'photoUrl', 'email',
+          'uid', 'displayName', 'photoUrl', 'email', 'username',
           'birthDate', 'birthTime', 'birthCity', 'birthNation', 'gender',
           'sunSign', 'moonSign', 'ascendant', 'wuXingElement', 'mizac',
           'onboardingCompleted', 'createdAt', 'updatedAt', 'fcmToken', 'bio',
           // Günlük seri (motivasyon): son görülen gün + seri sayacı
-          'lastSeenDaily', 'streakCount'
+          'lastSeenDaily', 'streakCount',
+          // Serimi arkadaşlarım görebilsin mi (varsayılan: kapalı)
+          'streakVisible',
+          // ---------- Bildirimler ----------
+          // Saat dilimi IANA adıdır ("Europe/Istanbul"); sunucu kullanıcının
+          // YEREL saatini bununla hesaplar. Doğum şehri kullanılamaz: kişi
+          // doğduğu yerde yaşamıyor olabilir.
+          'timezone',
+          // Arayüz dili: bildirim metni sunucuda üretildiği için istemcinin
+          // Accept-Language başlığı burada yok; dil profilde tutulur.
+          'language',
+          // Tercihler (varsayılan açık) ve sessiz saat aralığı (yerel saat).
+          'notifyDaily', 'notifyStreak', 'notifyFriends',
+          'quietFrom', 'quietTo'
         ]);
       allow delete: if isOwner(uid);
 
-      // Takip sistemi (X modeli):
-      // following/{targetUid} -> profil sahibi yazar
-      match /following/{targetUid} {
-        allow read: if signedIn();
-        allow create, delete: if isOwner(uid);
-      }
-      // followers/{followerUid} -> takip eden kişi yazar
-      match /followers/{followerUid} {
-        allow read: if signedIn();
-        allow create, delete: if signedIn() && request.auth.uid == followerUid;
-      }
-
-      // Engellenen kullanıcılar: yalnızca liste sahibi yazar/siler/okur
+      // Engellenen kullanıcılar: yalnızca liste sahibi yazar/siler/okur.
       match /blocked/{targetUid} {
         allow read, create, delete: if isOwner(uid);
       }
+
+      // Kullanıcı hafızası (memory_service), abonelik kaydı (billing) ve
+      // bildirim gönderim kaydı (notification_service) — yalnızca sunucu
+      // (Admin SDK) erişir; Admin SDK bu kuralları atlar.
+      //
+      // Gönderim kaydının istemciye kapalı olması şart: açık olsaydı kullanıcı
+      // "bugün gönderildi" kaydını silip aynı bildirimi tekrar tetikleyebilirdi.
+      match /private/{document=**} {
+        allow read, write: if false;
+      }
+
+      // ---------- Arkadaşlık (karşılıklı onay) ----------
+      // Her iki taraf da kendi listesini tutar. Davet eden kişi hem kendi
+      // kaydını ('outgoing') hem karşı tarafın kaydını ('incoming') yazar;
+      // bu yüzden karşı tarafa da yazma izni verilir. Serbest metin alanı yok.
+      match /friends/{otherUid} {
+        function counterpart() {
+          return signedIn() && request.auth.uid == otherUid;
+        }
+        allow read: if isOwner(uid);
+        allow create, update: if (isOwner(uid) || counterpart())
+          && request.resource.data.status in ['outgoing', 'incoming', 'accepted']
+          && request.resource.data.keys().hasOnly(['status', 'createdAt', 'updatedAt']);
+        allow delete: if isOwner(uid) || counterpart();
+      }
+
+      // ---------- Hazır tepkiler ("dürtme") ----------
+      // Duolingo modeli: gönderilebilecek şey KAPALI bir kümeden seçilir,
+      // serbest metin yoktur. Moderasyon yükü bu sayede sıfıra yakındır.
+      // Yalnızca kabul edilmiş bir arkadaş tepki gönderebilir.
+      match /nudges/{nudgeId} {
+        allow read, delete: if isOwner(uid);
+        allow create: if signedIn()
+          && request.resource.data.fromUid == request.auth.uid
+          && request.resource.data.keys().hasOnly(['fromUid', 'reaction', 'createdAt'])
+          && request.resource.data.reaction in [
+               'streak', 'thinking_of_you', 'shine', 'keep_going',
+               'congrats', 'same_frequency', 'good_night', 'check_today'
+             ]
+          && get(/databases/$(database)/documents/users/$(uid)/friends/$(request.auth.uid)).data.status == 'accepted';
+        allow update: if false;
+      }
+    }
+
+    // ---------- Herkese açık profil kartı ----------
+    // Arkadaş listesinde gösterilen türetilmiş, hassas olmayan alanlar.
+    // Ham doğum verisi BURAYA YAZILMAZ (alan listesi bunu zorunlu kılar).
+    match /publicProfiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isOwner(uid)
+        && request.resource.data.keys().hasOnly([
+          'uid', 'displayName', 'photoUrl', 'username', 'sunSign',
+          'streakCount', 'streakVisible', 'lastSeenDaily', 'updatedAt'
+        ]);
+      allow delete: if isOwner(uid);
+    }
+
+    // ---------- Kullanıcı adı rezervasyonu ----------
+    // Benzersizlik `create`in var olan dokümanda başarısız olmasıyla sağlanır.
+    // Devredilemez: update kapalı, sahibi silip yeniden alabilir.
+    match /usernames/{username} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'createdAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow update: if false;
     }
 
     // ---------- Şikayetler (yalnızca konsoldan incelenir) ----------
     match /reports/{reportId} {
       allow create: if signedIn()
         && request.resource.data.reporterId == request.auth.uid
-        && request.resource.data.targetType in ['post', 'user']
+        && request.resource.data.targetType == 'user'
         && request.resource.data.targetId is string
         && request.resource.data.targetId.size() > 0
         && request.resource.data.reason is string
@@ -54,81 +142,11 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // ---------- Gönderiler (kişisel akış + kanal gönderileri) ----------
-    match /posts/{postId} {
-      function isChannelOwner() {
-        return get(/databases/$(database)/documents/channels/$(request.resource.data.channelId)).data.ownerId == request.auth.uid;
-      }
-
-      allow read: if signedIn();
-      allow create: if signedIn()
-        && request.resource.data.authorId == request.auth.uid
-        && request.resource.data.text is string
-        && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 2000
-        // Kanal gönderisini yalnızca kanal sahibi atabilir
-        && (!('channelId' in request.resource.data)
-            || request.resource.data.channelId == null
-            || isChannelOwner());
-      allow update, delete: if signedIn()
-        && resource.data.authorId == request.auth.uid;
-
-      match /likes/{uid} {
-        allow read: if signedIn();
-        allow create, delete: if isOwner(uid);
-      }
-
-      match /comments/{commentId} {
-        allow read: if signedIn();
-        allow create: if signedIn()
-          && request.resource.data.authorId == request.auth.uid
-          && request.resource.data.text.size() <= 1000;
-        allow delete: if signedIn() && resource.data.authorId == request.auth.uid;
-      }
-    }
-
-    // ---------- Kanallar (tek yönlü yayın) ----------
-    match /channels/{channelId} {
-      allow read: if signedIn();
-      allow create: if signedIn()
-        && request.resource.data.ownerId == request.auth.uid
-        && request.resource.data.name is string
-        && request.resource.data.name.size() >= 3
-        && request.resource.data.name.size() <= 60;
-      allow update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
-
-      match /subscribers/{uid} {
-        allow read: if signedIn();
-        allow create, delete: if isOwner(uid);
-      }
-    }
-
-    // ---------- Birebir mesajlaşma (DM) ----------
-    match /chats/{chatId} {
-      function isParticipant() {
-        return signedIn() && request.auth.uid in resource.data.participants;
-      }
-      function willBeParticipant() {
-        return signedIn() && request.auth.uid in request.resource.data.participants;
-      }
-
-      allow read: if isParticipant();
-      allow create: if willBeParticipant()
-        && request.resource.data.participants.size() == 2;
-      allow update: if isParticipant() && willBeParticipant();
-      allow delete: if false;
-
-      match /messages/{messageId} {
-        function parentChat() {
-          return get(/databases/$(database)/documents/chats/$(chatId)).data;
-        }
-        allow read: if signedIn() && request.auth.uid in parentChat().participants;
-        allow create: if signedIn()
-          && request.auth.uid in parentChat().participants
-          && request.resource.data.senderId == request.auth.uid
-          && request.resource.data.text.size() <= 4000;
-        allow update, delete: if false;
-      }
+    // ---------- AI önbelleği (core/cache.py) ----------
+    // Instance'lar arası paylaşımlı LLM yanıt önbelleği. Yalnızca sunucu yazar
+    // ve okur; istemcinin buraya erişmesi gerekmez.
+    match /aiCache/{entryId} {
+      allow read, write: if false;
     }
   }
 }

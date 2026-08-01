@@ -2,8 +2,12 @@
 
 Kadim kaynakların (İlm-i Nücum, Kıyafetname, Mian Xiang, BaZi, I Ching, Batı/Vedik astroloji)
 AI tarafından öğrenildiği (RAG bilgi tabanı), gerçek astronomik veriyle (Swiss Ephemeris + NASA JPL)
-beslenen, kişiye özel yorum üreten; aynı zamanda mesajlaşma ve sosyal ağ platformu olan
-çok platformlu uygulama.
+beslenen, kullanıcıyı zamanla tanıyıp kişiye özel yorum üreten çok platformlu uygulama.
+
+> **v1 kapsamı.** Yüz okuma (biyometrik veri) ve serbest metinli sosyal katman
+> (gönderi akışı, kanallar, DM) ticari v1'de **yoktur**. Sosyal katmanın yerini
+> serbest metin içermeyen arkadaş deneyimi alacak: seri görünürlüğü, kapalı
+> kümeden hazır tepkiler ve günlük ikili dinamik.
 
 ## Depo Yapısı
 
@@ -34,9 +38,10 @@ astroaiproject/
 | Backend | FastAPI (Python 3.11) | Cloud Run üzerinde; Firebase Auth token doğrulamalı |
 | Astroloji | Kerykeion / Swiss Ephemeris | Natal, transit, sinastri; Tropikal + Sidereal (Lahiri) |
 | Çin metafiziği | Özel BaZi motoru + 64 heksagram I Ching | Jie Qi güneş terimleri swisseph ile hesaplanır |
-| Yüz analizi | MediaPipe Face Mesh (+ opsiyonel DeepFace) | San Ting, 12 Saray, Wu Xing sınıflandırma |
 | AI yorum | Gemini (gemini-flash-latest) + RAG | knowledge/ korpusundan pasaj çekilir, önbelleklenir |
-| Veri | Firebase (Auth, Firestore, Storage, FCM) | Sosyal ağ, DM, profiller |
+| Önbellek | Firestore (üretim) / dosya (lokal) | Instance'lar arası paylaşımlı; burç yorumu dönem başına bir kez üretilir |
+| Veri | Firebase (Auth, Firestore, Storage, FCM) | Profiller, kullanıcı hafızası, bildirim |
+| Yüz analizi | MediaPipe Face Mesh | **v1 dışı** — biyometrik veri; kod v2 referansı olarak `backend/services/face_service.py` altında duruyor |
 
 ## Geliştirme
 

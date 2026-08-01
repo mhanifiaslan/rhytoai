@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Çok dillilik (TR + EN)
+  flutter_localizations:
+    sdk: flutter
+
   # Durum yönetimi
   flutter_riverpod: ^3.0.3
 
@@ -21,6 +25,10 @@ dependencies:
   firebase_auth: ^6.4.0
   cloud_firestore: ^6.1.2
   firebase_messaging: ^16.1.0
+  # Cihazın IANA saat dilimi ("Europe/Istanbul"). Bildirimin kullanıcının
+  # sabahına denk gelmesi için sunucunun buna ihtiyacı var; DateTime'ın
+  # döndürdüğü kısaltmalar ("+03") sunucuda çözülemiyor.
+  flutter_timezone: ^5.1.0
   firebase_crashlytics: ^5.0.7
   firebase_analytics: ^12.0.4
   google_sign_in: ^7.2.0
@@ -29,11 +37,19 @@ dependencies:
   google_fonts: ^6.3.2
   flutter_animate: ^4.5.2
 
+  # Abonelik (RevenueCat)
+  purchases_flutter: ^9.10.4
+
   # Araçlar
   image_picker: ^1.2.1
   intl: ^0.20.2
   audioplayers: ^6.8.1
   shared_preferences: ^2.5.5
+  # Uygulama ON PLANDAYKEN gelen bildirimi gostermek icin. Android'de FCM'in
+  # `notification` yuku yalnizca uygulama arka plandayken sistem tepsisinde
+  # gorunur; on planda `onMessage`'a teslim edilir ve gostermek uygulamanin
+  # isidir. Ayrica yuksek oncelikli bildirim kanalini bu paket tanimliyor.
+  flutter_local_notifications: ^22.2.0
 
 dev_dependencies:
   flutter_test:
@@ -42,6 +58,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # ARB dosyalarından AppLocalizations üretimi (bkz. l10n.yaml)
+  generate: true
 
   assets:
     - assets/sounds/

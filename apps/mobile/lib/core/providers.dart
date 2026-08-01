@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'analytics.dart';
 import 'api.dart';
+import 'subscription.dart';
 
 /// Firebase oturum akışı.
 final authStateProvider = StreamProvider<User?>(
@@ -41,10 +42,29 @@ final skyNowProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return Map<String, dynamic>.from(response.data['data']);
 });
 
-/// Kişiye özel günlük okuma.
+/// Burç bazlı günlük yorum — ÜCRETSİZ katmanın omurgası.
+///
+/// Kullanıcıdan bağımsızdır ve sunucuda paylaşımlı önbellekten servis edilir:
+/// 12 burç için dönem başına tek LLM çağrısı yapılır, kullanıcı sayısı arttıkça
+/// maliyet artmaz. Ana ekran bu yüzden hiçbir zaman boş kalmaz.
+final signHoroscopeProvider =
+    FutureProvider.family<Map<String, dynamic>, String>((ref, signKey) async {
+  final dio = ref.watch(apiProvider);
+  final response = await dio.get('/api/v1/reports/horoscope/$signKey');
+  return Map<String, dynamic>.from(response.data['data']);
+});
+
+/// Kişiye özel günlük okuma — Rytho+ .
+///
+/// Abone olmayan için hiç İSTEK ATILMAZ. Atılsaydı sunucu 402 doner ve paywall
+/// her acilista kendiliginden acilirdi; kilitli icerik kullanicinin
+/// dokunmasiyla acilmali, yuzune firlatilmamali.
 final dailyReadingProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  if (!_hasPlus(ref)) return null;
+
   final profile = ref.watch(profileProvider).value;
   if (profile == null || profile['onboardingCompleted'] != true) return null;
+
   final dio = ref.watch(apiProvider);
   final response =
       await dio.post('/api/v1/reports/daily', data: birthPayload(profile));
@@ -52,8 +72,18 @@ final dailyReadingProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   return Map<String, dynamic>.from(response.data['data']);
 });
 
-/// Natal harita + derin rapor.
+/// Abone değilken ücretli uca istek atılmamalı.
+///
+/// Atılırsa sunucu 402 döner ve paywall ekran açılır açılmaz kullanıcının
+/// yüzüne fırlar. Kilitli içerik kullanıcının dokunmasıyla açılmalı; bu yüzden
+/// ücretli sağlayıcılar abonelik yoksa `null` döner ve ekranlar kilitli
+/// durumu gösterir.
+bool _hasPlus(Ref ref) =>
+    ref.watch(subscriptionProvider).value?.active ?? false;
+
+/// Natal harita + derin rapor — Rytho+ .
 final natalReportProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  if (!_hasPlus(ref)) return null;
   final profile = ref.watch(profileProvider).value;
   if (profile == null || profile['onboardingCompleted'] != true) return null;
   final dio = ref.watch(apiProvider);
@@ -63,8 +93,9 @@ final natalReportProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   return Map<String, dynamic>.from(response.data['data']);
 });
 
-/// BaZi haritası + rapor.
+/// BaZi haritası + rapor — Rytho+ .
 final baziReportProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
+  if (!_hasPlus(ref)) return null;
   final profile = ref.watch(profileProvider).value;
   if (profile == null || profile['onboardingCompleted'] != true) return null;
   final dio = ref.watch(apiProvider);
