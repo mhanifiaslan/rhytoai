@@ -33,14 +33,26 @@ def _memory_block(memory: str, lang: str | None = None) -> str:
 
 def _cached_generate(cache_key: str, prompt: str, fallback: str,
                      ttl_seconds: int = 24 * 3600,
-                     lang: str | None = None) -> dict[str, Any]:
+                     lang: str | None = None,
+                     owner_uid: str | None = None) -> dict[str, Any]:
+    """Üretimi önbellekli çalıştırır.
+
+    ``owner_uid`` KİŞİYE ÖZEL üretimlerde verilir (günlük okuma, natal, BaZi,
+    I Ching, sinastri, ikili dinamik). Önbellek dokümanının kimliği anahtarın
+    özeti olduğu için kayıtlar kullanıcıya göre sorgulanamaz; hesap
+    silindiğinde bu üretimlerin de silinebilmesi sahiplik alanına bağlı.
+
+    Burç yorumu ve gökyüzü PAYLAŞIMLI olduğu için sahipsizdir — tek bir
+    kullanıcının hesabını silmesi herkesin yorumunu silmemeli.
+    """
     cached = cache.get(cache_key)
     if cached is not None:
         return {"text": cached, "cached": True}
 
     text = gemini_service.generate(prompt, lang=lang)
     if text:
-        cache.set(cache_key, text, ttl_seconds=ttl_seconds)
+        cache.set(cache_key, text, ttl_seconds=ttl_seconds,
+                  owner_uid=owner_uid)
         return {"text": text, "cached": False}
     return {"text": fallback, "cached": False, "fallback": True}
 
@@ -89,7 +101,8 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
         sun_sign=sun_sign or "-",
         ascendant=ascendant or "-",
     )
-    return _cached_generate(cache_key, prompt, fallback, lang=lang)
+    return _cached_generate(cache_key, prompt, fallback, lang=lang,
+                            owner_uid=user_id)
 
 
 #: Dönem -> önbellek TTL'i. Anahtar tarih kovası içerdiği için TTL'in tek
@@ -221,8 +234,11 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
     )
     fallback = p.DYAD_FALLBACK.format(
         name_a=name_a, name_b=name_b, moon_name=moon.get("name") or "-")
+    # Okuma iki kişiye ait ama sahiplik tek alan; isteyen taraf yazılır.
+    # Zaten 24 saatlik ömrü var, kalan taraf için de kısa sürede düşer.
     result = _cached_generate(cache_key, prompt, fallback,
-                              ttl_seconds=24 * 3600, lang=lang)
+                              ttl_seconds=24 * 3600, lang=lang,
+                              owner_uid=uid_a)
     result["generated_for"] = today.isoformat()
     return result
 
@@ -265,7 +281,8 @@ def natal_report(user_id: str, natal: dict[str, Any],
         sun_sign=sun_sign, moon_sign=moon_sign, ascendant=ascendant,
     )
     return _cached_generate(cache_key, prompt, fallback,
-                            ttl_seconds=30 * 24 * 3600, lang=lang)
+                            ttl_seconds=30 * 24 * 3600, lang=lang,
+                            owner_uid=user_id)
 
 
 def face_report(user_id: str, face: dict[str, Any]) -> dict[str, Any]:
@@ -342,7 +359,8 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
         dominant=bazi["dominant_element"],
     )
     return _cached_generate(cache_key, prompt, fallback,
-                            ttl_seconds=30 * 24 * 3600, lang=lang)
+                            ttl_seconds=30 * 24 * 3600, lang=lang,
+                            owner_uid=user_id)
 
 
 def iching_reading(user_id: str, cast: dict[str, Any],
@@ -384,7 +402,7 @@ def iching_reading(user_id: str, cast: dict[str, Any],
         f"{primary['judgment']}"
     )
     return _cached_generate(cache_key, prompt, fallback, ttl_seconds=3600,
-                            lang=lang)
+                            lang=lang, owner_uid=user_id)
 
 
 def synastry_report(user_id: str, synastry: dict[str, Any],
@@ -421,4 +439,5 @@ def synastry_report(user_id: str, synastry: dict[str, Any],
         name2=p2["name"], sun2=p2["sun"]["sign_local"],
     )
     return _cached_generate(cache_key, prompt, fallback,
-                            ttl_seconds=7 * 24 * 3600, lang=lang)
+                            ttl_seconds=7 * 24 * 3600, lang=lang,
+                            owner_uid=user_id)

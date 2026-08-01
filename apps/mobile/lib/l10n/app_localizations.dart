@@ -1627,6 +1627,78 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bildirimleri aç'**
   String get enableNotifications;
+
+  /// No description provided for @deleteAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabı sil'**
+  String get deleteAccount;
+
+  /// No description provided for @deleteAccountTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabını silmek üzeresin'**
+  String get deleteAccountTitle;
+
+  /// No description provided for @deleteAccountBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu işlem geri alınamaz. Silinecekler: doğum kaydın, sohbetten biriktirdiğimiz notlar, arkadaşlıkların, kullanıcı adın ve sana özel üretilmiş tüm okumalar.'**
+  String get deleteAccountBody;
+
+  /// No description provided for @deleteAccountKeeps.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gönderdiğin şikayet kayıtları saklanır; başkalarının güvenliğiyle ilgili oldukları için silinmez.'**
+  String get deleteAccountKeeps;
+
+  /// No description provided for @deleteAccountSubscription.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aboneliğin varsa uygulama mağazandan ayrıca iptal etmelisin; hesabı silmek aboneliği durdurmaz.'**
+  String get deleteAccountSubscription;
+
+  /// No description provided for @deleteAccountConfirmHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylamak için SİL yaz'**
+  String get deleteAccountConfirmHint;
+
+  /// No description provided for @deleteAccountConfirmWord.
+  ///
+  /// In tr, this message translates to:
+  /// **'SİL'**
+  String get deleteAccountConfirmWord;
+
+  /// No description provided for @deleteAccountAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabımı kalıcı olarak sil'**
+  String get deleteAccountAction;
+
+  /// No description provided for @deleteAccountFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap silinemedi. Lütfen tekrar dene.'**
+  String get deleteAccountFailed;
+
+  /// No description provided for @deleteAccountReauth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güvenlik için tekrar giriş yapman gerekiyor. Çıkış yapıp yeniden giriş yaptıktan sonra bu işlemi tekrarla.'**
+  String get deleteAccountReauth;
+
+  /// No description provided for @cancel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Vazgeç'**
+  String get cancel;
+
+  /// No description provided for @insightDisclaimer.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho gerçek gökyüzü hesabına dayanır ama yorum bir öngörü yöntemi değildir. Okumalar içgörü içindir; tıbbi, hukuki veya finansal tavsiye yerine geçmez. 13 yaş ve üzeri içindir.'**
+  String get insightDisclaimer;
 }
 
 class _AppLocalizationsDelegate

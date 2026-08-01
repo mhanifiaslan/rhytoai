@@ -377,5 +377,17 @@
   },
   "quietHoursOff": "Kapalı",
   "notificationsDisabledHint": "Bildirimler cihaz ayarlarından kapalı. Açmak için sistem ayarlarına git.",
-  "enableNotifications": "Bildirimleri aç"
+  "enableNotifications": "Bildirimleri aç",
+  "deleteAccount": "Hesabı sil",
+  "deleteAccountTitle": "Hesabını silmek üzeresin",
+  "deleteAccountBody": "Bu işlem geri alınamaz. Silinecekler: doğum kaydın, sohbetten biriktirdiğimiz notlar, arkadaşlıkların, kullanıcı adın ve sana özel üretilmiş tüm okumalar.",
+  "deleteAccountKeeps": "Gönderdiğin şikayet kayıtları saklanır; başkalarının güvenliğiyle ilgili oldukları için silinmez.",
+  "deleteAccountSubscription": "Aboneliğin varsa uygulama mağazandan ayrıca iptal etmelisin; hesabı silmek aboneliği durdurmaz.",
+  "deleteAccountConfirmHint": "Onaylamak için SİL yaz",
+  "deleteAccountConfirmWord": "SİL",
+  "deleteAccountAction": "Hesabımı kalıcı olarak sil",
+  "deleteAccountFailed": "Hesap silinemedi. Lütfen tekrar dene.",
+  "deleteAccountReauth": "Güvenlik için tekrar giriş yapman gerekiyor. Çıkış yapıp yeniden giriş yaptıktan sonra bu işlemi tekrarla.",
+  "cancel": "Vazgeç",
+  "insightDisclaimer": "Rytho gerçek gökyüzü hesabına dayanır ama yorum bir öngörü yöntemi değildir. Okumalar içgörü içindir; tıbbi, hukuki veya finansal tavsiye yerine geçmez. 13 yaş ve üzeri içindir."
 }

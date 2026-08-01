@@ -11,6 +11,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from api.account import router as account_router
 from api.astrology import router as astrology_router
 from api.bazi import router as bazi_router
 from api.billing import router as billing_router
@@ -91,6 +92,10 @@ app.include_router(billing_router, prefix="/api/v1/billing", tags=["Billing"])
 # üretilir, toplu gönderim yalnızca Cloud Scheduler'ın paylaşılan anahtarıyla
 # tetiklenir ve tekil gönderimde arkadaşlık sunucuda doğrulanır.
 app.include_router(notify_router, prefix="/api/v1/notify", tags=["Notifications"])
+# Hesap silme: mağaza zorunluluğu (Apple 5.1.1(v), Google Play). İstemci
+# tarafında yapılamaz çünkü başka kullanıcıların dokümanlarındaki karşılıklı
+# arkadaşlık kayıtlarına ve sunucuya kapalı koleksiyonlara dokunuyor.
+app.include_router(account_router, prefix="/api/v1/account", tags=["Account"])
 
 
 @app.get("/")

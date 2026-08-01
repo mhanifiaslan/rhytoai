@@ -835,4 +835,45 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get enableNotifications => 'Bildirimleri aç';
+
+  @override
+  String get deleteAccount => 'Hesabı sil';
+
+  @override
+  String get deleteAccountTitle => 'Hesabını silmek üzeresin';
+
+  @override
+  String get deleteAccountBody =>
+      'Bu işlem geri alınamaz. Silinecekler: doğum kaydın, sohbetten biriktirdiğimiz notlar, arkadaşlıkların, kullanıcı adın ve sana özel üretilmiş tüm okumalar.';
+
+  @override
+  String get deleteAccountKeeps =>
+      'Gönderdiğin şikayet kayıtları saklanır; başkalarının güvenliğiyle ilgili oldukları için silinmez.';
+
+  @override
+  String get deleteAccountSubscription =>
+      'Aboneliğin varsa uygulama mağazandan ayrıca iptal etmelisin; hesabı silmek aboneliği durdurmaz.';
+
+  @override
+  String get deleteAccountConfirmHint => 'Onaylamak için SİL yaz';
+
+  @override
+  String get deleteAccountConfirmWord => 'SİL';
+
+  @override
+  String get deleteAccountAction => 'Hesabımı kalıcı olarak sil';
+
+  @override
+  String get deleteAccountFailed => 'Hesap silinemedi. Lütfen tekrar dene.';
+
+  @override
+  String get deleteAccountReauth =>
+      'Güvenlik için tekrar giriş yapman gerekiyor. Çıkış yapıp yeniden giriş yaptıktan sonra bu işlemi tekrarla.';
+
+  @override
+  String get cancel => 'Vazgeç';
+
+  @override
+  String get insightDisclaimer =>
+      'Rytho gerçek gökyüzü hesabına dayanır ama yorum bir öngörü yöntemi değildir. Okumalar içgörü içindir; tıbbi, hukuki veya finansal tavsiye yerine geçmez. 13 yaş ve üzeri içindir.';
 }

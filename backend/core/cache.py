@@ -132,16 +132,24 @@ def _firestore_get(key: str) -> tuple[Any, float] | None:
     return data.get("value"), expires_epoch
 
 
-def _firestore_set(key: str, value: Any, expires_at: float) -> None:
+def _firestore_set(key: str, value: Any, expires_at: float,
+                   owner_uid: str | None = None) -> None:
     doc_ref = _cache_doc(key)
     if doc_ref is None:
         return
-    doc_ref.set({
+    kayit = {
         "value": value,
         "expiresAt": dt.datetime.fromtimestamp(expires_at, tz=dt.timezone.utc),
         # Hata ayıklama için: hangi mantıksal anahtarın sağlaması olduğu.
         "keyHint": key[:200],
-    })
+    }
+    if owner_uid:
+        # Doküman kimliği anahtarın SHA-256 özeti olduğu için kayıtlar
+        # kullanıcıya göre SORGULANAMAZ. Hesap silindiğinde kişiye özel
+        # üretimlerin de silinmesi gerektiğinden sahiplik ayrı bir alanda
+        # tutulur. Paylaşımlı kayıtlarda (burç yorumu, gökyüzü) bu alan yoktur.
+        kayit["ownerUid"] = owner_uid
+    doc_ref.set(kayit)
 
 
 # --------------------------------------------------------------------------
@@ -154,9 +162,10 @@ def _persistent_get(key: str) -> tuple[Any, float] | None:
     return _file_get(key)
 
 
-def _persistent_set(key: str, value: Any, expires_at: float) -> None:
+def _persistent_set(key: str, value: Any, expires_at: float,
+                    owner_uid: str | None = None) -> None:
     if config.CACHE_BACKEND == "firestore":
-        _firestore_set(key, value, expires_at)
+        _firestore_set(key, value, expires_at, owner_uid)
     else:
         _file_set(key, value, expires_at)
 
@@ -181,7 +190,8 @@ def get(key: str) -> Any | None:
     return value
 
 
-def set(key: str, value: Any, ttl_seconds: int = 24 * 3600) -> None:
+def set(key: str, value: Any, ttl_seconds: int = 24 * 3600,
+        owner_uid: str | None = None) -> None:
     """Değeri hem bellek hem kalıcı katmana yazar.
 
     Kalıcı katmandaki hata isteği düşürmez; yalnızca loglanır.
@@ -189,6 +199,6 @@ def set(key: str, value: Any, ttl_seconds: int = 24 * 3600) -> None:
     expires_at = time.time() + ttl_seconds
     _memory_set(key, value, expires_at)
     try:
-        _persistent_set(key, value, expires_at)
+        _persistent_set(key, value, expires_at, owner_uid)
     except Exception as exc:
         logger.warning("Önbelleğe yazılamadı (%s): %s", config.CACHE_BACKEND, exc)

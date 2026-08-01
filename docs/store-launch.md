@@ -1,7 +1,7 @@
 # Rytho Mağaza Yayın Rehberi
 
-Bu doküman; Android imzalama, Play Console iç test, App Check ve mağaza
-politika notları ile monetizasyon planını içerir. **Buradaki adımların çoğu
+Bu doküman; Android imzalama, Play Console iç test, App Check, mağaza
+politika notları, monetizasyon ve bildirim altyapısını içerir. **Buradaki adımların çoğu
 konsol/hesap işlemi gerektirir ve uygulama sahibi tarafından yapılmalıdır.**
 
 ## 1. Android imzalama anahtarı
@@ -48,88 +48,140 @@ App Bundle üretimi: `flutter build appbundle --release`
 ## 2. Play Console iç test adımları
 
 1. https://play.google.com/console → geliştirici hesabı aç (25 USD, tek sefer).
-2. "Uygulama oluştur" → ad: Rytho, dil: Türkçe, tür: Uygulama, ücretsiz.
-3. **Uygulama içeriği** bölümünü doldur:
-   - Gizlilik politikası URL'si (docs/legal/gizlilik-politikasi.md bir web
-     adresinde yayınlanmalı — örn. Firebase Hosting).
-   - Veri güvenliği formu: konum yok; kişisel bilgi (ad, e-posta), doğum
-     bilgisi, fotoğraf (işlenir, SAKLANMAZ) beyan et.
-   - İçerik derecelendirmesi anketi: "fal/eğlence" içeriği işaretle.
-4. **Test → İç test** → yeni sürüm oluştur → `.aab` yükle → test kullanıcısı
-   e-postalarını ekle → yayınla. Test bağlantısı e-postayla gelir.
+2. "Uygulama oluştur" → ad: Rytho, dil: Türkçe, tür: Uygulama, ücretsiz
+   (uygulama içi satın alma var).
+3. **Uygulama içeriği** bölümü:
+   - Gizlilik politikası URL'si. Metin uygulama içinde
+     (`apps/mobile/lib/features/profile/legal_texts.dart`) ama mağaza bir URL
+     ister — bir web adresinde yayınlanmalı (Firebase Hosting yeterli).
+   - **Veri güvenliği formu:** `docs/store-privacy-labels.md` §3'teki tabloyu
+     birebir gir. Konum yok, biyometrik veri yok, rehber erişimi yok.
+   - İçerik derecelendirmesi anketi: Teen/13+ hedefleniyor
+     (`docs/store-privacy-labels.md` §5).
+4. **Test → İç test** → yeni sürüm → `.aab` yükle → test kullanıcısı
+   e-postalarını ekle → yayınla.
 5. Play App Signing'i kabul et (Google imzalama anahtarını yönetir; senin
    ürettiğin anahtar "upload key" olur).
 
 ## 3. Firebase App Check (Play Integrity)
 
-Kod tarafına SDK henüz EKLENMEDİ (bilinçli olarak); önce konsol hazırlığı:
+Kod tarafına SDK henüz **eklenmedi** (bilinçli); önce konsol hazırlığı:
 
 1. Firebase Console → rhytoai → **App Check** → "Get started".
-2. Android uygulaması (ai.rytho) için sağlayıcı: **Play Integrity** seç;
-   Play Console'da uygulamanın yayınlanmış (en az iç test) olması gerekir.
+2. Android uygulaması (`ai.rytho`) için sağlayıcı: **Play Integrity**.
+   Play Console'da uygulamanın en az iç teste çıkmış olması gerekir.
 3. SHA-256 imza parmak izlerini Firebase proje ayarlarına ekle
-   (`keytool -list -v -keystore ...` çıktısındaki SHA-256).
+   (`keytool -list -v -keystore ...` çıktısından).
 4. Kod tarafı (konsol hazır olunca):
    - `flutter pub add firebase_app_check`
-   - `main.dart` içinde `await FirebaseAppCheck.instance.activate(
-     androidProvider: AndroidProvider.playIntegrity)` (Firebase.initializeApp
-     sonrası).
-5. Önce **izleme modunda** çalıştır (enforcement kapalı), metrikler temizse
-   Firestore + backend için enforcement'ı aç.
-6. Backend'in App Check token doğrulaması istenirse `firebase_admin` ile
-   `app_check.verify_token` middleware'i eklenebilir (ayrı iş).
+   - `main.dart` içinde `Firebase.initializeApp()` sonrası
+     `await FirebaseAppCheck.instance.activate(
+     androidProvider: AndroidProvider.playIntegrity)`
+5. Önce **izleme modunda** çalıştır; metrikler temizse Firestore ve backend
+   için enforcement'ı aç.
+6. Backend doğrulaması istenirse `firebase_admin.app_check.verify_token`
+   ile bir middleware eklenebilir (ayrı iş).
 
 ## 4. Mağaza politika notları
 
-### Apple App Store — Kural 5.3.1 ve "fal" uygulamaları
-- Apple, astroloji/fal uygulamalarını **4.3 (spam/kopya)** ve **5.6** başlıkları
-  altında sık inceler; "burç uygulaması enflasyonu" nedeniyle ret riski vardır.
-  Rytho'nun ayırt edici özellikleri (gerçek efemeris hesabı, BaZi + I Ching +
-  yüz analizi sentezi, sosyal katman) inceleme notunda vurgulanmalı.
-- **5.3.1** kumar/piyango kuralıdır: uygulamada gerçek para ödülü, bahis veya
-  piyango ÇAĞRIŞIMI yapan hiçbir mekanik olmamalı (I Ching "para atma"
-  animasyonu bir kehanet ritüelidir, kumar değildir — açıklamada netleştir).
-- Yorumların "eğlence amaçlı" olduğu ibaresi hem uygulama içinde (mevcut)
-  hem App Store açıklamasında yer almalı.
+Ayrıntılı savunma ve inceleme notu: **`docs/store-review-notes.md`**.
+Burada yalnızca konsol tarafını ilgilendiren özet var.
+
+### Apple App Store
+
+| Kural | Durum |
+|---|---|
+| **4.3 — Spam / duplicate** | En yüksek risk. Ayırt edici unsurlar ve kanıtları `store-review-notes.md` §2'de; inceleme notu §3'te kopyalanabilir hâlde. |
+| **5.1.1(v) — Hesap silme** | Karşılanıyor: Profil → Hesabı sil. |
+| **1.2 — UGC** | Uygulanmıyor: kullanıcılar arası **serbest metin yok**, yalnızca sekiz maddelik kapalı tepki kümesi. |
+| **5.3.1 — Kumar/piyango** | Uygulanmıyor. I Ching para atma animasyonu bir kehanet ritüelidir; ödül, bahis veya şans oyunu mekaniği yok. Açıklamada netleştir. |
+| **3.1.1 — Uygulama içi satın alma** | Tek aylık abonelik, harici ödeme bağlantısı yok. |
+
 - iOS derlemesi macOS gerektirir; TestFlight için Apple Developer Program
-  (99 USD/yıl) hesabı gerekir.
+  (99 USD/yıl).
+- Mağaza açıklamasında **sağlık iddiası ("iyileştirir", "şifa") ve kesin
+  kehanet dili kullanılmamalı.**
 
-### Google Play — "fal/eğlence" kategorisi
-- Kategori: **Yaşam Tarzı** veya **Eğlence** seç ("Fal" alt etiketi arama
-  anahtar kelimeleriyle sağlanır).
-- İçerik derecelendirmesinde "simya/fal/astroloji" içeriğini doğru beyan et;
-  yanlış beyan kaldırma sebebidir.
-- Veri güvenliği formunda yüz fotoğrafının **işlendiğini ama saklanmadığını**
-  açıkça beyan et; bu, incelemede güçlü bir artıdır.
-- Sosyal özellikler (UGC) nedeniyle: şikayet mekanizması, engelleme ve
-  moderasyon zorunludur — **uygulamada mevcut** (Faz 4'te eklendi).
+### Google Play
 
-## 5. Monetizasyon planı (öneri — kod tarafı uygulanmadı)
+- Kategori: **Yaşam Tarzı** veya **Eğlence**.
+- İçerik derecelendirmesinde astroloji/fal içeriğini doğru beyan et; yanlış
+  beyan kaldırma sebebidir.
+- Sosyal özellik beyanı: kullanıcılar arası etkileşim **var ama sınırlı**
+  (sabit tepki kümesi), kullanıcı üretimi içerik paylaşımı **yok**. Şikayet
+  ve engelleme akışları yine de mevcut (`apps/mobile/lib/core/safety.dart`).
+- Veri güvenliği formunda **hesap silmenin uygulama içinden yapılabildiğini**
+  işaretle — Play bunu ayrıca soruyor.
 
-RevenueCat ile abonelik altyapısı (Play Billing + StoreKit'i tek SDK'da
-soyutlar, sunucu tarafı doğrulama ve deneme yönetimi hazır gelir):
+## 5. Monetizasyon (uygulandı)
+
+Abonelik altyapısı **kodda mevcut**: RevenueCat (`purchases_flutter`) +
+webhook ile sunucu tarafı yetkilendirme.
 
 | Katman | İçerik |
 |---|---|
-| **Ücretsiz** | Günlük okuma, temel natal harita, sınırlı sohbet (örn. 5 mesaj/gün), Meclis sosyal özellikleri |
-| **Premium** (aylık/yıllık) | Sınırsız sohbet, derin raporlar (natal tam + BaZi tam), sinastri (kozmik uyum), yüz okuma |
+| **Ücretsiz** | Burç yorumu (günlük/haftalık/aylık), gerçek gökyüzü, günde 5 sohbet mesajı, günde 1 I Ching çekimi, arkadaş listesi, seri ve hazır tepkiler |
+| **Rytho+** (yalnızca aylık) | Kişiye özel günlük okuma, derin natal rapor, BaZi analizi, sinastri, arkadaşlarla günlük ikili dinamik, sınırsız sohbet |
 
-Uygulama adımları (ileride):
-1. RevenueCat hesabı → proje → Play Console API anahtarı bağla.
-2. Play Console → Para kazanma → abonelik ürünleri: `rytho_premium_monthly`,
-   `rytho_premium_yearly` (+7 gün deneme önerilir).
-3. `flutter pub add purchases_flutter` → paywall ekranı → `entitlement`
-   kontrolü ile premium uçları kilitle.
-4. Backend'de kota: ücretsiz kullanıcıların sohbet/rapor sayısı zaten
-   rate limiting ile sınırlı; premium ayrımı için Firestore'da
-   `users/{uid}.premium` alanı + backend kontrolü eklenebilir.
+Kilit sunucuda: kilitli uçlar HTTP **402** döner, istemci bunu görünce paywall
+açar (`backend/core/entitlements.py`, `apps/mobile/lib/core/api.dart`).
 
-## 6. Yayın öncesi kritik hatırlatmalar
+### Kalan konsol işleri — uygulama sahibinin
+
+1. **App Store Connect** ve **Play Console**'da abonelik ürününü oluştur:
+   önerilen kimlik `rytho_plus_monthly`, **3 gün ücretsiz deneme**.
+2. RevenueCat panelinde ürünü `RhytoAI Pro` yetkisine (`entitlement`) bağla.
+   Yetki kimliği koddaki `RYTHO_PLUS_ENTITLEMENT` ile birebir aynı olmalı;
+   farklıysa satın alma sonrası yetki açılmaz.
+3. RevenueCat webhook'unu şu adrese kur:
+   `https://<cloud-run-url>/api/v1/billing/revenuecat`
+   Authorization başlığına Secret Manager'daki `REVENUECAT_WEBHOOK_SECRET`
+   değerini yaz. Anahtar tanımsızken uç 503 döner ve **hiçbir kullanıcı abone
+   olarak işaretlenemez** — bu bilinçli.
+4. `test_` önekli RevenueCat anahtarlarını gerçek anahtarlarla değiştir
+   (`apps/mobile/dart_defines.local.json`; dosya .gitignore'da).
+
+> RevenueCat **TRANSFER** olayı işleniyor: kullanıcı oturum açmadan satın alma
+> yaparsa kayıt anonim kimliğe gider, sonradan giriş yapınca devredilir.
+> Devir işlenmeseydi ödeme yapmış kullanıcı kilitli kalırdı.
+
+## 6. Bildirim altyapısı (uygulandı)
+
+Cloud Scheduler saatte bir toplu gönderim ucunu tetikler; kime gideceğine
+sunucu karar verir (yerel saat + sessiz saat + tercih + tekrar koruması).
+
+Kurulum tek komut:
+
+```powershell
+cd infra
+./create-scheduler.ps1
+./deploy-backend.ps1
+```
+
+Betik gizli anahtarı üretir, servis hesabına okuma izni verir ve iki saatlik
+işi kurar. **Anahtarı döndürmek için:** `$env:RYTHO_ROTATE_SCHEDULER_SECRET=1`
+ile çalıştır.
+
+Duman testi (yayın sonrası "gerçekten gidiyor mu"):
+
+```powershell
+$A = gcloud secrets versions access latest --secret NOTIFY_SCHEDULER_SECRET --project rhytoai
+curl -X POST -H "Authorization: $A" "<url>/api/v1/notify/run?type=daily&dry_run=true"
+```
+
+`dry_run` hiçbir şey göndermez ve kaydetmez; kime gideceğini ve neden
+atlandığını döner. Gerçek bir test gönderimi için `force=true` (hedef saati
+atlar) ve gerekirse `ignore_dedupe=true` eklenir. **Sessiz saat ve kullanıcı
+tercihi hiçbir bayrakla atlanmaz.**
+
+## 7. Yayın öncesi kritik hatırlatmalar
 
 - **Swiss Ephemeris ticari lisansı**: kerykeion/pyswisseph AGPLv3'tür; kapalı
   kaynak mağaza yayını ÖNCESİ Astrodienst AG'den ticari lisans alınmalı
   (~750 CHF, tek seferlik): https://www.astro.com/swisseph/
-- Gizlilik politikası ve kullanım şartları bir web adresinde yayınlanmalı
-  (mağaza formları URL ister) — Firebase Hosting önerilir.
-- Cloud Run `--max-instances 3` ve rate limiting mevcut; lansman sonrası
-  trafiğe göre gözden geçir.
+- Hukuki metinler bir web adresinde yayınlanmalı (mağaza formları URL ister).
+- Hukuki metinler **bir hukukçuya baktırılmalı** — mühendislik taslağıdır.
+- `app/build.gradle.kts` release bloğu hâlâ **debug anahtarıyla** imzalıyor;
+  §1'deki yapılandırmaya geçilmeli.
+- Cloud Run `--max-instances 3`; lansman trafiğine göre gözden geçir.
+- Tam kontrol listesi: `docs/production-checklist.md`

@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/friends.dart' show setStreakVisible;
 import '../../core/locale.dart';
+import 'delete_account.dart';
 import 'notification_settings.dart';
 import '../../core/providers.dart';
 import '../../core/sound.dart';
@@ -292,6 +293,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               } catch (_) {}
               await FirebaseAuth.instance.signOut();
             },
+          ),
+        ),
+        // Hesap silme (Apple 5.1.1(v) / Google Play zorunluluğu).
+        // Çıkış yapmakla karıştırılmaması için ayrı ve sönük duruyor; ama
+        // "gömülü olmamalı" kuralı gereği ana profil ekranında, ek bir
+        // menünün arkasında değil.
+        Center(
+          child: TextButton(
+            onPressed: () => showDeleteAccountSheet(context),
+            child: Text(
+              l10n.deleteAccount,
+              style: RythoText.label(12, color: RythoColors.parchmentDim),
+            ),
           ),
         ),
         // "Gönderilerin" bölümü kaldırıldı: kullanıcı üretimi serbest metin

@@ -377,5 +377,17 @@
   },
   "quietHoursOff": "Off",
   "notificationsDisabledHint": "Notifications are off in your device settings. Turn them on there to receive them.",
-  "enableNotifications": "Turn on notifications"
+  "enableNotifications": "Turn on notifications",
+  "deleteAccount": "Delete account",
+  "deleteAccountTitle": "You're about to delete your account",
+  "deleteAccountBody": "This cannot be undone. We will delete your birth record, the notes we built up from your conversations, your friendships, your username and every reading generated for you.",
+  "deleteAccountKeeps": "Reports you filed are kept — they concern other people's safety, so we do not remove them.",
+  "deleteAccountSubscription": "If you have a subscription you must also cancel it in your app store; deleting the account does not stop the billing.",
+  "deleteAccountConfirmHint": "Type DELETE to confirm",
+  "deleteAccountConfirmWord": "DELETE",
+  "deleteAccountAction": "Permanently delete my account",
+  "deleteAccountFailed": "The account could not be deleted. Please retry.",
+  "deleteAccountReauth": "For security you need to sign in again. Sign out, sign back in, and repeat this step.",
+  "cancel": "Cancel",
+  "insightDisclaimer": "Rytho is built on real ephemeris calculation, but interpretation is not a method of prediction. Readings are for insight; they are not medical, legal or financial advice. For ages 13 and up."
 }

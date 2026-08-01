@@ -193,6 +193,18 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             textAlign: TextAlign.center,
           ),
         ),
+        // Ne satın aldığının dürüst tarifi. Ürünün "yağcılık yok" ilkesinin
+        // para istenen ekrandaki karşılığı: burada abartmak, uygulamanın
+        // geri kalanındaki dürüstlüğü de değersizleştirirdi. Mağaza
+        // incelemesinde de aranan ibare.
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+          child: Text(
+            l10n.insightDisclaimer,
+            style: RythoText.body(11, color: RythoColors.parchmentDim),
+            textAlign: TextAlign.center,
+          ),
+        ),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
@@ -216,10 +228,14 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     );
   }
 
-  /// Yıllık paket varsayılan seçili gelir (en iyi değer).
+  /// Varsayılan seçili paket.
+  ///
+  /// Kapsam kararı: **yalnızca aylık sunuluyor** (bkz. core/subscription.dart,
+  /// kOfferedPackageTypes). Yıllığı tercih eden eski mantık kaldırıldı —
+  /// sunulmayan bir paketi varsayılan seçmeye çalışıyordu.
   Package _defaultPackage(List<Package> packages) {
     for (final package in packages) {
-      if (package.packageType == PackageType.annual) return package;
+      if (package.packageType == PackageType.monthly) return package;
     }
     return packages.first;
   }

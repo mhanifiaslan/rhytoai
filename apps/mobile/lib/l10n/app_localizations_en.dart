@@ -836,4 +836,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get enableNotifications => 'Turn on notifications';
+
+  @override
+  String get deleteAccount => 'Delete account';
+
+  @override
+  String get deleteAccountTitle => 'You\'re about to delete your account';
+
+  @override
+  String get deleteAccountBody =>
+      'This cannot be undone. We will delete your birth record, the notes we built up from your conversations, your friendships, your username and every reading generated for you.';
+
+  @override
+  String get deleteAccountKeeps =>
+      'Reports you filed are kept — they concern other people\'s safety, so we do not remove them.';
+
+  @override
+  String get deleteAccountSubscription =>
+      'If you have a subscription you must also cancel it in your app store; deleting the account does not stop the billing.';
+
+  @override
+  String get deleteAccountConfirmHint => 'Type DELETE to confirm';
+
+  @override
+  String get deleteAccountConfirmWord => 'DELETE';
+
+  @override
+  String get deleteAccountAction => 'Permanently delete my account';
+
+  @override
+  String get deleteAccountFailed =>
+      'The account could not be deleted. Please retry.';
+
+  @override
+  String get deleteAccountReauth =>
+      'For security you need to sign in again. Sign out, sign back in, and repeat this step.';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get insightDisclaimer =>
+      'Rytho is built on real ephemeris calculation, but interpretation is not a method of prediction. Readings are for insight; they are not medical, legal or financial advice. For ages 13 and up.';
 }
