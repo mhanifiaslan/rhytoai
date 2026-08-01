@@ -389,5 +389,8 @@
   "deleteAccountFailed": "The account could not be deleted. Please retry.",
   "deleteAccountReauth": "For security you need to sign in again. Sign out, sign back in, and repeat this step.",
   "cancel": "Cancel",
-  "insightDisclaimer": "Rytho is built on real ephemeris calculation, but interpretation is not a method of prediction. Readings are for insight; they are not medical, legal or financial advice. For ages 13 and up."
+  "insightDisclaimer": "Rytho is built on real ephemeris calculation, but interpretation is not a method of prediction. Readings are for insight; they are not medical, legal or financial advice. For ages 13 and up.",
+  "shareReading": "Share",
+  "shareCardTagline": "from real ephemeris calculation",
+  "shareFailed": "The share card could not be created."
 }

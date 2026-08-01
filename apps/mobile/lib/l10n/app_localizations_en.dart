@@ -878,4 +878,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get insightDisclaimer =>
       'Rytho is built on real ephemeris calculation, but interpretation is not a method of prediction. Readings are for insight; they are not medical, legal or financial advice. For ages 13 and up.';
+
+  @override
+  String get shareReading => 'Share';
+
+  @override
+  String get shareCardTagline => 'from real ephemeris calculation';
+
+  @override
+  String get shareFailed => 'The share card could not be created.';
 }

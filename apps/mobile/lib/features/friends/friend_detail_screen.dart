@@ -63,6 +63,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     final dio = ref.read(apiProvider);
     try {
       await sendReaction(widget.friend.uid, key);
+      Analytics.reactionSent(key);
       // Bildirimi tetikle. Başarısız olsa bile tepki gönderilmiş sayılır;
       // arkadaş uygulamayı açtığında gelen kutusunda görecek.
       await notifyReaction(dio, widget.friend.uid, key);

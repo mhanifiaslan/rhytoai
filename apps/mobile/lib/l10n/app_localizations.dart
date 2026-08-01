@@ -1699,6 +1699,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Rytho gerçek gökyüzü hesabına dayanır ama yorum bir öngörü yöntemi değildir. Okumalar içgörü içindir; tıbbi, hukuki veya finansal tavsiye yerine geçmez. 13 yaş ve üzeri içindir.'**
   String get insightDisclaimer;
+
+  /// No description provided for @shareReading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylaş'**
+  String get shareReading;
+
+  /// No description provided for @shareCardTagline.
+  ///
+  /// In tr, this message translates to:
+  /// **'gerçek gökyüzü hesabıyla'**
+  String get shareCardTagline;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paylaşım kartı oluşturulamadı.'**
+  String get shareFailed;
 }
 
 class _AppLocalizationsDelegate

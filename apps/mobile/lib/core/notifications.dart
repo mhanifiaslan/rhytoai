@@ -8,6 +8,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/shell/app_shell.dart' show shellTabProvider;
+import 'analytics.dart';
 import 'locale.dart';
 import 'providers.dart';
 
@@ -156,6 +157,9 @@ Future<bool> requestNotificationPermission() async {
     final verildi =
         ayar.authorizationStatus == AuthorizationStatus.authorized ||
             ayar.authorizationStatus == AuthorizationStatus.provisional;
+    // İzin oranı ölçülmezse bildirim sisteminin işe yarayıp yaramadığı
+    // bilinemez: gönderim başarılı görünür ama kimseye ulaşmıyordur.
+    Analytics.notificationPermission(granted: verildi);
     if (verildi) await syncNotificationContext();
     return verildi;
   } catch (e) {
@@ -305,14 +309,19 @@ Future<void> handleNotificationTaps(
 
   try {
     final ilk = await FirebaseMessaging.instance.getInitialMessage();
-    if (ilk != null) onSelectTab(tabForNotification(ilk.data));
+    if (ilk != null) _bildirimAcildi(ilk, onSelectTab);
   } catch (e) {
     debugPrint('Açılış bildirimi okunamadı: $e');
   }
 
-  FirebaseMessaging.onMessageOpenedApp.listen((mesaj) {
-    onSelectTab(tabForNotification(mesaj.data));
-  });
+  FirebaseMessaging.onMessageOpenedApp
+      .listen((mesaj) => _bildirimAcildi(mesaj, onSelectTab));
+}
+
+void _bildirimAcildi(RemoteMessage mesaj, ValueChanged<int> onSelectTab) {
+  // Bildirimden dönüş, bu kategoride retention'ın ana ölçüsü.
+  Analytics.notificationOpened('${mesaj.data['type'] ?? 'unknown'}');
+  onSelectTab(tabForNotification(mesaj.data));
 }
 
 /// Bildirim altyapısını oturuma bağlar.

@@ -876,4 +876,13 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get insightDisclaimer =>
       'Rytho gerçek gökyüzü hesabına dayanır ama yorum bir öngörü yöntemi değildir. Okumalar içgörü içindir; tıbbi, hukuki veya finansal tavsiye yerine geçmez. 13 yaş ve üzeri içindir.';
+
+  @override
+  String get shareReading => 'Paylaş';
+
+  @override
+  String get shareCardTagline => 'gerçek gökyüzü hesabıyla';
+
+  @override
+  String get shareFailed => 'Paylaşım kartı oluşturulamadı.';
 }

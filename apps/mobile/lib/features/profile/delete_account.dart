@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
@@ -50,6 +51,8 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
     final dio = ref.read(apiProvider);
     try {
       await dio.delete('/api/v1/account/me');
+      // Kayip analizinde en anlamli sinyal; oturum kapanmadan once gonderilir.
+      Analytics.accountDeleted();
 
       // Sunucu kimliği de sildi; yerel oturumu temizle. Sıra önemli:
       // Firebase oturumu açık kalırsa uygulama silinmiş bir hesapla

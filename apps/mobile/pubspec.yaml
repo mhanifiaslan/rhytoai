@@ -50,6 +50,8 @@ dependencies:
   # gorunur; on planda `onMessage`'a teslim edilir ve gostermek uygulamanin
   # isidir. Ayrica yuksek oncelikli bildirim kanalini bu paket tanimliyor.
   flutter_local_notifications: ^22.2.0
+  share_plus: ^13.3.0
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:

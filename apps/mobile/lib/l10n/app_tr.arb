@@ -389,5 +389,8 @@
   "deleteAccountFailed": "Hesap silinemedi. Lütfen tekrar dene.",
   "deleteAccountReauth": "Güvenlik için tekrar giriş yapman gerekiyor. Çıkış yapıp yeniden giriş yaptıktan sonra bu işlemi tekrarla.",
   "cancel": "Vazgeç",
-  "insightDisclaimer": "Rytho gerçek gökyüzü hesabına dayanır ama yorum bir öngörü yöntemi değildir. Okumalar içgörü içindir; tıbbi, hukuki veya finansal tavsiye yerine geçmez. 13 yaş ve üzeri içindir."
+  "insightDisclaimer": "Rytho gerçek gökyüzü hesabına dayanır ama yorum bir öngörü yöntemi değildir. Okumalar içgörü içindir; tıbbi, hukuki veya finansal tavsiye yerine geçmez. 13 yaş ve üzeri içindir.",
+  "shareReading": "Paylaş",
+  "shareCardTagline": "gerçek gökyüzü hesabıyla",
+  "shareFailed": "Paylaşım kartı oluşturulamadı."
 }

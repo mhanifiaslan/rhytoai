@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/analytics.dart';
 import '../../core/friends.dart';
 import '../../core/providers.dart';
 import '../../core/safety.dart';
@@ -493,6 +494,7 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
         return;
       }
       await sendFriendRequest(uid);
+      Analytics.friendInviteSent();
       if (!mounted) return;
       navigator.pop();
       messenger.showSnackBar(

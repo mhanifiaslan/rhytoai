@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import '../../core/analytics.dart';
 import '../../core/subscription.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
@@ -33,6 +34,15 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   bool _busy = false;
   String? _error;
 
+  @override
+  void initState() {
+    super.initState();
+    // `reason` yalnızca kilitli bir uçtan 402 dönünce dolu gelir; boşsa
+    // paywall ilk değerden sonra kendiliğinden açılmıştır. İkisini ayırmak,
+    // hangi girişin dönüştüğünü ölçmenin tek yolu.
+    Analytics.paywallShown(widget.reason == null ? 'intro' : 'locked');
+  }
+
   /// Faydalar dile göre üretildiği için const olamaz.
   List<(String, String, String)> _benefits(AppLocalizations l10n) => [
         ('🌙', l10n.benefitDailyTitle, l10n.benefitDailyBody),
@@ -49,8 +59,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       _busy = true;
       _error = null;
     });
+    // Huninin orta adimi: bu olay olmadan "paywall calismiyor" ile "magaza
+    // akisi dusuyor" ayirt edilemez.
+    Analytics.purchaseStarted();
     try {
       final ok = await purchasePackage(ref, package);
+      if (ok) Analytics.purchaseCompleted();
       if (ok && mounted) Navigator.of(context).pop(true);
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
@@ -69,6 +83,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     setState(() => _busy = true);
     try {
       final ok = await restorePurchases(ref);
+      Analytics.purchasesRestored(found: ok);
       if (!mounted) return;
       if (ok) {
         Navigator.of(context).pop(true);

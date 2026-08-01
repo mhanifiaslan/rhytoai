@@ -22,6 +22,7 @@ import '../../core/notifications.dart'
         markNotificationPromptShown,
         notificationPromptShown,
         requestNotificationPermission;
+import '../share/share_card.dart';
 import '../../l10n/app_localizations.dart';
 
 /// GÖKYÜZÜ — ana ekran v3: selamlama, burç çipleri, promo banner,
@@ -61,6 +62,27 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   /// göstermemek ise kilitli karta dokunmayan kullanıcıya Rytho+'ın varlığını
   /// hiç duyurmuyor. Bu yüzden tetikleyici, ücretsiz günlük yorumun ekrana
   /// gelmesidir.
+  /// Günlük yorumu görsel kart olarak paylaşır.
+  ///
+  /// Karta yalnızca burç, tarih, yorumdan bir alıntı ve ay evresi girer —
+  /// ham doğum verisi ASLA. Kullanıcı doğum tarihini paylaştığını fark
+  /// etmeden paylaşmamalı.
+  Future<void> _shareReading(
+      AppLocalizations l10n, int signIndex, Map<String, dynamic> data) async {
+    final moon = data['moon_phase'] as Map<String, dynamic>?;
+    await shareReadingCard(
+      context,
+      signName: signDisplayName(l10n, signIndex),
+      signGlyph: kSignGlyphs[signIndex],
+      reading: data['reading'] ?? '',
+      dateLabel: DateFormat('d MMMM yyyy',
+              Localizations.localeOf(context).toLanguageTag())
+          .format(DateTime.now()),
+      moonEmoji: moon?['emoji'] as String?,
+      moonName: moon?['name'] as String?,
+    );
+  }
+
   /// İlk değer ekrana geldikten sonraki tek seferlik akış.
   ///
   /// Sıra önemli: paywall gösterilecekse bildirim izni BU AÇILIŞTA
@@ -209,10 +231,30 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                       // hemen üstünde AI'ın gerçek gökyüzü verisiyle ürettiği
                       // burç yorumu duruyor, altına hazır bir cümle eklemek
                       // yorumu ucuzlatıyordu.
-                      child: TypewriterText(
-                        text: data['reading'] ?? '',
-                        style: RythoText.body(14.5, height: 1.6),
-                      ),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TypewriterText(
+                              text: data['reading'] ?? '',
+                              style: RythoText.body(14.5, height: 1.6),
+                            ),
+                            const SizedBox(height: 10),
+                            // Dışa paylaşım: kategorinin en güçlü büyüme
+                            // kanalı. Sosyal graf gerektirmez ve paylaşılan
+                            // metni kullanıcı yazmadığı için moderasyon
+                            // yükü yok.
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton.icon(
+                                onPressed: () => _shareReading(
+                                    l10n, selected, data),
+                                icon: const Icon(Icons.ios_share_rounded,
+                                    size: 16),
+                                label: Text(l10n.shareReading,
+                                    style: RythoText.label(11)),
+                              ),
+                            ),
+                          ]),
                     ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
                           begin: 0.06, curve: Curves.easeOutCubic);
                     },
