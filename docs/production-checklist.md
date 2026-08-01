@@ -177,7 +177,11 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [x] Sekme degisince form ve hatalar temizleniyor
 - [x] Eszamanli giris engellendi
 - [x] ios/Runner/Runner.entitlements: applesignin + associated-domains
-- [ ] **Apple Developer hesabi gerekiyor.** Yapilacaklar:
+- [ ] **Apple Developer hesabi — ERTELENDI (2026-08-01 karari).** Uyelik
+      satin alinmadi; iOS yayini kendi turunda yapilacak. Bu Android'i
+      ETKILEMEZ: Apple dugmesi yalnizca iOS'ta gorunuyor, Android derlemesi
+      ve testler bundan bagimsiz calisiyor. Kod ve entitlements hazir,
+      yalnizca konsol ayarlari eksik. Hesap acilinca yapilacaklar:
       1. App ID (`ai.rytho`) uzerinde "Sign in with Apple" yetenegini AC.
       2. Firebase Console > Authentication > Sign-in method > Apple'i etkinlestir;
          Service ID, Team ID ve Key (.p8) gir.
