@@ -64,6 +64,15 @@ _SIGN_CODE_TO_KEY = {
 }
 
 
+def sign_key_from_code(code: str | None) -> str | None:
+    """kerykeion burç kodunun (``Leo``) dilden bağımsız anahtarı (``leo``).
+
+    Element/nitelik gibi türetilmiş sayımlar burç ADINDAN değil anahtarından
+    yapılmalı; aksi halde hesap dile bağımlı hale gelir.
+    """
+    return _SIGN_CODE_TO_KEY.get(code) if code else None
+
+
 def sign_name_from_code(lang: str | None, code: str | None) -> str:
     """kerykeion burç kodunun (``Leo``, ``Ari``) o dildeki adı."""
     if not code:

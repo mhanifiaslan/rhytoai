@@ -191,8 +191,13 @@ WHISPER_MEMORY = (
     "conflicts with what they just said, the LATEST thing they said wins):"
 )
 WHISPER_CHART = (
-    "THE READER'S CHART (calculated data — stay faithful to it, never invent a "
-    "placement. No need to recite it; use it as your basis):"
+    "THE READER'S CHART (calculated with Swiss Ephemeris — stay faithful to "
+    "it; never invent a placement, aspect or transit that is not written "
+    "here. Do not recite the list or hand it over as a block. Your reading "
+    "must be specific to THIS chart, not a description of their sun sign: "
+    "anchor it to a house placement, an aspect, or a transit happening today. "
+    "If what you are saying would fit anyone of that sign, it is not specific "
+    "enough):"
 )
 WHISPER_SKY = "TODAY'S ACTUAL SKY (calculated with Swiss Ephemeris):"
 USER_MESSAGE_LABEL = "THE READER'S MESSAGE"
@@ -211,6 +216,30 @@ HOUSE_LABEL = "House"
 RETROGRADE_LABEL = "Rx"
 WU_XING_LABEL = "Wu Xing element"
 TEMPERAMENT_LABEL = "Temperament (four humours)"
+
+# --- Chart depth (attached to chat) ---
+#
+# For a long time chat only saw Sun/Moon/Ascendant, which was the main reason
+# answers stayed generic. House placements, element/modality balance, natal
+# aspects and today's transits are named here.
+
+ELEMENT_NAMES = {
+    "fire": "Fire", "earth": "Earth", "air": "Air", "water": "Water",
+}
+MODALITY_NAMES = {
+    "cardinal": "Cardinal", "fixed": "Fixed", "mutable": "Mutable",
+}
+HOUSE_FMT = "house {house}"
+CHART_ELEMENT_LABEL = "Element balance"
+CHART_MODALITY_LABEL = "Modality balance"
+CHART_STELLIUM_LABEL = "Stellium"
+CHART_STELLIUM_FMT = "{house} ({count} planets)"
+CHART_NATAL_ASPECTS_LABEL = "Tightest natal aspects"
+CHART_TRANSITS_LABEL = "Transits touching the chart today"
+#: Transit line: "Saturn → Sun opposition (0.8°)". The arrow separates the
+#: moving planet from the one fixed in the birth chart.
+CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
+CHART_ASPECT_FMT = "{p1} {aspect} {p2} ({orb}°)"
 
 # --- Notifications ---
 #

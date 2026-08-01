@@ -178,8 +178,12 @@ WHISPER_MEMORY = (
     "çelişirse kullanıcının SON söylediği geçerlidir):"
 )
 WHISPER_CHART = (
-    "KULLANICININ HARİTASI (hesaplanmış veri — buna sadık kal, konum uydurma. "
-    "Her mesajda saymana gerek yok; yorum yaparken temel al):"
+    "KULLANICININ HARİTASI (Swiss Ephemeris ile hesaplandı — buna sadık kal, "
+    "burada YAZMAYAN hiçbir konumu, açıyı veya transiti uydurma. Listeyi "
+    "sayma, blok halinde aktarma. Yorumun burcunun genel tarifi değil, BU "
+    "haritaya özgü olsun: dayandığın şey bir ev yerleşimi, bir açı ya da "
+    "bugünkü bir transit olsun. Aynı şeyi her burçtan biri için "
+    "söyleyebiliyorsan yeterince spesifik değilsin):"
 )
 WHISPER_SKY = "BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris ile hesaplandı):"
 USER_MESSAGE_LABEL = "KULLANICININ MESAJI"
@@ -198,6 +202,31 @@ HOUSE_LABEL = "Ev"
 RETROGRADE_LABEL = "Retro"
 WU_XING_LABEL = "Wu Xing elementi"
 TEMPERAMENT_LABEL = "Mizaç (Ahlat-ı Erbaa)"
+
+# --- Harita derinliği (sohbete iliştirilen) ---
+#
+# Sohbet uzun süre yalnızca Güneş/Ay/Yükselen görüyordu; cevapların jenerik
+# kalmasının başlıca sebebi buydu. Ev yerleşimleri, element/nitelik dengesi,
+# doğum açıları ve bugünkü transitler burada adlandırılır.
+
+ELEMENT_NAMES = {
+    "fire": "Ateş", "earth": "Toprak", "air": "Hava", "water": "Su",
+}
+MODALITY_NAMES = {
+    "cardinal": "Öncü", "fixed": "Sabit", "mutable": "Değişken",
+}
+#: Ev numarasının o dildeki yazımı. Türkçede sıra sayısı noktayla yazılır.
+HOUSE_FMT = "{house}. ev"
+CHART_ELEMENT_LABEL = "Element dengesi"
+CHART_MODALITY_LABEL = "Nitelik dengesi"
+CHART_STELLIUM_LABEL = "Yığılma"
+CHART_STELLIUM_FMT = "{house} ({count} gezegen)"
+CHART_NATAL_ASPECTS_LABEL = "Doğum haritasının en sıkı açıları"
+CHART_TRANSITS_LABEL = "Bugün haritasına dokunan transitler"
+#: Transit satırı: "Satürn → Güneş Karşıt (0.8°)". Ok yönü hangi gezegenin
+#: gezindiğini, hangisinin doğum haritasında sabit durduğunu ayırır.
+CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
+CHART_ASPECT_FMT = "{p1} {aspect} {p2} ({orb}°)"
 
 # --- Bildirimler ---
 #

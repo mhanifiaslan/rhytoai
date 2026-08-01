@@ -9,6 +9,7 @@ from core.entitlements import FREE_CHAT_PER_DAY, enforce_daily_quota
 from core.i18n import get_language
 from core.messages import text
 from services import (
+    chart_context,
     gemini_service,
     memory_extractor,
     memory_service,
@@ -104,10 +105,13 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # yapılır — kullanıcı hakkında bilinenler her mesajda geçerlidir.
         memory = memory_service.memory_context(user.uid)
 
-        # Kullanıcının haritası: sohbet bunu daha önce hiç görmüyordu, yani
-        # Rytho kullanıcı kendi burcunu söylemedikçe habersiz konuşuyordu.
-        chart = profile_service.chart_summary(
-            profile_service.get_profile(user.uid), lang=lang)
+        # Kullanıcının haritası. Uzun süre yalnızca Güneş/Ay/Yükselen
+        # geçiyordu; artık ev yerleşimleri, element dengesi, doğum açıları ve
+        # bugün haritaya dokunan transitler de geliyor — cevabın "herkese
+        # uyan" olmaktan çıkması bu ayrıntılara bağlı. Efemeris hesabı
+        # önbellekli, LLM maliyeti yok.
+        chart = chart_context.chart_whisper(
+            user.uid, profile_service.get_profile(user.uid), lang=lang)
 
         # Bugünün gökyüzü paylaşımlı önbellekten gelir (kullanıcı başına
         # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.

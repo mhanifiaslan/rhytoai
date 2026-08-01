@@ -35,6 +35,7 @@ TABLOLAR = [
     "SIGN_NAMES", "PERIOD_NAMES", "PERIOD_LENGTHS", "MOON_PHASES",
     "PLANET_NAMES", "ASPECT_NAMES", "BAZI_ELEMENTS", "BAZI_ANIMALS",
     "TEN_GOD_MEANINGS", "POLARITY_NAMES", "GENDER_NAMES",
+    "ELEMENT_NAMES", "MODALITY_NAMES",
 ]
 
 
@@ -183,6 +184,8 @@ def test_ceviriler_gercekten_farkli():
         "BAZI_ANIMALS": set(),
         "TEN_GOD_MEANINGS": set(),
         "GENDER_NAMES": set(),
+        "ELEMENT_NAMES": set(),
+        "MODALITY_NAMES": set(),
     }
     tr, en = prompts.get("tr"), prompts.get("en")
     for tablo, muaf in ayni_kalabilir.items():
@@ -286,6 +289,42 @@ def test_ingilizce_burc_ve_gunluk_promptu_turkce_icermez(monkeypatch,
     report_service.daily_reading("u-daily-en", natal, sky, lang="en")
     assert not turkce_kalinti(kutu["prompt"])
     assert not turkce_kelime_kalintisi(kutu["prompt"]),         f"Ingilizce gunluk prompt'unda Turkce ad: "         f"{turkce_kelime_kalintisi(kutu['prompt'])}"
+
+
+def test_ingilizce_harita_fisiltisi_turkce_icermez(temiz_onbellek):
+    """Sohbete iliştirilen harita blogu en riskli yuzey: HER mesajda gider.
+
+    Blok gezegen, burc, ev, aci, element ve nitelik adlarinin hepsini bir
+    arada tasiyor; bunlardan biri anahtar yerine Turkce ad tutarsa Ingilizce
+    konusan kullanici her turda Turkce bir kelime gorur.
+    """
+    from services import chart_context
+
+    birth = dict(name="Test", year=1990, month=5, day=12, hour=14, minute=30,
+                 city="Istanbul", nation="TR")
+    facts = {**chart_context.natal_facts(birth),
+             "transits": chart_context.transit_facts(birth)["hits"]}
+
+    blok = chart_context.render(facts, lang="en")
+    assert blok, "Ingilizce harita blogu bos dondu"
+    assert not turkce_kalinti(blok), \
+        f"Ingilizce harita blogunda Turkce harf: {turkce_kalinti(blok)}"
+    assert not turkce_kelime_kalintisi(blok), \
+        f"Ingilizce harita blogunda Turkce ad: {turkce_kelime_kalintisi(blok)}"
+
+    # Karsi kontrol: Turkce tarafta gercekten Turkce uretiliyor mu?
+    assert turkce_kalinti(chart_context.render(facts, lang="tr"))
+
+
+def test_harita_olgulari_dilden_bagimsiz(temiz_onbellek):
+    """Olgu sozlugu hicbir gosterilecek ad tasimaz, yalnizca anahtar."""
+    from services import chart_context
+
+    birth = dict(name="Test", year=1990, month=5, day=12, hour=14, minute=30,
+                 city="Istanbul", nation="TR")
+    facts = chart_context.natal_facts(birth)
+    sizinti = turkce_izi(facts, "chart")
+    assert not sizinti, f"Harita olgularinda Turkce ad: {sizinti}"
 
 
 def test_turkce_promptlar_turkce_kalir(monkeypatch, temiz_onbellek):
