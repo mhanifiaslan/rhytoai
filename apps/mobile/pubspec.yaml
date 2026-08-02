@@ -68,6 +68,10 @@ dependencies:
   app_links: ^7.2.1
   sign_in_with_apple: ^8.1.0
   crypto: ^3.0.7
+  # Sac cizgisi olcumu icin CIHAZ USTU segmentasyon (bkz.
+  # features/face/face_segmentation.dart). Model dosyasi assets altinda ve
+  # Apache 2.0; goruntu telefondan cikmiyor.
+  tflite_flutter: ^0.12.0
 
 dev_dependencies:
   flutter_test:
@@ -81,3 +85,7 @@ flutter:
 
   assets:
     - assets/sounds/
+    # MediaPipe Selfie Multiclass — 6 sinif (arka plan, sac, govde-teni,
+    # yuz-teni, giysi, aksesuar). Sac cizgisini bundan cikariyoruz.
+    # Lisans: Apache 2.0 (model karti, Google, 10 Mayis 2023).
+    - assets/models/selfie_multiclass_256x256.tflite

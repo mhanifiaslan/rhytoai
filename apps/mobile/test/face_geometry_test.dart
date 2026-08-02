@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -152,12 +153,17 @@ void main() {
 
   group('çerçeveleme kalitesi', () {
     const kadraj = Size(1080, 1920);
-    Rect kutu(double oran, {Offset kaydir = Offset.zero}) {
-      final h = kadraj.height * oran;
-      final w = h * 0.75;
+    final hedef = guideOvalInImage(previewSize: kadraj);
+
+    // Yuz kutusu KILAVUZ OVALINE gore olculur, kadraja gore degil. Onceki
+    // surumde kadraja gore olculuyordu ve ovali gozle dolduran bir yuz
+    // esigin altinda kaliyordu: kullanici kilavuzun dedigini yapiyor,
+    // uygulama "biraz yaklas" deyip deklansoru hic acmiyordu.
+    Rect kutu(double doluluk, {Offset kaydir = Offset.zero}) {
+      final h = hedef.height * doluluk;
       return Rect.fromCenter(
-        center: Offset(kadraj.width / 2, kadraj.height / 2) + kaydir,
-        width: w,
+        center: hedef.center + kaydir,
+        width: h * 0.75,
         height: h,
       );
     }
@@ -168,19 +174,19 @@ void main() {
     });
 
     test('çok küçük yüz tooFar', () {
-      expect(assessFrame(faceBox: kutu(0.15), previewSize: kadraj),
+      expect(assessFrame(faceBox: kutu(0.30), previewSize: kadraj),
           FrameQuality.tooFar);
     });
 
     test('çok büyük yüz tooClose', () {
-      expect(assessFrame(faceBox: kutu(0.92), previewSize: kadraj),
+      expect(assessFrame(faceBox: kutu(1.6), previewSize: kadraj),
           FrameQuality.tooClose);
     });
 
     test('merkezden kayık yüz offCentre', () {
       expect(
           assessFrame(
-              faceBox: kutu(0.5, kaydir: const Offset(340, 0)),
+              faceBox: kutu(0.9, kaydir: Offset(hedef.height * 0.4, 0)),
               previewSize: kadraj),
           FrameQuality.offCentre);
     });
@@ -188,13 +194,13 @@ void main() {
     test('eğik baş tilted', () {
       expect(
           assessFrame(
-              faceBox: kutu(0.5), previewSize: kadraj, headAngleZ: 25),
+              faceBox: kutu(0.9), previewSize: kadraj, headAngleZ: 25),
           FrameQuality.tilted);
     });
 
     test('iyi çerçevelenmiş yüz ready', () {
       expect(
-          assessFrame(faceBox: kutu(0.5), previewSize: kadraj, headAngleZ: 3),
+          assessFrame(faceBox: kutu(0.9), previewSize: kadraj, headAngleZ: 3),
           FrameQuality.ready);
     });
 
@@ -203,13 +209,87 @@ void main() {
       // Ayni anda iki sey soylemek okunmuyor.
       expect(
           assessFrame(
-              faceBox: kutu(0.12, kaydir: const Offset(400, 0)),
+              faceBox: kutu(0.20, kaydir: Offset(hedef.height * 0.5, 0)),
               previewSize: kadraj),
           FrameQuality.tooFar);
     });
 
+    test('ML Kit kutusu ovalden DAR olsa da kabul edilir', () {
+      // ASIL KALIBRASYON HATASI. ML Kit'in kutusu gorunen kafadan dar: sac
+      // ve cene alti disarida kaliyor. Ovali gozle dolduran bir yuzun kutusu
+      // ovalin ~%70-85'i cikiyor. Eski esik (kadrajin %30'u) bunu "cok uzak"
+      // sayiyordu.
+      for (final doluluk in [0.62, 0.70, 0.80, 0.95, 1.05]) {
+        expect(assessFrame(faceBox: kutu(doluluk), previewSize: kadraj),
+            FrameQuality.ready,
+            reason: 'doluluk $doluluk reddedildi');
+      }
+    });
+
+    test('histerezis: kilitliyken sınır genişler', () {
+      // Titremenin sebebi tek esikti: olcum sinirin iki yaninda salinip
+      // kilavuzu yesil-sari arasinda cirpitiyordu.
+      final sinirda = kutu(kMinGuideFill - 0.04);
+
+      expect(assessFrame(faceBox: sinirda, previewSize: kadraj),
+          FrameQuality.tooFar,
+          reason: 'kilitli DEGILKEN dar esik gecerli');
+      expect(
+          assessFrame(
+              faceBox: sinirda, previewSize: kadraj, wasReady: true),
+          FrameQuality.ready,
+          reason: 'kilitliyken ayni kare kabul edilmeli');
+    });
+
+    test('kılavuz ovali görüntü uzayına doğru taşınır', () {
+      // Oval EKRAN uzayinda ciziliyor, yuz kutusu GORUNTU uzayinda geliyor;
+      // onizleme `BoxFit.cover` ile kirpiliyor. Donusum atlanirsa hedefin
+      // boyutu yanlis cikar.
+      const goruntu = Size(480, 640);
+      const ekran = Size(1080, 2340);
+      final imgOval =
+          guideOvalInImage(previewSize: goruntu, screenSize: ekran);
+
+      final olcek = math.max(ekran.width / goruntu.width,
+          ekran.height / goruntu.height);
+      expect(imgOval.width * olcek,
+          closeTo(ekran.width * kGuideWidthFraction, 0.5));
+      // Yatayda kirpildigi icin oval dikeyde kadrajin yarisindan az kaplar.
+      expect(imgOval.height / goruntu.height, lessThan(0.5));
+      expect(imgOval.height / goruntu.height, greaterThan(0.35));
+    });
+
+    test('ters çevrilmiş önizleme boyutu yüzü merkezden kaçık gösterir', () {
+      // ASIL HATA BUYDU. ML Kit koordinatlari DONDURULMUS uzayda donuyor
+      // (dik, 480x640); ham kare boyutu ise yatay geliyor (640x480). Ham
+      // boyut verilince genislik ve yukseklik yer degistiriyor ve kadrajin
+      // tam ortasindaki yuz "merkezden kacik" cikiyor — deklansor hic
+      // acilmiyordu.
+      const dik = Size(480, 640);
+      const yatay = Size(640, 480); // ham kare: YANLIS olan bu
+      final dikOval = guideOvalInImage(previewSize: dik);
+      final yatayOval = guideOvalInImage(previewSize: yatay);
+
+      // Once dogrudan: iki uzayda hedef AYNI OLAMAZ.
+      expect(dikOval.center, isNot(yatayOval.center));
+      expect(dikOval.height, isNot(closeTo(yatayOval.height, 1)));
+
+      // Sonra sonucu uzerinden: dik uzayda kabul edilen bir yuz, ters boyutla
+      // reddedilmeli.
+      final yuz = Rect.fromCenter(
+        center: dikOval.center,
+        width: dikOval.height * 0.62 * 0.75,
+        height: dikOval.height * 0.62,
+      );
+
+      expect(assessFrame(faceBox: yuz, previewSize: dik), FrameQuality.ready);
+      expect(assessFrame(faceBox: yuz, previewSize: yatay),
+          isNot(FrameQuality.ready),
+          reason: 'ters boyutla ayni yuz kabul edilmemeli — hatanin kendisi');
+    });
+
     test('bozuk önizleme boyutu çökmez', () {
-      expect(assessFrame(faceBox: kutu(0.5), previewSize: Size.zero),
+      expect(assessFrame(faceBox: kutu(0.9), previewSize: Size.zero),
           FrameQuality.noFace);
     });
   });

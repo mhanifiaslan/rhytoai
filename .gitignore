@@ -55,3 +55,12 @@ apps/mobile/android/key.properties
 # knowledge/corpus/ altinda ve o izleniyor; ham dosyayi depoya koymak
 # gereksiz agirlik. Ureten: backend/scripts/ingest_*.py
 knowledge/raw/
+
+# Cihaz üstü segmentasyon modeli (~16 MB).
+#
+# Repoya girmiyor: git geçmişine bir kez giren ikili dosya bir daha çıkmıyor.
+# Apache 2.0 ve Google'ın kalıcı adresinden indiriliyor; kurulum tek komut:
+#   apps/mobile/scripts/fetch_models.ps1
+#
+# Tersini isterseniz bu satırı silip dosyayı commit'lemek yeterli.
+apps/mobile/assets/models/*.tflite

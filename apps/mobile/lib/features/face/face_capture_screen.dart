@@ -1,18 +1,24 @@
 /// Yüz okuma çekim ekranı — kılavuz, tespit ve sinematik tarama.
 ///
 /// Akış: canlı önizleme → çerçeveleme kılavuzu → deklanşör yalnızca kadraj
-/// hazırken etkin → çekim → tespit → tarama animasyonu → oranlar.
+/// hazırken etkin → tarama animasyonu → oranlar.
 ///
-/// **Görüntü bu ekrandan çıkmaz.** Çekilen kare belleğe alınır, ML Kit ile
-/// cihazda işlenir, oranlar çıkarılır ve kare atılır. Diske yazılmaz,
-/// sunucuya gönderilmez.
+/// **Görüntü bu ekrandan çıkmaz — artık diske de değmiyor.** Önceki sürüm
+/// deklanşöre basınca `takePicture()` çağırıyor, geçici bir dosya yazıyor,
+/// onu ML Kit'e verip siliyordu. O dosya artık hiç oluşmuyor: ölçüm canlı
+/// akışın son karesinden yapılıyor. Kare bellekte işleniyor, oranlar
+/// çıkarılıyor ve kare atılıyor.
+///
+/// Yan fayda ilk baştaki asıl amaçtan çıktı: fotoğrafın koordinat uzayı
+/// önizlemeninkinden farklı olduğu için tarama noktaları yüzün üstüne değil
+/// başka bir yere düşüyordu. Tek uzay kullanmak hem doğru hem daha mahrem.
 library;
 
 import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -21,7 +27,9 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import 'face_detection.dart';
 import 'face_geometry.dart';
+import 'face_hairline.dart';
 import 'face_motion.dart';
+import 'face_segmentation.dart';
 import 'face_scan_overlay.dart';
 
 /// Çekim sonucu: durağan oranlar + hareket ölçümü.
@@ -54,7 +62,7 @@ class FaceCaptureScreen extends StatefulWidget {
 enum _Asama { hazirlaniyor, izinYok, onizleme, tarama, hata }
 
 class _FaceCaptureScreenState extends State<FaceCaptureScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   CameraController? _kamera;
   late final FaceDetector _dedektor = createFaceDetector();
 
@@ -81,8 +89,50 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     duration: ScanTiming.total,
   );
 
-  List<Offset> _noktalar = const [];
+  List<List<Offset>> _noktalar = const [];
   Size _goruntuBoyutu = Size.zero;
+
+  /// Kılavuzun çizildiği alanın ölçüsü.
+  ///
+  /// Kalite kontrolü bunu bilmek zorunda: oval ekran uzayında çiziliyor, yüz
+  /// kutusu görüntü uzayında geliyor ve ikisi arasındaki dönüşüm ekran
+  /// oranına bağlı (`BoxFit.cover`). Ölçü `LayoutBuilder`'dan alınıyor —
+  /// `MediaQuery` pencerenin tamamını verir, boyanan alanı değil.
+  Size? _ekranBoyutu;
+
+  /// Kalibrasyon okuması — yalnızca hata ayıklama derlemesinde görünür.
+  String? _olcum;
+
+  /// Üç bölge oranı — okumanın dayandığı asıl sayılar (hata ayıklama).
+  String? _bolgeler;
+
+  /// Akıştan gelen SON geçerli tespit ve ait olduğu görüntünün boyutu.
+  ///
+  /// Çekim anında kullanılan şey bu. Ayrı bir fotoğraf çekmek, koordinatları
+  /// başka bir uzaya taşıyıp noktaların yanlış yere düşmesine yol açıyordu.
+  Face? _sonYuz;
+  Size _sonBoyut = Size.zero;
+
+  /// Segmentasyon modeli — saç/yüz teni ayrımı (bkz. face_segmentation.dart).
+  final FaceSegmenter _segmenter = FaceSegmenter();
+
+  /// Model ölçümünün cihazdaki süresi ve gördüğü sınıflar (hata ayıklama).
+  String? _segOlcum;
+
+  /// Kadraj hazırken yakalanan son ham kare — çekim anında segmentasyon için.
+  CameraImage? _sonKare;
+
+  /// Çekim anında üretilen sınıf maskesi — saç çizgisi buradan çıkıyor.
+  SegmentationMask? _sonMaske;
+
+  /// Saç çizgisi ölçümünün sonucu (hata ayıklama).
+  String? _sacTuru;
+
+  /// Alın örtülü uyarısı gösteriliyor mu.
+  ///
+  /// Kullanıcı kadrajı düzeltince kendiliğinden kalkıyor: uyarının kalıcı
+  /// olması, düzeltildiğini fark etmeyen bir ekran demek olurdu.
+  bool _alinUyarisi = false;
 
   /// Hareket ölçümü önizleme boyunca birikiyor.
   ///
@@ -95,6 +145,33 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // Yorumlayıcı yüklemesi pahalı; kamera açılırken bir kez yapılıyor.
+    _segmenter.load();
+    _baslat();
+  }
+
+  /// Kullanıcı izin diyaloğundan dönünce **kendiliğinden** yeniden dener.
+  ///
+  /// Android'de izin diyaloğu açılırken ilk `initialize()` çağrısı
+  /// başarısız oluyor. İlk sürümde o hata kalıcı duruma yazılıyordu ve
+  /// kullanıcı izni VERDİĞİ hâlde ekranda "kamera izni verilmedi" yazısı
+  /// kalıyordu — üstelik oradan çıkış da yoktu. Diyalog kapanınca uygulama
+  /// `resumed` durumuna dönüyor; tekrar denemek için doğru an bu.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _asama == _Asama.izinYok) {
+      _yenidenDene();
+    }
+  }
+
+  void _yenidenDene() {
+    setState(() {
+      _asama = _Asama.hazirlaniyor;
+      _kilit = 0;
+      _noktalar = const [];
+    });
+    _hareket.reset();
     _baslat();
   }
 
@@ -152,11 +229,43 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
       if (!mounted) return;
 
       final yuz = yuzler.isEmpty ? null : yuzler.first;
+      // Boyut ML Kit'in koordinat DÖNDÜRDÜĞÜ uzayda olmalı; ham kare boyutu
+      // yatay geliyor ve karşılaştırmada genişlik/yükseklik yer değiştiriyor.
+      final goruntuBoyutu = rotatedImageSize(
+        image: kare,
+        camera: kamera.description,
+        deviceOrientationDegrees: 0,
+      );
+
+      // Çekim anında kullanılacak kare. Ayrı bir fotoğraf çekmek yerine
+      // AKIŞIN kendisini saklıyoruz: koordinatlar zaten doğru uzayda.
+      _sonYuz = yuz;
+      _sonBoyut = goruntuBoyutu;
+
+      // Ekran ölçüsü de veriliyor: kılavuz ovali ekran uzayında çiziliyor,
+      // yüz kutusu görüntü uzayında geliyor ve önizleme `BoxFit.cover` ile
+      // kırpılıyor. Ekran ölçüsü olmadan hedefin gerçek boyutu bilinemez.
       final kalite = assessFrame(
         faceBox: yuz?.boundingBox,
-        previewSize: Size(kare.width.toDouble(), kare.height.toDouble()),
+        previewSize: goruntuBoyutu,
+        screenSize: _ekranBoyutu,
         headAngleZ: yuz?.headEulerAngleZ ?? 0,
+        wasReady: _kalite == FrameQuality.ready,
       );
+
+      // Kadraj hazırken son kareyi tut: çekim anında segmentasyon buna
+      // uygulanacak. `kalite` yukarıda hesaplandığı için atama BURADA.
+      if (kalite == FrameQuality.ready) _sonKare = kare;
+
+      // Segmentasyon BURADA ÇALIŞMIYOR — bilinçli.
+      //
+      // Önce önizlemede her karede ölçülüyordu ve ölçülen süre 594 ms'ydi;
+      // arayüz o süre boyunca donuyordu. Oysa saç çizgisine yalnızca ÇEKİM
+      // anında ihtiyaç var ve orada zaten 3,3 saniyelik tarama animasyonu
+      // dönüyor — çıkarım onun içinde görünmüyor.
+      //
+      // Ölçümü akışa yaymak, ihtiyaç olmayan bir işi saniyede onlarca kez
+      // yapmaktı.
 
       // Hareket ölçümü: yalnızca yüz çerçevedeyken anlamlı. Yüz yokken
       // ölçmek, tespit gürültüsünü ifade sanmak olurdu.
@@ -172,15 +281,54 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
         }
       }
 
-      // Kilit birikimi: hazır kaldıkça dolar, bozulunca hızla boşalır.
+      if (kDebugMode) {
+        // Kalibrasyon okuması — yalnızca hata ayıklama derlemesinde.
+        // Eşikler ilk sürümde tahminle konmuştu ve tutmadı; bir daha tahmin
+        // etmemek için ölçülen değer cihazda görünür olmalı.
+        //
+        // Üç bölge (San Ting) de burada: okumanın DAYANDIĞI sayılar bunlar.
+        // Kullanıcı "alnım dar değil" dediğinde tartışılacak şey yorum değil,
+        // bu üç sayı.
+        final lm = yuz == null ? null : _olcumlu(yuz);
+        _bolgeler = lm == null
+            ? null
+            : () {
+                final r = computeRatios(lm);
+                if (!r.foreheadMeasured) return 'saç çizgisi ÖLÇÜLEMEDİ';
+                return 'üst ${r.upperThird.toStringAsFixed(2)}  '
+                    'orta ${r.middleThird.toStringAsFixed(2)}  '
+                    'alt ${r.lowerThird.toStringAsFixed(2)}';
+              }();
+        final hedef = guideOvalInImage(
+          previewSize: rotatedImageSize(
+            image: kare,
+            camera: kamera.description,
+            deviceOrientationDegrees: 0,
+          ),
+          screenSize: _ekranBoyutu,
+        );
+        _olcum = (yuz == null || hedef.height < 1)
+            ? null
+            : 'doluluk ${(yuz.boundingBox.height / hedef.height).toStringAsFixed(2)}'
+                ' · sapma ${((yuz.boundingBox.center - hedef.center).distance / hedef.height).toStringAsFixed(2)}';
+      }
+
+      // Kilit birikimi: hazır kaldıkça dolar, bozulunca boşalır.
+      //
+      // Çürüme eskiden -0.35'ti; kazanç +0.14 olduğu için TEK kötü kare iki
+      // buçuk iyi kareyi siliyordu. Tespit gürültüsü kural, istisna değil:
+      // halka doluyor, bir karede sıfırlanıyor ve kullanıcı "yeşilde sabit
+      // tutamıyorum" diyordu. Artık kayıp kazançtan yavaş.
       final yeniKilit = kalite == FrameQuality.ready
           ? (_kilit + 0.14).clamp(0.0, 1.0)
-          : (_kilit - 0.35).clamp(0.0, 1.0);
+          : (_kilit - 0.10).clamp(0.0, 1.0);
 
       if (kalite != _kalite || (yeniKilit - _kilit).abs() > 0.01) {
         setState(() {
           _kalite = kalite;
           _kilit = yeniKilit;
+          // Kullanıcı yeniden kadraja girdiğinde uyarı kalkar.
+          if (kalite != FrameQuality.ready) _alinUyarisi = false;
         });
       }
     } catch (_) {
@@ -190,44 +338,187 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     }
   }
 
+  /// Çekim anında bir kez segmentasyon çalıştırır.
+  ///
+  /// Süre `RYTHO-SEG` etiketiyle loglanıyor: ölçümü kullanıcıdan istemek
+  /// yerine doğrudan cihazdan almak, hem hızlı hem yanılmasız.
+  Future<void> _segmentle() async {
+    final kare = _sonKare;
+    final kamera = _kamera;
+    if (kare == null || kamera == null || !_segmenter.ready) return;
+
+    final bas = DateTime.now();
+    final maske = await _segmenter.run(
+      image: kare,
+      camera: kamera.description,
+      deviceOrientationDegrees: 0,
+    );
+    final gecen = DateTime.now().difference(bas).inMilliseconds;
+    _sonMaske = maske;
+
+    assert(() {
+      if (maske == null) {
+        debugPrint('RYTHO-SEG basarisiz ${gecen}ms — ${_segmenter.lastError}');
+      } else {
+        var sac = 0;
+        var ten = 0;
+        var arka = 0;
+        for (final c in maske.classes) {
+          if (c == SegClass.hair) sac++;
+          if (c == SegClass.faceSkin) ten++;
+          if (c == SegClass.background) arka++;
+        }
+        final n = maske.classes.length;
+        debugPrint('RYTHO-SEG ${gecen}ms sac=${(100 * sac / n).round()}% '
+            'ten=${(100 * ten / n).round()}% arka=${(100 * arka / n).round()}%');
+      }
+      _segOlcum = maske == null
+          ? 'seg başarısız: ${_segmenter.lastError}'
+          : 'seg ${gecen}ms';
+      if (_sacTuru != null) {
+        debugPrint('RYTHO-SEG $_sacTuru');
+      }
+      return true;
+    }());
+  }
+
+  /// Landmark'lara **ölçülen** saç çizgisini iliştirir.
+  ///
+  /// Ölçüm başarısızsa `hairlineY` boş kalıyor ve `computeRatios` yüksekliğe
+  /// bağlı hiçbir oranı üretmiyor. Bu bilinçli: ML Kit'in yüz konturu tepesini
+  /// saç çizgisi saymak, gerçek bir yüzde üst bölgeyi 0,17 gösteriyordu
+  /// (klasik ~0,33) ve payda da oradan hesaplandığı için orta/alt bölgeyi de
+  /// şişiriyordu. Tek yanlış nokta üç yanlış iddia üretiyordu.
+  FaceLandmarks? _olcumlu(Face yuz) {
+    final temel = landmarksFromFace(yuz);
+    if (temel == null) return null;
+
+    final maske = _sonMaske;
+    if (maske == null) return temel;
+
+    final sac = hairlineFromMask(
+      mask: maske,
+      imageSize: _sonBoyut,
+      browY: temel.browMid.dy,
+      chinY: temel.chin.dy,
+      axisX: temel.noseBase.dx,
+      faceWidth: (temel.cheekRight.dx - temel.cheekLeft.dx).abs(),
+    );
+    assert(() {
+      _sacTuru = sac == null
+          ? 'saç çizgisi: ÖLÇÜLEMEDİ (alın örtülü?)'
+          : 'saç çizgisi: ${sac.kind.name} '
+              '(güven ${sac.confidence.toStringAsFixed(2)})';
+      return true;
+    }());
+    if (sac == null) return temel;
+
+    return FaceLandmarks(
+      faceOval: temel.faceOval,
+      foreheadTop: temel.foreheadTop,
+      browMid: temel.browMid,
+      noseBase: temel.noseBase,
+      chin: temel.chin,
+      cheekLeft: temel.cheekLeft,
+      cheekRight: temel.cheekRight,
+      jawLeft: temel.jawLeft,
+      jawRight: temel.jawRight,
+      mouthLeft: temel.mouthLeft,
+      mouthRight: temel.mouthRight,
+      upperLip: temel.upperLip,
+      lowerLip: temel.lowerLip,
+      eyeLeft: temel.eyeLeft,
+      eyeRight: temel.eyeRight,
+      headAngleZ: temel.headAngleZ,
+      headAngleY: temel.headAngleY,
+      hairlineY: sac.y,
+      hairlineFromCrown: sac.kind == HairlineKind.crown,
+    );
+  }
+
+  /// Maske alnın örtülü olduğunu mu söylüyor?
+  ///
+  /// Ayrım önemli: maske YOKSA (model yüklenmedi, çıkarım düştü) bu bir
+  /// örtülme değil, ölçüm yapılamaması. O durumda akış devam ediyor ve üç
+  /// bölge oranı gönderilmiyor. Yalnızca maske VARKEN saç çizgisi
+  /// bulunamıyorsa alın örtülü sayılıyor.
+  bool _alinOrtulu() {
+    final maske = _sonMaske;
+    final yuz = _sonYuz;
+    if (maske == null || yuz == null) return false;
+    final temel = landmarksFromFace(yuz);
+    if (temel == null) return false;
+
+    return hairlineFromMask(
+          mask: maske,
+          imageSize: _sonBoyut,
+          browY: temel.browMid.dy,
+          chinY: temel.chin.dy,
+          axisX: temel.noseBase.dx,
+          faceWidth: (temel.cheekRight.dx - temel.cheekLeft.dx).abs(),
+        ) ==
+        null;
+  }
+
+  /// Çekim — ama **fotoğraf çekmeden**.
+  ///
+  /// Önceki sürüm `takePicture()` ile geçici bir dosya yazıyor, onu ML Kit'e
+  /// veriyor ve siliyordu. İki sorunu vardı:
+  ///
+  /// 1. **Noktalar yanlış yere düşüyordu.** Ölçekleme için gereken görüntü
+  ///    boyutu UYDURULUYORDU (`yüz kutusu × 3`). Gerçek fotoğraf ölçüsüyle
+  ///    ilgisi yoktu, dolayısıyla noktalar yüzün üstünde değil rastgele bir
+  ///    yerde beliriyordu.
+  /// 2. Fotoğraf, kısa bir an için de olsa **diske yazılıyordu.**
+  ///
+  /// Artık canlı akışın son karesi kullanılıyor: koordinatlar zaten
+  /// kadrajlama kontrolüyle aynı uzayda (`rotatedImageSize`) ve önizleme de
+  /// aynı `BoxFit.cover` dönüşümüyle çiziliyor — yani noktalar yüzün üstüne
+  /// oturuyor. Yan faydası: görüntü artık diske hiç değmiyor.
   Future<void> _cek() async {
     final kamera = _kamera;
-    if (kamera == null || _kilit < 1.0) return;
+    final yuz = _sonYuz;
+    if (kamera == null || yuz == null || _kilit < 1.0) return;
 
     HapticFeedback.mediumImpact();
-    setState(() => _asama = _Asama.tarama);
 
     try {
-      await kamera.stopImageStream();
-      final dosya = await kamera.takePicture();
-
-      final girdi = InputImage.fromFilePath(dosya.path);
-      final yuzler = await _dedektor.processImage(girdi);
-
-      // Kare artık gerekli değil: DISKTEN SIL. camera paketi geçici dosyaya
-      // yazıyor; bırakılsa cihazda kalıcı bir yüz fotoğrafı birikirdi.
-      unawaited(File(dosya.path).delete().catchError((_) => File(dosya.path)));
-
+      // Segmentasyon TAM BURADA: tarama animasyonu başlamadan hemen önce,
+      // saniyede bir değil ömürde bir kez.
+      await _segmentle();
       if (!mounted) return;
-      if (yuzler.isEmpty) {
-        setState(() => _asama = _Asama.hata);
+
+      // Alın örtülüyse tarama HİÇ BAŞLAMIYOR.
+      //
+      // Bu, sessizce eksik veri göndermenin alternatifi. Kâkül ya da şapka
+      // alnı kapattığında saç çizgisi ölçülemiyor; eskiden bu yalnızca
+      // "alan gönderilmedi" olarak sonuçlanıyor ve kullanıcı hiçbir şey
+      // bilmiyordu. Oysa bu düzeltilebilir bir durum — söylenmesi gerekiyor.
+      if (_alinOrtulu()) {
+        setState(() {
+          _alinUyarisi = true;
+          _kilit = 0;
+        });
         return;
       }
 
-      final yuz = yuzler.first;
-      final lm = landmarksFromFace(yuz);
+      final lm = _olcumlu(yuz);
       if (lm == null) {
         setState(() => _asama = _Asama.hata);
         return;
       }
 
       setState(() {
+        _asama = _Asama.tarama;
         _noktalar = scanNodes(yuz);
-        _goruntuBoyutu = Size(
-          yuz.boundingBox.width * 3,
-          yuz.boundingBox.height * 3,
-        );
+        _goruntuBoyutu = _sonBoyut;
       });
+
+      // Akış durur, önizleme DONAR: noktalar donmuş kareye kilitli kalsın.
+      // Canlı kalsaydı yüz oynadıkça noktalar geride kalır ve tespit yanlış
+      // yapılmış gibi görünürdü.
+      await kamera.stopImageStream();
+      await kamera.pausePreview();
 
       await _tarama.forward(from: 0);
       if (!mounted) return;
@@ -242,10 +533,12 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _nabiz.dispose();
     _tarama.dispose();
     _kamera?.dispose();
     _dedektor.close();
+    _segmenter.dispose();
     super.dispose();
   }
 
@@ -254,7 +547,15 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     final l10n = AppLocalizations.of(context);
     return Scaffold(
       backgroundColor: RythoColors.ink,
-      body: Stack(
+      body: LayoutBuilder(builder: (context, kisit) {
+        _ekranBoyutu = kisit.biggest;
+        return _govde(l10n);
+      }),
+    );
+  }
+
+  Widget _govde(AppLocalizations l10n) {
+    return Stack(
         fit: StackFit.expand,
         children: [
           if (_kamera?.value.isInitialized ?? false)
@@ -263,14 +564,20 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
             const ColoredBox(color: RythoColors.ink),
           if (_asama == _Asama.onizleme) _kilavuz(),
           if (_asama == _Asama.tarama) _taramaKatmani(),
-          _ustBar(l10n),
-          if (_asama == _Asama.onizleme) _altBar(l10n),
-          if (_asama == _Asama.tarama) _taramaMetni(l10n),
+          if (_asama == _Asama.hazirlaniyor)
+            const Center(child: CircularProgressIndicator()),
           if (_asama == _Asama.izinYok || _asama == _Asama.hata)
             _hataKatmani(l10n),
-        ],
-      ),
-    );
+          if (_asama == _Asama.onizleme) _altBar(l10n),
+          if (_asama == _Asama.tarama) _taramaMetni(l10n),
+          // Kapatma düğmesi yığının EN ÜSTÜNDE.
+          //
+          // Önce hata katmanının altındaydı ve o katman tüm ekranı kaplayan
+          // bir ColoredBox olduğu için düğmeyi örtüyordu: izin reddedilince
+          // kullanıcı çıkışı olmayan bir ekranda kalıyordu. Çıkış her zaman
+          // erişilebilir olmalı.
+          _ustBar(l10n),
+        ]);
   }
 
   /// Önizleme `BoxFit.cover` ile ekranı kaplar; katmandaki nokta ölçekleme
@@ -302,9 +609,15 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
         animation: _tarama,
         builder: (_, _) => CustomPaint(
           painter: FaceScanPainter(
-            points: _noktalar,
+            lines: _noktalar,
             progress: _tarama.value,
             imageSize: _goruntuBoyutu,
+            // Ön kamera önizlemesi ayna gibi gösteriliyor; ML Kit
+            // koordinatları ise aynalanmamış geliyor. Bayrak verilmezse
+            // noktalar yüzün YANINA düşüyor — cihaz testinde tam olarak
+            // "noktalar yüzümün solunda" diye görüldü.
+            mirrored: _kamera?.description.lensDirection ==
+                CameraLensDirection.front,
           ),
         ),
       );
@@ -332,8 +645,10 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),
                   child: Text(
-                    _yonerge(l10n, _kalite),
-                    key: ValueKey(_kalite),
+                    _alinUyarisi
+                        ? l10n.faceGuideForehead
+                        : _yonerge(l10n, _kalite),
+                    key: ValueKey(_alinUyarisi ? 'alin' : _kalite),
                     style: const TextStyle(
                       color: RythoColors.parchment,
                       fontSize: 16,
@@ -341,6 +656,25 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
                     ),
                   ),
                 ),
+                if (kDebugMode && _olcum != null) ...[
+                  const SizedBox(height: 6),
+                  Text(_olcum!,
+                      style: const TextStyle(
+                          color: RythoColors.parchmentDim, fontSize: 11)),
+                ],
+                if (kDebugMode && _bolgeler != null) ...[
+                  const SizedBox(height: 2),
+                  Text(_bolgeler!,
+                      style: const TextStyle(
+                          color: RythoColors.parchmentDim, fontSize: 11)),
+                ],
+                if (kDebugMode && _segOlcum != null) ...[
+                  const SizedBox(height: 2),
+                  Text(_segOlcum!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: ScanPalette.node, fontSize: 10)),
+                ],
                 const SizedBox(height: 22),
                 _deklansor(),
               ],
@@ -390,28 +724,70 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     );
   }
 
+  /// Tarama sırasındaki durum satırı.
+  ///
+  /// Önceki sürümde metin yanıp sönüyordu (`sin` ile saydamlık) ve aşama
+  /// değişimi ani oluyordu — ikisi de ucuz duruyordu. Artık aşamalar
+  /// birbirine çapraz geçiyor, altında ince bir ilerleme çizgisi var: hem
+  /// nerede olduğu belli hem de ne kadar kaldığı.
   Widget _taramaMetni(AppLocalizations l10n) => SafeArea(
         child: Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: const EdgeInsets.only(bottom: 56),
+            padding: const EdgeInsets.only(bottom: 52, left: 40, right: 40),
             child: AnimatedBuilder(
               animation: _tarama,
               builder: (_, _) {
                 final t = _tarama.value;
-                final metin = t < 0.42
-                    ? l10n.faceScanning
+                final (metin, sira) = t < 0.42
+                    ? (l10n.faceScanning, 0)
                     : t < 0.85
-                        ? l10n.faceScanNodes
-                        : l10n.faceScanReading;
-                return Text(
-                  metin,
-                  style: TextStyle(
-                    color: RythoColors.parchment
-                        .withValues(alpha: 0.6 + 0.4 * math.sin(t * math.pi)),
-                    fontSize: 15,
-                    letterSpacing: 1.2,
-                  ),
+                        ? (l10n.faceScanNodes, 1)
+                        : (l10n.faceScanReading, 2);
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 320),
+                      transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: SlideTransition(
+                          position: Tween(
+                            begin: const Offset(0, 0.35),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                              parent: anim, curve: Curves.easeOutCubic)),
+                          child: child,
+                        ),
+                      ),
+                      child: Text(
+                        metin,
+                        key: ValueKey(sira),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: RythoColors.parchment,
+                          fontSize: 15,
+                          letterSpacing: 1.6,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: 132,
+                      height: 2,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(1),
+                        child: LinearProgressIndicator(
+                          value: t,
+                          backgroundColor:
+                              RythoColors.parchment.withValues(alpha: 0.14),
+                          valueColor: const AlwaysStoppedAnimation(
+                              ScanPalette.node),
+                        ),
+                      ),
+                    ),
+                  ],
                 );
               },
             ),
@@ -436,21 +812,25 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
                       color: RythoColors.parchment, fontSize: 16),
                 ),
                 const SizedBox(height: 20),
-                if (_asama == _Asama.hata)
-                  FilledButton(
-                    onPressed: () {
-                      setState(() {
-                        _asama = _Asama.hazirlaniyor;
-                        _kilit = 0;
-                        _noktalar = const [];
-                      });
-                      // Yeniden çekimde hareket ölçümü de sıfırlanmalı:
-                      // önceki denemenin kareleri yeni okumaya karışmamalı.
-                      _hareket.reset();
-                      _baslat();
-                    },
-                    child: Text(l10n.faceRetake),
-                  ),
+                // Tekrar denemek HER İKİ hata durumunda da mümkün.
+                //
+                // Önce yalnızca `hata` durumunda vardı; izin reddedildiğinde
+                // ekranda ne düğme ne çıkış kalıyordu. Yeniden çekimde
+                // hareket ölçümü de sıfırlanır — önceki denemenin kareleri
+                // yeni okumaya karışmamalı.
+                FilledButton(
+                  onPressed: _yenidenDene,
+                  child: Text(_asama == _Asama.izinYok
+                      ? l10n.faceOpenSettings
+                      : l10n.faceRetake),
+                ),
+                if (_asama == _Asama.izinYok) ...[
+                  const SizedBox(height: 10),
+                  Text(l10n.faceCameraDeniedHint,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: RythoColors.parchmentDim, fontSize: 13)),
+                ],
               ],
             ),
           ),

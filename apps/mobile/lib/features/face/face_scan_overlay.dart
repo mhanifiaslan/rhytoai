@@ -102,17 +102,10 @@ class FaceGuidePainter extends CustomPainter {
 
   /// Kılavuz ovali — kadrajın ortasında, dikey olarak biraz yukarıda.
   ///
-  /// Yüzün doğal ağırlık merkezi geometrik merkezin biraz üstündedir;
-  /// oval tam ortaya konursa kullanıcı içgüdüsel olarak çenesini kaldırıyor.
-  static Rect guideOval(Size size) {
-    final w = size.width * 0.66;
-    final h = w * 1.32;
-    return Rect.fromCenter(
-      center: Offset(size.width / 2, size.height * 0.44),
-      width: w,
-      height: h,
-    );
-  }
+  /// Geometri `face_geometry.dart`'tan geliyor: çizilen oval ile kalite
+  /// kontrolünün beklediği hedef **aynı işlevden** çıkmalı. Ayrı hesaplar
+  /// kullanınca kılavuz bir yeri gösterip kontrol başka yere bakmıştı.
+  static Rect guideOval(Size size) => guideOvalOnScreen(size);
 
   static Color _renk(FrameQuality q) => switch (q) {
         FrameQuality.ready => ScanPalette.locked,
@@ -182,21 +175,68 @@ class ScanTiming {
   /// Noktaların tek tek oturması.
   static const nodes = Duration(milliseconds: 1300);
 
-  /// Bağ çizgilerinin çekilmesi.
-  static const mesh = Duration(milliseconds: 600);
+  /// Bağ çizgilerinin çekilmesi ve kapanış.
+  static const mesh = Duration(milliseconds: 900);
 
   static Duration get total => beam + nodes + mesh;
 }
 
+/// Yumuşatma eğrileri.
+///
+/// İlk sürümde her şey doğrusaldı ve ucuz duruyordu: gerçek hiçbir şey sabit
+/// hızla başlayıp sabit hızla durmaz. Tarama çizgisi hızlanıp yavaşlıyor,
+/// noktalar yerine otururken hafifçe aşıyor.
+const _kBeamCurve = Curves.easeInOutCubic;
+const _kNodeCurve = Curves.easeOutBack;
+
+/// Tespit noktalarını GÖRÜNTÜ uzayından EKRAN uzayına taşır.
+///
+/// İki dönüşüm var ve ikisi de gerekli:
+///
+/// 1. **`BoxFit.cover`.** Önizleme ekrana kırpılarak oturuyor; noktalar aynı
+///    ölçek ve aynı ortalama ile taşınmazsa yüzün yanında belirirler.
+/// 2. **Aynalama.** Ön kamera önizlemesi ayna gibi gösteriliyor (CameraX
+///    bunu varsayılan yapıyor) ama ML Kit koordinatları aynalanMAMIŞ sensör
+///    uzayında geliyor. Cihaz testinde noktalar "yüzün solunda" çıktı;
+///    sebebi buydu.
+///
+/// Aynalamanın kadrajlama kontrolünü etkilemediğini not etmek gerekiyor:
+/// merkeze uzaklık aynalamada değişmiyor, yalnızca işareti dönüyor. Bu yüzden
+/// kılavuz doğru çalışırken noktalar yanlış yerdeydi — kusur sessizdi.
+List<Offset> mapScanPoints({
+  required List<Offset> points,
+  required Size imageSize,
+  required Size screenSize,
+  required bool mirrored,
+}) {
+  if (imageSize.width < 1 || imageSize.height < 1) return const [];
+  final olcek = math.max(screenSize.width / imageSize.width,
+      screenSize.height / imageSize.height);
+  final dx = (screenSize.width - imageSize.width * olcek) / 2;
+  final dy = (screenSize.height - imageSize.height * olcek) / 2;
+  return [
+    for (final p in points)
+      Offset(
+        mirrored
+            ? screenSize.width - (p.dx * olcek + dx)
+            : p.dx * olcek + dx,
+        p.dy * olcek + dy,
+      ),
+  ];
+}
+
 class FaceScanPainter extends CustomPainter {
   FaceScanPainter({
-    required this.points,
+    required this.lines,
     required this.progress,
     required this.imageSize,
+    required this.mirrored,
   });
 
-  /// Tespit edilen noktalar — GÖRÜNTÜ uzayında.
-  final List<Offset> points;
+  /// Tespit edilen hatlar — GÖRÜNTÜ uzayında, **kontur kontur ayrılmış.**
+  ///
+  /// Düz liste değil: ağ çizgileri yalnızca aynı kontur içinde anlamlı.
+  final List<List<Offset>> lines;
 
   /// 0..1 arası toplam ilerleme.
   final double progress;
@@ -204,11 +244,24 @@ class FaceScanPainter extends CustomPainter {
   /// Noktaların ait olduğu görüntünün boyutu; ekrana ölçeklemek için.
   final Size imageSize;
 
+  /// Önizleme aynalanmış mı (ön kamera).
+  final bool mirrored;
+
   @override
   void paint(Canvas canvas, Size size) {
-    if (points.isEmpty || imageSize.width < 1 || imageSize.height < 1) return;
+    if (lines.isEmpty || imageSize.width < 1 || imageSize.height < 1) return;
 
-    final ekranNoktalari = _olcekle(size);
+    final ekranHatlari = [
+      for (final hat in lines)
+        mapScanPoints(
+          points: hat,
+          imageSize: imageSize,
+          screenSize: size,
+          mirrored: mirrored,
+        ),
+    ];
+    final ekranNoktalari = [for (final h in ekranHatlari) ...h];
+    if (ekranNoktalari.isEmpty) return;
     final t = progress.clamp(0.0, 1.0);
 
     final beamPay = ScanTiming.beam.inMilliseconds / ScanTiming.total.inMilliseconds;
@@ -219,95 +272,157 @@ class FaceScanPainter extends CustomPainter {
     final meshT = ((t - beamPay - nodePay) / (1 - beamPay - nodePay))
         .clamp(0.0, 1.0);
 
-    if (meshT > 0) _mesh(canvas, ekranNoktalari, meshT);
+    // Çizim sırası derinlik kuruyor: en arkada karartma, sonra ağ, sonra
+    // noktalar, en önde ışık. Tersi olsaydı ışık noktaların altında kalır ve
+    // katmanlar yassı görünürdü.
+    _karartma(canvas, size, ekranNoktalari, t);
+    if (meshT > 0) _mesh(canvas, ekranHatlari, meshT);
     if (nodeT > 0) _noktalar(canvas, ekranNoktalari, nodeT);
-    if (beamT > 0 && beamT < 1) _beam(canvas, size, beamT);
+    if (beamT > 0 && beamT < 1) _beam(canvas, size, _kBeamCurve.transform(beamT));
   }
 
-  List<Offset> _olcekle(Size size) {
-    // Kamera görüntüsü ekrana `BoxFit.cover` ile oturuyor; noktalar da aynı
-    // dönüşümden geçmeli, yoksa yüzün üstünde değil yanında belirirler.
-    final olcek = math.max(
-        size.width / imageSize.width, size.height / imageSize.height);
-    final dx = (size.width - imageSize.width * olcek) / 2;
-    final dy = (size.height - imageSize.height * olcek) / 2;
-    return [
-      for (final p in points) Offset(p.dx * olcek + dx, p.dy * olcek + dy),
-    ];
+  /// Yüz dışını hafifçe karartır ve tarama ilerledikçe açar.
+  ///
+  /// Kadrajın "incelendiği" hissi buradan geliyor; ışık bandı tek başına
+  /// ekranın üstünden geçen bir çizgi gibi duruyordu.
+  void _karartma(Canvas canvas, Size size, List<Offset> noktalar, double t) {
+    if (noktalar.isEmpty) return;
+    final merkez = noktalar.fold(Offset.zero, (a, b) => a + b) /
+        noktalar.length.toDouble();
+    var yaricap = 0.0;
+    for (final p in noktalar) {
+      yaricap = math.max(yaricap, (p - merkez).distance);
+    }
+    // Tarama biterken karartma çözülür: dikkat yüze çekilir, sonra bırakılır.
+    final guc = (0.55 * (1 - Curves.easeIn.transform(t.clamp(0.0, 1.0)) * 0.55))
+        .clamp(0.0, 1.0);
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()
+        ..shader = RadialGradient(
+          colors: [
+            Colors.transparent,
+            ScanPalette.vignette.withValues(alpha: guc),
+          ],
+          stops: const [0.55, 1.0],
+        ).createShader(
+            Rect.fromCircle(center: merkez, radius: yaricap * 2.6)),
+    );
   }
 
   /// Tarama çizgisi: yüzü yukarıdan aşağı geçen ışık bandı.
+  ///
+  /// Üç katman: geniş ve sönük bir hâle, ince ve parlak bir çizgi, çizginin
+  /// hemen arkasında kalan bir iz. Tek düz çizgi "çizilmiş" duruyordu; ışığın
+  /// hacmi olduğunu gösteren şey hâle ve iz.
   void _beam(Canvas canvas, Size size, double t) {
     final y = size.height * t;
-    const yukseklik = 130.0;
+    const yukseklik = 160.0;
+    final bant = Rect.fromLTWH(0, y - yukseklik * 0.75, size.width, yukseklik);
 
     canvas.drawRect(
-      Rect.fromLTWH(0, y - yukseklik / 2, size.width, yukseklik),
+      bant,
       Paint()
-        ..shader = const LinearGradient(
+        ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Color(0x00B79CFF),
-            Color(0x66B79CFF),
-            Color(0x00B79CFF),
+            ScanPalette.beam.withValues(alpha: 0.0),
+            ScanPalette.beam.withValues(alpha: 0.30),
+            ScanPalette.beam.withValues(alpha: 0.0),
           ],
-        ).createShader(
-            Rect.fromLTWH(0, y - yukseklik / 2, size.width, yukseklik)),
+          stops: const [0.0, 0.78, 1.0],
+        ).createShader(bant)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
     );
 
+    // Parlak çekirdek — kenarlara doğru sönüyor ki çizgi kadrajı kesmesin.
     canvas.drawLine(
       Offset(0, y),
       Offset(size.width, y),
       Paint()
-        ..strokeWidth = 1.4
-        ..color = ScanPalette.beam.withValues(alpha: 0.9),
+        ..strokeWidth = 1.6
+        ..shader = LinearGradient(
+          colors: [
+            ScanPalette.beam.withValues(alpha: 0.0),
+            ScanPalette.node.withValues(alpha: 0.95),
+            ScanPalette.beam.withValues(alpha: 0.0),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ).createShader(Rect.fromLTWH(0, y - 1, size.width, 2)),
     );
   }
 
   /// Noktalar sırayla oturur; her biri küçük bir halkayla "kenetlenir".
+  ///
+  /// Nokta yerine otururken hafifçe büyüyüp geri çekiliyor ([_kNodeCurve]) ve
+  /// kenetlenme halkası dışarı doğru açılıp sönüyor. Hepsinin aynı anda
+  /// belirmesi ya da sabit boyutta durması, ölçümün gerçekten o an yapıldığı
+  /// hissini vermiyordu.
   void _noktalar(Canvas canvas, List<Offset> noktalar, double t) {
     final gorunen = (noktalar.length * t).ceil();
     final dolgu = Paint()..color = ScanPalette.node;
+    final hale = Paint()
+      ..color = ScanPalette.node.withValues(alpha: 0.5)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
     final halka = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = ScanPalette.beam.withValues(alpha: 0.7);
+      ..strokeWidth = 1.2;
 
     for (var i = 0; i < gorunen && i < noktalar.length; i++) {
       final p = noktalar[i];
       // Son oturan noktanın kenetlenme halkası açık, öncekiler sönmüş.
       final yas = (gorunen - i) / math.max(noktalar.length * 0.18, 1);
       final canli = (1 - yas).clamp(0.0, 1.0);
+      final yerlesme =
+          _kNodeCurve.transform((1 - canli).clamp(0.0, 1.0)).clamp(0.0, 1.4);
 
-      canvas.drawCircle(p, 1.9, dolgu);
+      canvas.drawCircle(p, 2.6 * yerlesme, hale);
+      canvas.drawCircle(p, 1.7 * yerlesme, dolgu);
       if (canli > 0) {
-        canvas.drawCircle(p, 2 + 9 * (1 - canli),
-            halka..color = ScanPalette.beam.withValues(alpha: 0.7 * canli));
+        canvas.drawCircle(
+            p,
+            3 + 11 * (1 - canli),
+            halka..color = ScanPalette.beam.withValues(alpha: 0.65 * canli));
       }
     }
   }
 
-  /// Komşu noktalar arasında bağ çizgileri — "ağ" hissi.
+  /// Kontur hatlarını çizer — "ağ" hissi.
   ///
-  /// Her noktayı herkesle bağlamak çorba görüntüsü veriyor; yalnızca kontur
-  /// üzerindeki ardışık komşular bağlanıyor.
-  void _mesh(Canvas canvas, List<Offset> noktalar, double t) {
-    if (noktalar.length < 2) return;
+  /// Her hat KENDİ içinde bağlanıyor. Önceki sürümde bütün noktalar tek bir
+  /// listeye diziliyor ve aralarındaki bağ, iki nokta arasındaki UZAKLIĞA
+  /// bakılarak koparılıyordu. Bu bir sezgiydi: eşik kimi yüzde tutuyor,
+  /// kimi yüzde kaşın sonundan gözün başına çizgi çekiyordu. Kullanıcı bunu
+  /// "sınırları rastgele olmuş gibi" diye tarif etti ve haklıydı.
+  ///
+  /// Hangi noktanın hangi hatta ait olduğu tespit anında zaten belli
+  /// (bkz. `scanNodes`); tahmin etmeye gerek yok.
+  void _mesh(Canvas canvas, List<List<Offset>> hatlar, double t) {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.9
-      ..color = ScanPalette.beam.withValues(alpha: 0.35 * t);
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round
+      ..color = ScanPalette.beam.withValues(alpha: 0.32 * t);
 
-    final yol = Path()..moveTo(noktalar.first.dx, noktalar.first.dy);
-    final adet = (noktalar.length * t).ceil();
-    for (var i = 1; i < adet && i < noktalar.length; i++) {
-      yol.lineTo(noktalar[i].dx, noktalar[i].dy);
+    final yol = Path();
+    for (final hat in hatlar) {
+      if (hat.length < 2) continue;
+      // Her hat kendi payınca çiziliyor ki hepsi aynı anda tamamlansın;
+      // sırayla çizmek uzun ovali bitirip kalanları son ana sıkıştırıyordu.
+      final adet = math.max(2, (hat.length * t).ceil());
+      yol.moveTo(hat.first.dx, hat.first.dy);
+      for (var i = 1; i < adet && i < hat.length; i++) {
+        yol.lineTo(hat[i].dx, hat[i].dy);
+      }
     }
     canvas.drawPath(yol, paint);
   }
 
   @override
   bool shouldRepaint(FaceScanPainter old) =>
-      old.progress != progress || old.points != points;
+      old.progress != progress ||
+      old.lines != lines ||
+      old.mirrored != mirrored;
 }

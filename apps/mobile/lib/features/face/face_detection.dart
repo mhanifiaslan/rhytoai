@@ -79,6 +79,45 @@ Uint8List _birlestir(List<Plane> planes) {
   return builder.toBytes();
 }
 
+/// ML Kit'in koordinat döndürdüğü uzayın boyutu.
+///
+/// **Ham kare boyutu bunun yerine kullanılamaz.** Kamera sensörü yatay
+/// veriyor (ör. 640x480); ML Kit ise döndürme meta verisini uygulayıp
+/// koordinatları DİK uzayda (480x640) döndürüyor. Ham boyutla
+/// karşılaştırınca genişlik ve yükseklik yer değiştiriyor: yüz kadrajın
+/// tam ortasındayken "yüzünü ortala" uyarısı çıkıyor ve deklanşör hiç
+/// açılmıyordu.
+Size rotatedImageSize({
+  required CameraImage image,
+  required CameraDescription camera,
+  required int deviceOrientationDegrees,
+}) {
+  final rotation = _rotation(camera, deviceOrientationDegrees);
+  final ceyrek = rotation == InputImageRotation.rotation90deg ||
+      rotation == InputImageRotation.rotation270deg;
+  return ceyrek
+      ? Size(image.height.toDouble(), image.width.toDouble())
+      : Size(image.width.toDouble(), image.height.toDouble());
+}
+
+/// ML Kit'e uygulanan döndürme — derece cinsinden.
+///
+/// Parlaklık düzlemi de aynı döndürmeden geçmeli, yoksa landmark'lar ile
+/// piksel verisi ayrı uzaylarda kalır (bkz. `face_luma.dart`).
+int? cameraRotationDegrees({
+  required CameraDescription camera,
+  required int deviceOrientationDegrees,
+}) {
+  final r = _rotation(camera, deviceOrientationDegrees);
+  return switch (r) {
+    InputImageRotation.rotation0deg => 0,
+    InputImageRotation.rotation90deg => 90,
+    InputImageRotation.rotation180deg => 180,
+    InputImageRotation.rotation270deg => 270,
+    null => null,
+  };
+}
+
 InputImageRotation? _rotation(CameraDescription camera, int deviceDegrees) {
   // Ön kamera aynalandığı için sensör açısı ters yönde toplanır; bu
   // atlanırsa yüz bulunur ama noktalar yatay olarak yanlış yere düşer.
@@ -199,20 +238,29 @@ List<Offset>? motionPoints(Face face) {
   return parcalar;
 }
 
-/// Animasyonda çizilecek nokta kümesi.
+/// Animasyonda çizilecek nokta kümesi — **kontur kontur ayrılmış.**
 ///
 /// Tüm kontur noktalarını çizmek (yüzlerce) ağ değil leke veriyor; ovalden
 /// seyreltilmiş bir alt küme + iç hatların anahtar noktaları hem okunur hem
 /// "tarandı" hissini veriyor.
-List<Offset> scanNodes(Face face) {
-  final noktalar = <Offset>[];
+///
+/// Dönüş tipi düz liste DEĞİL, çünkü ağ çizgileri yalnızca **aynı kontur
+/// içinde** anlamlı. Tek listede birleştirilince kaşın sonundan gözün başına
+/// çizgi çekiliyordu ve sınırlar rastgele görünüyordu. Bir ara bunu
+/// noktalar arası uzaklığa bakarak ayıklamayı denedim — sezgiydi ve bazı
+/// yüzlerde tutmuyordu. Hangi noktanın hangi hatta ait olduğu zaten belli;
+/// tahmin etmeye gerek yok.
+List<List<Offset>> scanNodes(Face face) {
+  final hatlar = <List<Offset>>[];
 
   void ekle(FaceContourType tur, int adim) {
     final p = face.contours[tur]?.points;
-    if (p == null) return;
+    if (p == null || p.isEmpty) return;
+    final hat = <Offset>[];
     for (var i = 0; i < p.length; i += adim) {
-      noktalar.add(Offset(p[i].x.toDouble(), p[i].y.toDouble()));
+      hat.add(Offset(p[i].x.toDouble(), p[i].y.toDouble()));
     }
+    if (hat.isNotEmpty) hatlar.add(hat);
   }
 
   ekle(FaceContourType.face, 2);
@@ -225,5 +273,5 @@ List<Offset> scanNodes(Face face) {
   ekle(FaceContourType.upperLipTop, 2);
   ekle(FaceContourType.lowerLipBottom, 2);
 
-  return noktalar;
+  return hatlar;
 }

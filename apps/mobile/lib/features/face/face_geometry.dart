@@ -44,6 +44,8 @@ class FaceLandmarks {
     required this.eyeRight,
     this.headAngleZ = 0,
     this.headAngleY = 0,
+    this.hairlineY,
+    this.hairlineFromCrown = false,
   });
 
   /// Yüz ovalinin tüm kontur noktaları — animasyonda çizilen şey budur.
@@ -67,6 +69,16 @@ class FaceLandmarks {
   /// Başın eğimi (derece). Çerçeveleme kalitesi için.
   final double headAngleZ;
   final double headAngleY;
+
+  /// ÖLÇÜLEN saç çizgisi (bkz. `face_hairline.dart`). `null` ise ölçülemedi.
+  ///
+  /// `foreheadTop` bunun yerine KULLANILAMAZ: o, ML Kit yüz konturunun en üst
+  /// noktası ve kişinin saç çizgisiyle değil modelin davranışıyla belirleniyor.
+  /// Gerçek bir yüzde üst bölgeyi 0,17 gösteriyordu (klasik ~0,33).
+  final double? hairlineY;
+
+  /// [hairlineY] saç sınırından değil kafatası tepesinden geldi mi.
+  final bool hairlineFromCrown;
 }
 
 /// Sunucuya gidecek olan şey: yalnızca oranlar.
@@ -75,6 +87,8 @@ class FaceRatios {
     required this.upperThird,
     required this.middleThird,
     required this.lowerThird,
+    this.foreheadMeasured = false,
+    this.foreheadFromCrown = false,
     required this.widthToHeight,
     required this.jawToCheek,
     required this.mouthToFaceWidth,
@@ -107,14 +121,43 @@ class FaceRatios {
   /// 0.9 altı belirgin asimetri sayılır.
   final double symmetry;
 
+  /// Saç çizgisi GERÇEKTEN ölçüldü mü?
+  ///
+  /// `false` ise üç bölge oranı sunucuya **gönderilmiyor**. Sebebi ölçülmüş
+  /// bir kusur: ML Kit saç çizgisi vermiyor ve yüz konturunun tepesi alın
+  /// üstü sayılınca üst bölge 0,17 çıkıyordu (klasik ~0,33). Payda da o
+  /// noktadan hesaplandığı için orta ve alt bölge şişiyor, sunucu "kısa alın
+  /// + baskın orta + baskın alt" gibi üç çelişkili iddia üretiyordu.
+  ///
+  /// Ölçemediğimizde susmak, yanlış ölçüp yorumlamaktan iyidir.
+  final bool foreheadMeasured;
+
+  /// Ölçüm saç çizgisinden değil KAFATASI TEPESİNDEN yapıldı (kel/tıraşlı).
+  ///
+  /// Okuma bunu söylemek zorunda. Gelenek üst bölgeyi saç çizgisinden
+  /// tanımlıyor ve kel bir kafada o çizgi geri getirilemez; nereden
+  /// ölçüldüğünü gizlemek, ölçmediğimiz bir şeyi ölçmüş gibi sunmak olurdu.
+  final bool foreheadFromCrown;
+
   Map<String, double> toJson() => {
-        'upperThird': _yuvarla(upperThird),
-        'middleThird': _yuvarla(middleThird),
-        'lowerThird': _yuvarla(lowerThird),
-        'widthToHeight': _yuvarla(widthToHeight),
+        // Üç bölge yalnızca saç çizgisi ölçüldüyse gider. Sunucu "alan yoksa
+        // ölçemedim" diye okuyor; hareket ölçümünde de aynı desen var.
+        // YÜKSEKLİĞE bölünen her oran saç çizgisine bağlı; ölçülemediyse
+        // hiçbiri gitmiyor. Bunlar tek tek değil TOPLU düşer, çünkü hepsi
+        // aynı yanlış paydadan besleniyordu.
+        if (foreheadMeasured) ...{
+          'upperThird': _yuvarla(upperThird),
+          'middleThird': _yuvarla(middleThird),
+          'lowerThird': _yuvarla(lowerThird),
+          'widthToHeight': _yuvarla(widthToHeight),
+          'lipFullness': _yuvarla(lipFullness),
+          // 1 = kafatası tepesinden ölçüldü. Sunucu okumayı buna göre
+          // ifade ediyor.
+          'foreheadFromCrown': foreheadFromCrown ? 1.0 : 0.0,
+        },
+        // Genişliğe bölünenler saç çizgisinden bağımsız — her zaman gider.
         'jawToCheek': _yuvarla(jawToCheek),
         'mouthToFaceWidth': _yuvarla(mouthToFaceWidth),
-        'lipFullness': _yuvarla(lipFullness),
         'eyeSpacing': _yuvarla(eyeSpacing),
         'symmetry': _yuvarla(symmetry),
       };
@@ -130,13 +173,22 @@ class FaceRatios {
 /// Ölçek bağımsızdır: her uzunluk yüz yüksekliğine ya da genişliğine
 /// bölünür, böylece kameraya yakınlık sonucu değiştirmez.
 FaceRatios computeRatios(FaceLandmarks lm) {
-  final faceHeight = (lm.chin.dy - lm.foreheadTop.dy).abs();
+  // Dikey referans SAÇ ÇİZGİSİ. Ölçülemediyse yükseklik türevli oranların
+  // hiçbiri üretilmiyor (bkz. `FaceRatios.foreheadMeasured`); yanlış bir
+  // tepe noktası üç bölgeyi de, en/boy oranını da, dudak dolgunluğunu da
+  // birden kaydırıyordu.
+  final sacCizgisi = lm.hairlineY;
+  final olculdu = sacCizgisi != null;
+  final tepeden = lm.hairlineFromCrown;
+  final tepe = sacCizgisi ?? lm.foreheadTop.dy;
+
+  final faceHeight = (lm.chin.dy - tepe).abs();
   final faceWidth = (lm.cheekRight.dx - lm.cheekLeft.dx).abs();
 
   // Sıfıra bölmeye karşı: tespit bozuksa oran üretmek yerine nötr dön.
   if (faceHeight < 1 || faceWidth < 1) return _neutral;
 
-  final ust = (lm.browMid.dy - lm.foreheadTop.dy).abs() / faceHeight;
+  final ust = (lm.browMid.dy - tepe).abs() / faceHeight;
   final orta = (lm.noseBase.dy - lm.browMid.dy).abs() / faceHeight;
   final alt = (lm.chin.dy - lm.noseBase.dy).abs() / faceHeight;
 
@@ -146,6 +198,8 @@ FaceRatios computeRatios(FaceLandmarks lm) {
   final eyeGap = (lm.eyeRight.dx - lm.eyeLeft.dx).abs();
 
   return FaceRatios(
+    foreheadMeasured: olculdu,
+    foreheadFromCrown: tepeden,
     upperThird: ust,
     middleThird: orta,
     lowerThird: alt,
@@ -208,44 +262,129 @@ enum FrameQuality {
   ready,
 }
 
-/// Yüzün kadraja göre kapladığı en küçük/en büyük oran.
-const double kMinFaceRatio = 0.30;
-const double kMaxFaceRatio = 0.78;
+/// Kılavuz ovalinin geometrisi — **tek kaynak**.
+///
+/// Bunlar hem ekrana çizilen ovali (`FaceGuidePainter.guideOval`) hem de
+/// kalite kontrolünün beklediği hedefi belirliyor. İkisi ayrı sabitler
+/// kullanınca gerçek bir hata çıktı: oval ekranın %44'üne çiziliyor ama
+/// kontrol yüzü %50'de arıyordu. Kullanıcı kılavuzun dediğini yapıyor,
+/// uygulama "yüzünü ortala" deyip deklanşörü açmıyordu.
+///
+/// Oval bilinçli olarak merkezin biraz ÜSTÜNDE: yüzün doğal ağırlık merkezi
+/// geometrik merkezin üstündedir, tam ortaya konursa kullanıcı içgüdüsel
+/// olarak çenesini kaldırıyor.
+const double kGuideCenterY = 0.44;
+const double kGuideWidthFraction = 0.66;
+const double kGuideAspect = 1.32;
 
-/// Kadraj merkezinden izin verilen en büyük sapma (kısa kenara oranla).
-const double kMaxOffCentre = 0.14;
+/// Yüz kutusunun **kılavuz ovaline** göre doldurma oranı.
+///
+/// Eşik daha önce kadraja göreydi (`faceBox.height / previewSize.height`) ve
+/// bu yanlış ölçüydü: kullanıcının hedefi kadraj değil oval. Oval, ekran
+/// oranına göre kadrajın %40–49'u; üstüne ML Kit'in kutusu görünen kafadan
+/// dar (saç ve çene altı dışarıda). Ovali gözle dolduran bir yüz eşiğin tam
+/// sınırına düşüyor, "biraz yaklaş" diyor ve deklanşör açılmıyordu.
+///
+/// Bant BİLEREK geniş. Çıkan oranların hepsi ölçek bağımsız (bkz.
+/// [computeRatios]) — yani yüzün büyüklüğü sonucu değiştirmiyor. Bu kapının
+/// işi okumayı doğru kılmak değil, konturun güvenilir çıkacağı kadar piksel
+/// ve cepheden bir duruş sağlamak.
+const double kMinGuideFill = 0.55;
+const double kMaxGuideFill = 1.15;
+
+/// Kılavuz merkezinden izin verilen sapma (oval yüksekliğine oranla).
+const double kMaxOffCentre = 0.22;
 
 /// İzin verilen en büyük baş eğimi (derece).
 const double kMaxTilt = 12.0;
+
+/// Histerezis payı — **titremeyi bitiren şey**.
+///
+/// Tek eşik kullanılınca ölçüm sınırın iki yanında salınıyor ve kılavuz
+/// yeşil–sarı arasında çırpınıyordu. "Hazır"a girmek için gereken ile
+/// "hazır"dan çıkmak için gereken artık farklı: bir kez kilitlenince
+/// tolerans genişliyor.
+const double _kHisterezisOran = 0.08;
+const double _kHisterezisSapma = 0.06;
+const double _kHisterezisEgim = 4.0;
+
+/// Kılavuz ovali — EKRAN uzayında.
+Rect guideOvalOnScreen(Size screenSize) {
+  final w = screenSize.width * kGuideWidthFraction;
+  final h = w * kGuideAspect;
+  return Rect.fromCenter(
+    center: Offset(screenSize.width / 2, screenSize.height * kGuideCenterY),
+    width: w,
+    height: h,
+  );
+}
+
+/// Kılavuz ovalinin GÖRÜNTÜ uzayındaki karşılığı.
+///
+/// Bu dönüşüm şart, çünkü iki uzay farklı: oval ekran ölçülerine göre
+/// çiziliyor, ML Kit'in yüz kutusu ise görüntü ölçülerinde geliyor. Önizleme
+/// ekrana `BoxFit.cover` ile oturuyor; burada o dönüşümün tersi alınıyor.
+///
+/// [screenSize] yoksa (test ya da ölçü bilinmiyorsa) önizlemenin ekranı
+/// birebir kapladığı varsayılır.
+Rect guideOvalInImage({required Size previewSize, Size? screenSize}) {
+  if (screenSize == null ||
+      screenSize.width < 1 ||
+      screenSize.height < 1) {
+    return guideOvalOnScreen(previewSize);
+  }
+  final ekranOval = guideOvalOnScreen(screenSize);
+  final olcek = math.max(screenSize.width / previewSize.width,
+      screenSize.height / previewSize.height);
+  final dx = (screenSize.width - previewSize.width * olcek) / 2;
+  final dy = (screenSize.height - previewSize.height * olcek) / 2;
+  return Rect.fromCenter(
+    center: Offset((ekranOval.center.dx - dx) / olcek,
+        (ekranOval.center.dy - dy) / olcek),
+    width: ekranOval.width / olcek,
+    height: ekranOval.height / olcek,
+  );
+}
 
 /// Tespit edilen yüz kutusundan çerçeveleme kalitesini çıkarır.
 ///
 /// Kontrol sırası bilinçli: kullanıcıya aynı anda tek bir şey söylenir ve
 /// önce en temel olan düzeltilir. "Yüzünü ortala ve biraz yaklaş ve başını
 /// düzelt" üç ayrı iş demektir; kimse okumaz.
+///
+/// [wasReady] bir önceki karenin sonucu; histerezis bunun üzerinden çalışıyor.
 FrameQuality assessFrame({
   required Rect? faceBox,
   required Size previewSize,
+  Size? screenSize,
   double headAngleZ = 0,
+  bool wasReady = false,
 }) {
   if (faceBox == null) return FrameQuality.noFace;
   if (previewSize.width < 1 || previewSize.height < 1) {
     return FrameQuality.noFace;
   }
 
-  final kisaKenar = math.min(previewSize.width, previewSize.height);
-  final oran = faceBox.height / previewSize.height;
+  final hedef = guideOvalInImage(
+      previewSize: previewSize, screenSize: screenSize);
+  if (hedef.height < 1) return FrameQuality.noFace;
 
-  if (oran < kMinFaceRatio) return FrameQuality.tooFar;
-  if (oran > kMaxFaceRatio) return FrameQuality.tooClose;
+  final pay = wasReady ? _kHisterezisOran : 0.0;
+  final doluluk = faceBox.height / hedef.height;
 
-  final merkez = faceBox.center;
-  final kadrajMerkezi =
-      Offset(previewSize.width / 2, previewSize.height / 2);
-  final sapma = (merkez - kadrajMerkezi).distance / kisaKenar;
-  if (sapma > kMaxOffCentre) return FrameQuality.offCentre;
+  if (doluluk < kMinGuideFill - pay) return FrameQuality.tooFar;
+  if (doluluk > kMaxGuideFill + pay) return FrameQuality.tooClose;
 
-  if (headAngleZ.abs() > kMaxTilt) return FrameQuality.tilted;
+  // Hedef, ekrandaki kılavuz ovalinin merkezi — kadrajın geometrik merkezi
+  // DEĞİL. İkisi ayrıldığında kullanıcı kılavuzun dediğini yapıyor ama
+  // kontrol reddediyordu.
+  final sapma = (faceBox.center - hedef.center).distance / hedef.height;
+  final sapmaSiniri =
+      kMaxOffCentre + (wasReady ? _kHisterezisSapma : 0.0);
+  if (sapma > sapmaSiniri) return FrameQuality.offCentre;
+
+  final egimSiniri = kMaxTilt + (wasReady ? _kHisterezisEgim : 0.0);
+  if (headAngleZ.abs() > egimSiniri) return FrameQuality.tilted;
 
   return FrameQuality.ready;
 }
