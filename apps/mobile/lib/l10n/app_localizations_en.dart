@@ -1006,4 +1006,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get faceReadingEntryBody =>
       'Scan your face and read your temperament through the firasa tradition.';
+
+  @override
+  String get faceConsentSetting => 'Face reading consent';
+
+  @override
+  String get faceConsentSettingOn =>
+      'Given. The image is processed on your device and never stored.';
+
+  @override
+  String get faceConsentSettingOff =>
+      'Not given. You will be asked when you open face reading.';
+
+  @override
+  String get faceConsentWithdrawTitle => 'Withdraw consent';
+
+  @override
+  String get faceConsentWithdrawBody =>
+      'Your face reading consent will be withdrawn and any firasa readings produced so far will be deleted. Your other readings (natal, BaZi, daily) are not affected.';
+
+  @override
+  String get faceConsentWithdrawConfirm => 'Withdraw and delete';
+
+  @override
+  String faceConsentWithdrawn(int count) {
+    return 'Consent withdrawn, $count readings deleted.';
+  }
 }

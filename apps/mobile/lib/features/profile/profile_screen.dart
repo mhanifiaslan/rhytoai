@@ -14,6 +14,8 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../../l10n/app_localizations.dart';
 import 'legal_page.dart';
+import '../face/face_consent.dart';
+import '../../core/api.dart' show apiProvider, friendlyError;
 
 /// SİCİL — kendi profilin: rozetler, günlük seri, doğum kaydı, gizlilik ve
 /// uygulama ayarları, hukuki metinler ve oturum işlemleri.
@@ -252,6 +254,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 onChanged: (v) => setStreakVisible(v),
               ),
             ]),
+            // Biyometrik rıza. Verildiği kadar kolay geri alınabilmeli
+            // (GDPR Md.7/3) — o yüzden diğer gizlilik ayarlarıyla aynı
+            // yerde ve aynı biçimde duruyor, ayrı bir menüye gömülü değil.
+            const Divider(height: 18),
+            const _FaceConsentRow(),
           ]),
         ),
         Plaque(
@@ -344,5 +351,78 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         Text(value, style: RythoText.body(14)),
       ]),
     );
+  }
+}
+
+/// Biyometrik işleme rızası satırı.
+///
+/// Yalnızca **geri alma** yönünde çalışıyor: buradan açmak, kullanıcıya neye
+/// rıza gösterdiğini anlatan metni göstermeden rıza almak olurdu. Vermek için
+/// yüz okuma akışındaki rıza ekranından geçilir; burası kapatma yeridir.
+///
+/// Geri alma üretilmiş okumaları da siler; kullanıcıya kaç tanesinin
+/// silindiği söyleniyor çünkü "geri aldım ama verim ne oldu" sorusu cevapsız
+/// kalmamalı.
+class _FaceConsentRow extends ConsumerWidget {
+  const _FaceConsentRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final riza = ref.watch(faceConsentProvider);
+    final verildi = riza.value?.granted ?? false;
+
+    return Row(children: [
+      const Icon(Icons.face_retouching_natural_outlined,
+          size: 18, color: RythoColors.lilac),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l10n.faceConsentSetting, style: RythoText.body(14)),
+          Text(
+            verildi ? l10n.faceConsentSettingOn : l10n.faceConsentSettingOff,
+            style: RythoText.body(11.5, color: RythoColors.parchmentDim),
+          ),
+        ]),
+      ),
+      Switch(
+        value: verildi,
+        activeThumbColor: RythoColors.magenta,
+        activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
+        // Açma yönü kapalı: rıza ancak metnini gösteren ekrandan alınır.
+        onChanged: !verildi
+            ? null
+            : (_) async {
+                final onay = await showDialog<bool>(
+                  context: context,
+                  builder: (c) => AlertDialog(
+                    title: Text(l10n.faceConsentWithdrawTitle),
+                    content: Text(l10n.faceConsentWithdrawBody),
+                    actions: [
+                      TextButton(
+                          onPressed: () => Navigator.pop(c, false),
+                          child: Text(l10n.cancel)),
+                      TextButton(
+                          onPressed: () => Navigator.pop(c, true),
+                          child: Text(l10n.faceConsentWithdrawConfirm)),
+                    ],
+                  ),
+                );
+                if (onay != true || !context.mounted) return;
+                try {
+                  final silinen =
+                      await withdrawFaceConsent(ref.read(apiProvider));
+                  ref.invalidate(faceConsentProvider);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(l10n.faceConsentWithdrawn(silinen))));
+                } catch (e) {
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(friendlyError(e, l10n))));
+                }
+              },
+      ),
+    ]);
   }
 }

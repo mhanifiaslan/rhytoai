@@ -1927,6 +1927,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yüzünü tarat, firaset geleneğine göre mizacını oku.'**
   String get faceReadingEntryBody;
+
+  /// No description provided for @faceConsentSetting.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz okuma rızası'**
+  String get faceConsentSetting;
+
+  /// No description provided for @faceConsentSettingOn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Verildi. Görüntü cihazında işlenir, saklanmaz.'**
+  String get faceConsentSettingOn;
+
+  /// No description provided for @faceConsentSettingOff.
+  ///
+  /// In tr, this message translates to:
+  /// **'Verilmedi. Yüz okumaya girdiğinde sorulur.'**
+  String get faceConsentSettingOff;
+
+  /// No description provided for @faceConsentWithdrawTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rızayı geri al'**
+  String get faceConsentWithdrawTitle;
+
+  /// No description provided for @faceConsentWithdrawBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz okuma rızan geri alınacak ve şimdiye kadar üretilmiş firaset okumaların silinecek. Diğer okumaların (natal, BaZi, günlük) etkilenmez.'**
+  String get faceConsentWithdrawBody;
+
+  /// No description provided for @faceConsentWithdrawConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri al ve sil'**
+  String get faceConsentWithdrawConfirm;
+
+  /// No description provided for @faceConsentWithdrawn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rıza geri alındı, {count} okuma silindi.'**
+  String faceConsentWithdrawn(int count);
 }
 
 class _AppLocalizationsDelegate

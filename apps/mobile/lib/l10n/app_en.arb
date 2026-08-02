@@ -434,5 +434,19 @@
   "faceDetectFailed": "No face detected. Make sure the light is good and your face is inside the frame.",
   "faceReadingHint": "The tradition says: a single sign decides nothing. What follows is a tendency, not a fate.",
   "faceReadingLockedBody": "A temperament reading from your features. The image is processed on your device and never sent anywhere.",
-  "faceReadingEntryBody": "Scan your face and read your temperament through the firasa tradition."
+  "faceReadingEntryBody": "Scan your face and read your temperament through the firasa tradition.",
+  "faceConsentSetting": "Face reading consent",
+  "faceConsentSettingOn": "Given. The image is processed on your device and never stored.",
+  "faceConsentSettingOff": "Not given. You will be asked when you open face reading.",
+  "faceConsentWithdrawTitle": "Withdraw consent",
+  "faceConsentWithdrawBody": "Your face reading consent will be withdrawn and any firasa readings produced so far will be deleted. Your other readings (natal, BaZi, daily) are not affected.",
+  "faceConsentWithdrawConfirm": "Withdraw and delete",
+  "faceConsentWithdrawn": "Consent withdrawn, {count} readings deleted.",
+  "@faceConsentWithdrawn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

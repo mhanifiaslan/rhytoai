@@ -434,5 +434,19 @@
   "faceDetectFailed": "Yüz tespit edilemedi. Işığın yeterli olduğundan ve yüzünün çerçevede olduğundan emin ol.",
   "faceReadingHint": "Gelenek der ki: tek bir belirti hüküm vermez. Aşağıdaki okuma bir eğilimdir, kader değildir.",
   "faceReadingLockedBody": "Yüz hatlarından mizaç okuması. Görüntü cihazında işlenir, hiçbir yere gönderilmez.",
-  "faceReadingEntryBody": "Yüzünü tarat, firaset geleneğine göre mizacını oku."
+  "faceReadingEntryBody": "Yüzünü tarat, firaset geleneğine göre mizacını oku.",
+  "faceConsentSetting": "Yüz okuma rızası",
+  "faceConsentSettingOn": "Verildi. Görüntü cihazında işlenir, saklanmaz.",
+  "faceConsentSettingOff": "Verilmedi. Yüz okumaya girdiğinde sorulur.",
+  "faceConsentWithdrawTitle": "Rızayı geri al",
+  "faceConsentWithdrawBody": "Yüz okuma rızan geri alınacak ve şimdiye kadar üretilmiş firaset okumaların silinecek. Diğer okumaların (natal, BaZi, günlük) etkilenmez.",
+  "faceConsentWithdrawConfirm": "Geri al ve sil",
+  "faceConsentWithdrawn": "Rıza geri alındı, {count} okuma silindi.",
+  "@faceConsentWithdrawn": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

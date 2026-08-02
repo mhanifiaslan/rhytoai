@@ -1003,4 +1003,30 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get faceReadingEntryBody =>
       'Yüzünü tarat, firaset geleneğine göre mizacını oku.';
+
+  @override
+  String get faceConsentSetting => 'Yüz okuma rızası';
+
+  @override
+  String get faceConsentSettingOn =>
+      'Verildi. Görüntü cihazında işlenir, saklanmaz.';
+
+  @override
+  String get faceConsentSettingOff =>
+      'Verilmedi. Yüz okumaya girdiğinde sorulur.';
+
+  @override
+  String get faceConsentWithdrawTitle => 'Rızayı geri al';
+
+  @override
+  String get faceConsentWithdrawBody =>
+      'Yüz okuma rızan geri alınacak ve şimdiye kadar üretilmiş firaset okumaların silinecek. Diğer okumaların (natal, BaZi, günlük) etkilenmez.';
+
+  @override
+  String get faceConsentWithdrawConfirm => 'Geri al ve sil';
+
+  @override
+  String faceConsentWithdrawn(int count) {
+    return 'Rıza geri alındı, $count okuma silindi.';
+  }
 }

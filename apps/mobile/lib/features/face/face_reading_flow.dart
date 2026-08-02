@@ -1,12 +1,14 @@
-/// Yüz okuma akışı: rıza → çekim → okuma.
+/// Yüz okuma akışı: (gerekiyorsa rıza) → çekim → okuma.
 ///
-/// Rıza ekranı **atlanabilir değil** ve varsayılan kapalı. Biyometrik işleme
-/// için açık rıza gerekiyor (GDPR Md.9 / KVKK md.6); "devam" düğmesine
-/// basmayı rıza saymak açık rıza değildir, o yüzden ayrı bir onay kutusu var.
+/// Rıza **bir kez** alınır ve sunucuda saklanır; her çekimde sorulmaz.
+/// İlk sürümde her seferinde soruluyordu ve bu fazla temkinliydi: rızanın
+/// **geri alınabilir** olması gerekiyor, her seferinde yeniden sorulması
+/// değil. Geri alma Profil > Gizlilik'te.
 ///
-/// Rıza **kalıcı olarak saklanmıyor.** Her okumada yeniden soruluyor ve bu
-/// bilinçli: rızanın geri alınabilir olması gerekiyor ve "bir kez onayladın,
-/// artık hep açık" en kötü yorumu. Sürtünme burada bir kusur değil.
+/// Öbür uçtaki hata da geçerli değil — rızayı üyelik sözleşmesine ya da
+/// gizlilik metnine gömmek işe yaramaz. Biyometrik veri özel nitelikli
+/// (GDPR Md.9 / KVKK md.6) ve rıza **ayrı, açık ve başka şartlarla
+/// paketlenmemiş** olmalı. O yüzden ayrı ekran ve ayrı onay kutusu var.
 library;
 
 import 'package:flutter/material.dart';
@@ -19,15 +21,36 @@ import '../../widgets/glass.dart';
 import '../profile/legal_page.dart' show LegalPage, privacyPolicySections;
 import 'face_api.dart';
 import 'face_capture_screen.dart';
+import 'face_consent.dart';
 
-/// Akışın giriş noktası: rıza ekranını açar, onaydan sonra kamerayı.
+/// Akışın giriş noktası.
+///
+/// Rıza **yalnızca yoksa** sorulur. Varsa doğrudan kameraya gidilir; her
+/// çekimde onay ekranı göstermek rıza yorgunluğu üretir ve kimse okumadan
+/// tıklamaya başlar — o noktada rıza bilgilendirici olmaktan çıkar.
 Future<void> startFaceReading(BuildContext context, WidgetRef ref) async {
-  final onay = await Navigator.of(context).push<bool>(MaterialPageRoute(
-    builder: (_) => const FaceConsentScreen(),
-    fullscreenDialog: true,
-  ));
-  if (onay != true || !context.mounted) return;
+  final mevcut = await ref.read(faceConsentProvider.future);
 
+  if (!mevcut.granted) {
+    if (!context.mounted) return;
+    final onay = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => const FaceConsentScreen(),
+      fullscreenDialog: true,
+    ));
+    if (onay != true || !context.mounted) return;
+
+    try {
+      await grantFaceConsent(ref.read(apiProvider));
+      ref.invalidate(faceConsentProvider);
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(friendlyError(e, AppLocalizations.of(context)))));
+      return;
+    }
+  }
+
+  if (!context.mounted) return;
   final sonuc = await Navigator.of(context).push<FaceCaptureResult>(
     MaterialPageRoute(builder: (_) => const FaceCaptureScreen()),
   );

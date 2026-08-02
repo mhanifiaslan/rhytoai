@@ -22,11 +22,16 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from core.auth import AuthUser
+from core.auth import AuthUser, get_current_user
 from core.entitlements import require_plus
 from core.i18n import get_language
 from core.messages import text
-from services import chart_context, profile_service, report_service
+from services import (
+    chart_context,
+    consent_service,
+    profile_service,
+    report_service,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +81,15 @@ def firasa_reading(
     sonuç bir hafta önbellekte tutulur; kullanıcı ekranı her açtığında
     yeniden üretilmez.
     """
+    # Rıza kapısı yetkiden SONRA, işlemeden ÖNCE.
+    #
+    # Bu kontrol sunucuda olmak zorunda: istemcide onay kutusu göstermek
+    # kullanıcıyı bilgilendirir ama işlemeyi engellemez. İspat yükü bizde ve
+    # "istemci onay aldı" denetimde bir şey ifade etmez.
+    if not consent_service.has_face_consent(user.uid):
+        raise HTTPException(status_code=403,
+                            detail=text("face_consent_required", lang))
+
     try:
         # Üç bölge oranı toplamı 1 civarında olmalı. Değilse tespit bozuk
         # demektir; uydurma bir okuma üretmektense reddetmek doğru.
@@ -102,3 +116,55 @@ def firasa_reading(
     except Exception as exc:
         logger.exception("Firaset okumasi uretilemedi", exc_info=exc)
         raise HTTPException(status_code=500, detail=text("internal", lang))
+
+
+# ---------------------------------------------------------------------------
+# Rıza
+# ---------------------------------------------------------------------------
+#
+# Rıza uçları **abonelik istemez** ve bu bilinçli: rızayı geri almak, ödeme
+# durumundan bağımsız olarak her zaman mümkün olmalı. Aboneliği biten birinin
+# rızasını geri alamaması, geri alma hakkını ödemeye bağlamak olurdu.
+
+
+@router.get("/consent")
+def consent_status(user: AuthUser = Depends(get_current_user)):
+    """Kullanıcının güncel rıza durumu.
+
+    ``version`` istemciye de veriliyor: rıza metni sürümü ilerlediğinde
+    istemci bunu görüp yeniden sormalı.
+    """
+    return {
+        "granted": consent_service.has_face_consent(user.uid),
+        "version": consent_service.FACE_CONSENT_VERSION,
+    }
+
+
+@router.post("/consent")
+def grant_consent(user: AuthUser = Depends(get_current_user),
+                  lang: str = Depends(get_language)):
+    """Biyometrik işleme rızasını kaydeder.
+
+    Zaman damgası ve sürümle birlikte saklanıyor; "ne zaman, neye rıza
+    gösterildi" sorusunun cevabı olmadan kayıt bir işe yaramaz.
+    """
+    if not consent_service.grant_face_consent(user.uid):
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+    return {"status": "success", "granted": True,
+            "version": consent_service.FACE_CONSENT_VERSION}
+
+
+@router.delete("/consent")
+def withdraw_consent(user: AuthUser = Depends(get_current_user),
+                     lang: str = Depends(get_language)):
+    """Rızayı geri alır ve **üretilmiş okumaları siler**.
+
+    İkisi ayrılamaz: rızayı geri alıp veriyi bırakmak, geri almayı anlamsız
+    kılar. Silme yalnızca firaset okumalarını kapsıyor — kullanıcının natal
+    raporuna, BaZi'sine ya da günlük okumasına dokunmuyor. Rızayı geri almak
+    yüz okumadan vazgeçmektir, hesabı silmek değil.
+    """
+    if not consent_service.withdraw_face_consent(user.uid):
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+    silinen = consent_service.delete_face_readings(user.uid)
+    return {"status": "success", "granted": False, "deletedReadings": silinen}

@@ -98,6 +98,12 @@ _MESSAGES: dict[str, dict[str, str]] = {
     },
 
     # --- Genel ---
+    "face_consent_required": {
+        "tr": "Yüz okuma için biyometrik işleme rızası gerekiyor. "
+              "Profil > Gizlilik bölümünden verebilirsin.",
+        "en": "Face reading needs your consent to biometric processing. "
+              "You can give it under Profile > Privacy.",
+    },
     "face_invalid_ratios": {
         "tr": "Yüz ölçümü tutarsız geldi. Işığın yeterli olduğundan ve "
               "yüzünün çerçevede olduğundan emin olup tekrar dene.",
