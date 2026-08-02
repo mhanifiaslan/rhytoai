@@ -232,3 +232,194 @@ def test_sablonda_yagcilik_talimati_yok():
         for kalip in ("pozitif psikoloji", "güç + gelişim",
                       "positive psychology", "growth area"):
             assert kalip not in sablon
+
+
+# ---------------------------------------------------------------------------
+# San Ting ölçülemediğinde
+# ---------------------------------------------------------------------------
+
+r"""Istemci sac cizgisini olcemediginde uc bolge alanlarini HIC gondermiyor.
+
+Sebep olculmus bir kusur: ML Kit sac cizgisi vermiyor ve yuz konturunun
+tepesi "alin ustu" sayilinca gercek bir yuzde su cikiyordu:
+
+    ust 0,17   orta 0,40   alt 0,42      (klasik beklenti ~0,33 her biri)
+
+Payda da o noktadan hesaplandigi icin hata yalnizca alini bozmuyor, orta ve
+alt bolgeyi de sisiriyordu. Bu sayilar asagidaki esiklere konunca sonuc
+"kisa alin + baskin orta + baskin alt" oluyordu: uc iddia, tek yanlis
+landmark'tan, ustelik ikisi kendi icinde celiskili.
+
+Artik olculemezse alanlar gelmiyor. Bu testler o durumda SUSULDUGUNU koruyor.
+"""
+
+
+def test_uc_bolge_yoksa_san_ting_belirtisi_uretilmez():
+    # Yalnizca genislige bolunen oranlar — sac cizgisinden bagimsiz olanlar.
+    olcum = {
+        "jawToCheek": 0.88,
+        "mouthToFaceWidth": 0.40,
+        "eyeSpacing": 0.45,
+        "symmetry": 0.97,
+    }
+    bulunan = firasa_service.descriptors(olcum)
+
+    san_ting = {"forehead_dominant", "forehead_short",
+                "midface_dominant", "jaw_dominant", "jaw_short"}
+    assert not (set(bulunan) & san_ting), (
+        f"olculmeyen uc bolgeden belirti uretildi: {bulunan}"
+    )
+    # Olculebilen eksen calismaya devam etmeli.
+    assert "jaw_square" in bulunan
+
+
+def test_yukseklik_turevli_oranlar_yoksa_belirti_uretilmez():
+    """`widthToHeight` ve `lipFullness` de sac cizgisine bagli.
+
+    Ikisi de `faceHeight`'a bolunuyor; yanlis bir tepe noktasi onlari da
+    kaydiriyordu. Istemci uc bolgeyle BIRLIKTE onlari da gondermiyor.
+    """
+    bulunan = firasa_service.descriptors({
+        "jawToCheek": 0.80,
+        "mouthToFaceWidth": 0.41,
+        "eyeSpacing": 0.45,
+        "symmetry": 0.97,
+    })
+    for anahtar in ("face_broad", "face_long", "lips_full", "lips_thin"):
+        assert anahtar not in bulunan, f"{anahtar} olculmeden uretildi"
+
+
+def test_gercek_sac_cizgisiyle_olculen_deger_belirti_uretebilir():
+    """Olcum yapildiginda eksen calismali — susmak varsayilan degil, sonuc."""
+    bulunan = firasa_service.descriptors({
+        "upperThird": 0.40,
+        "middleThird": 0.31,
+        "lowerThird": 0.29,
+        "widthToHeight": 0.70,
+        "jawToCheek": 0.80,
+        "mouthToFaceWidth": 0.41,
+        "lipFullness": 0.05,
+        "eyeSpacing": 0.45,
+        "symmetry": 0.97,
+    })
+    assert "forehead_dominant" in bulunan
+
+
+# ---------------------------------------------------------------------------
+# Istemci-sunucu sozlesmesi
+# ---------------------------------------------------------------------------
+
+r"""Sac cizgisi olculemediginde istemci yukseklige bagli alanlari GONDERMIYOR.
+
+Bu sozlesme bir kez tek tarafli degisti ve gercek bir kusur uretti: istemci
+alanlari istege bagli yapti, sunucu semasi zorunlu kaldi. Sonuc 422 oldu ve
+kullanici cekimden hemen sonra "beklenmeyen bir sorun" ekrani gordu.
+
+Asagidaki testler iki ucun birlikte durdugunu koruyor.
+"""
+
+
+def _asgari_olcum() -> dict:
+    """Yalnizca GENISLIGE bolunen oranlar — sac cizgisinden bagimsiz olanlar."""
+    return {
+        "jawToCheek": 0.80,
+        "mouthToFaceWidth": 0.41,
+        "eyeSpacing": 0.45,
+        "symmetry": 0.97,
+    }
+
+
+def test_sema_yukseklik_alanlari_olmadan_dogrular():
+    from api.face_reading import FaceRatios
+
+    model = FaceRatios(**_asgari_olcum())
+    assert model.upperThird is None
+    assert model.widthToHeight is None
+    # `exclude_none` ile sozluge HIC girmemeliler.
+    govde = model.model_dump(exclude_none=True)
+    for anahtar in ("upperThird", "middleThird", "lowerThird",
+                    "widthToHeight", "lipFullness"):
+        assert anahtar not in govde, f"{anahtar} olculmeden gonderiliyor"
+
+
+def test_sema_genislik_alanlarini_ZORUNLU_tutar():
+    """Bunlar her yuzde olculebiliyor; eksikse istek gercekten bozuktur."""
+    import pytest as _pytest
+    from pydantic import ValidationError
+
+    from api.face_reading import FaceRatios
+
+    eksik = _asgari_olcum()
+    del eksik["symmetry"]
+    with _pytest.raises(ValidationError):
+        FaceRatios(**eksik)
+
+
+def test_sema_uc_bolge_geldiginde_araligi_korur():
+    import pytest as _pytest
+    from pydantic import ValidationError
+
+    from api.face_reading import FaceRatios
+
+    with _pytest.raises(ValidationError):
+        FaceRatios(**_asgari_olcum(), upperThird=1.4)
+
+
+# ---------------------------------------------------------------------------
+# Kafatasi tepesinden olcum (kel / tirasli)
+# ---------------------------------------------------------------------------
+
+r"""Kel kafa OLCULEMEZ bir durum degil, farkli bir geometri.
+
+Segmentasyon maskesi "sac yok, yuz teni dogrudan arka plana cikiyor" diyorsa
+kafatasi tepesi olculebiliyor demektir. Ama gelenek ust bolgeyi SAC CIZGISI
+ile tanimliyor ve kel bir kafada o cizgi geri getirilemez.
+
+Bu yuzden okuma nereden olculdugunu SOYLEMEK zorunda. Gizlemek, olcmedigimiz
+bir seyi olcmus gibi sunmak olurdu; ayni ilke sicak-soguk ekseninde de var.
+"""
+
+
+def test_tepeden_olcumde_prompt_bunu_bildirir():
+    blok = firasa_service.prompt_block({
+        "upperThird": 0.34,
+        "middleThird": 0.33,
+        "lowerThird": 0.33,
+        "widthToHeight": 0.70,
+        "jawToCheek": 0.80,
+        "mouthToFaceWidth": 0.41,
+        "lipFullness": 0.05,
+        "eyeSpacing": 0.45,
+        "symmetry": 0.97,
+        "foreheadFromCrown": 1.0,
+    }, "tr")
+    assert "kafatası tepesinden" in blok
+
+
+def test_sac_cizgisinden_olcumde_uyari_YOK():
+    """Uyari yalnizca gerektiginde cikmali; her okumada cikarsa gurultu olur."""
+    blok = firasa_service.prompt_block({
+        "upperThird": 0.34,
+        "middleThird": 0.33,
+        "lowerThird": 0.33,
+        "widthToHeight": 0.70,
+        "jawToCheek": 0.80,
+        "mouthToFaceWidth": 0.41,
+        "lipFullness": 0.05,
+        "eyeSpacing": 0.45,
+        "symmetry": 0.97,
+        "foreheadFromCrown": 0.0,
+    }, "tr")
+    assert "kafatası tepesinden" not in blok
+
+
+def test_tepeden_olcum_ingilizcede_de_bildirilir():
+    blok = firasa_service.prompt_block({
+        "jawToCheek": 0.80,
+        "mouthToFaceWidth": 0.41,
+        "eyeSpacing": 0.45,
+        "symmetry": 0.97,
+        "foreheadFromCrown": 1.0,
+    }, "en")
+    assert "CROWN" in blok
+    assert "kafatası" not in blok, "Ingilizce blokta Turkce metin var"

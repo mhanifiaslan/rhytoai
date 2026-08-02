@@ -233,6 +233,19 @@ def prompt_block(ratios: dict[str, Any], lang: str | None = None) -> str:
         # boş bir blok göndermek "bir şeyler bul" demek olurdu.
         satirlar.append(p.FIRASA_NO_MARKED_SIGNS)
 
+    # Üst bölge kafatası tepesinden ölçüldüyse SÖYLENİR.
+    #
+    # Gelenek bu bölgeyi saç çizgisiyle tanımlıyor; kel bir kafada o çizgi
+    # geri getirilemez. Ölçüm yapılabiliyor ama neyi ölçtüğü farklı ve bunu
+    # gizlemek, ölçmediğimiz bir şeyi ölçmüş gibi sunmak olurdu. Aynı ilke
+    # sıcak–soğuk ekseninde de uygulanıyor.
+    try:
+        tepeden = float(ratios.get("foreheadFromCrown") or 0.0) >= 0.5
+    except (TypeError, ValueError):
+        tepeden = False
+    if tepeden:
+        satirlar.append(p.FIRASA_FOREHEAD_FROM_CROWN)
+
     nem = ozet["moisture"]
     if nem:
         satirlar.append(p.FIRASA_MOISTURE[nem])

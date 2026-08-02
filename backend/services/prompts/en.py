@@ -536,6 +536,14 @@ FIRASA_HEAT_UNKNOWN = (
     "Do not pass judgement on that axis"
 )
 
+#: Told to the model when the crown was used instead of the hairline.
+FIRASA_FOREHEAD_FROM_CROWN = (
+    "The upper region was measured from the CROWN, not the hairline (no hair "
+    "or very short hair). The tradition defines this region by the hairline; "
+    "when discussing the upper region, say where the measurement was taken "
+    "from and avoid a firm verdict"
+)
+
 FIRASA = """
 TASK: Write a 180-220 word firasa reading from the MEASURED facial signs
 below. Address the reader as "you".

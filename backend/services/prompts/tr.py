@@ -520,6 +520,18 @@ FIRASA_HEAT_UNKNOWN = (
     "hakkında hüküm verme"
 )
 
+#: Saç çizgisi yerine kafatası tepesi kullanıldığında modele SÖYLENİR.
+#:
+#: Gelenek üst bölgeyi saç çizgisinden tanımlıyor ve kel ya da tıraşlı bir
+#: kafada o çizgi geri getirilemez. Ölçüm yapılabiliyor ama neyi ölçtüğü
+#: farklı; bunu gizlemek, ölçmediğimiz bir şeyi ölçmüş gibi sunmak olurdu.
+FIRASA_FOREHEAD_FROM_CROWN = (
+    "Üst bölge saç çizgisinden DEĞİL kafatası tepesinden ölçüldü (saç yok ya "
+    "da çok kısa). Gelenek bu bölgeyi saç çizgisiyle tanımlar; bu yüzden üst "
+    "bölge hakkında konuşurken ölçünün nereden alındığını belirt ve kesin "
+    "hüküm verme"
+)
+
 FIRASA = """
 GÖREV: Aşağıdaki ÖLÇÜLMÜŞ yüz belirtilerinden 180-220 kelimelik bir firaset
 okuması yaz. "Sen" diye hitap et.

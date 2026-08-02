@@ -46,15 +46,36 @@ class FaceRatios(BaseModel):
     üretmek, olmayan bir ölçüme dayanarak konuşmak olurdu.
     """
 
-    upperThird: float = Field(ge=0, le=1)
-    middleThird: float = Field(ge=0, le=1)
-    lowerThird: float = Field(ge=0, le=1)
-    widthToHeight: float = Field(ge=0.2, le=3)
+    # --- Genişliğe bölünenler: her zaman gelir ---
+    #
+    # Bunlar yüz genişliğine oranlanıyor ve saç çizgisinden BAĞIMSIZ.
     jawToCheek: float = Field(ge=0.2, le=2)
     mouthToFaceWidth: float = Field(ge=0.05, le=1.5)
-    lipFullness: float = Field(ge=0, le=0.5)
     eyeSpacing: float = Field(ge=0.05, le=1.5)
     symmetry: float = Field(ge=0, le=1)
+
+    # --- Yüksekliğe bölünenler: İSTEĞE BAĞLI ---
+    #
+    # Hepsi `yüz yüksekliği = çene − saç çizgisi` paydasına bağlı ve saç
+    # çizgisi her yüzde ölçülemiyor (kâkül, şapka, güvenilmez maske). İstemci
+    # ölçemediğinde bu alanları HİÇ göndermiyor.
+    #
+    # Zorunlu olmaları gerçek bir kusur üretti: istemci alanları göndermeyi
+    # bıraktığında uç 422 döndü ve kullanıcı çekimden sonra "beklenmeyen bir
+    # sorun" ekranı gördü. Sözleşmenin iki ucu birlikte değişmeliydi.
+    #
+    # Alanın YOKLUĞU bilgi taşıyor: "bu eksen ölçülemedi". Varsayılan 0
+    # vermek "ölçtüm ve sıfır çıktı" demek olurdu — bkz. hareket alanları.
+    #: 1 = üst bölge saç çizgisinden değil KAFATASI TEPESİNDEN ölçüldü.
+    #: Kel ya da tıraşlı kafada saç çizgisi geri getirilemiyor; ölçüm
+    #: yapılabiliyor ama okuma nereden ölçüldüğünü söylemek zorunda.
+    foreheadFromCrown: float | None = Field(default=None, ge=0, le=1)
+
+    upperThird: float | None = Field(default=None, ge=0, le=1)
+    middleThird: float | None = Field(default=None, ge=0, le=1)
+    lowerThird: float | None = Field(default=None, ge=0, le=1)
+    widthToHeight: float | None = Field(default=None, ge=0.2, le=3)
+    lipFullness: float | None = Field(default=None, ge=0, le=0.5)
 
     # --- Hareket (sıcak–soğuk ekseni) ---
     #
@@ -93,8 +114,17 @@ def firasa_reading(
     try:
         # Üç bölge oranı toplamı 1 civarında olmalı. Değilse tespit bozuk
         # demektir; uydurma bir okuma üretmektense reddetmek doğru.
-        toplam = ratios.upperThird + ratios.middleThird + ratios.lowerThird
-        if not (0.85 <= toplam <= 1.15):
+        #
+        # Kontrol yalnızca ÜÇÜ DE geldiğinde yapılıyor. Yokluk bir bozukluk
+        # değil, "saç çizgisi ölçülemedi" demek; onu 422 ile reddetmek
+        # ölçülebilen öbür eksenleri de çöpe atardı.
+        ucu = (ratios.upperThird, ratios.middleThird, ratios.lowerThird)
+        if all(v is not None for v in ucu):
+            if not (0.85 <= sum(ucu) <= 1.15):
+                raise HTTPException(status_code=422,
+                                    detail=text("face_invalid_ratios", lang))
+        elif any(v is not None for v in ucu):
+            # Kısmi gönderim tutarsız: üçü bir bütün.
             raise HTTPException(status_code=422,
                                 detail=text("face_invalid_ratios", lang))
 
