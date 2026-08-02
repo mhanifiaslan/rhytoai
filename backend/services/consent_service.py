@@ -32,12 +32,47 @@ saklanıyor ve sürüm ilerlediğinde kullanıcıya yeniden soruluyor —
 from __future__ import annotations
 
 import datetime as dt
+import json
 import logging
 from typing import Any
 
-from core import firestore as firestore_client
+from core import config, firestore as firestore_client
 
 logger = logging.getLogger(__name__)
+
+
+def _local_store():
+    """Firestore yokken kullanılan yerel kayıt dosyası.
+
+    Önbellekteki desenin aynısı (`core/cache.py`): yerelde dosya, üretimde
+    Firestore. Bu bir KAPI GEVŞETMESİ DEĞİL, depolama seçimi — rıza yine
+    gerçekten aranıyor ve kayıt yoksa işleme reddediliyor.
+
+    Yanlış tarafa düşme yönü de doğru: kayıt kaybolursa kullanıcıya rıza
+    yeniden sorulur (can sıkıcı ama zararsız), rıza kendiliğinden "var"
+    sayılmaz. Yani hata durumunda sistem kapanıyor, açılmıyor.
+    """
+    return config.CACHE_DIR / "face_consent.json"
+
+
+def _local_read() -> dict[str, Any]:
+    path = _local_store()
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def _local_write(kayitlar: dict[str, Any]) -> bool:
+    try:
+        _local_store().write_text(
+            json.dumps(kayitlar, ensure_ascii=False), encoding="utf-8")
+        return True
+    except Exception as exc:
+        logger.warning("Yerel rıza kaydı yazılamadı: %s", exc)
+        return False
 
 #: Yüz okuma rızasının güncel sürümü.
 #:
@@ -75,7 +110,7 @@ def face_consent(uid: str) -> dict[str, Any] | None:
     """Kayıtlı rıza kaydı; yoksa ``None``."""
     doc_ref = _user_doc(uid)
     if doc_ref is None:
-        return None
+        return _local_read().get(uid)
     try:
         snapshot = doc_ref.get()
     except Exception as exc:
@@ -114,9 +149,16 @@ def grant_face_consent(uid: str) -> bool:
     Zaman damgası ve sürüm birlikte tutuluyor: ispat yükü bizde ve "ne zaman,
     neye rıza gösterildi" sorusunun cevabı olmadan kayıt bir işe yaramaz.
     """
+    kayit = {
+        "granted": True,
+        "version": FACE_CONSENT_VERSION,
+        "grantedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+    }
     doc_ref = _user_doc(uid)
     if doc_ref is None:
-        return False
+        kayitlar = _local_read()
+        kayitlar[uid] = kayit
+        return _local_write(kayitlar)
     try:
         doc_ref.set({_FIELD: {
             "granted": True,
@@ -142,7 +184,13 @@ def withdraw_face_consent(uid: str) -> bool:
     """
     doc_ref = _user_doc(uid)
     if doc_ref is None:
-        return False
+        kayitlar = _local_read()
+        kayitlar[uid] = {
+            "granted": False,
+            "version": FACE_CONSENT_VERSION,
+            "withdrawnAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        }
+        return _local_write(kayitlar)
     try:
         doc_ref.set({_FIELD: {
             "granted": False,

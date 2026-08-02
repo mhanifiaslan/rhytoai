@@ -26,6 +26,29 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    // Biyometrik işleme rızasını İSTEMCİ DEĞİŞTİREMEZ.
+    //
+    // Alan bir dönem yazılabilir listesinde HİÇ yoktu; amaç doğruydu ama yan
+    // etkisi ağırdı. Kural motoru `merge: true` yazımlarda gönderilen alanlara
+    // değil SONUÇTA oluşacak dokümana bakıyor. `faceConsent` o dokümanda
+    // durduğu için `hasOnly(...)` her istemci yazımında düşüyordu:
+    //
+    //   Bildirim bağlamı yazılamadı: [cloud_firestore/permission-denied]
+    //
+    // Yani kullanıcı rıza verdikten SONRA saat dilimi, dil, FCM token, seri
+    // sayacı ve profil düzenlemeleri artık hiç yazılamıyordu — sessizce.
+    //
+    // Alan artık listede ama DEĞİŞMEZ: merge yazımlarında olduğu gibi geçiyor,
+    // istemci değerini kuramıyor ve değiştiremiyor. Yalnızca Admin SDK
+    // (kuralları atlar) yazabiliyor. Özgün amaç korunuyor:
+    // kullanıcı kendi rızasını uyduramaz.
+    function faceConsentDegismedi() {
+      return !('faceConsent' in request.resource.data)
+        || (resource != null
+            && 'faceConsent' in resource.data
+            && request.resource.data.faceConsent == resource.data.faceConsent);
+    }
+
     // ---------- Kullanıcı profili (HASSAS — yalnızca sahibi) ----------
     // Doğum tarihi + saati + yeri hassas bir üçlüdür (kimlik doğrulama
     // sorularında kullanılır). Firestore kuralları okumada alan filtreleyemediği
@@ -53,8 +76,11 @@ service cloud.firestore {
           'language',
           // Tercihler (varsayılan açık) ve sessiz saat aralığı (yerel saat).
           'notifyDaily', 'notifyStreak', 'notifyFriends',
-          'quietFrom', 'quietTo'
-        ]);
+          'quietFrom', 'quietTo',
+          // Biyometrik işleme rızası — LİSTEDE ama DEĞİŞMEZ (aşağıya bak).
+          'faceConsent'
+        ])
+        && faceConsentDegismedi();
       allow delete: if isOwner(uid);
 
       // Engellenen kullanıcılar: yalnızca liste sahibi yazar/siler/okur.

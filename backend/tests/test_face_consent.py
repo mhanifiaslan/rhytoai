@@ -100,20 +100,61 @@ def test_okuma_hatasinda_riza_yok_sayilir(monkeypatch):
 
 
 def test_riza_alani_istemciye_YAZILAMAZ():
-    """Firestore kurallarindaki yazilabilir alan listesi `hasOnly(...)` ile
-    calisiyor ve `faceConsent` orada YOK — yani alani yalnizca sunucu
-    (Admin SDK) yazabiliyor.
+    """`faceConsent` istemci tarafindan DEGISTIRILEMEZ olmali.
 
-    Eklenirse kullanici kendi rizasini uydurabilir: riza metnini hic gormeden
-    `granted: true` yazar, hem bilgilendirme hem ispat kaydi coker. Bu test o
-    yuzden kural dosyasini bekciliyor.
+    Degistirilebilirse kullanici kendi rizasini uydurur: riza metnini hic
+    gormeden `granted: true` yazar, hem bilgilendirme hem ispat kaydi coker.
+
+    Koruma bir donem "alan yazilabilir listede HIC yok" seklindeydi. Amac
+    dogruydu ama yan etkisi agirdi ve CIHAZDA GORULDU: kural motoru
+    `merge: true` yazimlarda gonderilen alanlara degil SONUCTA olusacak
+    dokumana bakiyor. `faceConsent` o dokumanda durdugu icin `hasOnly(...)`
+    her istemci yazimini reddediyordu:
+
+        Bildirim baglami yazilamadi: [cloud_firestore/permission-denied]
+
+    Yani kullanici riza verdikten SONRA saat dilimi, dil, FCM token, seri
+    sayaci ve profil duzenlemeleri hic yazilamiyordu — sessizce.
+
+    Koruma artik "listede ama DEGISMEZ" seklinde. Bu test onu bekciliyor.
     """
     from pathlib import Path
     kurallar = (Path(__file__).resolve().parent.parent.parent
                 / "infra" / "firestore.rules").read_text(encoding="utf-8")
-    assert "faceConsent" not in kurallar, (
-        "faceConsent Firestore kurallarindaki yazilabilir alan listesine "
-        "eklenmis; kullanici kendi rizasini uydurabilir hale gelir.")
+
+    # Degismezlik kontrolu VAR olmali.
+    assert "faceConsentDegismedi()" in kurallar, (
+        "faceConsent degismezlik kontrolu kurallardan kaldirilmis; kullanici "
+        "kendi rizasini uydurabilir hale gelir.")
+
+    # Kontrol kullanici dokumanina UYGULANMIS olmali; tanimlanip
+    # cagrilmamasi sessiz bir acik olurdu.
+    bas = kurallar.index("match /users/{uid}")
+    son = kurallar.index("allow delete", bas)
+    assert "faceConsentDegismedi()" in kurallar[bas:son], (
+        "kontrol tanimli ama users/{uid} kuralinda cagrilmiyor.")
+
+    # Esitlik karsilastirmasi: yeni deger eskisiyle AYNI olmak zorunda.
+    assert ("request.resource.data.faceConsent == resource.data.faceConsent"
+            in kurallar), "degismezlik esitlik ile kurulmamis."
+
+
+def test_riza_alani_yazilabilir_listede_OLMALI():
+    """Alan listede olmazsa merge yazimlarinin TAMAMI reddedilir.
+
+    Bu testin varlik sebebi, yukaridaki korumayi "listeden cikar" diye
+    duzeltmeye calisan bir sonraki kisiyi durdurmak: o degisiklik guvenligi
+    artirmiyor, yalnizca uygulamanin kullanici dokumanina yazmasini
+    tamamen kapatiyor.
+    """
+    from pathlib import Path
+    kurallar = (Path(__file__).resolve().parent.parent.parent
+                / "infra" / "firestore.rules").read_text(encoding="utf-8")
+    bas = kurallar.index("match /users/{uid}")
+    son = kurallar.index("]);", bas)
+    assert "'faceConsent'" in kurallar[bas:son], (
+        "faceConsent hasOnly listesinden cikarilmis; riza verildikten sonra "
+        "istemci kullanici dokumanina HIC yazamaz.")
 
 
 # --------------------------------------------------------------------------
@@ -152,3 +193,58 @@ def test_riza_uclari_abonelik_istemez():
         kaynak = inspect.getsource(fn)
         assert "require_plus" not in kaynak, fn.__name__
         assert "get_current_user" in kaynak, fn.__name__
+
+
+# --------------------------------------------------------------------------
+# Yerel depolama yedegi (Firestore yokken)
+# --------------------------------------------------------------------------
+
+@pytest.fixture
+def yerel_depo(tmp_path, monkeypatch):
+    """Firestore'suz ortam: kayit dosyaya yazilir."""
+    from core import config
+    monkeypatch.setattr(config, "CACHE_DIR", tmp_path)
+    monkeypatch.setattr(consent_service.firestore_client, "get_client",
+                        lambda: None)
+    return tmp_path
+
+
+def test_firestore_yokken_riza_dosyaya_yazilir(yerel_depo):
+    """Onbellekteki desenin aynisi: yerelde dosya, uretimde Firestore.
+
+    Bu bir KAPI GEVSETMESI DEGIL, depolama secimi — riza yine gercekten
+    araniyor ve kayit yoksa isleme reddediliyor.
+    """
+    assert consent_service.has_face_consent("u1") is False
+    assert consent_service.grant_face_consent("u1") is True
+    assert consent_service.has_face_consent("u1") is True
+
+
+def test_yerel_depoda_geri_alma_calisir(yerel_depo):
+    consent_service.grant_face_consent("u1")
+    assert consent_service.withdraw_face_consent("u1") is True
+    assert consent_service.has_face_consent("u1") is False
+
+
+def test_yerel_depo_kullanicilari_karistirmaz(yerel_depo):
+    consent_service.grant_face_consent("u1")
+    assert consent_service.has_face_consent("u1") is True
+    assert consent_service.has_face_consent("u2") is False
+
+
+def test_kayit_kaybolursa_riza_YOK_sayilir(yerel_depo):
+    """Yanlis tarafa dusme yonu onemli: kayit kaybolursa kullaniciya riza
+    yeniden sorulur (can sikici ama zararsiz), riza kendiliginden 'var'
+    sayilmaz. Yani hata durumunda sistem KAPANIYOR, acilmiyor.
+    """
+    consent_service.grant_face_consent("u1")
+    (yerel_depo / "face_consent.json").unlink()
+    assert consent_service.has_face_consent("u1") is False
+
+
+def test_bozuk_dosya_cokmez_riza_yok_sayilir(yerel_depo):
+    (yerel_depo / "face_consent.json").write_text("{bozuk", encoding="utf-8")
+    assert consent_service.has_face_consent("u1") is False
+    # Bozuk dosyanin uzerine yazilabilmeli, kullanici kilitli kalmamali
+    assert consent_service.grant_face_consent("u1") is True
+    assert consent_service.has_face_consent("u1") is True
