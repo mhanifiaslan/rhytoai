@@ -174,6 +174,60 @@ def test_mizac_sorusunda_baskin_element_girer():
     assert "Toprak" in sorgu  # olgularda earth 5 ile baskin
 
 
+def test_mesaj_sorguya_her_zaman_girer():
+    """Regresyon: ilk surumde mesaj tamamen ATILIYOR, yerine yalnizca konu
+    tohumu + harita konuyordu. Iki sonucu vardi:
+
+    1. Konu eslesmediginde sorgu HER SORU ICIN AYNI oluyordu — "Bugun hangi
+       gezegenin gunu?" ile "Ayin menzili ne demek?" birebir ayni metni
+       uretiyordu.
+    2. Konu eslesse bile mesajin kendi icerigi kayboluyordu: "YUZUMDEN
+       mizacim okunur mu?" sorusunda "yuzumden" dusuyor, firaset yerine
+       genel mizac bolumu geliyordu.
+
+    Dogru bolusum: mesaj NEYIN soruldugunu, harita KIMIN sordugunu tasir.
+    """
+    a = chart_query.build_query("Bugün hangi gezegenin günü?", OLGULAR,
+                                lang="tr")
+    b = chart_query.build_query("Ayın menzili ne demek?", OLGULAR, lang="tr")
+    assert a != b, "farkli sorular ayni sorguyu uretiyor"
+    assert "gezegenin günü" in a
+    assert "menzili" in b
+
+    c = chart_query.build_query("Yüzümden mizacım okunur mu?", OLGULAR,
+                                lang="tr")
+    assert "Yüzümden" in c
+
+
+def test_konu_taninmazsa_harita_eklenmez():
+    """Konuyu bilmemek, hangi olgularin ilgili oldugunu bilmemek demektir.
+    Kisiye ozel olmayan bir soruya kisiye ozel baglam eklemek
+    kisisellestirme degil, gurultudur."""
+    mesaj = "Ayın menzili ne demek?"
+    sorgu = chart_query.build_query(mesaj, OLGULAR, lang="tr")
+    assert sorgu == mesaj
+    assert "Aslan" not in sorgu and "Kare" not in sorgu
+
+
+def test_firaset_kendi_konusudur():
+    """Yuz okuma aktif edilecegi icin firaset ayri bir konu; sorgunun
+    Marifetname'nin firaset bolumune gitmesi buna bagli."""
+    assert "physiognomy" in detect_topics("Yüzümden mizacım okunur mu?", "tr")
+    assert "physiognomy" in detect_topics("Firaset ne anlatır?", "tr")
+    assert "physiognomy" in detect_topics("Can my face show my nature?", "en")
+
+    sorgu = chart_query.build_query("Firaset ne anlatır?", OLGULAR, lang="tr")
+    assert "Firaset" in sorgu and "kıyafet ilmi" in sorgu
+
+
+def test_yuzden_kalibi_firaseti_tetiklemez():
+    """"bu yüzden" / "onun yüzünden" Turkcede cok sik ve konuyla ilgisiz;
+    bu yuzden "yüz" koku TEK BASINA tetikleyici degil."""
+    for mesaj in ("bu yüzden çok yoruldum", "onun yüzünden geç kaldım",
+                  "bu yüzden karar veremiyorum"):
+        assert "physiognomy" not in detect_topics(mesaj, "tr"), mesaj
+
+
 def test_harita_yoksa_mesajin_kendisi_kullanilir():
     """Dogum verisi girilmemis kullanicida davranis eskisiyle ayni kalir."""
     mesaj = "İşimle ilgili ne yapmalıyım?"
@@ -181,12 +235,17 @@ def test_harita_yoksa_mesajin_kendisi_kullanilir():
     assert chart_query.build_query(mesaj, {}, lang="tr") == mesaj
 
 
-def test_konu_bulunamazsa_haritanin_omurgasi_verilir():
-    sorgu = chart_query.build_query("bugün biraz tuhaf hissediyorum",
-                                    OLGULAR, lang="tr")
-    assert sorgu
-    # Bos sorgu embedding'i anlamsizdir; en azindan buyuk uclu girmeli
-    assert "Güneş" in sorgu or "Ay" in sorgu
+def test_konu_bulunamazsa_sorgu_bos_kalmaz():
+    """Mesaj her zaman sorguda oldugu icin bos sorgu ihtimali yok.
+
+    Bu test eskiden bunun TERSINI iddia ediyordu: konu bulunamazsa haritanin
+    buyuk uclusu eklensin diyordu. O davranis kaldirildi, cunku alakasiz
+    yerlesimler asil soruyu boguyordu (bkz.
+    test_konu_taninmazsa_harita_eklenmez).
+    """
+    mesaj = "bugün biraz tuhaf hissediyorum"
+    sorgu = chart_query.build_query(mesaj, OLGULAR, lang="tr")
+    assert sorgu == mesaj
 
 
 def test_sorgu_odagini_kaybedecek_kadar_uzamaz():
@@ -199,15 +258,22 @@ def test_sorgu_odagini_kaybedecek_kadar_uzamaz():
         assert len(sorgu) < 400, f"sorgu {len(sorgu)} karaktere cikti"
 
 
-def test_sorgu_ayni_konuda_kararlidir():
-    """Sorgu embedding'i sorgu metnine gore onbellekleniyor. Ham kullanici
-    mesajlari neredeyse hic tekrar etmedigi icin onbellek calismiyordu;
-    haritadan kurulan sorgu ayni kullanici + ayni konu icin AYNI metni
-    uretir ve ~1 sn'lik embedding cagrisi atlanir."""
+def test_ayni_konuda_harita_kismi_kararlidir():
+    """Sorgunun HARITA kismi ayni konuda ayni kalir; mesaj kismi degisir.
+
+    Bu test eskiden sorgunun TAMAMININ ayni kalmasini bekliyordu ve bunu
+    "sorgu embedding onbellegi artik calisiyor" diye bir kazanc sayiyordum.
+    O kazanc gercek degildi: sorgular ayni cikiyordu cunku MESAJ ATILIYORDU
+    (bkz. test_mesaj_sorguya_her_zaman_girer). Iki farkli soru ayni sorguyu
+    uretiyorsa bu onbellek isabeti degil, bilgi kaybidir.
+    """
     a = chart_query.build_query("İşimle ilgili ne yapmalıyım?", OLGULAR,
                                 lang="tr")
     b = chart_query.build_query("İşim beni çok yoruyor", OLGULAR, lang="tr")
-    assert a == b
+    assert a != b, "farkli mesajlar ayni sorguyu uretmemeli"
+
+    # Mesajdan sonraki kisim (konu tohumu + harita) ayni olmali.
+    assert a.split(". ", 1)[1] == b.split(". ", 1)[1]
 
 
 def test_ham_dogum_verisi_sorguya_girmez():

@@ -24,6 +24,21 @@ Kaynak metin eklemek modeli sertleştirmez: Batlamyus'un dilini kullanıp yine
 "ama bu senin için bir büyüme fırsatı" diye bitirebilir. Bu yüzden aynı
 koşuda yağcılık kalıpları ve yasak alan sızıntısı da sayılır.
 
+## Ölçümün varyansı — okurken dikkat
+
+Üç ardışık koşuda (aynı kod, 3 harita × 4 soru = 12 cevap) "cevap başına
+olgu" **1,7 / 2,9 / 2,8** çıktı. Yani bu sayı ±1 oynuyor ve tek koşuluk bir
+fark **değişiklik olarak okunamaz**. Bir kez 2,7 → 1,7 düşüşünü gerileme
+sandım; iki koşu daha alınca gürültü olduğu görüldü.
+
+Koşudan koşuya kararlı olan iki gösterge şunlar ve sonuç bunlardan okunmalı:
+
+- **Haritalar arası olgu örtüşmesi** — her koşuda %0.
+- **Yasak alan sızıntısı** — her koşuda 0.
+
+Bir değişikliğin etkisini ölçmek için tek koşu yetmez; `--charts` artırılmalı
+ya da birkaç kez çalıştırılıp ortalaması alınmalı.
+
 Kullanım:
     GEMINI_API_KEY=... .venv/Scripts/python.exe scripts/eval_genericness.py
     ... --charts 3 --repeat   (tavan referansı da ölçülsün)

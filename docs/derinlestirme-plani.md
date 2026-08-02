@@ -300,9 +300,23 @@ pasajı çeker.
    bir bölüm var. Konu tespiti artık kapıyı açıyor. ("timing" tek başına
    yeterli sayılmıyor: "bugün biraz keyifsizim" dönem sorusu değil.)
 
-Yan fayda: sorgu artık aynı kullanıcı + aynı konu için **aynı metni** üretiyor,
-yani sorgu embedding önbelleği gerçekten çalışıyor. Ham kullanıcı mesajları
-neredeyse hiç tekrar etmediği için o önbellek pratikte hiç isabet etmiyordu.
+> **Düzeltme (2026-08-02).** İlk sürümde `build_query` kullanıcının mesajını
+> **tamamen atıyor**, yerine yalnızca konu tohumu + harita koyuyordu. Bunu
+> "sorgu artık kararlı, embedding önbelleği çalışıyor" diye bir kazanç olarak
+> yazmıştım — **kazanç değildi, hatanın kendisiydi.** İki farklı soru aynı
+> sorguyu üretiyorsa bu önbellek isabeti değil, bilgi kaybıdır.
+>
+> Marifetname eklendikten sonra görüldü: "Bugün hangi gezegenin günü?" ile
+> "Ayın menzili ne demek?" birebir aynı sorgu metnini üretiyor ve ikisi de
+> yanlış pasaj getiriyordu. Ham mesajla arandığında ikisi de doğru bölümü
+> buluyordu.
+>
+> İki düzeltme yapıldı:
+> 1. **Mesaj sorgunun önünde durur ve asla atılmaz.** Mesaj NEYİN
+>    sorulduğunu, harita KİMİN sorduğunu taşır; ikisi de gerekli.
+> 2. **Konu tanınmazsa harita hiç eklenmez.** Konuyu bilmemek, hangi
+>    olguların ilgili olduğunu bilmemek demektir; o durumda harita eklemek
+>    kişiselleştirme değil gürültüdür.
 
 ### ✅ Faz E sonucu (2026-08-01)
 
@@ -332,6 +346,13 @@ için CI testi değil, elle çalıştırılır).
 **Olgu örtüşmesinin %0 olması asıl sonuç:** hiçbir iki harita aynı yerleşimi
 anmıyor, yani her cevap kendi haritasından konuşuyor. Jeneriklik tam olarak
 bunun tersiydi.
+
+> **Varyans notu (2026-08-02).** Üç ardışık koşuda "cevap başına olgu"
+> **1,7 / 2,9 / 2,8** çıktı — aynı kodla. Yani bu sayı n=12'de ±1 oynuyor ve
+> tek koşuluk fark değişiklik olarak okunamaz. Bir kez 2,7 → 1,7 düşüşünü
+> gerileme sandım; iki koşu daha alınca gürültü olduğu görüldü. Koşudan
+> koşuya kararlı olan iki gösterge **olgu örtüşmesi (%0)** ve **yasak alan
+> sızıntısı (0)**; sonuç bunlardan okunmalı.
 
 İki dürüstlük notu:
 

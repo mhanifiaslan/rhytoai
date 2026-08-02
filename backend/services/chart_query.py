@@ -48,6 +48,8 @@ _TOPIC_SEEDS = {
         "relationship": "Evlilik, ortaklık, bağ, dostluk",
         "mind": "Aklın niteliği, düşünme biçimi, muhakeme",
         "temperament": "Mizaç, bedenin biçimi, dört element dengesi",
+        "physiognomy": ("Firaset, kıyafet ilmi, dış belirtiden mizaca; "
+                        "yüz hatları, ses ve duruş"),
         "travel": "Yolculuk, yer değiştirme, kökten uzaklaşma",
         "timing": "Yaklaşma ve ayrılma, transit, açının kurulması",
         "self": "Yükselen derece, kişinin kendi doğası",
@@ -57,6 +59,8 @@ _TOPIC_SEEDS = {
         "relationship": "Marriage, partnership, friendship, bonds",
         "mind": "The quality of the mind, manner of thinking, judgement",
         "temperament": "Temperament, form of the body, balance of elements",
+        "physiognomy": ("Firasa, the science of physiognomy, from outward "
+                        "sign to temperament; facial features, voice, bearing"),
         "travel": "Travelling, journeys, leaving one's own ground",
         "timing": "Application and separation, transit, an aspect forming",
         "self": "The degree ascending, a person's own nature",
@@ -75,6 +79,10 @@ _TOPIC_FACTORS: dict[str, dict[str, tuple]] = {
                      "houses": (7, 5, 11)},
     "mind": {"planets": ("Mercury", "Moon"), "houses": (3, 9)},
     "temperament": {"planets": ("Sun", "Moon", "Saturn", "Mars", "Jupiter"),
+                    "houses": (1,)},
+    # Firaset bedeni okur; gelenekte beden birinci evin işidir. Yükselen ve
+    # oradaki gezegenler, mizaç belirleyicileriyle aynı kümeye düşer.
+    "physiognomy": {"planets": ("Sun", "Moon", "Mars", "Venus", "Saturn"),
                     "houses": (1,)},
     "travel": {"planets": ("Moon", "Jupiter"), "houses": (9, 3, 4)},
     "timing": {"planets": (), "houses": ()},
@@ -154,10 +162,40 @@ def build_query(message: str, facts: dict | None,
         return message
 
     dil = _lang_key(lang)
-    konular = detect_topics(message, lang) or [_DEFAULT_TOPIC]
+    konular = detect_topics(message, lang)
 
-    parcalar = [_TOPIC_SEEDS[dil][k] for k in konular
-                if k in _TOPIC_SEEDS[dil]]
+    # Konu tanınmadıysa harita EKLENMEZ, mesaj olduğu gibi aranır.
+    #
+    # Konuyu bilmemek, hangi olguların ilgili olduğunu bilmemek demektir;
+    # o durumda haritayı yine de eklemek sorguyu alakasız yerleşimlerle
+    # dolduruyor ve asıl soruyu boğuyordu. Ölçülen örnek: "Bugün hangi
+    # gezegenin günü?" ham hâliyle doğru bölümü buluyordu (Günlerin ve
+    # Saatlerin Yöneticileri, 0,75); büyük üçlü + açılar eklenince o
+    # bölüm listeden düşüyor ve yerine genel gezegen pasajları geliyordu.
+    #
+    # Kişiye özel olmayan bir soru için kişiye özel bağlam eklemek
+    # kişiselleştirme değil, gürültüdür.
+    if not konular:
+        return re.sub(r"\s+", " ", message).strip() or message
+
+    # Mesajın kendisi sorgunun ÖNÜNDE durur ve asla atılmaz.
+    #
+    # İlk sürümde mesaj tamamen değiştiriliyordu (yalnızca konu tohumu +
+    # harita) ve bu iki şeyi birden bozuyordu:
+    #
+    #   1. Konu eşleşmediğinde sorgu HER SORU İÇİN AYNI oluyordu.
+    #      "Bugün hangi gezegenin günü?" ile "Ayın menzili ne demek?"
+    #      birebir aynı sorgu metnini üretiyor, dolayısıyla aynı pasajları
+    #      getiriyordu.
+    #   2. Konu eşleşse bile mesajın kendi içeriği kayboluyordu:
+    #      "YÜZÜMDEN mizacım okunur mu?" sorusunda "yüzümden" düşüyor ve
+    #      firaset bölümü yerine genel mizaç bölümü geliyordu.
+    #
+    # Doğru bölüşüm şu: mesaj NEYİN sorulduğunu, harita KİMİN sorduğunu
+    # taşır. İkisi de gerekli.
+    parcalar = [re.sub(r"\s+", " ", message).strip()]
+    parcalar += [_TOPIC_SEEDS[dil][k] for k in konular
+                 if k in _TOPIC_SEEDS[dil]]
 
     yerlesimler = _relevant_placements(facts, konular)
     if yerlesimler:

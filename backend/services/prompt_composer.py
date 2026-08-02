@@ -135,6 +135,11 @@ _TOPIC_TRIGGERS = {
                  "öğren", "konsantr", "unut", "hafıza", "akıl", "akl"),
         "temperament": ("mizaç", "mizac", "huy", "karakter", "element",
                         "kişilik", "doğam", "yapım"),
+        # "yüz" tek başına KULLANILMIYOR: "bu yüzden", "onun yüzünden" gibi
+        # kalıplar Türkçede çok sık ve konuyla ilgisiz. Daha dar kökler ve
+        # çok kelimeli kalıplar tercih edildi.
+        "physiognomy": ("yüzüm", "suratım", "çehre", "sima", "firaset",
+                        "kıyafetname", "yüz okuma", "yüz hat"),
         "travel": ("yolculuk", "seyahat", "taşın", "göç", "yurtdışı",
                    "uzağa", "şehir değiş"),
         # "bugün", "şimdi" gibi kelimeler BİLEREK yok: sıradan sohbette çok
@@ -154,6 +159,8 @@ _TOPIC_TRIGGERS = {
                  "memory", "understand", "concentrat"),
         "temperament": ("temperament", "character", "personality", "nature",
                         "element", "who i am"),
+        "physiognomy": ("my face", "facial", "physiognom", "my looks",
+                        "my features", "face reading", "appearance"),
         "travel": ("travel", "move abroad", "relocat", "journey", "emigrat",
                    "moving to"),
         # "when" ve "today" bilerek yok — İngilizcede her cümlede geçebilirler.
