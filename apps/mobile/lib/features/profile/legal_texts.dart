@@ -14,8 +14,8 @@ library;
 /// (başlık | null, gövde) çiftleri — başlıksız girdiler düz paragraftır.
 typedef LegalSections = List<(String?, String)>;
 
-const String kLegalLastUpdatedTr = '29 Temmuz 2026';
-const String kLegalLastUpdatedEn = '29 July 2026';
+const String kLegalLastUpdatedTr = '2 Ağustos 2026';
+const String kLegalLastUpdatedEn = '2 August 2026';
 const String kLegalContact = 'aslan.mh@gmail.com';
 
 // ---------------------------------------------------------------------------
@@ -56,6 +56,28 @@ const LegalSections kPrivacyPolicyTr = [
         'oturur, hesabına bağlı olarak saklanır ve başka kullanıcılara '
         'gösterilmez. Sağlık durumu, tanı veya ilaç bilgisi bu kapsamda '
         'TUTULMAZ.'
+  ),
+  (
+    'Yüz okuma',
+    'Yüz okuma özelliği KAMERAYI kullanır ama FOTOĞRAF ÇEKMEZ. Kamera '
+        'görüntüsü telefonundan çıkmaz: yüz hatlarının tespiti de, saç '
+        'çizgisinin bulunması da tamamen cihazında, çevrimdışı çalışan '
+        'modellerle yapılır. Görüntü sunucularımıza gönderilmez, buluta '
+        'yüklenmez ve telefonunun diskine dahi yazılmaz — işlem bittiği anda '
+        'bellekten silinir.\n\n'
+        'Sunucuya yalnızca yüz hatlarından TÜRETİLMİŞ ORANLAR gider (örneğin '
+        'alın yüksekliğinin yüz yüksekliğine oranı). Bu sayılar iki ondalığa '
+        'yuvarlanır ve kişiyi tanımaya yaramaz: "0,34" değeri milyonlarca '
+        'insanda aynıdır. Yüz tanıma, kimlik doğrulama veya kişi eşleştirme '
+        'YAPILMAZ; bu sayılardan yüzün geri üretilmesi mümkün değildir.\n\n'
+        'Oranlar ve üretilen okuma hesabına bağlı olarak saklanır, başka '
+        'kullanıcılara gösterilmez. Bu özellik ayrı ve açık rızanla '
+        'çalışır; rızanı Profil > Gizlilik bölümünden istediğin an geri '
+        'alabilirsin. Geri aldığında oranların ve o oranlardan üretilmiş '
+        'okumalar silinir.\n\n'
+        'Yüz okuma bir eğlence ve kendini tanıma aracıdır. Sağlık, işe alım, '
+        'kredi, sigorta ya da benzeri hiçbir kararda kullanılmaz ve '
+        'kullanılmamalıdır.'
   ),
   (
     'Arkadaş katmanı',
@@ -230,6 +252,30 @@ const LegalSections kPrivacyPolicyEn = [
         'preset reactions you send. Users cannot send each other free text in '
         'this app; interaction is limited to a fixed set of reactions. We do '
         'not access your contacts.'
+  ),
+  (
+    'Face reading',
+    'The face reading feature uses the CAMERA but does NOT take a photo. The '
+        'camera image never leaves your phone: both the facial landmark '
+        'detection and the hairline measurement run entirely on your device, '
+        'with offline models. The image is not sent to our servers, not '
+        'uploaded to any cloud, and not even written to your phone '
+        'storage — it is discarded from memory as soon as the measurement '
+        'finishes.\n\n'
+        'Only DERIVED RATIOS are sent to the server (for example, forehead '
+        'height as a fraction of face height). These numbers are rounded to '
+        'two decimals and cannot identify you: a value of "0.34" is shared by '
+        'millions of people. No face recognition, identity verification or '
+        'person matching is performed, and your face cannot be reconstructed '
+        'from these numbers.\n\n'
+        'The ratios and the resulting reading are stored against your account '
+        'and are never shown to other users. The feature runs only with your '
+        'separate, explicit consent, which you can withdraw at any time from '
+        'Profile > Privacy. Withdrawing deletes your ratios and any readings '
+        'produced from them.\n\n'
+        'Face reading is a form of entertainment and self-reflection. It is '
+        'not used, and must not be used, for any decision about health, '
+        'employment, credit, insurance or anything similar.'
   ),
   (
     'Notifications',

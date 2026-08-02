@@ -1838,6 +1838,12 @@ abstract class AppLocalizations {
   /// **'Hazır — sabit dur'**
   String get faceGuideReady;
 
+  /// No description provided for @faceGuideForehead.
+  ///
+  /// In tr, this message translates to:
+  /// **'Alnını aç — saçını geriye al'**
+  String get faceGuideForehead;
+
   /// No description provided for @faceScanning.
   ///
   /// In tr, this message translates to:
@@ -1969,6 +1975,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Rıza geri alındı, {count} okuma silindi.'**
   String faceConsentWithdrawn(int count);
+
+  /// No description provided for @faceOpenSettings.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar dene'**
+  String get faceOpenSettings;
+
+  /// No description provided for @faceCameraDeniedHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'İzni reddettiysen, telefon ayarlarından Rytho için kamera iznini açıp buraya dönebilirsin.'**
+  String get faceCameraDeniedHint;
 }
 
 class _AppLocalizationsDelegate

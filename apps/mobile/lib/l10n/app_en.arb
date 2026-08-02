@@ -420,6 +420,7 @@
   "faceGuideOffCentre": "Centre your face",
   "faceGuideTilted": "Hold your head upright",
   "faceGuideReady": "Ready — hold still",
+  "faceGuideForehead": "Uncover your forehead — push your hair back",
   "faceScanning": "Reading your features",
   "faceScanNodes": "Points settling",
   "faceScanReading": "Matching against firasa",
@@ -448,5 +449,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "faceOpenSettings": "Try again",
+  "faceCameraDeniedHint": "If you declined, you can enable camera access for Rytho in your phone settings and come back."
 }

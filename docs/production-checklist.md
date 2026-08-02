@@ -1,8 +1,13 @@
 # Üretim Yayın Kontrol Listesi
 
 Bu liste **v1 kapsamına** göre yazıldı. Kapsam dışı bırakılanlar burada da
-yok: yüz okuma, gönderi akışı, birebir mesajlaşma, takip ilişkileri.
+yok: gönderi akışı, birebir mesajlaşma, takip ilişkileri.
 Gerekçeler: `docs/store-review-notes.md`.
+
+**Yüz okuma artık kapsam İÇİNDE.** Bir dönem çıkarılmıştı (sunucuda görüntü
+işleme gerektiriyordu); şimdi tamamen cihaz üstünde çalışıyor — görüntü
+telefondan çıkmıyor, diske bile yazılmıyor. Gizlilik beyanları
+`docs/store-privacy-labels.md` içinde güncellendi.
 
 İşaretli maddeler **kodda doğrulanabilir**. İşaretsiz olanların çoğu
 konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
@@ -19,8 +24,11 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
       (`apps/mobile/lib/features/profile/legal_texts.dart`; Profil → Hakkında
       ve satın alma ekranından erişilebilir)
 - [x] Metinler gerçek ürünü anlatıyor: bildirim katmanı, kullanıcı hafızası,
-      abonelik ve arkadaş katmanı yazılı; kaldırılan özellikler (yüz analizi,
-      gönderi, DM) metinlerden çıkarıldı
+      abonelik, arkadaş katmanı ve **yüz okuma** yazılı; kaldırılan
+      özellikler (gönderi, DM) metinlerden çıkarıldı
+- [x] Gizlilik politikasında yüz okuma bölümü var (TR + EN) ve iddiaları
+      kodla test edilerek bağlanmış
+      (`apps/mobile/test/legal_texts_test.dart`)
 - [ ] **Hukukçu incelemesi** — metinler mühendislik taslağıdır; KVKK/GDPR
       açısından yayın öncesi gözden geçirilmeli
 - [ ] Hukuki metinleri bir web adresinde yayınla (mağaza formları URL ister;

@@ -420,6 +420,7 @@
   "faceGuideOffCentre": "Yüzünü ortala",
   "faceGuideTilted": "Başını dik tut",
   "faceGuideReady": "Hazır — sabit dur",
+  "faceGuideForehead": "Alnını aç — saçını geriye al",
   "faceScanning": "Yüz hatların okunuyor",
   "faceScanNodes": "Noktalar yerleşiyor",
   "faceScanReading": "Firaset ile eşleştiriliyor",
@@ -448,5 +449,7 @@
         "type": "int"
       }
     }
-  }
+  },
+  "faceOpenSettings": "Tekrar dene",
+  "faceCameraDeniedHint": "İzni reddettiysen, telefon ayarlarından Rytho için kamera iznini açıp buraya dönebilirsin."
 }

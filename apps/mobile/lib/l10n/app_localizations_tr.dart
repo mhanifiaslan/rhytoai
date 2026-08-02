@@ -953,6 +953,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get faceGuideReady => 'Hazır — sabit dur';
 
   @override
+  String get faceGuideForehead => 'Alnını aç — saçını geriye al';
+
+  @override
   String get faceScanning => 'Yüz hatların okunuyor';
 
   @override
@@ -1029,4 +1032,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String faceConsentWithdrawn(int count) {
     return 'Rıza geri alındı, $count okuma silindi.';
   }
+
+  @override
+  String get faceOpenSettings => 'Tekrar dene';
+
+  @override
+  String get faceCameraDeniedHint =>
+      'İzni reddettiysen, telefon ayarlarından Rytho için kamera iznini açıp buraya dönebilirsin.';
 }

@@ -956,6 +956,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get faceGuideReady => 'Ready — hold still';
 
   @override
+  String get faceGuideForehead => 'Uncover your forehead — push your hair back';
+
+  @override
   String get faceScanning => 'Reading your features';
 
   @override
@@ -1032,4 +1035,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String faceConsentWithdrawn(int count) {
     return 'Consent withdrawn, $count readings deleted.';
   }
+
+  @override
+  String get faceOpenSettings => 'Try again';
+
+  @override
+  String get faceCameraDeniedHint =>
+      'If you declined, you can enable camera access for Rytho in your phone settings and come back.';
 }

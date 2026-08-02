@@ -31,6 +31,8 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
 | Bildirim kimliği (FCM token) | `users/{uid}.fcmToken` | Bildirim gönderimi | Evet | Hayır |
 | Saat dilimi (IANA adı) | `users/{uid}.timezone` | Bildirimin yerel sabaha denk gelmesi | Evet | Hayır |
 | Arayüz dili | `users/{uid}.language` | Bildirim dilinin seçimi | Evet | Hayır |
+| **Yüz oranları (türetilmiş sayılar)** | `users/{uid}/private/firasa` — çekimden sonra | Firaset okuması | Evet | Hayır |
+| Yüz okuma rızası | `users/{uid}.faceConsent` — yalnızca sunucu yazar | İspat kaydı (GDPR Md.7/1) | Evet | Hayır |
 | Çökme kayıtları | Firebase Crashlytics | Kararlılık | Hayır (anonim) | Hayır |
 | Kullanım olayları | Firebase Analytics | Ürün ölçümü | Evet | Hayır |
 
@@ -40,12 +42,23 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
   IANA adıdır (`Europe/Istanbul`), koordinat değildir.
 - **Rehber / kişiler.** İzin istenmiyor, erişilmiyor. Arkadaş ekleme yalnızca
   kullanıcı adı ve davet bağlantısıyla.
-- **Biyometrik veri.** Yüz analizi v1 kapsamı dışında; uç kaydı yapılmıyor
-  (`backend/main.py` — `face_reading` router'ı bilinçli olarak kayıtlı değil).
-  **Her iki konsolda da biyometrik beyanı YAPILMAMALIDIR.**
+- **Yüz görüntüsü / fotoğraf.** Yüz okuma KAMERAYI kullanır ama fotoğraf
+  çekmez. Görüntü cihazdan çıkmaz, buluta yüklenmez, telefonun diskine bile
+  yazılmaz; hem landmark tespiti (ML Kit) hem saç çizgisi ölçümü (MediaPipe
+  Selfie Multiclass, cihaz üstü TFLite) yerelde çalışır ve kare işlem biter
+  bitmez bellekten atılır. **Görüntü toplanmadığı için "Photos" ya da
+  "Sensitive Info → biometric" beyan edilmez.**
+
+  Sunucuya giden şey iki ondalığa yuvarlanmış ORANLARDIR (ör. `0.34`) ve bu
+  sayılar kişiyi tanımaya yaramaz — GDPR Md.9 anlamında "benzersiz
+  tanımlamaya izin veren" işleme değildir. Yine de ürün bunu **ayrı ve açık
+  rıza** ile çalıştırır; temkinli taraf budur.
+
+  Yüz tanıma, kimlik doğrulama veya kişi eşleştirme YAPILMAZ.
 - **Ödeme bilgisi.** Satın alma mağaza tarafından yürütülür; kart bilgisi
   uygulamaya hiç ulaşmaz.
-- **Kişi rehberi, takvim, mikrofon, kamera, fotoğraf galerisi.**
+- **Kişi rehberi, takvim, mikrofon, fotoğraf galerisi.** Kamera YALNIZCA yüz
+  okuma sırasında ve yalnızca canlı önizleme için kullanılır; kayıt yapılmaz.
 - **Ham sohbet transkripti saklanmaz.** Saklanan şey kapalı bir kategori
   kümesine oturan kısa olgulardır (`backend/services/memory_service.py`,
   `CATEGORIES`). Sağlık/tanı/ilaç bilgisi bilinçli olarak tutulmaz.
@@ -109,6 +122,21 @@ Her madde için "Bu veriyi topluyor musunuz?" → aşağıdaki gibi işaretleyin
 | App activity | App interactions | Evet | Hayır | Hayır | Analitik |
 | App info & performance | Crash logs, Diagnostics | Evet | Hayır | Hayır | Analitik |
 | Financial info | Purchase history | Evet | Hayır | Hayır | Uygulama işlevi |
+| Personal info | Other info (yüz oranları — türetilmiş sayılar) | Evet | Hayır | Hayır | Uygulama işlevi |
+
+> **Yüz okuma neden "Photos and videos" altında DEĞİL:** Play bu kategoriyi
+> uygulamanın fotoğraf/video *topladığı* durumlar için istiyor. Yüz okuma
+> kamerayı yalnızca canlı önizleme için kullanıyor; kare çekilmiyor,
+> saklanmıyor, gönderilmiyor. Toplanan şey görüntüden TÜRETİLMİŞ sayılar,
+> o yüzden "Personal info → Other info" doğru kategori.
+>
+> Aynı sebeple Apple tarafında "Sensitive Info → biometric data" da
+> işaretlenmiyor: gönderilen sayılar kişiyi tanımaya yaramıyor.
+>
+> **Değişirse:** görüntü herhangi bir sebeple sunucuya gitmeye başlarsa bu
+> beyanın ikisi de yanlış olur ve düzeltilmesi ŞART. Bunu kod tarafında
+> `apps/mobile/test/legal_texts_test.dart` bekçiliyor: politika "diske
+> yazılmaz" derken kodda fotoğraf çağrısı olmadığını doğruluyor.
 
 > **"Messages" satırındaki paylaşım kutusu neden işaretli:** Sohbet mesajı
 > yanıt üretmek için Google'ın Gemini API'sine gönderiliyor. Bu bir işleyici
@@ -159,7 +187,10 @@ Bu dosya kodun aynası. Aşağıdakilerden biri değişirse beyanı güncelleyin
 - `infra/firestore.rules` — `users/{uid}` alan listesi
 - `backend/services/memory_service.py` — `CATEGORIES`
 - `apps/mobile/lib/core/notifications.dart` — profile yazılan alanlar
-- `backend/main.py` — kayıtlı router listesi (özellikle `face_reading`)
+- `backend/main.py` — kayıtlı router listesi
+- `apps/mobile/lib/features/face/` — yüz okuma; görüntünün cihazdan
+  çıkmadığının kaynağı. `face_capture_screen.dart` fotoğraf ÇEKMİYOR;
+  `face_segmentation.dart` modeli cihazda çalıştırıyor
 - `apps/mobile/lib/features/profile/legal_texts.dart` — gizlilik politikası
 
 **Yayın öncesi bir hukukçuya baktırın.** Buradaki tablo mühendislik
