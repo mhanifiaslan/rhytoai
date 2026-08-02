@@ -305,6 +305,48 @@ def test_vektor_araması_en_yakini_bulur(gecici_artefakt, monkeypatch):
     assert all(s["score"] > 0 for s in sonuc)
 
 
+def test_ilgisiz_sorgu_bos_doner(gecici_artefakt, monkeypatch):
+    """Korpusta karsiligi olmayan soruda pasaj DONMEMELI.
+
+    Esik olculerek konuldu: korpusta karsiligi olan sorgular 0,71-0,84 skor
+    aliyor, hic ilgisi olmayanlar 0,49-0,56'da kaliyor. Esik olmadan alakasiz
+    bir soruda en yakin pasaj yine donuyor ve model kadim bir metni ilgisiz
+    bir konuya baglamaya calisiyordu — cevap zorlama cikiyordu. Kaynak yoksa
+    kaynaksiz cevap vermek daha durust.
+    """
+    parcalar = _sahte_korpus(3)
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
+    rag_service.write_artifact("tr", {
+        c.chunk_id: np.array([1.0, 0.0], dtype=np.float32) for c in parcalar})
+
+    kb = _KnowledgeBase()
+    # Esigin ALTINDA kalan bir sorgu vektoru
+    dusuk = rag_service._MIN_RELEVANCE - 0.1
+    import math
+    aci = math.acos(dusuk)
+    monkeypatch.setattr(kb, "_embed_query", lambda q: np.array(
+        [math.cos(aci), math.sin(aci)], dtype=np.float32))
+    assert kb.search("alakasiz soru") == []
+
+
+def test_esik_yalnizca_vektor_modunda_uygulanir(gecici_artefakt, monkeypatch):
+    """Anahtar kelime modunun skoru tamamen farkli bir olcekte (ortusen
+    kelime sayisi / sorgu uzunlugu); orada 0,62 esigi her seyi elerdi."""
+    parcalar = [
+        Chunk(doc="d", title="ay", text="ay evresi dolunay yorumu",
+              keywords=rag_service._tokenize("ay evresi dolunay yorumu"),
+              chunk_id="1"),
+    ]
+    monkeypatch.setattr(rag_service, "_load_chunks", lambda lang: parcalar)
+    kb = _KnowledgeBase()
+    monkeypatch.setattr(kb, "_embed_texts", lambda texts: None)
+
+    sonuc = kb.search("dolunay yorumu ne anlama gelir")
+    assert kb.semantic_ready() is False
+    assert sonuc, "anahtar kelime modunda esik uygulanmamali"
+    assert sonuc[0]["score"] < rag_service._MIN_RELEVANCE
+
+
 def test_vektor_yoksa_arama_anahtar_kelimeye_duser(gecici_artefakt, monkeypatch):
     parcalar = [
         Chunk(doc="d", title="ay", text="ay evresi dolunay yorumu",

@@ -200,9 +200,10 @@ WHISPER_CHART = (
     "THE READER'S CHART (calculated with Swiss Ephemeris — stay faithful to "
     "it; never invent a placement, aspect or transit that is not written "
     "here. Do not recite the list or hand it over as a block. Your reading "
-    "must be specific to THIS chart, not a description of their sun sign: "
-    "anchor it to a house placement, an aspect, or a transit happening today. "
-    "If what you are saying would fit anyone of that sign, it is not specific "
+    "must be specific to THIS chart, not a description of their sun sign. "
+    "**Name at least one of them explicitly** — a house placement, an aspect, "
+    "or a transit happening today — and ground what you say in it. If what "
+    "you are saying would fit anyone of that sign, it is not specific "
     "enough):"
 )
 WHISPER_SKY = "TODAY'S ACTUAL SKY (calculated with Swiss Ephemeris):"

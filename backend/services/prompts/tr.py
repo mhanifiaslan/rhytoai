@@ -187,9 +187,10 @@ WHISPER_CHART = (
     "KULLANICININ HARİTASI (Swiss Ephemeris ile hesaplandı — buna sadık kal, "
     "burada YAZMAYAN hiçbir konumu, açıyı veya transiti uydurma. Listeyi "
     "sayma, blok halinde aktarma. Yorumun burcunun genel tarifi değil, BU "
-    "haritaya özgü olsun: dayandığın şey bir ev yerleşimi, bir açı ya da "
-    "bugünkü bir transit olsun. Aynı şeyi her burçtan biri için "
-    "söyleyebiliyorsan yeterince spesifik değilsin):"
+    "haritaya özgü olsun. Aşağıdakilerden **en az birini ADIYLA an** — bir "
+    "ev yerleşimi, bir açı ya da bugünkü bir transit — ve söylediğini ona "
+    "dayandır. Aynı şeyi her burçtan biri için söyleyebiliyorsan yeterince "
+    "spesifik değilsin):"
 )
 WHISPER_SKY = "BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris ile hesaplandı):"
 USER_MESSAGE_LABEL = "KULLANICININ MESAJI"

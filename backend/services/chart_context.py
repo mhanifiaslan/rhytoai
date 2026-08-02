@@ -419,16 +419,22 @@ def render(facts: dict[str, Any], lang: str | None = None) -> str:
 
 
 def chart_whisper(uid: str, profile: dict[str, Any] | None,
-                  lang: str | None = None) -> str:
+                  lang: str | None = None,
+                  facts: dict[str, Any] | None = None) -> str:
     """Sohbete iliştirilecek harita bloğu.
 
     Derin sürüm ancak gerçek doğum verisi varsa ve hesap başarılıysa üretilir;
     aksi halde bugüne kadarki sığ özete (`profile_service.chart_summary`)
     düşülür. Sohbet hiçbir koşulda haritasız kalmaz.
+
+    ``facts`` verilirse yeniden hesaplanmaz. Sohbet ucu olguları bilgi tabanı
+    sorgusunu kurmak için zaten üretiyor; ikinci kez istemek gereksiz bir
+    önbellek turu demek olurdu.
     """
     if not profile:
         return ""
-    facts = chart_facts(uid, profile)
+    if facts is None:
+        facts = chart_facts(uid, profile)
     if not facts:
         return profile_service.chart_summary(profile, lang=lang)
     metin = render(facts, lang=lang).strip()

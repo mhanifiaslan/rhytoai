@@ -10,6 +10,7 @@ from core.i18n import get_language
 from core.messages import text
 from services import (
     chart_context,
+    chart_query,
     gemini_service,
     memory_extractor,
     memory_service,
@@ -93,12 +94,23 @@ def chat(request: ChatRequest, background: BackgroundTasks,
     try:
         history = [{"sender": m.sender, "text": m.text} for m in request.history]
 
+        # Profil bir kez okunur, iki yerde kullanılır: haritayı prompt'a
+        # iliştirmek ve bilgi tabanı sorgusunu kurmak.
+        profile = profile_service.get_profile(user.uid)
+        facts = chart_context.chart_facts(user.uid, profile) if profile else None
+
         # Seçici RAG: selamlaşma/duygu/kısa onay turlarında korpus araması
         # (ve embedding çağrısı) atlanır; kadim bilgi soran mesajlarda en
         # fazla 2 kırpılmış pasaj "arka plan fısıltısı" olarak eklenir.
+        #
+        # Arama artık kullanıcının CÜMLESİYLE değil, cümlenin konusu +
+        # haritanın o konuyla ilgili faktörleriyle yapılıyor. "İşimle ilgili
+        # ne yapmalıyım?" diye aramak kadim metinde hiçbir şeye denk gelmez;
+        # "meslek, statü + Satürn 10. evde + Güneş Kare Mars" gelir.
         passages = []
-        if should_use_rag(request.message):
-            passages = retrieve_passages(request.message, top_k=2, lang=lang)
+        if should_use_rag(request.message, lang):
+            sorgu = chart_query.build_query(request.message, facts, lang=lang)
+            passages = retrieve_passages(sorgu, top_k=2, lang=lang)
 
         # Kullanıcı hafızası: "seni tanıyor" hissinin kaynağı burası. Okuma
         # ucuz (tek Firestore dokümanı) ve RAG'den bağımsız olarak her turda
@@ -111,7 +123,7 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # uyan" olmaktan çıkması bu ayrıntılara bağlı. Efemeris hesabı
         # önbellekli, LLM maliyeti yok.
         chart = chart_context.chart_whisper(
-            user.uid, profile_service.get_profile(user.uid), lang=lang)
+            user.uid, profile, lang=lang, facts=facts)
 
         # Bugünün gökyüzü paylaşımlı önbellekten gelir (kullanıcı başına
         # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.

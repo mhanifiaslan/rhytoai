@@ -64,8 +64,31 @@ _EMBED_BATCH_SIZE = 32
 #: Sorgu vektörü LRU'su (instance ömrü boyunca).
 _QUERY_CACHE_MAX = 128
 
+#: Anlamsal aramada bir pasajın "ilgili" sayılması için gereken en düşük
+#: kosinüs skoru.
+#:
+#: Ölçülerek konuldu. Korpusta karşılığı olan sorgular 0,71–0,84 arasında
+#: skor alıyor; hiç ilgisi olmayanlar ("wifi şifremi nasıl sıfırlarım",
+#: "arabamın lastiği patladı") 0,49–0,56'da kalıyor. 0,62 iki kümenin
+#: arasındaki boşluğa düşüyor ve iki tarafa da pay bırakıyor.
+#:
+#: Eşik olmadan alakasız bir soruda en yakın pasaj yine dönüyordu: model
+#: kadim bir metni ilgisiz bir konuya bağlamaya çalışıyor ve cevap
+#: zorlama çıkıyordu. Kaynak yoksa kaynaksız cevap vermek daha dürüst.
+#:
+#: YALNIZCA vektör modunda uygulanır. Anahtar kelime modunun skoru tamamen
+#: farklı bir ölçekte (örtüşen kelime sayısı / sorgu uzunluğu) ve orada bu
+#: eşik her şeyi elerdi.
+_MIN_RELEVANCE = 0.62
+
 #: Bölüm çeşitliliği için aday havuzu top_k'nın kaç katı olsun.
-_DIVERSITY_POOL = 4
+#:
+#: 4 katı yetmedi: uzun bir bölüm (ör. "The Quality of Employment") tek başına
+#: 8+ parçaya bölünüyor ve havuzun tamamını doldurabiliyor — çeşitlilik kuralı
+#: seçecek farklı bölüm bulamayınca aynı bölümden iki parça dönüyordu.
+#: Skorlar zaten tüm parçalar için hesaplı; havuzu genişletmenin maliyeti
+#: yalnızca argpartition, yani ihmal edilebilir.
+_DIVERSITY_POOL = 12
 
 
 def embedding_files(lang: str) -> tuple[Path, Path]:
@@ -484,10 +507,12 @@ class _KnowledgeBase:
             return []
 
         skorlar = None
+        taban = 0.0
         if self.semantic_ready():
             q = self._embed_query(query)
             if q is not None and len(q) == self._matrix.shape[1]:
                 skorlar = self._matrix @ q
+                taban = _MIN_RELEVANCE
 
         if skorlar is None:
             q_tokens = _tokenize(query)
@@ -501,7 +526,7 @@ class _KnowledgeBase:
         havuz = min(max(top_k * _DIVERSITY_POOL, top_k), len(chunks))
         aday = np.argpartition(-skorlar, havuz - 1)[:havuz]
         aday = aday[np.argsort(-skorlar[aday])]
-        aday = [i for i in aday if float(skorlar[i]) > 0]
+        aday = [i for i in aday if float(skorlar[i]) > taban]
 
         # Bölüm çeşitliliği: kitap korpusu geldiğinde ilk iki sonucun ikisi de
         # AYNI bölümden çıkıyordu (uzun bölümler çok parçaya bölündüğü için

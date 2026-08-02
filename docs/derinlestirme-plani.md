@@ -1,7 +1,6 @@
 # Derinleştirme planı — jenerik cevap sorununu kökten kapatma
 
-**Durum:** Faz A, B ve C (İngilizce tarafı) tamamlandı (2026-08-01).
-Sıradaki: Tetrabiblos'un Türkçe aktarımı, ardından Faz D.
+**Durum:** Faz A–E tamamlandı (2026-08-01).
 
 Bu plan tek bir şikâyeti hedefliyor: *"cevaplar jenerik."* O şikâyetin üç ayrı
 teknik sebebi var ve üçü de ayrı ayrı ölçüldü. Sırayla kapatılıyorlar.
@@ -273,6 +272,81 @@ olmalı:
 Yani: mesajın konusu (`_DOMAIN_TERMS` zaten bir konu sezgisi taşıyor) +
 haritanın o konuyla ilgili faktörleri. Bu, korpustan gerçekten o kişiye ait
 pasajı çeker.
+
+### ✅ Faz D sonucu (2026-08-01)
+
+`backend/services/chart_query.py`. Sorgu artık şöyle kuruluyor:
+
+| Mesaj | Kurulan sorgu | Dönen bölüm |
+|---|---|---|
+| "İşimle ilgili ne yapmalıyım?" | *Mesleğin niteliği, iş, statü, rütbe. Merkür Başak 1. ev, Jüpiter Yengeç 10. ev… Güneş Kare Mars* | Mesleğin Niteliği (0,81) |
+| "Why do I overthink everything?" | *The quality of the mind, manner of thinking… Moon Taurus house 9, Mercury Virgo house 1* | The Quality of the Mind (0,78) |
+
+**Uygularken çıkan üç kusur — üçü de sessizdi:**
+
+1. **Türkçe noktalı I.** `"İ".lower()` Python'da `"i"` değil, `"i" + U+0307`
+   (birleşik nokta) veriyor. Sonuç: "İşimle ilgili…" diye başlayan bir
+   mesajda `"iş"` kökü hiç eşleşmiyordu — yani RAG **hiç tetiklenmiyordu**.
+   Türkçe cümleler büyük harfle başladığı için bu kenar durum değil; en sık
+   sorulan kelimeler ("İşim", "İlişkim") tam buradan düşüyordu. Bu hata
+   `prompt_composer.should_use_rag` içinde de vardı, yani Faz D'den önce de
+   mevcuttu.
+2. **Alt dizi eşleşmesi Türkçede yanlış.** "il**iş**kimde" içinde "iş"
+   geçtiği için ilişki sorusu meslek konusunu tetikliyordu. Türkçe sondan
+   eklemeli olduğundan kelime **başı** eşleşmesi doğru olan; İngilizcede ekler
+   öne de geldiği için ("overthink" içinde "think") orada alt dizi kaldı.
+3. **RAG kapısı fazla dardı.** "İşimle ilgili ne yapmalıyım?" 4 kelime olduğu
+   için kısa sayılıp eleniyordu — oysa korpusta o soruya doğrudan cevap veren
+   bir bölüm var. Konu tespiti artık kapıyı açıyor. ("timing" tek başına
+   yeterli sayılmıyor: "bugün biraz keyifsizim" dönem sorusu değil.)
+
+Yan fayda: sorgu artık aynı kullanıcı + aynı konu için **aynı metni** üretiyor,
+yani sorgu embedding önbelleği gerçekten çalışıyor. Ham kullanıcı mesajları
+neredeyse hiç tekrar etmediği için o önbellek pratikte hiç isabet etmiyordu.
+
+### ✅ Faz E sonucu (2026-08-01)
+
+**Bütçe ölçülerek değiştirildi.** 280 karakter, ortalama 907 karakterlik bir
+parçanın **%68'ini** atıyordu — ve artık atılan şey alakasız değil, doğru
+bulunmuş pasajdı. `MAX_PASSAGE_CHARS` 280 → **700**. Pasaj sayısı 2'de kaldı:
+üçüncü kaynak odağı dağıtıyor ve persona zaten "en fazla tek bir ayrıntıyı
+sindir" diyor.
+
+**İlgililik tabanı eklendi (0,62).** Ölçüm: korpusta karşılığı olan sorgular
+0,71–0,84 alıyor, hiç ilgisi olmayanlar ("wifi şifremi nasıl sıfırlarım")
+0,49–0,56'da kalıyor. Eşik olmadan alakasız soruda da en yakın pasaj dönüyor
+ve model kadim bir metni ilgisiz bir konuya bağlamaya çalışıyordu. Kaynak
+yoksa kaynaksız cevap vermek daha dürüst. (Yalnızca vektör modunda; anahtar
+kelime skorları tamamen farklı ölçekte.)
+
+**Jeneriklik ölçüldü:** `backend/scripts/eval_genericness.py` (LLM çağırdığı
+için CI testi değil, elle çalıştırılır).
+
+| Ölçüt | Persona sıkılaştırmadan önce | Sonra |
+|---|---|---|
+| Cevap başına adıyla anılan **kendi haritasına ait** olgu | 2,3 | **2,7** |
+| Hiç olgu anmayan cevap | 2 / 12 | **0 / 12** |
+| Haritalar arası olgu örtüşmesi | %0 | **%0** |
+| Yasak alan sızıntısı | 0 | **0** |
+
+**Olgu örtüşmesinin %0 olması asıl sonuç:** hiçbir iki harita aynı yerleşimi
+anmıyor, yani her cevap kendi haritasından konuşuyor. Jeneriklik tam olarak
+bunun tersiydi.
+
+İki dürüstlük notu:
+
+- **Kosinüs benzerliği ölçüsü zayıf çıktı.** Taban 0,81 – tavan 0,87, yani
+  dinamik aralık sadece 0,06. Aynı alanda, aynı uzunlukta, aynı tonda
+  yazılmış iki Türkçe paragraf içerikleri farklı olsa da yüksek benzerlik
+  alıyor. Bu ölçüden çıkan "%69 jenerik" rakamı yanıltıcı; olgu örtüşmesi
+  çok daha ayırt edici ve o yüzden asıl gösterge olarak o alındı.
+- **Ölçüm aracının kendisinde bir kusur çıktı:** yağcılık/yasak alan
+  taraması düz alt dizi arıyordu ve `"hisse"` kalıbı
+  `"hissedebileceğini"` içinde eşleşip **6 sahte sızıntı** raporlamıştı.
+  Kelime sınırıyla arama yapılınca gerçek sayı **0** çıktı. Bu, Faz D'de
+  düzeltilen "iliş**ki**/iş" hatasıyla aynı sınıf.
+
+### Faz D — tasarım notları
 
 Gerektirdikleri:
 

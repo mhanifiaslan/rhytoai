@@ -15,9 +15,29 @@ import re
 
 from services import prompts
 
-# Pasaj başına karakter sınırı ve en fazla pasaj sayısı
+# Pasaj başına karakter sınırı ve en fazla pasaj sayısı.
+#
+# Bu iki sayı 13 parçalık, dil başına ~9 KB'lık bir korpus için konmuştu ve
+# o zaman doğruydu: dönen pasaj çoğu zaman alakasızdı, alakasız metni
+# büyütmek cevabı iyileştirmez, yalnızca pahalılaştırırdı.
+#
+# Üç şey değişti ve ölçüldü:
+#   1. Korpus gerçek bir kitap taşıyor (Tetrabiblos, EN 136 / TR 33 parça).
+#   2. Sorgu artık haritadan kuruluyor; dönen pasajlar 0,71–0,84 skorla
+#      gerçekten ilgili (alakasız sorgular 0,49–0,56'da kalıyor).
+#   3. 280 karakter, ortalama 907 karakterlik bir parçanın **%68'ini**
+#      atıyordu — yani doğru bulunan pasajın üçte ikisi çöpe gidiyordu.
+#
+# 700 karakter parçanın büyük kısmını taşıyor. Sohbet turuna maliyeti
+# ~210 token; harita bloğuyla birlikte bile Flash sınıfı bir modelde
+# ihmal edilebilir.
+#
+# Pasaj SAYISI 2'de bırakıldı. Üçüncü kaynak odağı dağıtıyor ve persona
+# zaten "en fazla tek bir ilgili ayrıntıyı kendi cümlene sindir" diyor;
+# daha çok kaynak vermek modeli aktarmaya davet ediyor. Çeşitlilik kuralı
+# sayesinde bu 2 pasaj zaten farklı bölümlerden geliyor.
 MAX_PASSAGES = 2
-MAX_PASSAGE_CHARS = 280
+MAX_PASSAGE_CHARS = 700
 
 # Bilgi tabanının kapsadığı kadim sistem terimleri (kök bazlı, küçük harf).
 # Mesajda bunlardan biri geçiyorsa korpus araması değerlidir.
@@ -72,17 +92,126 @@ _SMALL_TALK = {
 }
 
 
+def normalize(message: str) -> str:
+    """Küçük harfe indirger — Türkçe noktalı I'yı doğru ele alarak.
+
+    Python'un `str.lower()` metodu Türkçe bilmez: ``"İ".lower()`` sonucu
+    ``"i"`` DEĞİL, ``"i" + U+0307`` (birleşik nokta) olur. Sonuç sessiz bir
+    bozulmaydı — "İşimle ilgili..." diye başlayan bir mesajda ``"iş"`` kökü
+    hiç eşleşmiyor, yani RAG tetiklenmiyor ve kullanıcı kaynaksız cevap
+    alıyordu. Aynı şekilde ``"I".lower()`` ``"i"`` verir, oysa Türkçede
+    karşılığı ``"ı"``.
+
+    Türkçe cümleler büyük harfle başladığı için bu, kenar durum değil —
+    "İşim", "İlişkim", "İnsanlar" gibi en sık sorulan kelimeler tam da
+    buradan düşüyordu.
+    """
+    return message.replace("İ", "i").replace("I", "ı").lower()
+
+
 def _words(message: str) -> list[str]:
-    return re.findall(r"[a-zçğıöşü]+", message.lower())
+    return re.findall(r"[a-zçğıöşü]+", normalize(message))
 
 
-def should_use_rag(message: str) -> bool:
+#: Konu -> mesajda geçince o konuyu tetikleyen kökler.
+#:
+#: Eşleşme dile göre farklı çalışır ve bu bilinçli:
+#:
+#: **Türkçe: kelime BAŞI eşleşmesi.** Türkçe sondan eklemeli, yani "işim",
+#: "işimle", "işten" hep "iş" ile başlar. Alt dizi araması denendi ve yanlış
+#: eşleşti: "ilişkimde" kelimesinin içinde de "iş" geçiyor (il-**iş**-kimde)
+#: ve ilişki sorusu meslek konusunu tetikliyordu.
+#:
+#: **İngilizce: alt dizi.** Ekler öne de gelir ("overthink" içinde "think");
+#: kelime başı eşleşmesi bunları kaçırırdı.
+_TOPIC_TRIGGERS = {
+    "tr": {
+        "vocation": ("iş", "meslek", "kariyer", "çalış", "patron", "terfi",
+                     "mesai", "statü", "kazanç", "geçim", "emek", "mesleğ"),
+        "relationship": ("ilişki", "sevgili", "eş", "evli", "evlen", "aşk",
+                         "partner", "ayrıl", "flört", "arkadaş", "dost",
+                         "nişan", "boşan", "sevdiğ"),
+        "mind": ("düşün", "kafam", "zihin", "odaklan", "karar", "anlam",
+                 "öğren", "konsantr", "unut", "hafıza", "akıl", "akl"),
+        "temperament": ("mizaç", "mizac", "huy", "karakter", "element",
+                        "kişilik", "doğam", "yapım"),
+        "travel": ("yolculuk", "seyahat", "taşın", "göç", "yurtdışı",
+                   "uzağa", "şehir değiş"),
+        # "bugün", "şimdi" gibi kelimeler BİLEREK yok: sıradan sohbette çok
+        # sık geçiyorlar ve "bugün biraz keyifsizim" gibi bir duygu ifadesini
+        # dönem sorusu sanmaya yol açıyorlardı.
+        "timing": ("dönem", "transit", "ne zaman", "bu ara", "şu an",
+                   "bu sıralar"),
+    },
+    "en": {
+        "vocation": ("job", "work", "career", "profession", "boss",
+                     "promotion", "employ", "vocation", "business",
+                     "colleague", "office"),
+        "relationship": ("relationship", "partner", "marri", "love",
+                         "boyfriend", "girlfriend", "spouse", "dating",
+                         "breakup", "friend", "divorce", "engaged"),
+        "mind": ("think", "mind", "focus", "decide", "decision", "learn",
+                 "memory", "understand", "concentrat"),
+        "temperament": ("temperament", "character", "personality", "nature",
+                        "element", "who i am"),
+        "travel": ("travel", "move abroad", "relocat", "journey", "emigrat",
+                   "moving to"),
+        # "when" ve "today" bilerek yok — İngilizcede her cümlede geçebilirler.
+        "timing": ("right now", "period", "transit", "these days", "lately",
+                   "at the moment"),
+    },
+}
+
+
+def _topic_hits(message: str, dil: str, konu: str) -> int:
+    kokler = _TOPIC_TRIGGERS[dil][konu]
+    dusuk = normalize(message)
+    kelimeler = _words(message)
+    adet = 0
+    for kok in kokler:
+        if " " in kok or dil != "tr":
+            adet += 1 if kok in dusuk else 0
+        else:
+            adet += 1 if any(k.startswith(kok) for k in kelimeler) else 0
+    return adet
+
+
+def detect_topics(message: str, lang: str | None = None) -> list[str]:
+    """Mesajın hangi konu(lar)a değdiğini döndürür.
+
+    Konu, bilgi tabanında karşılığı olan bir alan demektir; bu yüzden konu
+    tespiti aynı zamanda "korpusta aranacak bir şey var" kanıtıdır
+    (bkz. `should_use_rag`).
+    """
+    dil = lang if lang in _TOPIC_TRIGGERS else "tr"
+    skorlar = [(_topic_hits(message, dil, konu), konu)
+               for konu in _TOPIC_TRIGGERS[dil]]
+    skorlar = sorted((s for s in skorlar if s[0]), key=lambda s: -s[0])
+    # En fazla iki konu: üçüncüsü sorguyu odaksız hale getiriyor.
+    return [konu for _, konu in skorlar[:2]]
+
+
+def should_use_rag(message: str, lang: str | None = None) -> bool:
     """Mesaj kadim bilgi gerektiriyorsa True; selamlaşma/duygu/onay ise False."""
-    lowered = message.lower()
+    lowered = normalize(message)
     words = _words(message)
 
     # Alan terimi geçiyorsa korpus her zaman değerli
     if any(term in lowered for term in _DOMAIN_TERMS):
+        return True
+
+    # Bilinen bir konuya değiyorsa korpusta karşılığı var demektir.
+    #
+    # Bu kapı olmadan "İşimle ilgili ne yapmalıyım?" RAG'e hiç uğramıyordu:
+    # mesajda alan terimi yok, "ne yapmalıyım" derin soru kalıbı listesinde
+    # değil ve mesaj 4 kelime olduğu için kısa sayılıp eleniyordu. Oysa
+    # korpusta o soruya doğrudan cevap veren bir bölüm var.
+    #
+    # "timing" TEK BAŞINA yeterli sayılmaz: zaman kelimeleri duygu
+    # paylaşımında da geçiyor ve tek başına korpusa gitmeyi haklı çıkarmıyor.
+    # Gerçek bir dönem sorusu ("şu an nasıl bir dönemdeyim") zaten aşağıdaki
+    # soru kalıbı kapısından geçer.
+    if [k for k in detect_topics(message, lang) if k != "timing"]:
         return True
 
     # "neden/nasıl/anlat" gibi derin soru kalıpları (tam kelime eşleşmesi)
