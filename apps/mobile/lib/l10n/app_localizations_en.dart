@@ -998,4 +998,12 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get faceReadingHint =>
       'The tradition says: a single sign decides nothing. What follows is a tendency, not a fate.';
+
+  @override
+  String get faceReadingLockedBody =>
+      'A temperament reading from your features. The image is processed on your device and never sent anywhere.';
+
+  @override
+  String get faceReadingEntryBody =>
+      'Scan your face and read your temperament through the firasa tradition.';
 }

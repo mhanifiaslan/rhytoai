@@ -561,3 +561,20 @@ FIRASA_RAG_QUERY = (
     "Firaset, kiyafet ilmi, dis belirtiden mizaca; yuz hatlari, "
     "ahlat-i erbaa, kuru ve nemli mizac"
 )
+
+#: Sicak-soguk ekseni HAREKETTEN olculuyor. Gelenekte bu eksen "canli renk,
+#: hizli hareket, gur ses"e bakiyor; ucunden olculebilir ve irkla/cinsiyetle
+#: korele OLMAYAN tek isaret hareket.
+FIRASA_HEAT = {
+    "fast": "İfade hareketi hızlı ve canlı — sıcaklık tarafı "
+            "(çabuk ısınma, çabuk karar)",
+    "slow": "İfade hareketi ağır ve durgun — soğukluk tarafı "
+            "(geç ısınma, uzun tutma)",
+}
+
+#: Hareket OLCULDU ama net bir tarafa dusmedi. "Olcemedim" demekten FARKLI
+#: bir durum ve modele farkli soylenmeli: veri var, sonuc belirsiz.
+FIRASA_HEAT_AMBIGUOUS = (
+    "İfade hareketi ölçüldü ama sıcak ile soğuk arasında kaldı: net bir "
+    "tarafa düşmüyor. Bu eksende ölçülü konuş, hüküm verme"
+)

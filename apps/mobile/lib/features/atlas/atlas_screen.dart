@@ -9,7 +9,9 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/natal_wheel.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../face/face_reading_flow.dart';
 import '../paywall/plus_locked_card.dart';
+import '../../core/subscription.dart' show subscriptionProvider;
 import '../../core/api.dart' show friendlyError;
 import '../../l10n/app_localizations.dart';
 
@@ -64,6 +66,10 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
             padding: const EdgeInsets.only(bottom: 130),
             children: [
               const SizedBox(height: 8),
+              // Yüz okuma girişi. Atlas'ta duruyor çünkü firaset de haritayla
+              // birlikte okunuyor: mizaç iki taraftan da geliyor.
+              _FaceReadingEntry(),
+              const SizedBox(height: 12),
               // Natal çark
               GlassPanel(
                 padding: const EdgeInsets.all(8),
@@ -468,6 +474,46 @@ class _FoldSectionState extends State<_FoldSection> {
                 )
               : const SizedBox(width: double.infinity),
         ),
+      ]),
+    );
+  }
+}
+
+/// Yüz okuma giriş kartı.
+///
+/// Ücretli uca **istek atmadan** kilit gösteriyor: abone olmayan biri karta
+/// dokununca paywall açılıyor, kamera hiç başlamıyor. Kamerayı açıp sonunda
+/// 402 almak, kullanıcıya yüzünü boşuna taratmak olurdu.
+class _FaceReadingEntry extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final abonelik = ref.watch(subscriptionProvider);
+    final acik = abonelik.value?.active ?? false;
+
+    if (!acik) {
+      return PlusLockedCard(
+        emoji: '👁️',
+        title: l10n.faceReadingTitle,
+        description: l10n.faceReadingLockedBody,
+      );
+    }
+
+    return GlassPanel(
+      onTap: () => startFaceReading(context, ref),
+      child: Row(children: [
+        const Text('👁️', style: TextStyle(fontSize: 20)),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(l10n.faceReadingTitle, style: RythoText.display(16)),
+            const SizedBox(height: 3),
+            Text(l10n.faceReadingEntryBody,
+                style: RythoText.body(12.5, color: RythoColors.parchmentDim)),
+          ]),
+        ),
+        const Icon(Icons.chevron_right_rounded,
+            size: 18, color: RythoColors.parchmentDim),
       ]),
     );
   }

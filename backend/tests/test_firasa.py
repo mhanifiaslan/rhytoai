@@ -86,13 +86,72 @@ def test_bozuk_veri_coker_degil_eler():
 # --------------------------------------------------------------------------
 
 @pytest.mark.parametrize("lang", ["tr", "en"])
-def test_olcemedigimiz_eksen_her_zaman_bildirilir(lang):
-    """Gelenekte mizac iki eksende okunur; duragan geometriden yalnizca
-    kuru-nemli cikarilabilir. Sicak-soguk ekseni renk, hareket ve sese bakar
-    ve elimizde onlar yok. Bilmedigini bilmeyen model uydurur."""
+def test_hareket_yoksa_eksen_olculemedi_denir(lang):
+    """Hareket alani gonderilmediyse eksen olculemedi demektir.
+
+    Bilmedigini bilmeyen model uydurur; sessiz kalmak modelin o eksende de
+    hukum vermesine kapi acardi.
+    """
     for oran in (ORTALAMA, UZUN, GENIS):
         blok = firasa_service.prompt_block(oran, lang)
         assert prompts.get(lang).FIRASA_HEAT_UNKNOWN in blok
+
+
+# --------------------------------------------------------------------------
+# Sicak-soguk ekseni (hareket)
+# --------------------------------------------------------------------------
+
+def test_hizli_hareket_sicak_tarafa():
+    assert firasa_service.heat_lean({**UZUN, "motionRate": 0.31}) == "fast"
+
+
+def test_agir_hareket_soguk_tarafa():
+    assert firasa_service.heat_lean(
+        {**UZUN, "motionRate": 0.04, "stillness": 0.02}) == "slow"
+
+
+def test_arada_kalan_olcum_taraf_secmez():
+    """Esikler arasi bosluk BILEREK genis: arada kalan bir olcum icin taraf
+    secmektense hicbir sey sylememek dogru."""
+    assert firasa_service.heat_lean({**UZUN, "motionRate": 0.11}) == "ambiguous"
+
+
+def test_olculemedi_ile_arada_kaldi_AYRI_durumlar():
+    """Ikisini ayni kefeye koymak yanlis olurdu.
+
+    "Olcemedim, elimde yalnizca duragan bicim var" ile "olctum, net bir
+    tarafa dusmedi" farkli ifadelerdir ve modele farkli soylenmeleri gerekir.
+    """
+    assert firasa_service.heat_lean(UZUN) is None
+    assert firasa_service.heat_lean({**UZUN, "motionRate": 0.11}) == "ambiguous"
+
+    for lang in ("tr", "en"):
+        p = prompts.get(lang)
+        yok = firasa_service.prompt_block(UZUN, lang)
+        arada = firasa_service.prompt_block({**UZUN, "motionRate": 0.11}, lang)
+        assert p.FIRASA_HEAT_UNKNOWN in yok
+        assert p.FIRASA_HEAT_AMBIGUOUS in arada
+        assert p.FIRASA_HEAT_UNKNOWN not in arada
+
+
+def test_sifir_hareket_olcum_sayilmaz():
+    """Istemci guvenilir bulmadiginda alani HIC gondermiyor. Sifir gelirse
+    de bu 'olctum ve sifir cikti' degil, bozuk veri sayilir."""
+    assert firasa_service.heat_lean(
+        {**UZUN, "motionRate": 0.0, "stillness": 0.0}) == "ambiguous"
+
+
+def test_bozuk_hareket_verisi_cokmez():
+    for bozuk in ({"motionRate": "abc"}, {"stillness": None}):
+        firasa_service.heat_lean({**UZUN, **bozuk})
+
+
+@pytest.mark.parametrize("lang", ["tr", "en"])
+def test_hareket_olculunce_eksen_acilir(lang):
+    p = prompts.get(lang)
+    hizli = firasa_service.prompt_block({**UZUN, "motionRate": 0.31}, lang)
+    assert p.FIRASA_HEAT["fast"] in hizli
+    assert p.FIRASA_HEAT_UNKNOWN not in hizli
 
 
 @pytest.mark.parametrize("lang", ["tr", "en"])

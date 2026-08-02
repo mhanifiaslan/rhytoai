@@ -51,6 +51,17 @@ class FaceRatios(BaseModel):
     eyeSpacing: float = Field(ge=0.05, le=1.5)
     symmetry: float = Field(ge=0, le=1)
 
+    # --- Hareket (sıcak–soğuk ekseni) ---
+    #
+    # Bu üçü İSTEĞE BAĞLI ve olmaması bir eksiklik değil, bir BİLGİ:
+    # istemci ölçümü güvenilir bulmadıysa alanları hiç göndermiyor ve
+    # sunucu "bu eksen ölçülemedi" diye okuyor. Varsayılan 0 vermek
+    # "ölçtüm ve sıfır çıktı" demek olurdu; o yalan olurdu ve modeli
+    # "hareketsiz" diye yorumlamaya iterdi.
+    motionRate: float | None = Field(default=None, ge=0, le=5)
+    stillness: float | None = Field(default=None, ge=0, le=5)
+    motionSeconds: float | None = Field(default=None, ge=0, le=120)
+
 
 @router.post("/reading")
 def firasa_reading(
@@ -78,8 +89,12 @@ def firasa_reading(
         # haritayla birlikte kişiye özgü olur.
         chart = chart_context.chart_whisper(user.uid, profile, lang=lang)
 
+        # `exclude_none`: gönderilmeyen hareket alanları sözlüğe HİÇ girmesin.
+        # `heat_lean` alanın YOKLUĞUNU "ölçülemedi" diye okuyor; None olarak
+        # taşımak da işe yarardı ama yokluk niyeti daha net ifade ediyor.
         rapor = report_service.firasa_report(
-            user.uid, ratios.model_dump(), chart=chart, lang=lang)
+            user.uid, ratios.model_dump(exclude_none=True),
+            chart=chart, lang=lang)
         return {"status": "success", "reading": rapor["text"],
                 "cached": rapor.get("cached", False)}
     except HTTPException:

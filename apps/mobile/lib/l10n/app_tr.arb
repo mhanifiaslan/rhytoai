@@ -432,5 +432,7 @@
   "faceConsentLearnMore": "Gizlilik politikasını oku",
   "faceCameraDenied": "Kamera izni verilmedi. Yüz okuma için kameraya erişim gerekiyor.",
   "faceDetectFailed": "Yüz tespit edilemedi. Işığın yeterli olduğundan ve yüzünün çerçevede olduğundan emin ol.",
-  "faceReadingHint": "Gelenek der ki: tek bir belirti hüküm vermez. Aşağıdaki okuma bir eğilimdir, kader değildir."
+  "faceReadingHint": "Gelenek der ki: tek bir belirti hüküm vermez. Aşağıdaki okuma bir eğilimdir, kader değildir.",
+  "faceReadingLockedBody": "Yüz hatlarından mizaç okuması. Görüntü cihazında işlenir, hiçbir yere gönderilmez.",
+  "faceReadingEntryBody": "Yüzünü tarat, firaset geleneğine göre mizacını oku."
 }

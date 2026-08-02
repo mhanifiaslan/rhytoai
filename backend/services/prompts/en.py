@@ -578,3 +578,21 @@ FIRASA_RAG_QUERY = (
     "Firasa, the science of physiognomy, from outward sign to "
     "temperament; facial features, the four humours, dry and moist"
 )
+
+#: The hot-cold axis is read from MOVEMENT. In the tradition it looks to
+#: "live colour, quick movement, full voice"; movement is the only one of the
+#: three that is measurable AND not correlated with race or sex.
+FIRASA_HEAT = {
+    "fast": "Expressive movement is quick and live - the hot side "
+            "(quick to warm, quick to decide)",
+    "slow": "Expressive movement is heavy and still - the cold side "
+            "(slow to warm, long to hold)",
+}
+
+#: Movement WAS measured but did not fall to either side. This is a DIFFERENT
+#: state from "could not measure" and must be said differently: there is
+#: data, the result is inconclusive.
+FIRASA_HEAT_AMBIGUOUS = (
+    "Expressive movement was measured but fell between hot and cold: it does "
+    "not settle on either side. Stay measured on this axis; pass no verdict"
+)

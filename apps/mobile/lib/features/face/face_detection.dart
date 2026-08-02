@@ -173,6 +173,32 @@ FaceLandmarks? landmarksFromFace(Face face) {
   );
 }
 
+/// Hareket ölçümüne girecek noktalar — kare kare aynı sırada.
+///
+/// **Göz konturu bilerek yok.** Göz kırpması landmark'ları çok büyük bir
+/// mesafe oynatıyor ve ölçüm tamamen kırpma sıklığına iniyor; oysa aranan
+/// şey ifadenin genel canlılığı.
+///
+/// Herhangi bir kontur eksikse `null` döner: nokta sayısı kareden kareye
+/// değişirse karşılaştırma anlamsız olur.
+List<Offset>? motionPoints(Face face) {
+  final parcalar = <Offset>[];
+  for (final tur in const [
+    FaceContourType.leftEyebrowTop,
+    FaceContourType.rightEyebrowTop,
+    FaceContourType.upperLipTop,
+    FaceContourType.lowerLipBottom,
+    FaceContourType.face,
+  ]) {
+    final p = face.contours[tur]?.points;
+    if (p == null || p.isEmpty) return null;
+    for (final nokta in p) {
+      parcalar.add(Offset(nokta.x.toDouble(), nokta.y.toDouble()));
+    }
+  }
+  return parcalar;
+}
+
 /// Animasyonda çizilecek nokta kümesi.
 ///
 /// Tüm kontur noktalarını çizmek (yüzlerce) ağ değil leke veriyor; ovalden

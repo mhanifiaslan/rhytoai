@@ -140,6 +140,57 @@ _MOISTURE = {
 }
 
 
+#: Sıcak–soğuk eşikleri (yüz genişliği / saniye).
+#:
+#: Bu eksen uzun süre "ölçülemedi" diye modele bildiriliyordu. Üç aday
+#: değerlendirildi ve HAREKET seçildi:
+#:
+#: * **Ten rengi: hayır.** Kamera mutlak yüz rengini ölçtüğünde ölçtüğü şey
+#:   mizaç değil etnisitedir. Korpustan tam da bu sebeple çıkardığımız
+#:   eşlemeleri otomatik ölçüm olarak geri getirirdi.
+#: * **Ses perdesi: hayır.** Perde büyük ölçüde cinsiyete bağlı; erkeklere ve
+#:   kadınlara sistematik olarak farklı okuma vermek olurdu.
+#: * **Hareket: evet.** Irkla da cinsiyetle de korele değil.
+#:
+#: Eşikler arası boşluk BİLEREK geniş: arada kalan bir ölçüm için taraf
+#: seçmektense hiçbir şey söylememek doğru. İstemci tarafındaki
+#: `kHeatFast` / `kHeatSlow` ile aynı olmalı.
+_HEAT_FAST = 0.18
+_HEAT_SLOW = 0.06
+
+
+def heat_lean(ratios: dict[str, Any]) -> str | None:
+    """Sıcak–soğuk ekseninde durum.
+
+    Üç ayrı sonuç döner ve üçü de birbirinden farklı şey söyler:
+
+    * ``"fast"`` / ``"slow"`` — ölçüldü ve bir tarafa düştü.
+    * ``"ambiguous"`` — **ölçüldü ama arada kaldı.** Veri var, sonuç yok.
+    * ``None`` — hiç ölçülemedi.
+
+    Son ikisini aynı kefeye koymak yanlış olurdu: "ölçemedim, elimde yalnızca
+    durağan biçim var" ile "ölçtüm, net bir tarafa düşmedi" farklı
+    ifadelerdir ve modele farklı söylenmeleri gerekir.
+
+    İstemci ölçümü güvenilir bulmazsa hareket alanlarını **hiç göndermiyor**.
+    Alanın yokluğu "ölçemedim" demek; sıfır göndermek "ölçtüm ve sıfır çıktı"
+    demek olurdu ve o yalan olurdu.
+    """
+    if "motionRate" not in ratios and "stillness" not in ratios:
+        return None
+    try:
+        hiz = max(float(ratios.get("motionRate") or 0.0),
+                  float(ratios.get("stillness") or 0.0))
+    except (TypeError, ValueError):
+        return None
+
+    if hiz >= _HEAT_FAST:
+        return "fast"
+    if 0 < hiz <= _HEAT_SLOW:
+        return "slow"
+    return "ambiguous"
+
+
 def moisture_lean(keys: list[str]) -> str | None:
     """Kuru–nemli ekseninde baskın taraf; belirsizse ``None``.
 
@@ -167,6 +218,7 @@ def summary(ratios: dict[str, Any], lang: str | None = None) -> dict[str, Any]:
         "lines": [p.FIRASA_SIGNS[k] for k in anahtarlar
                   if k in p.FIRASA_SIGNS],
         "moisture": moisture_lean(anahtarlar),
+        "heat": heat_lean(ratios),
     }
 
 
@@ -185,7 +237,15 @@ def prompt_block(ratios: dict[str, Any], lang: str | None = None) -> str:
     if nem:
         satirlar.append(p.FIRASA_MOISTURE[nem])
 
-    # Ölçemediğimiz eksen her seferinde bildirilir.
-    satirlar.append(p.FIRASA_HEAT_UNKNOWN)
+    # Sıcak–soğuk ekseni artık hareketten ölçülebiliyor. Ölçülemediğinde
+    # bunu SÖYLEMEK gerekiyor — sessiz kalmak modelin o eksende de hüküm
+    # vermesine kapı açar.
+    sicak = ozet["heat"]
+    if sicak in p.FIRASA_HEAT:
+        satirlar.append(p.FIRASA_HEAT[sicak])
+    elif sicak == "ambiguous":
+        satirlar.append(p.FIRASA_HEAT_AMBIGUOUS)
+    else:
+        satirlar.append(p.FIRASA_HEAT_UNKNOWN)
 
     return "\n".join(f"- {s}" for s in satirlar)

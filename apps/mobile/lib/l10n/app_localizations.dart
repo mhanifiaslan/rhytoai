@@ -1915,6 +1915,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Gelenek der ki: tek bir belirti hüküm vermez. Aşağıdaki okuma bir eğilimdir, kader değildir.'**
   String get faceReadingHint;
+
+  /// No description provided for @faceReadingLockedBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz hatlarından mizaç okuması. Görüntü cihazında işlenir, hiçbir yere gönderilmez.'**
+  String get faceReadingLockedBody;
+
+  /// No description provided for @faceReadingEntryBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüzünü tarat, firaset geleneğine göre mizacını oku.'**
+  String get faceReadingEntryBody;
 }
 
 class _AppLocalizationsDelegate

@@ -995,4 +995,12 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get faceReadingHint =>
       'Gelenek der ki: tek bir belirti hüküm vermez. Aşağıdaki okuma bir eğilimdir, kader değildir.';
+
+  @override
+  String get faceReadingLockedBody =>
+      'Yüz hatlarından mizaç okuması. Görüntü cihazında işlenir, hiçbir yere gönderilmez.';
+
+  @override
+  String get faceReadingEntryBody =>
+      'Yüzünü tarat, firaset geleneğine göre mizacını oku.';
 }

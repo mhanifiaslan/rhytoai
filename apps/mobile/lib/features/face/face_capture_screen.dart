@@ -21,10 +21,28 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import 'face_detection.dart';
 import 'face_geometry.dart';
+import 'face_motion.dart';
 import 'face_scan_overlay.dart';
 
-/// Çekim sonucunda dışarı verilen şey: yalnızca oranlar.
-typedef FaceCaptureResult = FaceRatios;
+/// Çekim sonucu: durağan oranlar + hareket ölçümü.
+///
+/// İkisi iki ayrı ekseni besliyor. Oranlar kuru–nemli eksenini, hareket
+/// sıcak–soğuk eksenini açıyor; gelenekte mizaç bu ikisinin kesişimi.
+class FaceCaptureResult {
+  const FaceCaptureResult(this.ratios, this.motion);
+
+  final FaceRatios ratios;
+  final MotionMetrics motion;
+
+  /// Sunucuya giden yük. İkisi de yalnızca sayı.
+  Map<String, double> toJson() => {
+        ...ratios.toJson(),
+        // Ölçüm güvenilir değilse hareket alanları HİÇ gönderilmez.
+        // Sunucu "alan yoksa ölçemedim" diye okuyor; sıfır göndermek
+        // "ölçtüm ve sıfır çıktı" demek olurdu ve bu yalan olurdu.
+        if (motion.confident) ...motion.toJson(),
+      };
+}
 
 class FaceCaptureScreen extends StatefulWidget {
   const FaceCaptureScreen({super.key});
@@ -65,6 +83,14 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
 
   List<Offset> _noktalar = const [];
   Size _goruntuBoyutu = Size.zero;
+
+  /// Hareket ölçümü önizleme boyunca birikiyor.
+  ///
+  /// Kullanıcı deklanşör için bilerek sabit duruyor; hareket çabukluğunu
+  /// kıpırdamamaya çalışan birinde ölçmek yanlış şeyi ölçer. Bu yüzden
+  /// serbest evre (kadrajı ararken) ve kilit evresi (istemsiz mikro hareket)
+  /// ayrı toplanıyor.
+  final MotionTracker _hareket = MotionTracker();
 
   @override
   void initState() {
@@ -132,6 +158,20 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
         headAngleZ: yuz?.headEulerAngleZ ?? 0,
       );
 
+      // Hareket ölçümü: yalnızca yüz çerçevedeyken anlamlı. Yüz yokken
+      // ölçmek, tespit gürültüsünü ifade sanmak olurdu.
+      if (yuz != null && kalite != FrameQuality.noFace) {
+        final noktalar = motionPoints(yuz);
+        if (noktalar != null) {
+          _hareket.addFrame(
+            points: noktalar,
+            faceWidth: yuz.boundingBox.width,
+            timestampMs: DateTime.now().millisecondsSinceEpoch,
+            locked: _kilit >= 1.0,
+          );
+        }
+      }
+
       // Kilit birikimi: hazır kaldıkça dolar, bozulunca hızla boşalır.
       final yeniKilit = kalite == FrameQuality.ready
           ? (_kilit + 0.14).clamp(0.0, 1.0)
@@ -192,7 +232,8 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
       await _tarama.forward(from: 0);
       if (!mounted) return;
 
-      Navigator.of(context).pop<FaceCaptureResult>(computeRatios(lm));
+      Navigator.of(context).pop<FaceCaptureResult>(
+          FaceCaptureResult(computeRatios(lm), _hareket.metrics));
     } catch (_) {
       if (!mounted) return;
       setState(() => _asama = _Asama.hata);
@@ -403,6 +444,9 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
                         _kilit = 0;
                         _noktalar = const [];
                       });
+                      // Yeniden çekimde hareket ölçümü de sıfırlanmalı:
+                      // önceki denemenin kareleri yeni okumaya karışmamalı.
+                      _hareket.reset();
                       _baslat();
                     },
                     child: Text(l10n.faceRetake),
