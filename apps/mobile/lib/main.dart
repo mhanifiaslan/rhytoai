@@ -104,6 +104,17 @@ class _Gate extends ConsumerWidget {
           error: (e, _) => _Splash(message: '$e'),
           data: (data) {
             if (data == null || data['onboardingCompleted'] != true) {
+              // Onboarding'e düşmek NADIR olmalı: yalnızca gerçekten yeni
+              // kullanıcı. Cihaz testinde profili tam olan bir kullanıcıya
+              // da açıldı ve sebebini ancak bu kararın girdisini görerek
+              // bulabiliriz. Yalnızca hata ayıklama derlemesinde.
+              assert(() {
+                debugPrint('[RYTHO-GATE] onboarding acildi — '
+                    'profilVar=${data != null} '
+                    'alanlar=${data?.keys.toList() ?? "-"} '
+                    'onboardingCompleted=${data?['onboardingCompleted']}');
+                return true;
+              }());
               return const OnboardingScreen();
             }
             return const AppShell();
@@ -133,7 +144,7 @@ class _Splash extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Text(message!,
-                    style: RythoText.body(13, color: RythoColors.parchmentDim),
+                   style: RythoText.body(13, color: RythoColors.parchmentDim),
                     textAlign: TextAlign.center),
               ),
             ],

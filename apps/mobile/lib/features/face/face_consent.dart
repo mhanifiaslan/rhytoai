@@ -43,9 +43,15 @@ final faceConsentProvider = FutureProvider<FaceConsent>((ref) async {
       granted: yanit.data?['granted'] == true,
       version: (yanit.data?['version'] as num?)?.toInt() ?? 0,
     );
-  } on DioException {
+  } catch (_) {
     // Okunamadıysa rıza YOK varsayılır. "Vardır" varsaymak, biyometrik
     // işlemeyi rızasız açmak olurdu; hata durumunda güvenli taraf bu.
+    //
+    // Yakalama BİLEREK geniş (`on DioException` değil): bu sağlayıcı hata
+    // durumuna DÜŞMEMELİ. Riverpod hatalı bir sağlayıcıyı yeniden deniyor ve
+    // `.future` o süre boyunca tamamlanmıyor; rıza kapısı da yükleniyor
+    // göstergesinde asılı kalıyordu. Beklenmedik bir hata (bozuk gövde, tip
+    // dönüşümü) burada sessizce "rıza yok"a çevrilmeli.
     return FaceConsent.unknown;
   }
 });

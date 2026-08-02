@@ -23,34 +23,31 @@ import 'face_api.dart';
 import 'face_capture_screen.dart';
 import 'face_consent.dart';
 
-/// Akışın giriş noktası.
+/// Akışın giriş noktası — ve **akışın tek sahibi**.
 ///
-/// Rıza **yalnızca yoksa** sorulur. Varsa doğrudan kameraya gidilir; her
-/// çekimde onay ekranı göstermek rıza yorgunluğu üretir ve kimse okumadan
-/// tıklamaya başlar — o noktada rıza bilgilendirici olmaktan çıkar.
+/// Üç adım burada sırayla yürütülüyor: rıza → çekim → okuma. Her adım kendi
+/// rotasında açılıyor ve sonucunu buraya döndürüyor.
+///
+/// Bu yapı iki gerçek kusurdan sonra böyle kuruldu:
+///
+/// 1. İlk sürümde rıza durumu burada BEKLENİYORDU; kullanıcı karta dokunuyor
+///    ve ağ turu bitene kadar hiçbir şey olmuyordu. Artık ekran hemen açılıyor,
+///    bekleme onun içinde görünüyor.
+/// 2. Sonraki sürümde rıza kapısı kameraya kendisi geçiyor ve bunu
+///    `pushReplacement` ile yapıp `await` ediyordu. `pushReplacement` kapının
+///    kendi rotasını YOK EDİYOR: State rotası silindikten sonra uyanıyordu ve
+///    uygulama `'_dependents.isEmpty': is not true` diye çöküyordu. Üstelik
+///    kapının future'ı o anda `null` ile kapandığı için çekim sonucu buraya
+///    hiç ulaşmıyor, okuma ekranı hiç açılmıyordu.
+///
+/// Kural: **hiçbir ekran kendi rotasını değiştirip onu beklemez.** Ekranlar
+/// yalnızca `pop` ile değer döndürür; sırayı burası kurar.
 Future<void> startFaceReading(BuildContext context, WidgetRef ref) async {
-  final mevcut = await ref.read(faceConsentProvider.future);
+  final riza = await Navigator.of(context).push<bool>(
+    MaterialPageRoute(builder: (_) => const FaceConsentGate()),
+  );
+  if (riza != true || !context.mounted) return;
 
-  if (!mevcut.granted) {
-    if (!context.mounted) return;
-    final onay = await Navigator.of(context).push<bool>(MaterialPageRoute(
-      builder: (_) => const FaceConsentScreen(),
-      fullscreenDialog: true,
-    ));
-    if (onay != true || !context.mounted) return;
-
-    try {
-      await grantFaceConsent(ref.read(apiProvider));
-      ref.invalidate(faceConsentProvider);
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(friendlyError(e, AppLocalizations.of(context)))));
-      return;
-    }
-  }
-
-  if (!context.mounted) return;
   final sonuc = await Navigator.of(context).push<FaceCaptureResult>(
     MaterialPageRoute(builder: (_) => const FaceCaptureScreen()),
   );
@@ -61,19 +58,127 @@ Future<void> startFaceReading(BuildContext context, WidgetRef ref) async {
   ));
 }
 
+/// Rıza kapısı: durumu çözer, gerekiyorsa sorar ve **yalnızca `true`/`null`
+/// döndürür.**
+///
+/// Bu ekran kamerayı AÇMAZ. Bir tek şeye karar verir: rıza var mı? Sırayı
+/// kuran [startFaceReading]. Bölüşüm böyle olmasaydı — ve bir süre öyle
+/// değildi — kapı kendi rotasını `pushReplacement` ile yok edip onu
+/// beklerdi; State rotası silindikten sonra uyanır ve uygulama
+/// `'_dependents.isEmpty': is not true` diye çökerdi.
+///
+/// Rıza durumu **bir kez okunur** (`ref.read`), izlenmez: bu ekranın işi tek
+/// bir karar vermek, sonrasında durumun değişmesi onu ilgilendirmiyor.
+/// İzleseydi, onay yazıldığında gelen `invalidate` kapıyı yeniden kurar ve
+/// ikinci bir gezinme doğardı.
+class FaceConsentGate extends ConsumerStatefulWidget {
+  const FaceConsentGate({super.key});
+
+  @override
+  ConsumerState<FaceConsentGate> createState() => _FaceConsentGateState();
+}
+
+enum _Asama { cozuluyor, riza }
+
+class _FaceConsentGateState extends ConsumerState<FaceConsentGate> {
+  _Asama _asama = _Asama.cozuluyor;
+  bool _kapandi = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _durumuCoz();
+  }
+
+  Future<void> _durumuCoz() async {
+    FaceConsent durum;
+    try {
+      // Zaman sınırı gerçek bir kusura karşı: Dio'nun alım zaman aşımı 120
+      // saniye ve sunucu yanıt vermezse kullanıcı o kadar süre dönen bir
+      // göstergeye bakıyordu. Sınır dolarsa rıza sorulur — bekletmek yerine
+      // güvenli tarafa düşülür.
+      durum = await ref
+          .read(faceConsentProvider.future)
+          .timeout(const Duration(seconds: 12));
+    } catch (_) {
+      // Durum okunamazsa rıza YOK sayılır ve sorulur; sessizce geçmek
+      // biyometrik işlemeyi rızasız açmak olurdu.
+      durum = FaceConsent.unknown;
+    }
+    if (!mounted) return;
+    if (durum.granted) {
+      _tamam();
+    } else {
+      setState(() => _asama = _Asama.riza);
+    }
+  }
+
+  /// Kapıyı olumlu kapatır. Tek seferlik: `pop` iki kez çağrılırsa altındaki
+  /// rota da kapanır.
+  void _tamam() {
+    if (_kapandi || !mounted) return;
+    _kapandi = true;
+    Navigator.of(context).pop(true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_asama == _Asama.riza) {
+      return _ConsentForm(onGranted: _tamam);
+    }
+    return Scaffold(
+      appBar:
+          AppBar(title: Text(AppLocalizations.of(context).faceReadingTitle)),
+      body: const Center(child: CircularProgressIndicator()),
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Rıza
 // ---------------------------------------------------------------------------
 
-class FaceConsentScreen extends StatefulWidget {
-  const FaceConsentScreen({super.key});
+/// Rıza formu. **Gezinmez** — onay yazıldığında [onGranted] çağırır.
+///
+/// Bu ayrım kasıtlı: gezinmeyi kapı yönetiyor. Formun hem sağlayıcıya hem
+/// gezinmeye dokunması, çöken sürümün ta kendisiydi.
+class _ConsentForm extends ConsumerStatefulWidget {
+  const _ConsentForm({required this.onGranted});
+
+  final VoidCallback onGranted;
 
   @override
-  State<FaceConsentScreen> createState() => _FaceConsentScreenState();
+  ConsumerState<_ConsentForm> createState() => _ConsentFormState();
 }
 
-class _FaceConsentScreenState extends State<FaceConsentScreen> {
+class _ConsentFormState extends ConsumerState<_ConsentForm> {
   bool _onaylandi = false;
+  bool _kaydediliyor = false;
+  String? _hata;
+
+  /// Onayı sunucuya yazar ve kararı kapıya devreder.
+  Future<void> _onayla() async {
+    setState(() {
+      _kaydediliyor = true;
+      _hata = null;
+    });
+    try {
+      await grantFaceConsent(ref.read(apiProvider));
+      // Profil > Gizlilik ekranı bu sağlayıcıyı izliyor; oradaki durum güncel
+      // kalsın. Bu kapı artık İZLEMEDİĞİ için yeniden kurulma olmuyor.
+      ref.invalidate(faceConsentProvider);
+      if (!mounted) return;
+      widget.onGranted();
+    } catch (e) {
+      // Hata SNACKBAR değil ekranda: snackbar kaybolup gidiyor ve kullanıcı
+      // neden geri atıldığını anlamıyordu.
+      if (!mounted) return;
+      setState(() {
+        _kaydediliyor = false;
+        _hata = friendlyError(e, AppLocalizations.of(context));
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -112,11 +217,20 @@ class _FaceConsentScreenState extends State<FaceConsentScreen> {
               title: Text(l10n.faceConsentCheckbox,
                   style: RythoText.body(13.5)),
             ),
+            if (_hata != null) ...[
+              const SizedBox(height: 4),
+              Text(_hata!,
+                  style: RythoText.body(13, color: RythoColors.madder)),
+            ],
             const SizedBox(height: 12),
             FilledButton(
-              onPressed:
-                  _onaylandi ? () => Navigator.of(context).pop(true) : null,
-              child: Text(l10n.faceConsentContinue),
+              onPressed: (_onaylandi && !_kaydediliyor) ? _onayla : null,
+              child: _kaydediliyor
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text(l10n.faceConsentContinue),
             ),
           ],
         ),

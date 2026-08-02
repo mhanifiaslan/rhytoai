@@ -24,6 +24,26 @@ final blockedUsersProvider = StreamProvider<Set<String>>((ref) {
       .map((snapshot) => snapshot.docs.map((d) => d.id).toSet());
 });
 
+/// Bir profil anlık görüntüsüne **karar için** güvenilebilir mi?
+///
+/// Firestore, dinleyici kurulduğunda önce yerel önbellekten yayın yapıyor.
+/// Önbellek boşsa (taze kurulum, yeni giriş) bu yayın "doküman yok" diyor —
+/// oysa doküman sunucuda duruyor. Sunucu yanıtı bir an sonra geliyor ve
+/// düzeliyor.
+///
+/// Cihaz testinde görülen şey buydu: giriş yapınca doğum bilgisi formu
+/// açılıyor, sonra kendiliğinden geçiyordu. Kullanıcının profili tamdı
+/// (`onboardingCompleted = true`); uygulama yalnızca bir anlığına yokmuş gibi
+/// davranıyordu.
+///
+/// Kural: **var olan bir doküman her zaman güvenilir; "yok" bilgisi ancak
+/// SUNUCUDAN geldiyse güvenilir.**
+bool profileSnapshotIsAuthoritative({
+  required bool exists,
+  required bool isFromCache,
+}) =>
+    exists || !isFromCache;
+
 /// Firestore'daki kullanıcı profili (users/{uid}).
 final profileProvider = StreamProvider<Map<String, dynamic>?>((ref) {
   final user = ref.watch(authStateProvider).value;
@@ -32,6 +52,13 @@ final profileProvider = StreamProvider<Map<String, dynamic>?>((ref) {
       .collection('users')
       .doc(user.uid)
       .snapshots()
+      // Güvenilmez anlık görüntü YAYILMIYOR; sağlayıcı o sırada `loading`
+      // kalıyor ve arayüz açılış ekranını gösteriyor. Yanlış bir "profil yok"
+      // yaymak, kullanıcıyı verisi dururken onboarding'e düşürüyordu.
+      .where((s) => profileSnapshotIsAuthoritative(
+            exists: s.exists,
+            isFromCache: s.metadata.isFromCache,
+          ))
       .map((snapshot) => snapshot.data());
 });
 

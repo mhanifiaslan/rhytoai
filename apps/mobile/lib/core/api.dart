@@ -81,17 +81,34 @@ final apiProvider = Provider<Dio>((ref) {
   return dio;
 });
 
+/// FastAPI'nin KENDİ ürettiği, çevrilmemiş gövde metinleri.
+///
+/// Sunucumuz kendi hatalarında `detail` alanını kullanıcının dilinde üretiyor
+/// (`core/messages.py` → `text()`) ve o metinler olduğu gibi gösterilebilir.
+/// Ama **yönlendirme düzeyindeki** hataları — var olmayan uç, yanlış metot —
+/// FastAPI üretiyor ve bunlar İngilizce sabitler.
+///
+/// Cihaz testinde tam olarak bu görüldü: yüz okuma ucu henüz deploy
+/// edilmemişti, sunucu 404 döndü ve rıza ekranında kullanıcıya kırmızı
+/// **"Not Found"** yazdı.
+const _cerceveMetinleri = {'Not Found', 'Method Not Allowed'};
+
 /// Hata mesajını kullanıcıya gösterilebilir hale getirir.
 ///
-/// Backend her hatada Türkçe ve anlaşılır bir `detail` döndürüyor (kota,
-/// paywall, sunucu hatası). Ham `DioException` metnini ekrana basmak
-/// kullanıcıya HTTP durum kodu ve MDN bağlantısı göstermek demek.
+/// Backend kendi hatalarında kullanıcının dilinde ve anlaşılır bir `detail`
+/// döndürüyor (kota, paywall, sunucu hatası). Ham `DioException` metnini
+/// ekrana basmak kullanıcıya HTTP durum kodu ve MDN bağlantısı göstermek
+/// demek.
 String friendlyError(Object error, [AppLocalizations? l10n]) {
   if (error is DioException) {
     // Sunucunun `detail` alani zaten kullanicinin dilinde uretiliyor
-    // (Accept-Language ile), o yuzden oldugu gibi gosterilir.
+    // (Accept-Language ile), o yuzden oldugu gibi gosterilir — cerceveden
+    // gelenler HARIC.
     final data = error.response?.data;
-    if (data is Map && data['detail'] is String) return data['detail'] as String;
+    if (data is Map && data['detail'] is String) {
+      final detay = data['detail'] as String;
+      if (!_cerceveMetinleri.contains(detay)) return detay;
+    }
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.connectionError) {

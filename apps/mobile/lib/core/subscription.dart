@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -137,8 +136,13 @@ final subscriptionProvider =
     final response = await dio.get('/api/v1/billing/status');
     return SubscriptionStatus.fromJson(
         Map<String, dynamic>.from(response.data));
-  } on DioException {
+  } catch (_) {
     // Durum okunamadıysa ücretsiz varsay; sunucu zaten uçları koruyor.
+    //
+    // Yakalama BİLEREK geniş (`on DioException` değil): bu sağlayıcı hata
+    // durumuna DÜŞMEMELİ. Riverpod hatalı bir sağlayıcıyı yeniden deniyor ve
+    // `.future` o süre boyunca tamamlanmıyor; satın alma sonrası yoklama da
+    // orada asılı kalıyordu.
     return SubscriptionStatus.none;
   }
 });
@@ -188,7 +192,20 @@ Future<bool> purchasePackage(WidgetRef ref, Package package) async {
   return true;
 }
 
-/// Sunucu aboneliği görene kadar bekler (en fazla ~10 saniye).
+/// Tek bir durum yoklamasının üst sınırı.
+///
+/// Dio'nun alım zaman aşımı 120 saniye; sınırsız bırakılırsa beş yoklama en
+/// kötü hâlde on dakika sürebiliyordu. Kullanıcının gördüğü şey "ödeme
+/// adımını geçemiyorum" oluyor.
+const Duration _kYoklamaSiniri = Duration(seconds: 6);
+
+/// Sunucuyu bekleme bütçesinin tamamı.
+const Duration _kBeklemeButcesi = Duration(seconds: 15);
+
+/// Sunucu aboneliği görene kadar bekler — sınırlı bir bütçeyle.
+///
+/// Süre dolarsa sessizce çıkılır: satın alma cihazda gerçekleşti, gecikme
+/// sunucu tarafında ve kullanıcıyı ödeme ekranında tutmak yanlış olur.
 Future<void> _waitForServerEntitlement(WidgetRef ref) async {
   const gecikmeler = [
     Duration(milliseconds: 400),
@@ -197,10 +214,17 @@ Future<void> _waitForServerEntitlement(WidgetRef ref) async {
     Duration(seconds: 3),
     Duration(seconds: 4),
   ];
+  final bitis = DateTime.now().add(_kBeklemeButcesi);
   for (final gecikme in gecikmeler) {
+    if (DateTime.now().isAfter(bitis)) break;
     ref.invalidate(subscriptionProvider);
-    final durum = await ref.read(subscriptionProvider.future);
-    if (durum.active) return;
+    try {
+      final durum =
+          await ref.read(subscriptionProvider.future).timeout(_kYoklamaSiniri);
+      if (durum.active) return;
+    } catch (_) {
+      // Yoklama düşerse beklemeyi sürdür; bu bir satın alma hatası değil.
+    }
     await Future<void>.delayed(gecikme);
   }
   ref.invalidate(subscriptionProvider);

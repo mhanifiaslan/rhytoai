@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_animate/flutter_animate.dart';
@@ -34,6 +36,38 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   bool _busy = false;
   String? _error;
 
+  /// Bekleyiş uzarsa çıkış yolu açılır.
+  ///
+  /// Mağaza çağrısı hiç dönmezse `finally` de çalışmıyor ve kullanıcı sonsuz
+  /// bir dönen halkada kalıyordu — cihaz testinde bildirilen "ödeme adımını
+  /// geçemiyorum" buydu. Çağrıya zaman aşımı KOYULMADI bilerek: kullanıcı o
+  /// sırada mağazanın kendi ekranında şifre giriyor olabilir ve akışı yarıda
+  /// kesmek daha kötü. Bunun yerine bekleyişten **çıkış** veriliyor.
+  Timer? _sabirsizlik;
+  bool _uzunSuruyor = false;
+
+  static const Duration _kCikisSuresi = Duration(seconds: 10);
+
+  void _mesguliyet(bool mesgul) {
+    _sabirsizlik?.cancel();
+    if (mesgul) {
+      _sabirsizlik = Timer(_kCikisSuresi, () {
+        if (mounted && _busy) setState(() => _uzunSuruyor = true);
+      });
+    }
+    if (!mounted) return;
+    setState(() {
+      _busy = mesgul;
+      if (!mesgul) _uzunSuruyor = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _sabirsizlik?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -55,10 +89,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
   Future<void> _buy() async {
     final package = _selected;
     if (package == null) return;
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
+    setState(() => _error = null);
+    _mesguliyet(true);
     // Huninin orta adimi: bu olay olmadan "paywall calismiyor" ile "magaza
     // akisi dusuyor" ayirt edilemez.
     Analytics.purchaseStarted();
@@ -75,12 +107,12 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) _mesguliyet(false);
     }
   }
 
   Future<void> _restore() async {
-    setState(() => _busy = true);
+    _mesguliyet(true);
     try {
       final ok = await restorePurchases(ref);
       Analytics.purchasesRestored(found: ok);
@@ -94,7 +126,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     } catch (e) {
       if (mounted) setState(() => _error = '$e');
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) _mesguliyet(false);
     }
   }
 
@@ -191,6 +223,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             onPressed: _selected == null ? null : _buy,
           ),
         ),
+        // Bekleyiş uzarsa çıkış yolu. Sonsuz dönen bir halka, kullanıcıya
+        // uygulamanın bozuk olduğunu söyler; bir düğme ise ne yapacağını.
+        if (_uzunSuruyor)
+          Center(
+            child: TextButton(
+              onPressed: () => _mesguliyet(false),
+              child: Text(l10n.cancel,
+                  style: RythoText.label(12.5, color: RythoColors.goldBright)),
+            ),
+          ),
         Center(
           child: TextButton(
             onPressed: _busy ? null : _restore,
