@@ -8,12 +8,18 @@ RAG bağlamı eklenir, Gemini'ye gönderilir ve sonuç kullanıcı+gün bazında
 from __future__ import annotations
 
 import datetime as dt
+import hashlib
 import json
 import logging
 from typing import Any
 
 from core import cache, i18n
-from services import gemini_service, memory_service, prompts
+from services import (
+    firasa_service,
+    gemini_service,
+    memory_service,
+    prompts,
+)
 from services.rag_service import retrieve_context
 
 logger = logging.getLogger(__name__)
@@ -285,41 +291,42 @@ def natal_report(user_id: str, natal: dict[str, Any],
                             owner_uid=user_id)
 
 
-def face_report(user_id: str, face: dict[str, Any]) -> dict[str, Any]:
-    """Yüz analizi verilerinden Mian Xiang + Kıyafetname sentez raporu."""
-    cache_key = f"face-report-{user_id}-{json.dumps(face.get('measurements', {}), sort_keys=True)[:64]}"
+def firasa_report(user_id: str, ratios: dict[str, Any],
+                  chart: str = "", lang: str | None = None) -> dict[str, Any]:
+    """Yüz ORANLARINDAN firaset okuması.
+
+    Bu fonksiyon eski `face_report`'un yerini aldı. Eskisinin üç sorunu vardı
+    ve üçü de bu projede başka yerlerde kapatılan kusur sınıflarındandı:
+
+    * **Sunucu görüntü alıyordu.** Artık almıyor: tespit kullanıcının
+      cihazında yapılıyor, buraya yalnızca oranlar geliyor.
+    * **Prompt Türkçeye sabitliydi** (`lang` parametresi yoktu), yani
+      İngilizce kullanıcı Türkçe kurallarla üretilmiş metin alıyordu.
+    * **Yağcılık talimatı taşıyordu:** "Yorum pozitif psikoloji çerçevesinde
+      olsun: her özellik güç + gelişim alanı." Bu, ürünün "pohpohlama yok"
+      ilkesinin tam tersi. Yerini geleneğin kendi sınırı aldı: tek belirti
+      hüküm vermez, belirti kader değildir, amaç ayıklamak değil dengelemek.
+
+    Ayrıca eskisi tahmini yaş ve duygu da prompt'a koyuyordu; ikisi de
+    biyometrik çıkarım ve ikisi de artık üretilmiyor.
+    """
+    p = prompts.get(lang)
+    belirtiler = firasa_service.prompt_block(ratios, lang)
+
+    # Önbellek anahtarı oranların kendisiyle: aynı yüz aynı okumayı alır,
+    # her açılışta yeni bir LLM çağrısı yapılmaz.
+    ozet = json.dumps(
+        {k: ratios.get(k) for k in sorted(ratios)}, sort_keys=True)
+    cache_key = (f"firasa-{user_id}-{lang}-"
+                 f"{hashlib.sha256(ozet.encode()).hexdigest()[:16]}")
 
     rag = retrieve_context(
-        f"Mian Xiang San Ting yüz okuma {face.get('wu_xing_element', '')} element "
-        f"Kıyafetname mizaç {face.get('mizac', '')}"
-    )
-    palaces = "\n".join(
-        f"- {p['name_tr']}: {p['assessment']}" for p in face.get("palaces", [])[:6]
-    )
+        p.FIRASA_RAG_QUERY, top_k=3, lang=lang)
 
-    prompt = f"""
-GÖREV: Aşağıdaki GERÇEK yüz ölçümü verilerinden 250-300 kelimelik bir kadim
-yüz okuması yaz (Mian Xiang + Marifetname İlm-i Sima sentezi). "Sen" diye hitap et.
-
-ÖLÇÜLMÜŞ VERİLER (MediaPipe 468-nokta yüz haritası):
-- San Ting dengesi: {face.get('san_ting_balance')}
-- San Ting oranları: {face.get('san_ting_ratios')}
-- Wu Xing yüz elementi: {face.get('wu_xing_element')} — {face.get('wu_xing_reason', '')}
-- Marifetname mizacı: {face.get('mizac')}
-- Yüz simetrisi: {face.get('symmetry')}
-- Tahmini yaş/duygu: {face.get('age', '?')} / {face.get('emotion', 'nötr')}
-
-12 SARAY DEĞERLENDİRMESİ:
-{palaces}
-
-KAYNAK PASAJLARI:
-{rag}
-
-Yorum pozitif psikoloji çerçevesinde olsun: her özellik güç + gelişim alanı.
-Sonda tek cümlelik bir "kadim tavsiye" ver.
-"""
-    fallback = face.get("summary", "Yüz hatların kadim haritalara göre dengeli bir mizacı işaret ediyor.")
-    return _cached_generate(cache_key, prompt, fallback, ttl_seconds=7 * 24 * 3600)
+    prompt = p.FIRASA.format(signs=belirtiler, chart=chart or "—", rag=rag)
+    return _cached_generate(cache_key, prompt, p.FIRASA_FALLBACK,
+                            ttl_seconds=7 * 24 * 3600,
+                            lang=lang, owner_uid=user_id)
 
 
 def bazi_report(user_id: str, bazi: dict[str, Any],

@@ -98,6 +98,12 @@ _MESSAGES: dict[str, dict[str, str]] = {
     },
 
     # --- Genel ---
+    "face_invalid_ratios": {
+        "tr": "Yüz ölçümü tutarsız geldi. Işığın yeterli olduğundan ve "
+              "yüzünün çerçevede olduğundan emin olup tekrar dene.",
+        "en": "The facial measurement came back inconsistent. Make sure the "
+              "light is good and your face is inside the frame, then retry.",
+    },
     "internal": {
         "tr": "Hesap yapılırken bir sorun çıktı. Lütfen biraz sonra tekrar dene.",
         "en": "Something went wrong while calculating this. Please try again "

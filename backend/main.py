@@ -16,6 +16,7 @@ from api.astrology import router as astrology_router
 from api.bazi import router as bazi_router
 from api.billing import router as billing_router
 from api.chat import router as chat_router
+from api.face_reading import router as face_reading_router
 from api.iching import router as iching_router
 from api.notify import router as notify_router
 from api.reports import router as reports_router
@@ -80,9 +81,15 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
 app.include_router(astrology_router, prefix="/api/v1/astrology", tags=["Astrology"])
 app.include_router(bazi_router, prefix="/api/v1/bazi", tags=["BaZi"])
 app.include_router(iching_router, prefix="/api/v1/iching", tags=["I Ching"])
-# Yüz analizi (api/face_reading.py, services/face_service.py) v1 kapsamı dışıdır:
-# biyometrik veri işlediği için GDPR Md.9 / KVKK md.6 ve BIPA benzeri düzenlemelere
-# tabi. Kod v2 referansı olarak repoda durur, uç kaydı yapılmaz.
+# Firaset (yüz okuma). Uç GÖRÜNTÜ ALMAZ, oran alır: tespit kullanıcının
+# cihazında yapılır ve sunucuya yalnızca türetilmiş sayılar gelir. Eski
+# tasarım fotoğrafı yüklüyordu ve silme adımı olsa da biyometrik veri
+# sunucuya ULAŞIYORDU; şimdi ulaşmıyor.
+#
+# YAYIN ÖNCESİ: bu özelliğin açık rıza akışı, gizlilik politikası ve
+# Play Data Safety / App Privacy beyanları tamamlanmadan mağazaya
+# gitmemeli (GDPR Md.9 / KVKK md.6 / BIPA).
+app.include_router(face_reading_router, prefix="/api/v1/face", tags=["Firasa"])
 app.include_router(sky_router, prefix="/api/v1/sky", tags=["Sky"])
 app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(reports_router, prefix="/api/v1/reports", tags=["Reports"])

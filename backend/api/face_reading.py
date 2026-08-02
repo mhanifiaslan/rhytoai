@@ -1,48 +1,89 @@
+"""Firaset ucu — **görüntü almaz, oran alır**.
+
+Bu uç baştan yazıldı. Eskisi bir `UploadFile` kabul ediyor, sunucuda
+MediaPipe ile 468 landmark çıkarıyor ve fotoğrafı geçici dosyaya yazıyordu.
+Silme adımı vardı ama tasarımın kendisi yanlıştı: **biyometrik veri sunucuya
+ulaşıyordu.**
+
+Şimdi tespit kullanıcının cihazında yapılıyor ve buraya yalnızca türetilmiş
+oranlar geliyor. Bunun üç sonucu var:
+
+* Sunucu hiçbir aşamada biyometrik veri işlemiyor, saklamıyor, loglamıyor.
+* Ağ üzerinde fotoğraf gitmiyor.
+* İmajda MediaPipe/OpenCV gerekmiyor (soğuk başlatma ve imaj boyutu).
+
+Gelen sayılar kişiyi tanımaya yaramaz: "alın/çene yükseklik oranı 0.94"
+milyonlarca insanda aynıdır.
+"""
+from __future__ import annotations
+
 import logging
-import os
-import shutil
-import tempfile
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
 
-from core.auth import AuthUser, get_current_user
-from services import report_service
-from services.face_service import analyze_face
+from core.auth import AuthUser
+from core.entitlements import require_plus
+from core.i18n import get_language
+from core.messages import text
+from services import chart_context, profile_service, report_service
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-@router.post("/analyze")
-async def process_face_image(
-    file: UploadFile = File(...),
-    user: AuthUser = Depends(get_current_user),
+class FaceRatios(BaseModel):
+    """İstemcinin cihazında hesaplanan oranlar.
+
+    Sınırlar hem doğrulama hem **kapı**: aralık dışı bir değer ya bozuk bir
+    tespitten ya da elle uydurulmuş bir istekten gelir. İkisinde de okuma
+    üretmek, olmayan bir ölçüme dayanarak konuşmak olurdu.
+    """
+
+    upperThird: float = Field(ge=0, le=1)
+    middleThird: float = Field(ge=0, le=1)
+    lowerThird: float = Field(ge=0, le=1)
+    widthToHeight: float = Field(ge=0.2, le=3)
+    jawToCheek: float = Field(ge=0.2, le=2)
+    mouthToFaceWidth: float = Field(ge=0.05, le=1.5)
+    lipFullness: float = Field(ge=0, le=0.5)
+    eyeSpacing: float = Field(ge=0.05, le=1.5)
+    symmetry: float = Field(ge=0, le=1)
+
+
+@router.post("/reading")
+def firasa_reading(
+    ratios: FaceRatios,
+    user: AuthUser = Depends(require_plus("firasa")),
+    lang: str = Depends(get_language),
 ):
-    tmp_path = None
+    """Yüz oranlarından firaset okuması — Rytho+.
+
+    Abonelik sınırı maliyet farkından geçiyor: okuma kullanıcıya özel
+    üretiliyor, yani kullanıcı başına bir LLM çağrısı. Aynı oranlar için
+    sonuç bir hafta önbellekte tutulur; kullanıcı ekranı her açtığında
+    yeniden üretilmez.
+    """
     try:
-        suffix = os.path.splitext(file.filename or "photo.jpg")[1] or ".jpg"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-            shutil.copyfileobj(file.file, tmp)
-            tmp_path = tmp.name
+        # Üç bölge oranı toplamı 1 civarında olmalı. Değilse tespit bozuk
+        # demektir; uydurma bir okuma üretmektense reddetmek doğru.
+        toplam = ratios.upperThird + ratios.middleThird + ratios.lowerThird
+        if not (0.85 <= toplam <= 1.15):
+            raise HTTPException(status_code=422,
+                                detail=text("face_invalid_ratios", lang))
 
-        result = analyze_face(tmp_path)
-        if "error" in result:
-            raise HTTPException(status_code=422, detail=result["error"])
+        profile = profile_service.get_profile(user.uid)
+        # Harita varsa okumaya girer: firaset tek başına da çalışır ama
+        # haritayla birlikte kişiye özgü olur.
+        chart = chart_context.chart_whisper(user.uid, profile, lang=lang)
 
-        report = report_service.face_report(user.uid, result)
-        result["face_reading_summary"] = report["text"]
-        return {"status": "success", "data": result}
+        rapor = report_service.firasa_report(
+            user.uid, ratios.model_dump(), chart=chart, lang=lang)
+        return {"status": "success", "reading": rapor["text"],
+                "cached": rapor.get("cached", False)}
     except HTTPException:
         raise
-    except Exception:
-        # Traceback'i logla; kullanıcıya iç detay sızdırmadan kısa Türkçe mesaj döndür
-        logger.exception("Yüz analizi başarısız oldu")
-        raise HTTPException(
-            status_code=500,
-            detail="Yüz analizi sırasında beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
-        )
-    finally:
-        # Fotoğraf analiz sonrası SİLİNİR — KVKK/GDPR gereği sunucuda tutulmaz
-        if tmp_path and os.path.exists(tmp_path):
-            os.remove(tmp_path)
+    except Exception as exc:
+        logger.exception("Firaset okumasi uretilemedi", exc_info=exc)
+        raise HTTPException(status_code=500, detail=text("internal", lang))

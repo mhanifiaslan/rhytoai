@@ -476,3 +476,88 @@ SYNASTRY_FALLBACK = (
     "{name1} ({sun1}) ile {name2} ({sun2}) arasındaki dinamik hem çekim hem "
     "sürtünme noktaları taşıyor. Detaylı yorum için tekrar dene."
 )
+
+# --- Firaset (yüz okuma) ---
+#
+# Belirtiler HÜKÜM DEĞİL GÖZLEMDİR. Kaynakta "burnu uzun olanın anlayışı
+# kıttır" gibi hükümler var; buraya yalnızca ölçülen biçim giriyor, yargı
+# modele bırakılmıyor ve persona onu da geleneğin sınırıyla bağlıyor.
+FIRASA_SIGNS = {
+    "forehead_dominant": "Üst bölge (alın) baskın",
+    "forehead_short": "Üst bölge (alın) dar",
+    "midface_dominant": "Orta bölge (göz-burun) baskın",
+    "jaw_dominant": "Alt bölge (ağız-çene) baskın",
+    "jaw_short": "Alt bölge (ağız-çene) kısa",
+    "face_broad": "Yüz geniş ve yuvarlağa yakın",
+    "face_long": "Yüz uzun ve ince",
+    "jaw_square": "Çene geniş ve köşeli",
+    "jaw_tapered": "Çene daralan, sivriye yakın",
+    "mouth_wide": "Ağız geniş",
+    "mouth_small": "Ağız küçük",
+    "lips_full": "Dudaklar dolgun",
+    "lips_thin": "Dudaklar ince",
+    "eyes_wide": "Gözler birbirinden uzak",
+    "eyes_close": "Gözler birbirine yakın",
+    "asymmetry_marked": "Sol-sağ arasında belirgin fark",
+}
+
+#: Ortalama bir yüzde uç belirti çıkmaz. Bunu modele SÖYLEMEK gerekiyor;
+#: boş bir blok göndermek "bir şeyler bul" demek olurdu.
+FIRASA_NO_MARKED_SIGNS = (
+    "Ölçülen oranların hiçbiri uçta değil: bu yüz dengeli oranlarda. "
+    "Belirti yokluğu da bir bilgidir, eksiklik değil"
+)
+
+FIRASA_MOISTURE = {
+    "dry": "Biçim kuruluk tarafına eğilimli (ince yapı, keskin hat)",
+    "moist": "Biçim nemlilik tarafına eğilimli (dolgun yapı, yumuşak hat)",
+}
+
+#: Ölçemediğimiz eksen HER SEFERINDE bildirilir.
+FIRASA_HEAT_UNKNOWN = (
+    "Sıcak-soğuk ekseni ÖLÇÜLEMEDİ: gelenekte bu eksen ten rengine, hareket "
+    "hızına ve sese bakar; elimizde yalnızca durağan biçim var. Bu eksen "
+    "hakkında hüküm verme"
+)
+
+FIRASA = """
+GÖREV: Aşağıdaki ÖLÇÜLMÜŞ yüz belirtilerinden 180-220 kelimelik bir firaset
+okuması yaz. "Sen" diye hitap et.
+
+ÖLÇÜLEN BELİRTİLER (kullanıcının cihazında hesaplandı; görüntü sunucuya
+hiç gelmedi):
+{signs}
+
+KULLANICININ HARİTASI:
+{chart}
+
+KAYNAK PASAJLARI:
+{rag}
+
+GELENEĞİN KENDİ KOYDUĞU SINIR — BUNA UY:
+- TEK BELİRTİ HÜKÜM VERMEZ. Belirtileri topla ve bir EĞİLİM çıkar; tek bir
+  ölçüye bakıp karar verme. En az iki belirtiyi birbiriyle konuştur.
+- BELİRTİ EĞİLİMDİR, KADER DEĞİLDİR. Kişinin nereye meyilli olduğunu söyle,
+  ne yapacağını değil.
+- AMAÇ AYIKLAMAK DEĞİL DENGELEMEKTİR. Okuma, kişinin kendi eğilimini tanıyıp
+  fazlasını yatıştırmasına, eksiğini beslemesine yarasın.
+- Ölçülemediği söylenen bir eksen hakkında HÜKÜM VERME; o eksende bir şey
+  söylemen gerekiyorsa neyi bilmediğini açıkça söyle.
+- Zekâ, güvenilirlik, ahlak ve çekicilik hakkında hüküm verme. Bunlar yüz
+  ölçüsünden çıkmaz.
+- Sağlık, hastalık ya da yaş hakkında hiçbir şey söyleme.
+
+Sonda tek cümlelik somut bir öneri ver. Başlık ve madde işareti kullanma.
+"""
+
+FIRASA_FALLBACK = (
+    "Yüz hatların ölçüldü ama okuma şu an üretilemedi. Gelenek zaten tek bir "
+    "belirtiye bakıp hüküm vermeyi yasaklar; birazdan tekrar dene."
+)
+
+#: Firaset okumasi icin bilgi tabani sorgusu. Korpustaki firaset
+#: bolumlerine (Marifetname) denk gelecek sekilde secildi.
+FIRASA_RAG_QUERY = (
+    "Firaset, kiyafet ilmi, dis belirtiden mizaca; yuz hatlari, "
+    "ahlat-i erbaa, kuru ve nemli mizac"
+)

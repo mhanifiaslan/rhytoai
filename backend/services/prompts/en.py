@@ -491,3 +491,90 @@ SYNASTRY_FALLBACK = (
     "points of attraction and points of friction. "
     "Check back shortly for the full reading."
 )
+
+# --- Firasa (face reading) ---
+#
+# The signs are OBSERVATIONS, NOT VERDICTS. The source contains judgements
+# like "a long nose means poor understanding"; only the measured form enters
+# here, the judgement is left to the model, and the persona binds that to the
+# limit the tradition sets on itself.
+FIRASA_SIGNS = {
+    "forehead_dominant": "Upper zone (forehead) predominates",
+    "forehead_short": "Upper zone (forehead) is narrow",
+    "midface_dominant": "Middle zone (eyes-nose) predominates",
+    "jaw_dominant": "Lower zone (mouth-jaw) predominates",
+    "jaw_short": "Lower zone (mouth-jaw) is short",
+    "face_broad": "The face is broad, close to round",
+    "face_long": "The face is long and narrow",
+    "jaw_square": "The jaw is broad and squared",
+    "jaw_tapered": "The jaw tapers, close to pointed",
+    "mouth_wide": "The mouth is wide",
+    "mouth_small": "The mouth is small",
+    "lips_full": "The lips are full",
+    "lips_thin": "The lips are thin",
+    "eyes_wide": "The eyes are set far apart",
+    "eyes_close": "The eyes are set close together",
+    "asymmetry_marked": "A marked difference between left and right",
+}
+
+#: An average face yields no extreme signs. The model must be TOLD this;
+#: sending an empty block would read as "find something".
+FIRASA_NO_MARKED_SIGNS = (
+    "None of the measured ratios sit at an extreme: this face is in balanced "
+    "proportion. The absence of marked signs is itself information, not a gap"
+)
+
+FIRASA_MOISTURE = {
+    "dry": "The form leans to the dry side (fine build, hard line)",
+    "moist": "The form leans to the moist side (full build, soft line)",
+}
+
+#: The axis we cannot measure is declared EVERY TIME.
+FIRASA_HEAT_UNKNOWN = (
+    "The hot-cold axis COULD NOT BE MEASURED: in the tradition that axis "
+    "reads colour, speed of movement and voice; all we have is static form. "
+    "Do not pass judgement on that axis"
+)
+
+FIRASA = """
+TASK: Write a 180-220 word firasa reading from the MEASURED facial signs
+below. Address the reader as "you".
+
+MEASURED SIGNS (computed on the reader's own device; the image never reached
+this server):
+{signs}
+
+THE READER'S CHART:
+{chart}
+
+SOURCE PASSAGES:
+{rag}
+
+THE LIMIT THE TRADITION SETS ON ITSELF — OBSERVE IT:
+- A SINGLE SIGN DECIDES NOTHING. Gather the signs and draw a TENDENCY; do not
+  judge on one measurement. Make at least two signs speak to each other.
+- A SIGN IS A TENDENCY, NOT A FATE. Say what they incline toward, not what
+  they will do.
+- THE PURPOSE IS NOT TO SORT BUT TO BALANCE. The reading should help them
+  recognise their own inclination, quiet what is excessive and feed what is short.
+- Do NOT pass judgement on an axis that was declared unmeasured; if you must
+  touch it, say plainly what you do not know.
+- Do not judge intelligence, trustworthiness, morality or attractiveness.
+  Those do not follow from facial measurement.
+- Say nothing about health, illness or age.
+
+Close with one concrete suggestion in a single sentence. No headings, no bullets.
+"""
+
+FIRASA_FALLBACK = (
+    "Your features were measured but the reading could not be produced right "
+    "now. The tradition forbids judging on a single sign anyway; try again "
+    "shortly."
+)
+
+#: Knowledge-base query for the firasa reading, aimed at the
+#: physiognomy sections of the Marifetname rendering.
+FIRASA_RAG_QUERY = (
+    "Firasa, the science of physiognomy, from outward sign to "
+    "temperament; facial features, the four humours, dry and moist"
+)
