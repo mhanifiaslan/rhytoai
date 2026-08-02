@@ -176,6 +176,22 @@ yazıldı ("Firasetin Sınırı"): tek belirti hüküm vermez, belirti eğilimdi
 kader değildir, ve bilmenin amacı ayıklamak değil dengelemektir. Yüz okuma
 özelliği geldiğinde personanın dayanacağı zemin burasıdır.
 
+### Motor tarafı: hesaplanır hâle getirildi (2026-08-02)
+
+Korpusa girip motorda karşılığı olmayan bilgi, modelin dayanaksız konuşmasına
+davetiyedir. Marifetname'nin iki somut katkısı bu yüzden hesaplandı:
+
+| Bilgi | Nereden | Notu |
+|---|---|---|
+| **Günün yöneticisi** | Kullanıcının **yerel** tarihi | Gökyüzü yükü UTC'de hesaplanıp paylaşıldığı için oraya gömülmedi; saat dilimi farkı olan kullanıcıya yanlış gün gösterirdi |
+| **Ayın menzili** (1–28) | Ay'ın boylamı | Konumdan bağımsız, paylaşımlı yükte duruyor |
+
+Bilinen sınır: gelenekte **gün, gün doğumunda başlar**, gece yarısında değil.
+Kullanıcının enlemi elimizde olmadığı için takvim günü kullanılıyor; fark
+yalnızca gece yarısı ile gün doğumu arasındaki saatlerde ortaya çıkıyor.
+**Saat yöneticisi** aynı sebeple henüz hesaplanmıyor — gün doğumu/batımı
+gerekiyor, o da konum istiyor.
+
 > **Hatırlatma:** korpusun hazır olması özelliğin yayınlanabilir olması
 > demek değil. Yüz okumanın v1 dışı bırakılma sebebi kaynak yokluğu değildi,
 > biyometrik veriydi (GDPR Md.9 / KVKK md.6 / BIPA). Açık rıza akışı,

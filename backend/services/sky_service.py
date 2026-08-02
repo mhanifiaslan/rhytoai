@@ -84,6 +84,72 @@ def _moon_phase(jd: float) -> dict[str, Any]:
             "illumination": 0}
 
 
+# --------------------------------------------------------------------------
+# Marifetname katmanı: günün yöneticisi ve ayın menzili
+#
+# Bu ikisi korpusa (knowledge/corpus/*/marifetname.md) girdi ama motor
+# hesaplamıyordu. Korpusta olup hesaplanmayan bilgi, modelin karşılığı
+# olmayan bir şey hakkında konuşmasına davetiye — "gök verisi uydurulmaz"
+# ilkesiyle çelişir. Bu yüzden ikisi de burada hesaplanıyor.
+# --------------------------------------------------------------------------
+
+#: Haftanın gününe göre yönetici gezegen. Pazartesi = 0 (datetime.weekday()).
+#: Sıra Marifetname'nin verdiğiyle aynı: Pazar Şems, Pazartesi Kamer,
+#: Salı Merih, Çarşamba Utarit, Perşembe Müşteri, Cuma Zühre, Cumartesi Zühal.
+_DAY_RULERS = ("Moon", "Mars", "Mercury", "Jupiter", "Venus", "Saturn", "Sun")
+
+#: Ayın 28 menzili (menâzil-i kamer). Adlar Arapça'dan gelen geleneksel
+#: adlardır ve her iki dilde de aynı yazılır — çeviri tablosuna girmezler
+#: (bkz. gezegen adlarındaki "Mars" istisnası).
+_MANSIONS = (
+    "al-Sharatan", "al-Butayn", "al-Thurayya", "al-Dabaran", "al-Haqa",
+    "al-Hana", "al-Dhira", "al-Nathra", "al-Tarf", "al-Jabha", "al-Zubra",
+    "al-Sarfa", "al-Awwa", "al-Simak", "al-Ghafr", "al-Zubana", "al-Iklil",
+    "al-Qalb", "al-Shawla", "al-Naaim", "al-Balda", "Saad al-Dhabih",
+    "Saad Bula", "Saad al-Suud", "Saad al-Akhbiya", "al-Fargh al-Muqaddam",
+    "al-Fargh al-Muakhkhar", "Batn al-Hut",
+)
+
+#: Bir menzilin genişliği: 360 / 28 ≈ 12,857 derece.
+_MANSION_WIDTH = 360.0 / len(_MANSIONS)
+
+
+def day_ruler(gun: dt.date) -> str:
+    """Günün yönetici gezegeninin dilden bağımsız anahtarı.
+
+    **Kullanıcının YEREL tarihi verilmelidir.** Gökyüzü yükü paylaşımlı
+    önbellekten servis edildiği ve UTC'de hesaplandığı için, gün yöneticisi
+    oraya gömülseydi saat dilimi farkı olan kullanıcılara yanlış gün
+    gösterilirdi.
+
+    Not: gelenekte gün gün doğumunda başlar, gece yarısında değil. Elimizde
+    kullanıcının enlemi olmadığı için burada takvim günü kullanılıyor; fark
+    yalnızca gece yarısı ile gün doğumu arasındaki saatlerde ortaya çıkar.
+    """
+    return _DAY_RULERS[gun.weekday()]
+
+
+def moon_mansion(moon_longitude: float) -> dict[str, Any]:
+    """Ay'ın hangi menzilde olduğu (1-28) ve o menzilin geleneksel adı.
+
+    Menzil burçtan ince bir ölçüdür: burç Ay'ı 30 derecelik bir dilimle,
+    menzil ~12,9 derecelik bir dilimle konumlar. Aynı burçtaki iki ayrı gün
+    çoğunlukla iki ayrı menzildir.
+
+    Konumdan bağımsızdır (Ay'ın boylamı küresel bir değerdir), bu yüzden
+    paylaşımlı gökyüzü yükünde durabilir.
+    """
+    lon = moon_longitude % 360
+    indeks = int(lon // _MANSION_WIDTH)
+    # Kayan nokta artığı son menzilin dışına taşabilir.
+    indeks = min(indeks, len(_MANSIONS) - 1)
+    return {
+        "number": indeks + 1,
+        "name": _MANSIONS[indeks],
+        "degree_in_mansion": round(lon - indeks * _MANSION_WIDTH, 1),
+    }
+
+
 def _horizons_distances() -> dict[str, float]:
     """NASA JPL Horizons'tan gezegenlerin Dünya'ya uzaklığı (AU). Günlük önbellek."""
     cache_key = f"horizons-distances-{dt.date.today().isoformat()}"
@@ -126,7 +192,10 @@ def _horizons_distances() -> dict[str, float]:
 #: Önbellek anahtarı sürümlü: yükün biçimi değiştiğinde (Türkçe adlar ->
 #: dilden bağımsız anahtarlar) eski kayıtlar okunmaya devam ederse İngilizce
 #: kullanıcı bir saat boyunca Türkçe gökyüzü görürdü.
-_SKY_CACHE_KEY = "sky-now-v2"
+#: Yük şekli her değiştiğinde SÜRÜM YÜKSELTİLİR. v2 -> v3: `moon_mansion`
+#: eklendi. Bu adım bir kez atlandı ve sonucu şuydu: eski kayıt yeni alan
+#: olmadan servis edilmeye devam etti, dolayısıyla değişiklik hiç görünmedi.
+_SKY_CACHE_KEY = "sky-now-v3"
 
 
 def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
@@ -182,6 +251,9 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
         "planets": planets,
         "retrogrades": retrogrades,
         "moon_phase": _moon_phase(jd),
+        # Menzil konumdan bağımsız; gün yöneticisi DEĞİL (yerel tarihe bağlı)
+        # ve o yüzden burada yok, çağıran tarafta hesaplanıyor.
+        "moon_mansion": moon_mansion(positions["Moon"]),
         "aspects": sorted(aspects, key=lambda a: a["orb"])[:12],
         "nasa_data_available": bool(nasa_distances),
     }

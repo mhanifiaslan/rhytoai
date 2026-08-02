@@ -214,6 +214,9 @@ USER_MESSAGE_LABEL = "THE READER'S MESSAGE"
 SKY_MOON = "- Moon phase: {name} ({illumination}% illuminated)"
 SKY_RETROS = "- Retrograde planets: {retros}"
 SKY_ASPECTS = "- Notable aspects: {aspects}"
+#: Marifetname layer. The day ruler comes from the reader's LOCAL date.
+SKY_DAY_RULER = "- Ruler of the day: {planet}"
+SKY_MOON_MANSION = "- Mansion of the Moon: mansion {number} ({name})"
 
 # --- Dyad, natal, BaZi, I Ching, synastry ---
 

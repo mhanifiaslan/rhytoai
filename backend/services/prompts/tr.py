@@ -200,6 +200,9 @@ USER_MESSAGE_LABEL = "KULLANICININ MESAJI"
 SKY_MOON = "- Ay evresi: {name} (aydınlanma %{illumination})"
 SKY_RETROS = "- Retro gezegenler: {retros}"
 SKY_ASPECTS = "- Önemli açılar: {aspects}"
+#: Marifetname katmanı. Gün yöneticisi kullanıcının YEREL tarihinden gelir.
+SKY_DAY_RULER = "- Günün yöneticisi: {planet}"
+SKY_MOON_MANSION = "- Ayın menzili: {number}. menzil ({name})"
 
 # --- İkili dinamik, natal, BaZi, I Ching, sinastri ---
 

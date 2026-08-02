@@ -14,8 +14,10 @@ from services import (
     gemini_service,
     memory_extractor,
     memory_service,
+    notification_service,
     profile_service,
     prompts,
+    sky_service,
 )
 from services.prompt_composer import compose_chat_message, should_use_rag
 from services.rag_service import retrieve_passages
@@ -40,7 +42,7 @@ class ModerationRequest(BaseModel):
     text: str
 
 
-def _sky_summary(lang: str) -> str:
+def _sky_summary(lang: str, profile: dict | None = None) -> str:
     """Bugünün gökyüzünün kompakt özeti; hata durumunda boş döner.
 
     Gökyüzü sohbetin çalışması için zorunlu değil — alınamazsa sohbet
@@ -48,6 +50,10 @@ def _sky_summary(lang: str) -> str:
 
     Etiketler dile bağlı: bu blok prompt'a giriyor ve İngilizce bir prompt'un
     içinde Türkçe etiketler modelin dili karıştırmasına yol açıyordu.
+
+    ``profile`` yalnızca **saat dilimi** için kullanılır: günün yöneticisi
+    kullanıcının yerel tarihine bağlıdır ve gökyüzü yükü UTC'de hesaplanıp
+    tüm kullanıcılarla paylaşıldığı için oraya gömülemez.
     """
     try:
         sky = prompts.localize_sky(lang, get_sky_now())
@@ -69,6 +75,18 @@ def _sky_summary(lang: str) -> str:
     ]
     if aspects:
         satirlar.append(p.SKY_ASPECTS.format(aspects=aspects))
+
+    # Marifetname katmanı: korpusa girdiği hâlde motorda karşılığı olmayan
+    # iki bilgi buradan geliyor. Karşılığı olmasaydı model bunlar hakkında
+    # dayanaksız konuşurdu.
+    yerel_gun = notification_service.local_now(profile or {}).date()
+    satirlar.append(p.SKY_DAY_RULER.format(
+        planet=prompts.planet_name(lang, sky_service.day_ruler(yerel_gun))))
+    menzil = sky.get("moon_mansion") or {}
+    if menzil:
+        satirlar.append(p.SKY_MOON_MANSION.format(
+            number=menzil.get("number"), name=menzil.get("name")))
+
     return "\n".join(satirlar)
 
 
@@ -127,7 +145,7 @@ def chat(request: ChatRequest, background: BackgroundTasks,
 
         # Bugünün gökyüzü paylaşımlı önbellekten gelir (kullanıcı başına
         # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.
-        sky = _sky_summary(lang)
+        sky = _sky_summary(lang, profile)
 
         message = compose_chat_message(request.message, passages,
                                        memory=memory, chart=chart, sky=sky,
