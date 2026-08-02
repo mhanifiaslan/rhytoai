@@ -36,24 +36,37 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: Text(l10n.atlasTitle)),
-      body: natal.when(
-        loading: () => const Center(child: AstrolabeSpinner()),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(32),
-            child: Text(friendlyError(e, l10n),
-                style: RythoText.body(14, color: RythoColors.parchmentDim)),
-          ),
+      // Yüz okuma girişi natal raporun DIŞINDA duruyor.
+      //
+      // Önce `data != null` dalının içindeydi; sonuç şuydu: natal rapor
+      // kilitliyken ya da yüklenemezken firaset girişi de hiç görünmüyordu.
+      // Oysa firaset natal rapordan bağımsız bir özellik — harita varsa
+      // okumaya katılıyor, yoksa yalnız başına da çalışıyor.
+      body: Column(children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: FaceReadingEntry(),
         ),
-        data: (data) {
-          if (data == null) {
-            return PlusLockedCard(
-              emoji: '🗺️',
-              title: l10n.natalLockedTitle,
-              description: l10n.natalLockedBody,
-              centered: true,
-            );
-          }
+        Expanded(
+          child: natal.when(
+            loading: () => const Center(child: AstrolabeSpinner()),
+            error: (e, _) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Text(friendlyError(e, l10n),
+                    style:
+                        RythoText.body(14, color: RythoColors.parchmentDim)),
+              ),
+            ),
+            data: (data) {
+              if (data == null) {
+                return PlusLockedCard(
+                  emoji: '🗺️',
+                  title: l10n.natalLockedTitle,
+                  description: l10n.natalLockedBody,
+                  centered: true,
+                );
+              }
           final chart = Map<String, dynamic>.from(data['chart']);
           final points = List<Map<String, dynamic>>.from(chart['points'] ?? []);
           final houses = List<Map<String, dynamic>>.from(chart['houses'] ?? []);
@@ -66,10 +79,6 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
             padding: const EdgeInsets.only(bottom: 130),
             children: [
               const SizedBox(height: 8),
-              // Yüz okuma girişi. Atlas'ta duruyor çünkü firaset de haritayla
-              // birlikte okunuyor: mizaç iki taraftan da geliyor.
-              _FaceReadingEntry(),
-              const SizedBox(height: 12),
               // Natal çark
               GlassPanel(
                 padding: const EdgeInsets.all(8),
@@ -184,8 +193,10 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
               const SizedBox(height: 16),
             ],
           );
-        },
-      ),
+            },
+          ),
+        ),
+      ]),
     );
   }
 }
@@ -484,7 +495,9 @@ class _FoldSectionState extends State<_FoldSection> {
 /// Ücretli uca **istek atmadan** kilit gösteriyor: abone olmayan biri karta
 /// dokununca paywall açılıyor, kamera hiç başlamıyor. Kamerayı açıp sonunda
 /// 402 almak, kullanıcıya yüzünü boşuna taratmak olurdu.
-class _FaceReadingEntry extends ConsumerWidget {
+class FaceReadingEntry extends ConsumerWidget {
+  const FaceReadingEntry({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);

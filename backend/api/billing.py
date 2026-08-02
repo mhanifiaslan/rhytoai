@@ -69,7 +69,14 @@ def status(user: AuthUser = Depends(get_current_user)):
     subscription = entitlements.get_subscription(user.uid)
     expires_at = subscription.get("expiresAt")
     return SubscriptionStatus(
-        active=bool(subscription.get("active")),
+        # `is_subscriber` ile aynı kaynağa bakar — ham `active` alanına DEĞİL.
+        #
+        # İkisi ayrışabiliyordu: `RYTHO_FORCE_PLUS=1` ile uçlar açılıyor ama
+        # bu uç "kapalı" diyordu, dolayısıyla istemci kilitli kart gösterip
+        # kullanıcıyı çalışan bir özelliğe sokmuyordu. Bu ucun sözleşmesi
+        # "sunucunun gördüğü gerçek"; sunucu çağrıyı kabul edecekse burada da
+        # açık görünmeli, aksi halde istemci ile sunucu ayrışır.
+        active=entitlements.is_subscriber(user.uid),
         product_id=subscription.get("productId"),
         expires_at=expires_at.isoformat() if hasattr(expires_at, "isoformat") else None,
         will_renew=subscription.get("willRenew"),
