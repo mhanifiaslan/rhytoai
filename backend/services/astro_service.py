@@ -9,15 +9,35 @@ from __future__ import annotations
 import datetime as dt
 from typing import Any, Literal
 
-from kerykeion import (
-    AstrologicalSubjectFactory,
-    KerykeionChartSVG,
-    NatalAspects,
-    RelationshipScoreFactory,
-    SynastryAspects,
-)
-
 from services.geo_service import resolve_city
+
+# `kerykeion` MODUL DUZEYINDE ICE AKTARILMIYOR.
+#
+# Olculen bedel 212 ms ve bu sure her SOGUK BASLATMADA odeniyordu; Cloud Run
+# konteyneri sifira inip geri kalktiginda kullanicinin gordugu bekleme buydu.
+# Ice aktarma ilk hesaba ertelendi ve sonuc onbelleklendi.
+#
+# `warm_up()` acilista arka planda cagriliyor: acilis beklemiyor, ilk istek de
+# bedeli odemiyor.
+_ker = None
+
+
+def _kerykeion():
+    """Kerykeion modulunu ilk ihtiyac aninda ice aktarir."""
+    global _ker
+    if _ker is None:
+        import kerykeion
+
+        _ker = kerykeion
+    return _ker
+
+
+def warm_up() -> None:
+    """Kerykeion'u arka planda yukler — acilisi bekletmez."""
+    import threading
+
+    threading.Thread(target=_kerykeion, daemon=True,
+                     name="kerykeion-warmup").start()
 
 ZodiacType = Literal["Tropical", "Sidereal"]
 
@@ -65,7 +85,7 @@ def _build_subject(
     )
     if zodiac_type == "Sidereal":
         kwargs["sidereal_mode"] = "LAHIRI"
-    return AstrologicalSubjectFactory.from_birth_data(**kwargs)
+    return _kerykeion().AstrologicalSubjectFactory.from_birth_data(**kwargs)
 
 
 def _point_dict(point) -> dict[str, Any]:
@@ -112,7 +132,7 @@ def get_natal_chart(
     city: str, nation: str | None = None, zodiac_type: ZodiacType = "Tropical",
 ) -> dict[str, Any]:
     subject = _build_subject(name, year, month, day, hour, minute, city, nation, zodiac_type)
-    aspects = NatalAspects(subject).relevant_aspects
+    aspects = _kerykeion().NatalAspects(subject).relevant_aspects
 
     houses = []
     for i, house_attr in enumerate([
@@ -154,7 +174,7 @@ def get_natal_chart_svg(
     theme: str = "dark",
 ) -> str:
     subject = _build_subject(name, year, month, day, hour, minute, city, nation, zodiac_type)
-    chart = KerykeionChartSVG(subject, chart_type="Natal", theme=theme)
+    chart = _kerykeion().KerykeionChartSVG(subject, chart_type="Natal", theme=theme)
     return chart.makeTemplate()
 
 
@@ -165,11 +185,11 @@ def get_transits(
     """Şu anki gökyüzünün natal haritaya açıları (transit)."""
     natal = _build_subject(name, year, month, day, hour, minute, city, nation)
     now = dt.datetime.now(dt.timezone.utc)
-    transit_subject = AstrologicalSubjectFactory.from_iso_utc_time(
+    transit_subject = _kerykeion().AstrologicalSubjectFactory.from_iso_utc_time(
         name="Transit", iso_utc_time=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
         city="Greenwich", nation="GB", lng=0.0, lat=51.48, online=False,
     )
-    cross = SynastryAspects(transit_subject, natal)
+    cross = _kerykeion().SynastryAspects(transit_subject, natal)
     return {
         "timestamp_utc": now.isoformat(),
         "transiting_points": _subject_points(transit_subject),
@@ -181,11 +201,11 @@ def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, 
     """İki kişi arasındaki sinastri (kozmik uyum) analizi."""
     s1 = _build_subject(**person1)
     s2 = _build_subject(**person2)
-    aspects = SynastryAspects(s1, s2).relevant_aspects
+    aspects = _kerykeion().SynastryAspects(s1, s2).relevant_aspects
 
     score_data: dict[str, Any] = {}
     try:
-        score = RelationshipScoreFactory(s1, s2).get_relationship_score()
+        score = _kerykeion().RelationshipScoreFactory(s1, s2).get_relationship_score()
         score_data = {
             "score": score.score_value,
             "description": score.score_description,
@@ -205,5 +225,5 @@ def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, 
 def get_synastry_svg(person1: dict[str, Any], person2: dict[str, Any], theme: str = "dark") -> str:
     s1 = _build_subject(**person1)
     s2 = _build_subject(**person2)
-    chart = KerykeionChartSVG(s1, chart_type="Synastry", second_obj=s2, theme=theme)
+    chart = _kerykeion().KerykeionChartSVG(s1, chart_type="Synastry", second_obj=s2, theme=theme)
     return chart.makeTemplate()

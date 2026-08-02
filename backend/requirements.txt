@@ -1,26 +1,39 @@
 # Çekirdek — Cloud Run imajına giren bağımlılıklar
-fastapi
-uvicorn[standard]
-pydantic
-python-multipart
-python-dotenv
-httpx
+#
+# SÜRÜMLER SABİTLENMİŞ ve bu bilinçli.
+#
+# Önceden hiçbiri sabit değildi: her imaj derlemesi o günkü en güncel
+# `kerykeion`, `google-genai`, `numpy` sürümünü çekiyordu. Yani KOD
+# DEĞİŞMEDEN iki dağıtım arasında davranış değişebiliyordu — testler yeşil,
+# üretim başka. Hata mesajı yok, sadece başka sonuç.
+#
+# Buradaki sürümler testlerin GERÇEKTEN çalıştığı sürümler (backend/.venv).
+# Yükseltme kasıtlı bir iş olmalı: sürümü değiştir, `pytest` çalıştır, dağıt.
+fastapi==0.140.13
+uvicorn[standard]==0.51.0
+pydantic==2.13.4
+python-multipart==0.0.32
+python-dotenv==1.2.2
+httpx==0.28.1
 
-# Astroloji
-kerykeion
-pyswisseph
+# Astroloji — Swiss Ephemeris sarmalayıcısı.
+#
+# `pyswisseph` Python 3.12'de kurulmuyor; imaj bilerek 3.11 tabanlı
+# (bkz. Dockerfile).
+kerykeion==5.12.9
+pyswisseph==2.10.3.2
 
 # AI
-google-genai
-firebase-admin
+google-genai==2.14.0
+firebase-admin==7.5.0
 
 # Görüntü işleme
-# mediapipe ve opencv yalnızca yüz analizi için gerekliydi; o özellik v1 kapsamı
-# dışında olduğu için requirements-local.txt'e taşındı (imaj boyutu ve soğuk
-# başlatma süresi için kritik).
-numpy
-pillow
+# mediapipe ve opencv yalnızca yüz analizi için gerekliydi; o özellik artık
+# TAMAMEN CİHAZDA çalışıyor (bkz. apps/mobile/lib/features/face/) ve sunucuda
+# hiçbir görüntü işleme yok. İmaj boyutu ve soğuk başlatma için kritik.
+numpy==2.4.6
+pillow==12.3.0
 
 # ZoneInfo veritabani. Debian slim imajinda ve Windows'ta sistem zoneinfo
 # bulunmuyor; BaZi hesabi ZoneInfo("Europe/Istanbul") ile cokuyordu.
-tzdata
+tzdata==2026.3

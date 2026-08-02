@@ -6,6 +6,7 @@ Cloud Run üzerinde çalışacak şekilde tasarlanmıştır:
 - /healthz canlılık ucu
 """
 import logging
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +27,27 @@ from core.ratelimit import RateLimitMiddleware
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Kimlik bilgisi yoklamasını açılışta, arka planda başlat.
+
+    Yoklama ilk çağrıda yapılırsa bedelini **ilk kullanıcı** öder; ölçülen
+    ortamda bu 12 saniyeydi ve hem token doğrulama hem Firestore aynı bedeli
+    ayrı ayrı ödüyordu. Açılışta başlatınca istek geldiğinde sonuç hazır olur.
+    Açılış beklemez (bkz. `core.gcp_credentials.warm_up`).
+    """
+    from core import gcp_credentials
+    from services import astro_service, gemini_service
+
+    gcp_credentials.warm_up()
+    # Ağır kütüphaneler (`google.genai` 624 ms, `kerykeion` 212 ms) modül
+    # düzeyinden çıkarıldı: artık açılışı geciktirmiyorlar. Burada arka planda
+    # ısıtılıyorlar ki bedeli ilk kullanıcı da ödemesin.
+    gemini_service.warm_up()
+    astro_service.warm_up()
+    yield
+
+
 app = FastAPI(
     title="RythoAI Cosmic Engine",
     version="2.0.0",
@@ -33,6 +55,7 @@ app = FastAPI(
         "Swiss Ephemeris tabanlı astroloji, BaZi, I Ching ve RAG destekli "
         "Gemini yorum servisi."
     ),
+    lifespan=lifespan,
 )
 
 app.add_middleware(

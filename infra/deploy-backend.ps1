@@ -38,9 +38,25 @@ gcloud run deploy $SERVICE `
     --cpu 2 `
     --timeout 300 `
     --max-instances 3 `
+    --min-instances 1 `
     --set-env-vars "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT" `
     --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest"
 
+# --min-instances 1 BILINCLI VE UCRETLI bir karar.
+#
+# Olculen: servis sifira inince sonraki ilk istek 14,65 saniye suruyordu
+# (hemen sonraki 0,0036 sn). Kullanicinin "bekliyor bekliyor bekliyor, sonra
+# mesajlar geliyor" diye bildirdigi sey buydu. Bir instance surekli ayakta
+# tutmak bunu bitiriyor; bedeli aylik ~25 USD ve kullanici sayisindan
+# BAGIMSIZ, yani buyudukce kullanici basina dusen pay azaliyor.
+#
+# Bu tek basina yetmiyor: --max-instances 3 oldugu icin yuk 2. ve 3.
+# instance'i actirdiginda onlar hala soguk basliyor. Onun icin agir
+# kutuphaneler modul duzeyinden cikarildi (bkz. tests/test_cold_start.py).
+#
+# Bayrak burada durmali; yalnizca konsoldan verilirse bir sonraki deploy
+# sessizce geri alir.
+#
 # REVENUECAT_WEBHOOK_SECRET olmadan /api/v1/billing/revenuecat 503 doner ve
 # hicbir kullanici abone olarak isaretlenemez (dogrulamasiz abonelik yazmaya
 # izin verilmiyor). Ayni deger RevenueCat panelindeki webhook'un Authorization
