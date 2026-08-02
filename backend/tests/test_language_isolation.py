@@ -44,11 +44,15 @@ TABLOLAR = [
 MESRU_ISTISNALAR = ("Lü",)
 
 
-def turkce_kalinti(metin: str) -> set[str]:
-    """Metindeki Turkce harfleri dondurur; mesru istisnalar ayiklanir."""
+def _istisnalari_ayikla(metin: str) -> str:
     for istisna in MESRU_ISTISNALAR:
         metin = metin.replace(istisna, "")
-    return set(TURKCE_HARFLER.findall(metin))
+    return metin
+
+
+def turkce_kalinti(metin: str) -> set[str]:
+    """Metindeki Turkce harfleri dondurur; mesru istisnalar ayiklanir."""
+    return set(TURKCE_HARFLER.findall(_istisnalari_ayikla(metin)))
 
 
 def turkce_kelime_kalintisi(metin: str) -> set[str]:
@@ -87,7 +91,14 @@ def turkce_izi(deger, yol: str = "") -> list[str]:
     elif isinstance(deger, (list, tuple)):
         for i, alt in enumerate(deger):
             bulunanlar += turkce_izi(alt, f"{yol}[{i}]")
-    elif isinstance(deger, str) and TURKCE_HARFLER.search(deger):
+    # MESRU_ISTISNALAR burada da ayiklanir. Eksikligi gercek bir sorundu:
+    # 10. ve 56. heksagramin adi "Lü" (履 ve 旅'nin pinyin okunusu, iki dilde
+    # de boyle yazilir) ve `turkce_kalinti` bunu zaten muaf tutuyordu ama
+    # `turkce_izi` tutmuyordu. Sonuc: I Ching testi RASTGELE cekim o ikisine
+    # denk geldiginde kiriliyordu (64'te 2, ~%3). Bir kez "sira bagimli"
+    # sanilip gecildi; oyle degil, yanlis pozitifti.
+    elif isinstance(deger, str) and TURKCE_HARFLER.search(
+            _istisnalari_ayikla(deger)):
         bulunanlar.append(f"{yol} = {deger!r}")
     return bulunanlar
 

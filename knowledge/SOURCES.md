@@ -39,13 +39,16 @@ Güvenli zemin üçe iner:
 |---|---|---|
 | `corpus/tr/cin_metafizigi.md` | tr | Rytho özgün metni |
 | `corpus/tr/ilmi_nucum.md` | tr | Rytho özgün metni |
-| `corpus/tr/kiyafetname_marifetname.md` | tr | Rytho özgün metni |
 | `corpus/en/chinese_metaphysics.md` | en | Rytho özgün metni |
 | `corpus/en/islamic_astrology.md` | en | Rytho özgün metni |
-| `corpus/en/temperaments_physiognomy.md` | en | Rytho özgün metni |
 
 Bunlar kamu malı kaynaklardan ve genel alan bilgisinden yazılmış özet
 metinlerdir; hiçbir telifli eserden alıntı içermez. Telif RythoAI'ye aittir.
+
+> `corpus/tr/kiyafetname_marifetname.md` ve `corpus/en/temperaments_physiognomy.md`
+> **kaldırıldı** (2026-08-02): yerlerini aşağıdaki Marifetname aktarımı aldı.
+> İkisi de aynı zemini yüzeysel biçimde kapsıyordu; bırakılsalardı aynı
+> konuda iki ayrı parça getirilir ve pasaj bütçesi boşa harcanırdı.
 
 ### Tetrabiblos — `corpus/en/tetrabiblos.md` ✅ (2026-08-01)
 
@@ -113,6 +116,70 @@ aşağılamak değil**.
 > Marifetname okusaydı aynı soruya iki farklı gelenekten cevap alırlardı. Bu
 > yüzden ilk kitap iki dile de aynı doktrini taşıyor. Marifetname kendi
 > turunda, iki dile birden eklenecek.
+
+---
+
+## Marifetname — `corpus/{tr,en}/marifetname.md` ✅ (2026-08-02)
+
+| Alan | Değer |
+|---|---|
+| Eser | *Marifetname*, Erzurumlu İbrahim Hakkı, 1757 |
+| Özgün eser | **Kamu malı** (telif süresi çoktan dolmuş) |
+| Korpustaki metin | **Rytho aktarımı** — `license: rytho-original` |
+| Kapsam | Dört unsur, ahlat-ı erbaa (mizaç), burç–ay–mevsim eşlemesi, yedi gezegenin tabiatı ve sa'd/nahs, **günlerin ve saatlerin yöneticileri**, **ayın menzilleri**, feleklerin düzeni, firaset yöntemi, yüz/ses/duruş belirtileri, firasetin sınırı |
+
+### Neden aktarım, alıntı değil
+
+Elimizdeki nüsha (370 sayfalık PDF, 2014'te web'e konmuş) **modern bir Türkçe
+aktarım**. İçinde:
+
+- Yayıncı yok, çevirmen/sadeleştiren adı yok, telif notu yok
+- Dosya üst verisindeki yazar alanı bir site adı
+
+**Telif notunun yokluğu kamu malı olduğu anlamına gelmez.** Özgün eser (1757)
+kamu malı, ama o modern aktarımı yapan kişinin hakkı vardır. Bu, Ashmand
+(kamu malı) ile Robbins (telifli) ayrımının aynısı. Bu yüzden bu PDF'ten
+**cümle aktarılmadı**; doktrin okunup metin sıfırdan yazıldı. Fikir ve
+doktrin telifle korunmaz, ifade korunur.
+
+Daha temiz zemin isteniyorsa: Osmanlıca özgün metin ya da telif süresi dolmuş
+eski bir baskı bulunup künyesi buraya yazılmalı.
+
+### Kapsam dışı bırakılanlar ve gerekçeleri
+
+Kaynak metnin kıyafetname bölümü olduğu gibi alınamazdı.
+
+**1. Irk, ten ve göz rengine dayalı karakter hükümleri — ALINMADI.**
+Kaynakta ten rengi ve göz rengine göre zekâ, sağlık ve güvenilirlik atfeden
+ifadeler var. Yüz okuma özelliği aktif edildiğinde bu pasajlar kullanıcının
+yüzüne bakan bir sistem tarafından getirilebilir hâle gelir ve uygulama ten
+rengine göre karakter hükmü verir. Sonuç: App Store 1.1.1 / Play ayrımcı
+içerik ihlali, AB AI Act tarafında biyometrik çıkarımın ırkla korele çıktı
+üretmesi, ve tek bir ekran görüntüsüyle ürünün bitmesi.
+
+**2. Cinsel organ ve meme tariflerine dayalı karakter/şehvet hükümleri —
+ALINMADI.** Kaynağın ilgili bölümünün yarısı bu; mağazada yayınlanacak bir
+uygulamanın korpusunda getirilebilir metin olamaz.
+
+**3. İlahiyat, tasavvuf şiiri ve anatomi bölümleri — ALINMADI.** Ürünün
+yaptığı iş değil; arama uzayını kirletir.
+
+Bu, Tetrabiblos'ta uygulanan kuralın aynısı: **korpus bir güvenlik
+yüzeyidir.** Kapı kullanıcının sorusunu süzer, ama masum bir soruya getirilen
+pasaj cevabı istenmeyen yere sürükleyebilir.
+
+### Alınan ama dikkat isteyen kısım
+
+Yüz hatlarının mizaç karşılıkları korpusa **belirti** olarak girdi, hüküm
+olarak değil. Ayrıca geleneğin kendi koyduğu sınır ayrı bir bölüm olarak
+yazıldı ("Firasetin Sınırı"): tek belirti hüküm vermez, belirti eğilimdir
+kader değildir, ve bilmenin amacı ayıklamak değil dengelemektir. Yüz okuma
+özelliği geldiğinde personanın dayanacağı zemin burasıdır.
+
+> **Hatırlatma:** korpusun hazır olması özelliğin yayınlanabilir olması
+> demek değil. Yüz okumanın v1 dışı bırakılma sebebi kaynak yokluğu değildi,
+> biyometrik veriydi (GDPR Md.9 / KVKK md.6 / BIPA). Açık rıza akışı,
+> saklama politikası ve hukuki metin güncellemesi o turun parçası.
 
 ---
 
