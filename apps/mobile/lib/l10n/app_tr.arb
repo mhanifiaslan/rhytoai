@@ -412,5 +412,25 @@
     }
   },
   "resetLinkSentNeutral": "Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi.",
-  "useGoogleInstead": "Giriş yapılamadı. Şifren hatalı olabilir ya da bu hesap Google/Apple ile açılmış olabilir — aşağıdaki düğmeleri dene."
+  "useGoogleInstead": "Giriş yapılamadı. Şifren hatalı olabilir ya da bu hesap Google/Apple ile açılmış olabilir — aşağıdaki düğmeleri dene.",
+  "faceReadingTitle": "Yüz Okuma",
+  "faceGuideNoFace": "Yüzünü çerçeveye al",
+  "faceGuideTooFar": "Biraz yaklaş",
+  "faceGuideTooClose": "Biraz uzaklaş",
+  "faceGuideOffCentre": "Yüzünü ortala",
+  "faceGuideTilted": "Başını dik tut",
+  "faceGuideReady": "Hazır — sabit dur",
+  "faceScanning": "Yüz hatların okunuyor",
+  "faceScanNodes": "Noktalar yerleşiyor",
+  "faceScanReading": "Firaset ile eşleştiriliyor",
+  "faceCapture": "Çek",
+  "faceRetake": "Yeniden çek",
+  "faceConsentTitle": "Yüz okuma için onayın gerekiyor",
+  "faceConsentBody": "Yüz okuma, kameradan aldığı kareyi CİHAZINDA işler. Fotoğraf sunucuya gönderilmez, hiçbir yerde saklanmaz ve işlem biter bitmez bellekten silinir. Sunucuya yalnızca yüz hatlarından türetilen oranlar (ör. alın/çene yükseklik oranı) gider; bu sayılar kişiyi tanımaya yaramaz.",
+  "faceConsentCheckbox": "Yüz görüntümün cihazımda işlenmesine onay veriyorum.",
+  "faceConsentContinue": "Onaylıyorum ve devam et",
+  "faceConsentLearnMore": "Gizlilik politikasını oku",
+  "faceCameraDenied": "Kamera izni verilmedi. Yüz okuma için kameraya erişim gerekiyor.",
+  "faceDetectFailed": "Yüz tespit edilemedi. Işığın yeterli olduğundan ve yüzünün çerçevede olduğundan emin ol.",
+  "faceReadingHint": "Gelenek der ki: tek bir belirti hüküm vermez. Aşağıdaki okuma bir eğilimdir, kader değildir."
 }

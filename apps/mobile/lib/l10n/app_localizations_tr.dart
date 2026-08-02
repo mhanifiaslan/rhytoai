@@ -930,4 +930,69 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get useGoogleInstead =>
       'Giriş yapılamadı. Şifren hatalı olabilir ya da bu hesap Google/Apple ile açılmış olabilir — aşağıdaki düğmeleri dene.';
+
+  @override
+  String get faceReadingTitle => 'Yüz Okuma';
+
+  @override
+  String get faceGuideNoFace => 'Yüzünü çerçeveye al';
+
+  @override
+  String get faceGuideTooFar => 'Biraz yaklaş';
+
+  @override
+  String get faceGuideTooClose => 'Biraz uzaklaş';
+
+  @override
+  String get faceGuideOffCentre => 'Yüzünü ortala';
+
+  @override
+  String get faceGuideTilted => 'Başını dik tut';
+
+  @override
+  String get faceGuideReady => 'Hazır — sabit dur';
+
+  @override
+  String get faceScanning => 'Yüz hatların okunuyor';
+
+  @override
+  String get faceScanNodes => 'Noktalar yerleşiyor';
+
+  @override
+  String get faceScanReading => 'Firaset ile eşleştiriliyor';
+
+  @override
+  String get faceCapture => 'Çek';
+
+  @override
+  String get faceRetake => 'Yeniden çek';
+
+  @override
+  String get faceConsentTitle => 'Yüz okuma için onayın gerekiyor';
+
+  @override
+  String get faceConsentBody =>
+      'Yüz okuma, kameradan aldığı kareyi CİHAZINDA işler. Fotoğraf sunucuya gönderilmez, hiçbir yerde saklanmaz ve işlem biter bitmez bellekten silinir. Sunucuya yalnızca yüz hatlarından türetilen oranlar (ör. alın/çene yükseklik oranı) gider; bu sayılar kişiyi tanımaya yaramaz.';
+
+  @override
+  String get faceConsentCheckbox =>
+      'Yüz görüntümün cihazımda işlenmesine onay veriyorum.';
+
+  @override
+  String get faceConsentContinue => 'Onaylıyorum ve devam et';
+
+  @override
+  String get faceConsentLearnMore => 'Gizlilik politikasını oku';
+
+  @override
+  String get faceCameraDenied =>
+      'Kamera izni verilmedi. Yüz okuma için kameraya erişim gerekiyor.';
+
+  @override
+  String get faceDetectFailed =>
+      'Yüz tespit edilemedi. Işığın yeterli olduğundan ve yüzünün çerçevede olduğundan emin ol.';
+
+  @override
+  String get faceReadingHint =>
+      'Gelenek der ki: tek bir belirti hüküm vermez. Aşağıdaki okuma bir eğilimdir, kader değildir.';
 }

@@ -1795,6 +1795,126 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Giriş yapılamadı. Şifren hatalı olabilir ya da bu hesap Google/Apple ile açılmış olabilir — aşağıdaki düğmeleri dene.'**
   String get useGoogleInstead;
+
+  /// No description provided for @faceReadingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz Okuma'**
+  String get faceReadingTitle;
+
+  /// No description provided for @faceGuideNoFace.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüzünü çerçeveye al'**
+  String get faceGuideNoFace;
+
+  /// No description provided for @faceGuideTooFar.
+  ///
+  /// In tr, this message translates to:
+  /// **'Biraz yaklaş'**
+  String get faceGuideTooFar;
+
+  /// No description provided for @faceGuideTooClose.
+  ///
+  /// In tr, this message translates to:
+  /// **'Biraz uzaklaş'**
+  String get faceGuideTooClose;
+
+  /// No description provided for @faceGuideOffCentre.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüzünü ortala'**
+  String get faceGuideOffCentre;
+
+  /// No description provided for @faceGuideTilted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Başını dik tut'**
+  String get faceGuideTilted;
+
+  /// No description provided for @faceGuideReady.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hazır — sabit dur'**
+  String get faceGuideReady;
+
+  /// No description provided for @faceScanning.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz hatların okunuyor'**
+  String get faceScanning;
+
+  /// No description provided for @faceScanNodes.
+  ///
+  /// In tr, this message translates to:
+  /// **'Noktalar yerleşiyor'**
+  String get faceScanNodes;
+
+  /// No description provided for @faceScanReading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Firaset ile eşleştiriliyor'**
+  String get faceScanReading;
+
+  /// No description provided for @faceCapture.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çek'**
+  String get faceCapture;
+
+  /// No description provided for @faceRetake.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeniden çek'**
+  String get faceRetake;
+
+  /// No description provided for @faceConsentTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz okuma için onayın gerekiyor'**
+  String get faceConsentTitle;
+
+  /// No description provided for @faceConsentBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz okuma, kameradan aldığı kareyi CİHAZINDA işler. Fotoğraf sunucuya gönderilmez, hiçbir yerde saklanmaz ve işlem biter bitmez bellekten silinir. Sunucuya yalnızca yüz hatlarından türetilen oranlar (ör. alın/çene yükseklik oranı) gider; bu sayılar kişiyi tanımaya yaramaz.'**
+  String get faceConsentBody;
+
+  /// No description provided for @faceConsentCheckbox.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz görüntümün cihazımda işlenmesine onay veriyorum.'**
+  String get faceConsentCheckbox;
+
+  /// No description provided for @faceConsentContinue.
+  ///
+  /// In tr, this message translates to:
+  /// **'Onaylıyorum ve devam et'**
+  String get faceConsentContinue;
+
+  /// No description provided for @faceConsentLearnMore.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gizlilik politikasını oku'**
+  String get faceConsentLearnMore;
+
+  /// No description provided for @faceCameraDenied.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kamera izni verilmedi. Yüz okuma için kameraya erişim gerekiyor.'**
+  String get faceCameraDenied;
+
+  /// No description provided for @faceDetectFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz tespit edilemedi. Işığın yeterli olduğundan ve yüzünün çerçevede olduğundan emin ol.'**
+  String get faceDetectFailed;
+
+  /// No description provided for @faceReadingHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gelenek der ki: tek bir belirti hüküm vermez. Aşağıdaki okuma bir eğilimdir, kader değildir.'**
+  String get faceReadingHint;
 }
 
 class _AppLocalizationsDelegate

@@ -933,4 +933,69 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get useGoogleInstead =>
       'Sign-in failed. Your password may be wrong, or this account may have been created with Google/Apple — try the buttons below.';
+
+  @override
+  String get faceReadingTitle => 'Face Reading';
+
+  @override
+  String get faceGuideNoFace => 'Bring your face into the frame';
+
+  @override
+  String get faceGuideTooFar => 'Move a little closer';
+
+  @override
+  String get faceGuideTooClose => 'Move back a little';
+
+  @override
+  String get faceGuideOffCentre => 'Centre your face';
+
+  @override
+  String get faceGuideTilted => 'Hold your head upright';
+
+  @override
+  String get faceGuideReady => 'Ready — hold still';
+
+  @override
+  String get faceScanning => 'Reading your features';
+
+  @override
+  String get faceScanNodes => 'Points settling';
+
+  @override
+  String get faceScanReading => 'Matching against firasa';
+
+  @override
+  String get faceCapture => 'Capture';
+
+  @override
+  String get faceRetake => 'Retake';
+
+  @override
+  String get faceConsentTitle => 'Face reading needs your consent';
+
+  @override
+  String get faceConsentBody =>
+      'Face reading processes the camera frame ON YOUR DEVICE. The photo is never sent to a server, never stored anywhere, and is discarded from memory as soon as the reading is made. Only ratios derived from your features (e.g. forehead-to-chin height) are sent; those numbers cannot identify a person.';
+
+  @override
+  String get faceConsentCheckbox =>
+      'I consent to my face image being processed on my device.';
+
+  @override
+  String get faceConsentContinue => 'I consent — continue';
+
+  @override
+  String get faceConsentLearnMore => 'Read the privacy policy';
+
+  @override
+  String get faceCameraDenied =>
+      'Camera permission was not granted. Face reading needs camera access.';
+
+  @override
+  String get faceDetectFailed =>
+      'No face detected. Make sure the light is good and your face is inside the frame.';
+
+  @override
+  String get faceReadingHint =>
+      'The tradition says: a single sign decides nothing. What follows is a tendency, not a fate.';
 }

@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<!-- Yuz okuma. Apple bu metni izin diyalogunda AYNEN gosteriyor ve
+	     belirsiz gerekce tek basina red sebebi (Guideline 5.1.1). Metin ne
+	     yapildigini VE ne yapilmadigini soyluyor: kare cihazda islenir,
+	     yuklenmez, saklanmaz. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Yüz okuma için kameraya erişim gerekiyor. Görüntü yalnızca cihazında işlenir; hiçbir yere gönderilmez ve saklanmaz.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

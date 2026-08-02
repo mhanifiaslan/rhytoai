@@ -412,5 +412,25 @@
     }
   },
   "resetLinkSentNeutral": "If this address is registered, a reset link has been sent.",
-  "useGoogleInstead": "Sign-in failed. Your password may be wrong, or this account may have been created with Google/Apple — try the buttons below."
+  "useGoogleInstead": "Sign-in failed. Your password may be wrong, or this account may have been created with Google/Apple — try the buttons below.",
+  "faceReadingTitle": "Face Reading",
+  "faceGuideNoFace": "Bring your face into the frame",
+  "faceGuideTooFar": "Move a little closer",
+  "faceGuideTooClose": "Move back a little",
+  "faceGuideOffCentre": "Centre your face",
+  "faceGuideTilted": "Hold your head upright",
+  "faceGuideReady": "Ready — hold still",
+  "faceScanning": "Reading your features",
+  "faceScanNodes": "Points settling",
+  "faceScanReading": "Matching against firasa",
+  "faceCapture": "Capture",
+  "faceRetake": "Retake",
+  "faceConsentTitle": "Face reading needs your consent",
+  "faceConsentBody": "Face reading processes the camera frame ON YOUR DEVICE. The photo is never sent to a server, never stored anywhere, and is discarded from memory as soon as the reading is made. Only ratios derived from your features (e.g. forehead-to-chin height) are sent; those numbers cannot identify a person.",
+  "faceConsentCheckbox": "I consent to my face image being processed on my device.",
+  "faceConsentContinue": "I consent — continue",
+  "faceConsentLearnMore": "Read the privacy policy",
+  "faceCameraDenied": "Camera permission was not granted. Face reading needs camera access.",
+  "faceDetectFailed": "No face detected. Make sure the light is good and your face is inside the frame.",
+  "faceReadingHint": "The tradition says: a single sign decides nothing. What follows is a tendency, not a fate."
 }
