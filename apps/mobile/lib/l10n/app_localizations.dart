@@ -1940,6 +1940,60 @@ abstract class AppLocalizations {
   /// **'Yüzünü tarat, firaset geleneğine göre mizacını oku.'**
   String get faceReadingEntryBody;
 
+  /// No description provided for @faceGalleryButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Galeriden seç'**
+  String get faceGalleryButton;
+
+  /// No description provided for @faceLensButton.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kamerayı çevir'**
+  String get faceLensButton;
+
+  /// No description provided for @faceStillAnalyzing.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fotoğraf inceleniyor…'**
+  String get faceStillAnalyzing;
+
+  /// No description provided for @faceStillNoFace.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fotoğrafta yüz bulunamadı. Önden, iyi aydınlatılmış bir fotoğraf dene.'**
+  String get faceStillNoFace;
+
+  /// No description provided for @faceStillNoLandmarks.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüz hatları seçilemedi. Yüzün tam göründüğü, önden bir fotoğraf dene.'**
+  String get faceStillNoLandmarks;
+
+  /// No description provided for @faceStillSingleFrameNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu okuma tek bir fotoğraf karesinden ölçüldü; canlı çekim daha kararlı sonuç verir.'**
+  String get faceStillSingleFrameNote;
+
+  /// No description provided for @faceWaitStage1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Oranlar geleneğin ölçüleriyle karşılaştırılıyor…'**
+  String get faceWaitStage1;
+
+  /// No description provided for @faceWaitStage2.
+  ///
+  /// In tr, this message translates to:
+  /// **'Firaset kaynakları taranıyor…'**
+  String get faceWaitStage2;
+
+  /// No description provided for @faceWaitStage3.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okuman yazılıyor…'**
+  String get faceWaitStage3;
+
   /// No description provided for @faceConsentSetting.
   ///
   /// In tr, this message translates to:

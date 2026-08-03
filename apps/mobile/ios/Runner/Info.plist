@@ -10,6 +10,11 @@
 	<string>Rehber eşleşmesini açarsan numaralar cihazında özetlenir; rehberin sunucuya gönderilmez.</string>
 <key>NSCameraUsageDescription</key>
 	<string>Yüz okuma için kameraya erişim gerekiyor. Görüntü yalnızca cihazında işlenir; hiçbir yere gönderilmez ve saklanmaz.</string>
+	<!-- iOS 14+ sistem seçicisi (PHPicker) bu izni sormaz; anahtar eski
+	     surumler ve olasi geri donusler icin duruyor. Metin ayni sozu
+	     veriyor: fotograf cihazda islenir, yuklenmez. -->
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Yüz okuma için galeriden fotoğraf seçebilirsin. Fotoğraf yalnızca cihazında işlenir; hiçbir yere gönderilmez ve saklanmaz.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

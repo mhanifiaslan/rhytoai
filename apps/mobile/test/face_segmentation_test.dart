@@ -167,6 +167,45 @@ void main() {
     });
   });
 
+  group('RGBA (galeri, Revize R5)', () {
+    test('kanal sirasi R-G-B-A okunur — BGRA ile AYNI baytlar farkli renk',
+        () {
+      // dart:ui cozucusu rawRgba verir. Ayni dort bayt BGRA diye okunsaydi
+      // kirmizi ile mavi yer degistirirdi; model saci ten sanar ve galeri
+      // fotograflarinda alin olcusu sessizce yanlis cikardi.
+      final bayt = Uint8List.fromList([10, 20, 30, 255]);
+      final rgb = Float64List(3);
+      readPixelRgb(
+        format: FrameFormat.rgba,
+        plane0: bayt,
+        u: 0,
+        v: 0,
+        width: 1,
+        height: 1,
+        stride0: 4,
+        hedef: rgb,
+      );
+      expect(rgb[0], 10, reason: 'R');
+      expect(rgb[1], 20, reason: 'G');
+      expect(rgb[2], 30, reason: 'B');
+    });
+
+    test('tampon disi okuma cokmez, sifir verir', () {
+      final rgb = Float64List(3)..[0] = 99;
+      readPixelRgb(
+        format: FrameFormat.rgba,
+        plane0: Uint8List(4),
+        u: 5,
+        v: 5,
+        width: 8,
+        height: 8,
+        stride0: 32,
+        hedef: rgb,
+      );
+      expect(rgb[0], 0);
+    });
+  });
+
   group('dondurme eslemesi', () {
     // Koordinat uzaylarini karistirmak bu projede daha once noktalarin yuzun
     // YANINA dusmesine yol acti.

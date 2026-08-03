@@ -44,14 +44,18 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
 
 - **Konum.** Hiçbir konum izni istenmiyor. Saat dilimi cihazın bildirdiği
   IANA adıdır (`Europe/Istanbul`), koordinat değildir.
-- **Rehber / kişiler.** İzin istenmiyor, erişilmiyor. Arkadaş ekleme yalnızca
-  kullanıcı adı ve davet bağlantısıyla.
-- **Yüz görüntüsü / fotoğraf.** Yüz okuma KAMERAYI kullanır ama fotoğraf
-  çekmez. Görüntü cihazdan çıkmaz, buluta yüklenmez, telefonun diskine bile
-  yazılmaz; hem landmark tespiti (ML Kit) hem saç çizgisi ölçümü (MediaPipe
-  Selfie Multiclass, cihaz üstü TFLite) yerelde çalışır ve kare işlem biter
-  bitmez bellekten atılır. **Görüntü toplanmadığı için "Photos" ya da
-  "Sensitive Info → biometric" beyan edilmez.**
+- **Rehber içeriği (ad/soyad, e-posta, notlar).** Rehber eşleşmesi (isteğe
+  bağlı, varsayılan KAPALI) yalnızca telefon NUMARALARINI cihazda özetler;
+  ad/soyad dahil başka hiçbir alan okunmaz, özet listesi eşleştirme sonrası
+  atılır (yukarıdaki tabloya bakın). Ayar kapalıyken rehbere hiç erişilmez.
+- **Yüz görüntüsü / fotoğraf.** Yüz okuma canlı kamerayla ya da galeriden
+  seçilen fotoğrafla çalışır; iki yolda da görüntü cihazdan çıkmaz, buluta
+  yüklenmez. Kamera yolunda fotoğraf hiç çekilmez, kare bellekte işlenip
+  atılır; galeri yolunda uygulamaya verilen kopya bellekte işlenir ve işlem
+  bitince silinir. Hem landmark tespiti (ML Kit) hem saç çizgisi ölçümü
+  (MediaPipe Selfie Multiclass, cihaz üstü TFLite) yerelde çalışır.
+  **Görüntü toplanmadığı için "Photos" ya da "Sensitive Info → biometric"
+  beyan edilmez.**
 
   Sunucuya giden şey iki ondalığa yuvarlanmış ORANLARDIR (ör. `0.34`) ve bu
   sayılar kişiyi tanımaya yaramaz — GDPR Md.9 anlamında "benzersiz
@@ -61,8 +65,10 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
   Yüz tanıma, kimlik doğrulama veya kişi eşleştirme YAPILMAZ.
 - **Ödeme bilgisi.** Satın alma mağaza tarafından yürütülür; kart bilgisi
   uygulamaya hiç ulaşmaz.
-- **Kişi rehberi, takvim, mikrofon, fotoğraf galerisi.** Kamera YALNIZCA yüz
-  okuma sırasında ve yalnızca canlı önizleme için kullanılır; kayıt yapılmaz.
+- **Takvim, mikrofon.** Hiç erişilmez. Kamera YALNIZCA yüz okuma sırasında
+  ve yalnızca canlı önizleme için kullanılır; kayıt yapılmaz. Galeriye
+  erişim yalnızca kullanıcı yüz okuma için fotoğraf SEÇTİĞİNDE, sistem
+  seçicisi üzerinden olur; galeri taranmaz.
 - **Ham sohbet transkripti saklanmaz.** Saklanan şey kapalı bir kategori
   kümesine oturan kısa olgulardır (`backend/services/memory_service.py`,
   `CATEGORIES`). Sağlık/tanı/ilaç bilgisi bilinçli olarak tutulmaz.

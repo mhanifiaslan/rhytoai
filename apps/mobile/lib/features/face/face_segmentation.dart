@@ -110,6 +110,14 @@ enum FrameFormat {
 
   /// YUV420: Y ayrı düzlemde, kroma ayrı düzlemde.
   yuv420Planar,
+
+  /// Durağan görüntü (galeri): `dart:ui` çözücüsünün ürettiği ham RGBA.
+  ///
+  /// Kameradan değil dosyadan geliyor; EXIF dönüşü çözücü uygulamış oluyor,
+  /// bu yüzden derece hep 0. Ayrı bir biçim olarak eklendi çünkü baytları
+  /// BGRA'ya çevirip mevcut dalı kullanmak, 12 MB'lik fotoğrafta boşuna bir
+  /// tam geçiş demekti — kanal sırasını okuma anında çevirmek bedava.
+  rgba,
 }
 
 /// Tek pikselin rengini okur; sonuç [hedef] dizisine yazılır (0-255).
@@ -143,6 +151,16 @@ void readPixelRgb({
       hedef[0] = plane0[i + 2].toDouble();
       hedef[1] = plane0[i + 1].toDouble();
       hedef[2] = plane0[i].toDouble();
+
+    case FrameFormat.rgba:
+      final i = v * stride0 + u * 4;
+      if (i + 2 >= plane0.length) {
+        hedef[0] = hedef[1] = hedef[2] = 0;
+        return;
+      }
+      hedef[0] = plane0[i].toDouble();
+      hedef[1] = plane0[i + 1].toDouble();
+      hedef[2] = plane0[i + 2].toDouble();
 
     case FrameFormat.nv21SinglePlane:
       final yi = v * stride0 + u;
@@ -521,6 +539,68 @@ class FaceSegmenter {
       lastError = 'kare biçimi tanınmadı: '
           'düzlem=${image.planes.length} '
           'bpr=${image.planes.first.bytesPerRow} en=${image.width}';
+      return null;
+    }
+
+    return _calistir(kare);
+  }
+
+  /// Durağan görüntüyü (galeri) segmentleyip sınıf maskesi döndürür.
+  ///
+  /// [rgba], `dart:ui` çözücüsünün ürettiği ham RGBA baytları — EXIF dönüşü
+  /// çözücü uygulamış durumda, bu yüzden derece 0. Kamera yolundaki tek fark
+  /// biçim; işçi, tampon yönetimi ve zaman sınırı birebir aynı.
+  Future<SegmentationMask?> runStill({
+    required Uint8List rgba,
+    required int width,
+    required int height,
+  }) async {
+    if (_isciKapisi == null) {
+      lastError = 'yorumlayıcı yok';
+      return null;
+    }
+    if (rgba.length < width * height * 4) {
+      lastError = 'rgba tamponu eksik: ${rgba.length} < ${width * height * 4}';
+      return null;
+    }
+
+    // Kamera yolunun aksine meşgulken REDDETMİYOR, kısaca bekliyor.
+    //
+    // Önizleme segmentasyonu 700 ms'de bir koşuyor; galeri analizi tam o
+    // anda gelirse ret, alnın sessizce ölçülmemesi demek olurdu. Kamera
+    // karelerinde ret doğru (sonraki kare 700 ms sonra zaten gelecek);
+    // fotoğrafta ikinci bir "kare" yok. Sınır var: işçi gerçekten
+    // takılmışsa sonsuza dek beklenmez.
+    for (var i = 0; _mesgul && i < 40; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    }
+    if (_mesgul) {
+      lastError = 'önceki çıkarım sürüyor';
+      return null;
+    }
+
+    return _calistir((yanit) => _Kare(
+          yanit: yanit,
+          bicim: FrameFormat.rgba,
+          duzlem0: rgba,
+          duzlem1: null,
+          genislik: width,
+          yukseklik: height,
+          adim0: width * 4,
+          adim1: 0,
+          pikselAdim1: 2,
+          derece: 0,
+        ));
+  }
+
+  /// Kurulu kare mesajını işçiye gönderir ve maskeyi bekler.
+  ///
+  /// Kamera ve galeri yolları burada birleşiyor: `_mesgul` kilidi, zaman
+  /// sınırı ve hata metinleri iki yol için de tek yerden yönetiliyor.
+  Future<SegmentationMask?> _calistir(_Kare Function(SendPort) kare) async {
+    final kapi = _isciKapisi;
+    if (kapi == null) {
+      lastError = 'yorumlayıcı yok';
       return null;
     }
 

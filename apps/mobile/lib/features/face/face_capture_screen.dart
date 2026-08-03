@@ -22,15 +22,18 @@ import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
+import '../../widgets/atlas_widgets.dart' show AstrolabeSpinner;
 import 'face_detection.dart';
 import 'face_geometry.dart';
 import 'face_hairline.dart';
 import 'face_motion.dart';
 import 'face_segmentation.dart';
 import 'face_scan_overlay.dart';
+import 'face_still.dart';
 import 'hairline_stabilizer.dart';
 
 /// Çekim sonucu: durağan oranlar + hareket ölçümü.
@@ -38,10 +41,18 @@ import 'hairline_stabilizer.dart';
 /// İkisi iki ayrı ekseni besliyor. Oranlar kuru–nemli eksenini, hareket
 /// sıcak–soğuk eksenini açıyor; gelenekte mizaç bu ikisinin kesişimi.
 class FaceCaptureResult {
-  const FaceCaptureResult(this.ratios, this.motion);
+  const FaceCaptureResult(this.ratios, this.motion, {this.singleFrame = false});
 
   final FaceRatios ratios;
   final MotionMetrics motion;
+
+  /// Ölçüm tek kareden mi (galeri fotoğrafı)?
+  ///
+  /// Kamera yolunda saç çizgisi 3+ örneğin medyanından geliyor; fotoğrafta
+  /// tek örnek var. Okuma ekranı bunu kullanıcıya SÖYLÜYOR — söylemeden
+  /// kabul etmek, kararlılık katmanının çözdüğü sorunu (ardışık çelişen
+  /// okumalar) galeri yolundan sessizce geri getirmek olurdu.
+  final bool singleFrame;
 
   /// Sunucuya giden yük. İkisi de yalnızca sayı.
   Map<String, double> toJson() => {
@@ -211,11 +222,29 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     _baslat();
   }
 
+  /// Seçili lens yönü. Varsayılan ön: insan kendi yüzünü tarıyor. Arka
+  /// kamera bilinçli bir ek (Revize R5): hem daha kaliteli sensör hem
+  /// "başkasının yüzünü okuma" akışı — rıza metni her iki yol için de aynı
+  /// kapıdan geçiyor.
+  CameraLensDirection _yon = CameraLensDirection.front;
+
+  /// Cihazda birden fazla lens yönü var mı — yoksa çevirme düğmesi çizilmez.
+  bool _ciftLens = false;
+
+  /// Galeri fotoğrafı işleniyor; önizleme ölçümleri duraklatılır.
+  bool _galeriIsleniyor = false;
+
   Future<void> _baslat() async {
     try {
       final kameralar = await availableCameras();
+      _ciftLens = kameralar
+              .map((c) => c.lensDirection)
+              .toSet()
+              .intersection({CameraLensDirection.front, CameraLensDirection.back})
+              .length ==
+          2;
       final on = kameralar.firstWhere(
-        (c) => c.lensDirection == CameraLensDirection.front,
+        (c) => c.lensDirection == _yon,
         orElse: () => kameralar.first,
       );
 
@@ -248,7 +277,9 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
   }
 
   Future<void> _kareGeldi(CameraImage kare) async {
-    if (_isliyor || _asama != _Asama.onizleme) return;
+    // Galeri analizi sürerken kareler işlenmez: dedektör ve segmenter tek;
+    // ikisini aynı anda hem akışa hem fotoğrafa koşturmak yarış üretir.
+    if (_isliyor || _galeriIsleniyor || _asama != _Asama.onizleme) return;
     _isliyor = true;
     try {
       final kamera = _kamera;
@@ -596,6 +627,86 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
         null;
   }
 
+  /// Ön ↔ arka lens geçişi.
+  ///
+  /// Ölçüm durumu SIFIRLANIYOR: kararlılık örnekleri, hareket birikimi ve
+  /// son maske hepsi eski lensin uzayından. Yeni lensin karelerine eski
+  /// örnekleri karıştırmak, medyanın çözdüğü sorunu geri getirirdi.
+  Future<void> _lensDegistir() async {
+    if (_asama != _Asama.onizleme || _galeriIsleniyor) return;
+    HapticFeedback.selectionClick();
+    _yon = _yon == CameraLensDirection.front
+        ? CameraLensDirection.back
+        : CameraLensDirection.front;
+
+    final eski = _kamera;
+    _kamera = null;
+    setState(() {
+      _asama = _Asama.hazirlaniyor;
+      _kilit = 0;
+      _kalite = FrameQuality.noFace;
+      _noktalar = const [];
+      _sonYuz = null;
+      _sonKare = null;
+      _sonMaske = null;
+      _alinUyarisi = false;
+    });
+    _kararlilik.clear();
+    _hareket.reset();
+    await eski?.dispose();
+    if (!mounted) return;
+    await _baslat();
+  }
+
+  /// Galeriden fotoğraf seçtirir ve kameradaki boru hattının durağan
+  /// eşleniğiyle analiz eder (bkz. face_still.dart).
+  ///
+  /// Seçicinin uygulama önbelleğine koyduğu kopya işin sonunda SİLİNİYOR:
+  /// "görüntü diske yazılmaz" sözünün galeri yolundaki karşılığı, bizim
+  /// yazmadığımız kopyayı da ortada bırakmamak.
+  Future<void> _galeridenSec() async {
+    if (_galeriIsleniyor || _asama != _Asama.onizleme) return;
+    HapticFeedback.selectionClick();
+
+    final XFile? secim;
+    try {
+      secim = await ImagePicker().pickImage(source: ImageSource.gallery);
+    } catch (_) {
+      return; // Seçici açılamadı; kamera akışı zaten sürüyor.
+    }
+    if (secim == null || !mounted) return;
+
+    setState(() => _galeriIsleniyor = true);
+    try {
+      final analiz = await analyzeStillImage(
+        path: secim.path,
+        detector: _dedektor,
+        segmenter: _segmenter,
+      );
+      if (!mounted) return;
+
+      final sonuc = analiz.result;
+      if (sonuc == null) {
+        final l10n = AppLocalizations.of(context);
+        setState(() => _galeriIsleniyor = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(analiz.failure == StillFailure.noLandmarks
+              ? l10n.faceStillNoLandmarks
+              : l10n.faceStillNoFace),
+        ));
+        return;
+      }
+
+      HapticFeedback.mediumImpact();
+      Navigator.of(context).pop<FaceCaptureResult>(sonuc);
+    } finally {
+      // Önbellek kopyasını sil — başarıda da başarısızlıkta da.
+      try {
+        await File(secim.path).delete();
+      } catch (_) {}
+    }
+  }
+
   /// Çekim — ama **fotoğraf çekmeden**.
   ///
   /// Önceki sürüm `takePicture()` ile geçici bir dosya yazıyor, onu ML Kit'e
@@ -706,6 +817,7 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
             _hataKatmani(l10n),
           if (_asama == _Asama.onizleme) _altBar(l10n),
           if (_asama == _Asama.tarama) _taramaMetni(l10n),
+          if (_galeriIsleniyor) _galeriKatmani(l10n),
           // Kapatma düğmesi yığının EN ÜSTÜNDE.
           //
           // Önce hata katmanının altındaydı ve o katman tüm ekranı kaplayan
@@ -812,9 +924,83 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
                           color: ScanPalette.node, fontSize: 10)),
                 ],
                 const SizedBox(height: 22),
-                _deklansor(),
+                // Deklanşör ortada; yanlarında galeri ve lens çevirme.
+                // İkisi de deklanşörden görsel olarak KÜÇÜK ve sönük: asıl
+                // eylem çekim, bunlar alternatif yollar.
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _yanDugme(
+                      icon: Icons.photo_library_outlined,
+                      etiket: l10n.faceGalleryButton,
+                      onTap: _galeridenSec,
+                    ),
+                    const SizedBox(width: 34),
+                    _deklansor(),
+                    const SizedBox(width: 34),
+                    if (_ciftLens)
+                      _yanDugme(
+                        icon: Icons.cameraswitch_outlined,
+                        etiket: l10n.faceLensButton,
+                        onTap: _lensDegistir,
+                      )
+                    else
+                      // Simetri: lens düğmesi yoksa deklanşör kaymasın.
+                      const SizedBox(width: 46),
+                  ],
+                ),
               ],
             ),
+          ),
+        ),
+      );
+
+  /// Deklanşör yanı ikincil düğme (galeri / lens çevirme).
+  Widget _yanDugme({
+    required IconData icon,
+    required String etiket,
+    required VoidCallback onTap,
+  }) =>
+      Semantics(
+        button: true,
+        label: etiket,
+        child: GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: RythoColors.ink.withValues(alpha: 0.45),
+              border: Border.all(
+                  color: RythoColors.parchment.withValues(alpha: 0.28)),
+            ),
+            child: Icon(icon, size: 21, color: RythoColors.parchment),
+          ),
+        ),
+      );
+
+  /// Galeri fotoğrafı analiz edilirken tüm ekranı kaplayan örtü.
+  ///
+  /// Çekimdeki tarama sahnesinin sade eşleniği: kullanıcı ~1-2 saniyelik
+  /// tespit + segmentasyon süresince ne olduğunu görmeli — çıplak bir
+  /// donma "uygulama takıldı" okunur.
+  Widget _galeriKatmani(AppLocalizations l10n) => ColoredBox(
+        color: RythoColors.ink.withValues(alpha: 0.82),
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const AstrolabeSpinner(),
+              const SizedBox(height: 18),
+              Text(l10n.faceStillAnalyzing,
+                  style: const TextStyle(
+                    color: RythoColors.parchment,
+                    fontSize: 15,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w500,
+                  )),
+            ],
           ),
         ),
       );

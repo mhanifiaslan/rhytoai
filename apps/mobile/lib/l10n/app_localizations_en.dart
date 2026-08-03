@@ -1014,6 +1014,37 @@ class AppLocalizationsEn extends AppLocalizations {
       'Scan your face and read your temperament through the firasa tradition.';
 
   @override
+  String get faceGalleryButton => 'Choose from gallery';
+
+  @override
+  String get faceLensButton => 'Flip camera';
+
+  @override
+  String get faceStillAnalyzing => 'Analyzing photo…';
+
+  @override
+  String get faceStillNoFace =>
+      'No face found in the photo. Try a well-lit, front-facing photo.';
+
+  @override
+  String get faceStillNoLandmarks =>
+      'Facial features couldn\'t be traced. Try a photo where the face is fully visible, facing forward.';
+
+  @override
+  String get faceStillSingleFrameNote =>
+      'This reading was measured from a single photo frame; a live capture gives steadier results.';
+
+  @override
+  String get faceWaitStage1 =>
+      'Comparing your proportions with the tradition\'s measures…';
+
+  @override
+  String get faceWaitStage2 => 'Searching the firasa sources…';
+
+  @override
+  String get faceWaitStage3 => 'Writing your reading…';
+
+  @override
   String get faceConsentSetting => 'Face reading consent';
 
   @override

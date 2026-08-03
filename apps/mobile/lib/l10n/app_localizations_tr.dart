@@ -1011,6 +1011,37 @@ class AppLocalizationsTr extends AppLocalizations {
       'Yüzünü tarat, firaset geleneğine göre mizacını oku.';
 
   @override
+  String get faceGalleryButton => 'Galeriden seç';
+
+  @override
+  String get faceLensButton => 'Kamerayı çevir';
+
+  @override
+  String get faceStillAnalyzing => 'Fotoğraf inceleniyor…';
+
+  @override
+  String get faceStillNoFace =>
+      'Fotoğrafta yüz bulunamadı. Önden, iyi aydınlatılmış bir fotoğraf dene.';
+
+  @override
+  String get faceStillNoLandmarks =>
+      'Yüz hatları seçilemedi. Yüzün tam göründüğü, önden bir fotoğraf dene.';
+
+  @override
+  String get faceStillSingleFrameNote =>
+      'Bu okuma tek bir fotoğraf karesinden ölçüldü; canlı çekim daha kararlı sonuç verir.';
+
+  @override
+  String get faceWaitStage1 =>
+      'Oranlar geleneğin ölçüleriyle karşılaştırılıyor…';
+
+  @override
+  String get faceWaitStage2 => 'Firaset kaynakları taranıyor…';
+
+  @override
+  String get faceWaitStage3 => 'Okuman yazılıyor…';
+
+  @override
   String get faceConsentSetting => 'Yüz okuma rızası';
 
   @override
