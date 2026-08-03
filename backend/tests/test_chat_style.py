@@ -93,7 +93,12 @@ def test_bilgi_sorusunda_rag_cagrilir_ve_kirpilir(monkeypatch):
 
 
 def test_api_semasi_degismedi(monkeypatch):
-    """İstek/yanıt şeması korunmalı: {'status', 'reply'} — istemci sözleşmesi."""
+    """İstek/yanıt şeması korunmalı — istemci sözleşmesi.
+
+    `conversation_id` Revize R4 ile eklendi (sohbet arşivi): istemci dönen
+    kimliği izleyip sonraki turlarda geri gönderiyor. Alanın DÜŞMESİ artık
+    sözleşme kırılmasıdır; bu test o günden beri üç alanı birden koruyor.
+    """
     monkeypatch.setattr(gemini_service, "chat",
                         lambda history, msg, **k: "test yanıtı")
 
@@ -108,7 +113,7 @@ def test_api_semasi_degismedi(monkeypatch):
         )
         assert response.status_code == 200
         body = response.json()
-        assert set(body.keys()) == {"status", "reply"}
+        assert set(body.keys()) == {"status", "reply", "conversation_id"}
         assert body["status"] == "success"
         assert isinstance(body["reply"], str)
 

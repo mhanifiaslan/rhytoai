@@ -125,7 +125,10 @@ def daily(data: BirthData,
     try:
         natal = astro_service.get_natal_chart(**_natal_kwargs(data))
         sky = prompts.localize_sky(lang, get_sky_now())
-        report = report_service.daily_reading(user.uid, natal, sky, lang=lang)
+        # birth: bugünün transitlerinin haritaya değdiği noktalar da okumaya
+        # girsin (Revize R8) — ek LLM çağrısı yok, hesap yerel efemeris.
+        report = report_service.daily_reading(user.uid, natal, sky, lang=lang,
+                                              birth=_natal_kwargs(data))
         return {"status": "success", "data": {
             "reading": report["text"], "cached": report.get("cached", False),
             "sun_sign": natal["sun_sign"], "moon_sign": natal["moon_sign"],

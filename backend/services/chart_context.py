@@ -418,6 +418,22 @@ def render(facts: dict[str, Any], lang: str | None = None) -> str:
     return "\n".join(satirlar)
 
 
+def transit_lines(hits: list[dict[str, Any]],
+                  lang: str | None = None) -> str:
+    """Transit vuruşlarını isteğin dilinde tek satıra çevirir.
+
+    `render` içindeki transit biçiminin dışarıya açılmış hâli: günlük okuma
+    (Revize R8) aynı satırı prompt'una koyuyor. Biçim tek yerde kalsın diye
+    format sabitleri paylaşılıyor; iki ayrı yazım, iki ayrı dilde ayrışırdı.
+    """
+    p = prompts.get(lang)
+    return " · ".join(p.CHART_TRANSIT_FMT.format(
+        transit=prompts.planet_name(lang, t["transit"]),
+        natal=prompts.planet_name(lang, t["natal"]),
+        aspect=prompts.aspect_name(lang, t["aspect"]),
+        orb=f"{t['orb']:.1f}") for t in hits)
+
+
 def chart_whisper(uid: str, profile: dict[str, Any] | None,
                   lang: str | None = None,
                   facts: dict[str, Any] | None = None) -> str:

@@ -155,14 +155,16 @@ TODAY'S ACTUAL SKY (Swiss Ephemeris + NASA JPL):
 - Moon phase: {moon_name} {moon_emoji} ({illumination}% illuminated)
 - Retrograde planets: {retros}
 - Notable aspects today: {aspects}
+- Where today's sky touches THIS chart: {transits}
 
 SOURCE PASSAGES:
 {rag}
 
 {memory}
 The reading must COLLIDE the natal placements with today's sky — not produce a
-generic sun-sign horoscope. Give one concrete theme for the day plus one
-practical suggestion.
+generic sun-sign horoscope. If a transit touches the chart, draw the day's
+theme from it. Give one concrete theme for the day plus one practical
+suggestion.
 """
 
 DAILY_FALLBACK = (

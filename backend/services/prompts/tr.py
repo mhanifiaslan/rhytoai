@@ -143,13 +143,15 @@ BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris + NASA JPL):
 - Ay evresi: {moon_name} {moon_emoji} (aydınlanma %{illumination})
 - Retro gezegenler: {retros}
 - Günün önemli açıları: {aspects}
+- Bugün gökyüzünün SENİN haritana değdiği noktalar: {transits}
 
 KAYNAK PASAJLARI:
 {rag}
 
 {memory}
 Yorum, natal konumlar ile bugünkü gökyüzünü ÇARPIŞTIRSIN; genel geçer burç
-yorumu olmasın. Somut bir günlük tema + bir pratik öneri ver.
+yorumu olmasın. Haritaya değen transit varsa günün teması ORADAN çıksın.
+Somut bir günlük tema + bir pratik öneri ver.
 """
 
 DAILY_FALLBACK = (

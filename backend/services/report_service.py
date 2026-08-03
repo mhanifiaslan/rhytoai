@@ -15,6 +15,8 @@ from typing import Any, Callable
 
 from core import cache, i18n
 from services import (
+    chart_context,
+    chart_query,
     firasa_service,
     gemini_service,
     memory_service,
@@ -78,8 +80,18 @@ def _cached_generate(cache_key: str, prompt: str, fallback: str,
 
 
 def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
-                  lang: str | None = None) -> dict[str, Any]:
-    """Kişiye özel günlük kozmik yorum: natal harita x güncel gökyüzü."""
+                  lang: str | None = None,
+                  birth: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Kişiye özel günlük kozmik yorum: natal harita x güncel gökyüzü.
+
+    ``birth`` verilirse bugünün gökyüzünün HARİTAYA değdiği noktalar da
+    prompt'a girer (Revize R8). Eskiden yalnızca genel gökyüzü (retrolar +
+    gökyüzü geneli açılar) veriliyordu; transit-natal kesişimi — "bugün
+    Satürn SENİN Güneşine kare" — sohbete gidiyor ama günlük okumaya
+    gitmiyordu. Oysa kişisel günlük okumanın kişisel kısmı tam da bu.
+    Ek LLM çağrısı YOK: transit hesabı yerel efemeris, önbellek anahtarı
+    değişmedi.
+    """
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
     today = dt.date.today().isoformat()
@@ -102,9 +114,25 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     moon_sign = yerel_harita.get("moon_sign_local") or natal.get("moon_sign")
     ascendant = yerel_harita.get("ascendant_local") or natal.get("ascendant")
 
+    # Bugünün gökyüzünün haritaya değdiği noktalar (Revize R8). Efemeris
+    # düşerse okuma düşmez — transitsiz devam edilir; eski davranış buydu.
+    transits = ""
+    if birth:
+        try:
+            vurus = chart_context.transit_facts(birth)["hits"]
+            transits = chart_context.transit_lines(vurus, lang)
+        except Exception as exc:
+            logger.warning("Günlük okuma transitsiz: %s", exc)
+
+    # Sorgu korpusun dilinde kurulur (chart_query gerekçesi): eski sabit
+    # şablon TR korpusta İngilizce dolgu kelimeleriyle arıyordu.
     rag = retrieve_context(
-        f"{sun_sign or ''} sun {moon_sign or ''} moon sign "
-        f"planet transit interpretation temperament",
+        " ".join(filter(None, [
+            chart_query.topic_seed("timing", lang),
+            chart_query.topic_seed("temperament", lang),
+            f"{sun_sign or ''} {moon_sign or ''}".strip(),
+            transits,
+        ])),
         lang=lang,
     )
     # Kullanıcı hafızası: günlük okumayı gerçekten kişisel yapan şey natal
@@ -122,6 +150,7 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
         ascendant=ascendant, today=today,
         moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
         illumination=moon.get("illumination"), retros=retros, aspects=aspects,
+        transits=transits or "-",
         rag=rag, memory=_memory_block(memory, lang),
     )
     fallback = p.DAILY_FALLBACK.format(
@@ -191,8 +220,11 @@ def horoscope_reading(sign: str, period: str, sky: dict[str, Any],
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
     ) or "-"
     moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
-    rag = retrieve_context(f"{sign_name} sign temperament planet transit",
-                           lang=lang)
+    # Mizaç tohumu + yerel burç adı (Revize R8): eski sabit şablon TR
+    # korpusta "sign temperament planet transit" diye İngilizce arıyordu.
+    rag = retrieve_context(
+        f"{chart_query.topic_seed('temperament', lang)} {sign_name}",
+        lang=lang)
 
     prompt = p.HOROSCOPE.format(
         sign=sign_name, period=period_name, period_upper=period_name.upper(),
@@ -253,8 +285,11 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
 
     moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
     retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
-    rag = retrieve_context("synastry relationship communication daily transit",
-                           lang=lang)
+    # İlişki + zamanlama tohumları isteğin dilinde (Revize R8).
+    rag = retrieve_context(
+        f"{chart_query.topic_seed('relationship', lang)} "
+        f"{chart_query.topic_seed('timing', lang)}",
+        lang=lang)
 
     prompt = p.DYAD.format(
         name_a=name_a, name_b=name_b, today=today.isoformat(),
@@ -305,8 +340,17 @@ def natal_report(user_id: str, natal: dict[str, Any],
         f"- {a['p1_local']} {a['aspect_local']} {a['p2_local']} (orb {a['orbit']}°)"
         for a in yerel.get("aspects", [])[:10]
     )
+    # Sorgu haritadan ve isteğin dilinde (Revize R8): burçlar + en sıkı açı.
+    # Eski sabit şablon TR korpusta İngilizce dolgu kelimeleriyle arıyordu.
+    en_siki = next(iter(yerel.get("aspects", [])), None)
     rag = retrieve_context(
-        f"{sun_sign} sun sign temperament house placement character",
+        " ".join(filter(None, [
+            chart_query.topic_seed("temperament", lang),
+            chart_query.topic_seed("self", lang),
+            f"{sun_sign or ''} {moon_sign or ''} {ascendant or ''}".strip(),
+            (f"{en_siki['p1_local']} {en_siki['aspect_local']} "
+             f"{en_siki['p2_local']}") if en_siki else "",
+        ])),
         lang=lang,
     )
 
@@ -391,8 +435,16 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
         f"{lp['from_age']}-{lp['to_age']}: {lp['label']} ({lp['ten_god']['name']})"
         for lp in bazi.get("luck_pillars", [])[:4]
     )
+    # Mizaç tohumu + yerelleştirilmiş element adları (Revize R8). Korpus
+    # BaZi metni taşımıyor; en yakın gerçek karşılık dört element/mizaç
+    # bölümleri, sorgu da oraya yönelir. "Day Master" gibi İngilizce
+    # terimler TR korpusta hiçbir şeye benzemiyordu.
     rag = retrieve_context(
-        f"BaZi Day Master {bazi['day_master']['element']} element Ten Gods luck pillar",
+        " ".join(filter(None, [
+            chart_query.topic_seed("temperament", lang),
+            str(bazi["day_master"].get("element") or ""),
+            str(bazi.get("dominant_element") or ""),
+        ])),
         lang=lang,
     )
 
@@ -492,8 +544,17 @@ def synastry_report(user_id: str, synastry: dict[str, Any],
         f"({p2['name']}) orb {a['orbit']}°"
         for a in yerel.get("aspects", [])[:8]
     ) or p.NO_ASPECTS
-    rag = retrieve_context("synastry compatibility love relationship aspects",
-                           lang=lang)
+    # Sorgu isteğin dilinde ve İKİ haritadan (Revize R8): ilişki tohumu +
+    # iki Güneş + en sıkı sinastri açısı.
+    en_siki = next(iter(yerel.get("aspects", [])), None)
+    rag = retrieve_context(
+        " ".join(filter(None, [
+            chart_query.topic_seed("relationship", lang),
+            f"{p1['sun']['sign_local']} {p2['sun']['sign_local']}",
+            (f"{en_siki['p1_local']} {en_siki['aspect_local']} "
+             f"{en_siki['p2_local']}") if en_siki else "",
+        ])),
+        lang=lang)
 
     prompt = p.SYNASTRY.format(
         name1=p1["name"], sun1=p1["sun"]["sign_local"],

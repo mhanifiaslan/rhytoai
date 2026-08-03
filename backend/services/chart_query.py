@@ -105,6 +105,17 @@ def _lang_key(lang: str | None) -> str:
     return lang if lang in _TOPIC_SEEDS else "tr"
 
 
+def topic_seed(topic: str, lang: str | None = None) -> str:
+    """Konu tohumunu isteğin dilinde döndürür.
+
+    Rapor üretimleri (Revize R8) sabit İngilizce sorgu şablonlarından bu
+    tohumlara geçti: TR korpusta "sun sign temperament character" aramak,
+    aramanın yarısını boşa harcamaktı. Tohumlar sohbetle AYNI tabloda
+    kalıyor — iki ayrı liste iki ayrı dile ayrışırdı.
+    """
+    return _TOPIC_SEEDS[_lang_key(lang)].get(topic, "")
+
+
 def _placement_text(lang: str | None, y: dict) -> str:
     ad = prompts.planet_name(lang, y["planet"])
     burc = prompts.sign_name(lang, y["sign"])
