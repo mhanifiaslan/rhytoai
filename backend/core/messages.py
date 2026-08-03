@@ -66,6 +66,14 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "Bu özellik Rytho+ aboneliğine dahildir.",
         "en": "This feature is part of Rytho+.",
     },
+    # 402 + X-Paywall-Reason: tokens ile birlikte döner; istemci bu metni
+    # token mağazası ekranında gösterir.
+    "tokens.empty": {
+        "tr": "Token bakiyen bitti. Aylık hakkın dönem başında yenilenir; "
+              "istersen şimdi token paketi alabilirsin.",
+        "en": "You're out of tokens. Your monthly allowance renews next "
+              "period, or you can top up with a token pack now.",
+    },
 
     # --- Günlük ücretsiz kota ---
     "quota.chat": {

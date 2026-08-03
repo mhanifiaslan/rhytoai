@@ -22,6 +22,7 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from core import wallet
 from core.auth import AuthUser, get_current_user
 from core.entitlements import require_plus
 from core.i18n import get_language
@@ -138,7 +139,9 @@ def firasa_reading(
         # taşımak da işe yarardı ama yokluk niyeti daha net ifade ediyor.
         rapor = report_service.firasa_report(
             user.uid, ratios.model_dump(exclude_none=True),
-            chart=chart, lang=lang)
+            chart=chart, lang=lang,
+            spend=wallet.spender(user.uid, "face", lang=lang),
+            refund=lambda: wallet.refund_spend(user.uid, "face"))
         return {"status": "success", "reading": rapor["text"],
                 "cached": rapor.get("cached", False)}
     except HTTPException:

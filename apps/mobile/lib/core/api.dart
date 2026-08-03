@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../features/paywall/paywall_screen.dart';
+import '../features/paywall/token_store_screen.dart';
 import '../l10n/app_localizations.dart';
 import 'locale.dart';
 
@@ -15,12 +16,18 @@ const int kPaywallStatus = 402;
 
 bool _paywallOpen = false;
 
-/// Sunucu 402 döndüğünde paywall'ı açar.
+/// Sunucu 402 döndüğünde doğru ekranı açar.
 ///
 /// Kilit kararı tek yerde — sunucuda — verilir; istemci hangi ekranda olursa
-/// olsun aynı davranışı gösterir. Böylece her ekrana ayrı kilit mantığı
-/// yazmak gerekmez ve arayüz ile sunucu birbirinden ayrışamaz.
-Future<void> _showPaywall(String? reason) async {
+/// olsun aynı davranışı gösterir. İki 402 türü var ve ayrım `detail`
+/// metnine GÖMÜLEMEZ (o alan kullanıcıya gösterilen düz metin); sunucu
+/// `X-Paywall-Reason: tokens` başlığıyla söyler:
+///
+/// * başlık yok  → abonelik sorunu → [PaywallScreen] ("abone ol")
+/// * `tokens`    → bakiye bitti    → [TokenStoreScreen] ("doldur")
+///
+/// Token'ı biten aboneye abonelik satmaya çalışmak yanlış teşhis olurdu.
+Future<void> _showPaywall(String? reason, {bool tokens = false}) async {
   if (_paywallOpen) return;
   final navigator = rythoNavigatorKey.currentState;
   if (navigator == null) return;
@@ -28,7 +35,9 @@ Future<void> _showPaywall(String? reason) async {
   _paywallOpen = true;
   try {
     await navigator.push(MaterialPageRoute(
-      builder: (_) => PaywallScreen(reason: reason),
+      builder: (_) => tokens
+          ? TokenStoreScreen(reason: reason)
+          : PaywallScreen(reason: reason),
       fullscreenDialog: true,
     ));
   } finally {
@@ -73,7 +82,9 @@ final apiProvider = Provider<Dio>((ref) {
         final detail = error.response?.data is Map
             ? (error.response!.data as Map)['detail'] as String?
             : null;
-        _showPaywall(detail);
+        final sebep =
+            error.response?.headers.value('x-paywall-reason');
+        _showPaywall(detail, tokens: sebep == 'tokens');
       }
       handler.next(error);
     },

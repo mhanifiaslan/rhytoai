@@ -1053,6 +1053,55 @@ class AppLocalizationsTr extends AppLocalizations {
   String get languageAndSounds => 'Dil ve sesler';
 
   @override
+  String get tokenStoreTitle => 'Token Mağazası';
+
+  @override
+  String get tokenBalanceLabel => 'BAKİYEN';
+
+  @override
+  String get tokenUnit => 'token';
+
+  @override
+  String get tokenAllowanceRow => 'Aylık hak (dönem sonunda yenilenir)';
+
+  @override
+  String get tokenPurchasedRow => 'Satın alınan (aya devreder)';
+
+  @override
+  String get tokenRolloverNote =>
+      'Aylık hak dönem sonunda yenilenir ve devretmez; satın aldığın tokenlar hiç yanmaz.';
+
+  @override
+  String get tokenPacksHeader => 'Paketler';
+
+  @override
+  String tokenPackAmount(int count) {
+    return '$count token';
+  }
+
+  @override
+  String get tokenBuy => 'Satın al';
+
+  @override
+  String get tokenPurchaseDone => 'Paket yüklendi. İyi okumalar ✨';
+
+  @override
+  String get tokenPacksUnavailable => 'Paketler şu an listelenemiyor';
+
+  @override
+  String get tokenPacksUnavailableBody =>
+      'Mağaza bağlantısı kurulamadı. Biraz sonra tekrar dene.';
+
+  @override
+  String get tokenCostsNote =>
+      'Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 token. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.';
+
+  @override
+  String tokenBalanceChip(int count) {
+    return '$count token';
+  }
+
+  @override
   String get atlasSections => 'Haritanda ne var';
 
   @override

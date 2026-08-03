@@ -5,9 +5,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
 import '../../core/sound.dart';
+import '../../core/wallet.dart';
 import '../../theme/rytho_theme.dart';
+import '../../theme/rytho_tokens.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../paywall/token_store_screen.dart';
 import '../../l10n/app_localizations.dart';
 
 /// Rytho AI sohbeti — v3: kullanıcı sağda beyaz balon, Rytho solda mor
@@ -99,8 +102,47 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 style: TextStyle(fontSize: 14, color: Colors.white)),
           ),
           const SizedBox(width: 10),
-          const Text('Rytho AI'),
+          Text(AppLocalizations.of(context).chatTitle),
         ]),
+        actions: [
+          // Bakiye çipi — "kalan hakkın" ilk kez bir yüzeye kavuşuyor.
+          // Dokununca token mağazası: bakiyeyi GÖREN kullanıcı, bitmeden
+          // doldurabilmeli. Abone olmayan ve paketi olmayan kullanıcıda
+          // toplam 0 görünür; günlük ücretsiz hak zaten çipin konusu değil.
+          Consumer(builder: (context, ref, _) {
+            final cuzdan = ref.watch(walletProvider).value;
+            if (cuzdan == null || cuzdan.total <= 0) {
+              return const SizedBox.shrink();
+            }
+            return Padding(
+              padding: const EdgeInsets.only(right: RythoSpace.md),
+              child: Pressable(
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const TokenStoreScreen(),
+                  fullscreenDialog: true,
+                )),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: RythoSpace.md, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: RythoColors.inkLighter,
+                    borderRadius: BorderRadius.circular(RythoRadius.pill),
+                    border: Border.all(color: RythoColors.glassStroke),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Text('🪙', style: TextStyle(fontSize: 13)),
+                    const SizedBox(width: RythoSpace.xs),
+                    Text(
+                      AppLocalizations.of(context)
+                          .tokenBalanceChip(cuzdan.total),
+                      style: RythoType.dataSmall,
+                    ),
+                  ]),
+                ),
+              ),
+            );
+          }),
+        ],
       ),
       body: Column(children: [
         Expanded(

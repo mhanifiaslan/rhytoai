@@ -456,6 +456,34 @@
   "edit": "Düzenle",
   "birthRecordRowSubtitle": "Tüm okumaların temeli",
   "languageAndSounds": "Dil ve sesler",
+  "tokenStoreTitle": "Token Mağazası",
+  "tokenBalanceLabel": "BAKİYEN",
+  "tokenUnit": "token",
+  "tokenAllowanceRow": "Aylık hak (dönem sonunda yenilenir)",
+  "tokenPurchasedRow": "Satın alınan (aya devreder)",
+  "tokenRolloverNote": "Aylık hak dönem sonunda yenilenir ve devretmez; satın aldığın tokenlar hiç yanmaz.",
+  "tokenPacksHeader": "Paketler",
+  "tokenPackAmount": "{count} token",
+  "@tokenPackAmount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tokenBuy": "Satın al",
+  "tokenPurchaseDone": "Paket yüklendi. İyi okumalar ✨",
+  "tokenPacksUnavailable": "Paketler şu an listelenemiyor",
+  "tokenPacksUnavailableBody": "Mağaza bağlantısı kurulamadı. Biraz sonra tekrar dene.",
+  "tokenCostsNote": "Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 token. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.",
+  "tokenBalanceChip": "{count} token",
+  "@tokenBalanceChip": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "atlasSections": "Haritanda ne var",
   "atlasTraitsSubtitle": "Element dağılımın",
   "atlasPlanetsSubtitle": "Doğduğun andaki konumlar",

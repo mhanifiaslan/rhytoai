@@ -18,7 +18,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel
 
-from core import config, entitlements
+from core import config, entitlements, wallet
 from core import firestore as firestore_client
 from core.auth import AuthUser, get_current_user
 
@@ -81,6 +81,35 @@ def status(user: AuthUser = Depends(get_current_user)):
         expires_at=expires_at.isoformat() if hasattr(expires_at, "isoformat") else None,
         will_renew=subscription.get("willRenew"),
         is_trial=subscription.get("isTrial"),
+    )
+
+
+class WalletStatus(BaseModel):
+    allowance: int
+    purchased: int
+    total: int
+    monthly_allowance: int
+    allowance_resets_at: str | None = None
+    costs: dict[str, int]
+
+
+@router.get("/wallet", response_model=WalletStatus)
+def wallet_status(user: AuthUser = Depends(get_current_user)):
+    """İstemcinin bakiye göstergesi ve token mağazası için tek gerçek.
+
+    İstemci paket adetlerini de buradan öğrenmez — yalnızca bedel tablosunu
+    görür; paket içerikleri satın alma sonrası webhook'la sunucuda yüklenir.
+    """
+    cuzdan = wallet.get_wallet(user.uid)
+    resets_at = cuzdan.get("allowance_resets_at")
+    return WalletStatus(
+        allowance=cuzdan["allowance"],
+        purchased=cuzdan["purchased"],
+        total=cuzdan["allowance"] + cuzdan["purchased"],
+        monthly_allowance=cuzdan["monthly_allowance"],
+        allowance_resets_at=(resets_at.isoformat()
+                             if hasattr(resets_at, "isoformat") else None),
+        costs=cuzdan["costs"],
     )
 
 
@@ -149,6 +178,10 @@ def _handle_transfer(client, event: dict[str, Any]) -> dict[str, Any]:
     for hedef in hedefler:
         _subscription_ref(client, hedef).set(kayit)
 
+    # Cüzdan da taşınır: satın alınmış bakiye kullanıcının parası, kimlik
+    # değişiminde kaybolamaz.
+    wallet.transfer_wallet(client, kaynaklar, hedefler)
+
     logger.info("Abonelik devredildi: %s -> %s aktif=%s",
                 kaynaklar, hedefler, kayit.get("active"))
     return {"status": "ok", "event": _TRANSFER_EVENT,
@@ -166,6 +199,35 @@ async def revenuecat_webhook(
     event = payload.get("event") or {}
     event_type = str(event.get("type") or "").upper()
     uid = event.get("app_user_id")
+    product_id = str(event.get("product_id") or "")
+
+    # ---- TOKEN PAKETLERİ: abonelik borusundan ÖNCE ayrılır. ----
+    #
+    # Sıralama kritik ve iki doğrulanmış tuzağı kapatıyor:
+    # 1. NON_RENEWING_PURCHASE "bilinen" kümede değildi — paket satışı
+    #    sessizce yutulurdu.
+    # 2. REFUND _DEACTIVATING_EVENTS içinde — paket iadesi aşağıdaki
+    #    abonelik yazımına düşseydi kullanıcının AYRI ödediği ABONELİĞİNİ
+    #    kapatırdı. Ürün kimliği paket listesindeyse abonelik dokümanına
+    #    asla dokunulmaz.
+    if product_id in wallet.TOKEN_PACKS:
+        if not uid:
+            raise HTTPException(status_code=400, detail="app_user_id eksik.")
+        event_id = str(event.get("id") or "")
+        if not event_id:
+            # Kimliksiz olayda idempotency kurulamaz; RevenueCat yeniden
+            # denesin diye 400 DEĞİL 500'e yakın davranmak yanlış — kimlik
+            # yükün kalıcı özelliği, tekrar denemede de gelmez. Logla, geç.
+            logger.warning("Paket olayında event.id yok; atlandı: %s", event_type)
+            return {"status": "ignored", "event": event_type}
+        if event_type == "NON_RENEWING_PURCHASE":
+            wallet.credit_pack(uid, product_id, event_id)
+            return {"status": "ok", "event": event_type, "pack": product_id}
+        if event_type == "REFUND":
+            wallet.debit_refund(uid, product_id, event_id)
+            return {"status": "ok", "event": event_type, "pack": product_id}
+        logger.info("Paket ürününde beklenmeyen olay: %s", event_type)
+        return {"status": "ignored", "event": event_type}
 
     bilinen = (_ACTIVATING_EVENTS | _DEACTIVATING_EVENTS
                | _CANCELLATION_EVENTS | {_TRANSFER_EVENT})
@@ -205,6 +267,11 @@ async def revenuecat_webhook(
     }
 
     _subscription_ref(client, uid).set(record)
+
+    # Yeni/yenilenen donem aylik token hakkini tazeler. Idempotent: ayni
+    # donemin tekrarlanan webhook'u hakki iki kez veremez (isaret esitligi).
+    if event_type in _ACTIVATING_EVENTS:
+        wallet.reset_allowance(uid, expires_at)
 
     logger.info("Abonelik guncellendi: uid=%s olay=%s aktif=%s", uid, event_type, active)
     return {"status": "ok", "event": event_type, "active": active}

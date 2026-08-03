@@ -456,6 +456,34 @@
   "edit": "Edit",
   "birthRecordRowSubtitle": "The basis of every reading",
   "languageAndSounds": "Language and sounds",
+  "tokenStoreTitle": "Token Store",
+  "tokenBalanceLabel": "YOUR BALANCE",
+  "tokenUnit": "tokens",
+  "tokenAllowanceRow": "Monthly allowance (renews each period)",
+  "tokenPurchasedRow": "Purchased (rolls over)",
+  "tokenRolloverNote": "Your monthly allowance renews each period and doesn't roll over; purchased tokens never expire.",
+  "tokenPacksHeader": "Packs",
+  "tokenPackAmount": "{count} tokens",
+  "@tokenPackAmount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tokenBuy": "Buy",
+  "tokenPurchaseDone": "Pack added. Enjoy your readings ✨",
+  "tokenPacksUnavailable": "Packs can't be listed right now",
+  "tokenPacksUnavailableBody": "Couldn't reach the store. Please try again shortly.",
+  "tokenCostsNote": "Chat message 1 · I Ching 2 · daily dyad 3 · deep reports and face reading 5 tokens. Revisiting a report you've already generated is free.",
+  "tokenBalanceChip": "{count} tokens",
+  "@tokenBalanceChip": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "atlasSections": "What's in your chart",
   "atlasTraitsSubtitle": "Your element balance",
   "atlasPlanetsSubtitle": "Positions at your birth",

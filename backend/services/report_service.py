@@ -11,7 +11,7 @@ import datetime as dt
 import hashlib
 import json
 import logging
-from typing import Any
+from typing import Any, Callable
 
 from core import cache, i18n
 from services import (
@@ -40,7 +40,9 @@ def _memory_block(memory: str, lang: str | None = None) -> str:
 def _cached_generate(cache_key: str, prompt: str, fallback: str,
                      ttl_seconds: int = 24 * 3600,
                      lang: str | None = None,
-                     owner_uid: str | None = None) -> dict[str, Any]:
+                     owner_uid: str | None = None,
+                     spend: Callable[[], None] | None = None,
+                     refund: Callable[[], None] | None = None) -> dict[str, Any]:
     """Üretimi önbellekli çalıştırır.
 
     ``owner_uid`` KİŞİYE ÖZEL üretimlerde verilir (günlük okuma, natal, BaZi,
@@ -50,16 +52,28 @@ def _cached_generate(cache_key: str, prompt: str, fallback: str,
 
     Burç yorumu ve gökyüzü PAYLAŞIMLI olduğu için sahipsizdir — tek bir
     kullanıcının hesabını silmesi herkesin yorumunu silmemeli.
+
+    ``spend`` token düşümüdür ve YALNIZCA önbellek kaçırıldığında, LLM
+    çağrısından hemen önce çalışır: aynı rapora ikinci bakış ücretsizdir,
+    çünkü sunucuya da maliyeti yoktur. Ücret ile maliyet aynı çizgide
+    durursa kullanıcıya "neden yine ücret?" sorusu hiç doğmaz. Üretim
+    fallback'e düşerse ``refund`` çağrılır — kullanıcı almadığı şeye ödemez.
+    ``spend`` 402 fırlatabilir; o durumda LLM çağrısı hiç yapılmaz.
     """
     cached = cache.get(cache_key)
     if cached is not None:
         return {"text": cached, "cached": True}
+
+    if spend is not None:
+        spend()
 
     text = gemini_service.generate(prompt, lang=lang)
     if text:
         cache.set(cache_key, text, ttl_seconds=ttl_seconds,
                   owner_uid=owner_uid)
         return {"text": text, "cached": False}
+    if refund is not None:
+        refund()
     return {"text": fallback, "cached": False, "fallback": True}
 
 
@@ -211,7 +225,9 @@ def dyad_cache_key(uid_a: str, uid_b: str, today: dt.date) -> str:
 
 def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
                  synastry: dict[str, Any], sky: dict[str, Any],
-                 lang: str | None = None) -> dict[str, Any]:
+                 lang: str | None = None,
+                 spend: Callable[[], None] | None = None,
+                 refund: Callable[[], None] | None = None) -> dict[str, Any]:
     """İki arkadaş için GÜNLÜK ikili dinamik okuması.
 
     Kalıcı bir uyum skoru üretilmez. Gerekçe iki katlı: skor ölçüm değil
@@ -252,13 +268,15 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
     # Zaten 24 saatlik ömrü var, kalan taraf için de kısa sürede düşer.
     result = _cached_generate(cache_key, prompt, fallback,
                               ttl_seconds=24 * 3600, lang=lang,
-                              owner_uid=uid_a)
+                              owner_uid=uid_a, spend=spend, refund=refund)
     result["generated_for"] = today.isoformat()
     return result
 
 
 def natal_report(user_id: str, natal: dict[str, Any],
-                 lang: str | None = None) -> dict[str, Any]:
+                 lang: str | None = None,
+                 spend: Callable[[], None] | None = None,
+                 refund: Callable[[], None] | None = None) -> dict[str, Any]:
     """Derinlemesine doğum haritası raporu (kullanıcı başına bir kez, 30 gün önbellek)."""
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
@@ -301,11 +319,13 @@ def natal_report(user_id: str, natal: dict[str, Any],
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang,
-                            owner_uid=user_id)
+                            owner_uid=user_id, spend=spend, refund=refund)
 
 
 def firasa_report(user_id: str, ratios: dict[str, Any],
-                  chart: str = "", lang: str | None = None) -> dict[str, Any]:
+                  chart: str = "", lang: str | None = None,
+                  spend: Callable[[], None] | None = None,
+                  refund: Callable[[], None] | None = None) -> dict[str, Any]:
     """Yüz ORANLARINDAN firaset okuması.
 
     Bu fonksiyon eski `face_report`'un yerini aldı. Eskisinin üç sorunu vardı
@@ -344,11 +364,14 @@ def firasa_report(user_id: str, ratios: dict[str, Any],
     prompt = p.FIRASA.format(signs=belirtiler, chart=chart or "—", rag=rag)
     return _cached_generate(cache_key, prompt, p.FIRASA_FALLBACK,
                             ttl_seconds=7 * 24 * 3600,
-                            lang=lang, owner_uid=user_id)
+                            lang=lang, owner_uid=user_id,
+                            spend=spend, refund=refund)
 
 
 def bazi_report(user_id: str, bazi: dict[str, Any],
-                lang: str | None = None) -> dict[str, Any]:
+                lang: str | None = None,
+                spend: Callable[[], None] | None = None,
+                refund: Callable[[], None] | None = None) -> dict[str, Any]:
     """BaZi haritasından kader analizi raporu."""
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
@@ -390,11 +413,13 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang,
-                            owner_uid=user_id)
+                            owner_uid=user_id, spend=spend, refund=refund)
 
 
 def iching_reading(user_id: str, cast: dict[str, Any],
-                   lang: str | None = None) -> dict[str, Any]:
+                   lang: str | None = None,
+                   spend: Callable[[], None] | None = None,
+                   refund: Callable[[], None] | None = None) -> dict[str, Any]:
     """I Ching çekimini kullanıcının sorusuna bağlayan yorum."""
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
@@ -437,11 +462,14 @@ def iching_reading(user_id: str, cast: dict[str, Any],
         f"{primary['judgment']}"
     )
     return _cached_generate(cache_key, prompt, fallback, ttl_seconds=3600,
-                            lang=lang, owner_uid=user_id)
+                            lang=lang, owner_uid=user_id,
+                            spend=spend, refund=refund)
 
 
 def synastry_report(user_id: str, synastry: dict[str, Any],
-                    lang: str | None = None) -> dict[str, Any]:
+                    lang: str | None = None,
+                    spend: Callable[[], None] | None = None,
+                    refund: Callable[[], None] | None = None) -> dict[str, Any]:
     """İki kişi arasındaki kozmik uyum raporu.
 
     Sinastri skoru hesaplanıyor ama prompt'a GİRMİYOR ve rapora yazdırılmıyor:
@@ -480,4 +508,4 @@ def synastry_report(user_id: str, synastry: dict[str, Any],
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=7 * 24 * 3600, lang=lang,
-                            owner_uid=user_id)
+                            owner_uid=user_id, spend=spend, refund=refund)

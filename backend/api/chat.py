@@ -5,7 +5,8 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
 
 from core.auth import AuthUser, get_current_user
-from core.entitlements import FREE_CHAT_PER_DAY, enforce_daily_quota
+from core.entitlements import FREE_CHAT_PER_DAY
+from core.wallet import charge_metered, refund_spend
 from core.i18n import get_language
 from core.messages import text
 from services import (
@@ -91,10 +92,11 @@ def _sky_summary(lang: str, profile: dict | None = None) -> str:
 def chat(request: ChatRequest, background: BackgroundTasks,
          user: AuthUser = Depends(get_current_user),
          lang: str = Depends(get_language)):
-    """Sohbet: ucretsiz katmanda gunde [FREE_CHAT_PER_DAY] mesaj, abonede sinirsiz.
+    """Sohbet: ucretsiz katmanda gunde [FREE_CHAT_PER_DAY] mesaj; abonede
+    aylik token hakkindan, hak bitince satin alinan paketten harcanir.
 
-    Kota LLM cagrisindan ONCE dusulur; aksi halde hata donen istekler de
-    kullaniciya bedava mesaj kazandirirdi.
+    Bedel LLM cagrisindan ONCE dusulur; aksi halde hata donen istekler de
+    kullaniciya bedava mesaj kazandirirdi. LLM yanit uretemezse iade edilir.
     """
     # Yasak alan kapısı kotadan ÖNCE: reddedilen bir soru kullanıcının günlük
     # hakkını yemez.
@@ -104,7 +106,11 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         logger.info("Yasak alan reddedildi: %s", kategori)
         return {"status": "success", "reply": reply, "blocked": kategori}
 
-    enforce_daily_quota(user, "chat", FREE_CHAT_PER_DAY, lang=lang)
+    # Ücretsiz günlük hak + token cüzdanı tek kapıda (Revize R1). Abone
+    # cüzdanından harcar; ücretsiz kullanıcı önce günlük hakkını yer, sonra
+    # varsa satın alınmış paketten. Sohbet ÖNBELLEKSİZ tek uç olduğu için
+    # harcama peşin; LLM yanıt veremezse aşağıda iade edilir.
+    token_harcandi = charge_metered(user, "chat", FREE_CHAT_PER_DAY, lang=lang)
     try:
         history = [{"sender": m.sender, "text": m.text} for m in request.history]
 
@@ -149,6 +155,9 @@ def chat(request: ChatRequest, background: BackgroundTasks,
 
         reply = gemini_service.chat(history, message, lang=lang)
         if reply is None:
+            # Kullanıcı almadığı yanıta ödemez.
+            if token_harcandi:
+                refund_spend(user.uid, "chat")
             reply = text("llm_unavailable", lang)
         # Olgu çıkarımı yanıttan SONRA, arka planda: kullanıcı ikinci bir LLM
         # çağrısını beklemez. Kendi içinde kotalı ve hataya dayanıklı.

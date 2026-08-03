@@ -1056,6 +1056,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageAndSounds => 'Language and sounds';
 
   @override
+  String get tokenStoreTitle => 'Token Store';
+
+  @override
+  String get tokenBalanceLabel => 'YOUR BALANCE';
+
+  @override
+  String get tokenUnit => 'tokens';
+
+  @override
+  String get tokenAllowanceRow => 'Monthly allowance (renews each period)';
+
+  @override
+  String get tokenPurchasedRow => 'Purchased (rolls over)';
+
+  @override
+  String get tokenRolloverNote =>
+      'Your monthly allowance renews each period and doesn\'t roll over; purchased tokens never expire.';
+
+  @override
+  String get tokenPacksHeader => 'Packs';
+
+  @override
+  String tokenPackAmount(int count) {
+    return '$count tokens';
+  }
+
+  @override
+  String get tokenBuy => 'Buy';
+
+  @override
+  String get tokenPurchaseDone => 'Pack added. Enjoy your readings ✨';
+
+  @override
+  String get tokenPacksUnavailable => 'Packs can\'t be listed right now';
+
+  @override
+  String get tokenPacksUnavailableBody =>
+      'Couldn\'t reach the store. Please try again shortly.';
+
+  @override
+  String get tokenCostsNote =>
+      'Chat message 1 · I Ching 2 · daily dyad 3 · deep reports and face reading 5 tokens. Revisiting a report you\'ve already generated is free.';
+
+  @override
+  String tokenBalanceChip(int count) {
+    return '$count tokens';
+  }
+
+  @override
   String get atlasSections => 'What\'s in your chart';
 
   @override

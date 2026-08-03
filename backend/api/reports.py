@@ -10,9 +10,9 @@ from core.i18n import get_language
 from core.messages import text
 from core.entitlements import (
     FREE_ICHING_PER_DAY,
-    enforce_daily_quota,
     require_plus,
 )
+from core import wallet
 from services import astro_service, profile_service, prompts, report_service
 from services.bazi_service import get_bazi_chart
 from services.iching_service import cast_iching
@@ -133,6 +133,9 @@ def daily(data: BirthData,
             "moon_phase": sky["moon_phase"],
             "retrogrades": sky["retrogrades"],
         }}
+    except HTTPException:
+        # Cuzdan 402'si dahil kasitli HTTP hatalari 500'e sarilmasin.
+        raise
     except Exception as e:
         raise _internal(e, "daily", lang)
 
@@ -143,11 +146,19 @@ def natal(data: BirthData,
           lang: str = Depends(get_language)):
     try:
         chart = astro_service.get_natal_chart(**_natal_kwargs(data))
-        report = report_service.natal_report(user.uid, chart, lang=lang)
+        # Token düşümü önbellek kaçırıldığında, LLM çağrısından hemen önce
+        # (bkz. _cached_generate): aynı rapora ikinci bakış ücretsiz.
+        report = report_service.natal_report(
+            user.uid, chart, lang=lang,
+            spend=wallet.spender(user.uid, "natal", lang=lang),
+            refund=lambda: wallet.refund_spend(user.uid, "natal"))
         return {"status": "success", "data": {
             "chart": prompts.localize_chart(lang, chart),
             "report": report["text"],
         }}
+    except HTTPException:
+        # Cuzdan 402'si dahil kasitli HTTP hatalari 500'e sarilmasin.
+        raise
     except Exception as e:
         raise _internal(e, "natal", lang)
 
@@ -162,12 +173,18 @@ def bazi(data: BirthData,
             minute=data.minute, city=data.city, nation=data.nation,
             gender=data.gender, name=data.name,
         )
-        report = report_service.bazi_report(user.uid, chart, lang=lang)
+        report = report_service.bazi_report(
+            user.uid, chart, lang=lang,
+            spend=wallet.spender(user.uid, "bazi", lang=lang),
+            refund=lambda: wallet.refund_spend(user.uid, "bazi"))
         # Ekranda gosterilen element/hayvan/On Tanri adlari da dile gore.
         return {"status": "success", "data": {
             "chart": prompts.localize_bazi(lang, chart),
             "report": report["text"],
         }}
+    except HTTPException:
+        # Cuzdan 402'si dahil kasitli HTTP hatalari 500'e sarilmasin.
+        raise
     except Exception as e:
         raise _internal(e, "bazi", lang)
 
@@ -181,14 +198,23 @@ def iching(req: IChingReportRequest,
     Sinirsiz olsaydi ucretsiz kullanici basina acik uclu LLM maliyeti olusurdu;
     gunde bir cekilis hem ritueli korur hem maliyeti ongorulur tutar.
     """
-    enforce_daily_quota(user, "iching", FREE_ICHING_PER_DAY, lang=lang)
+    # Günlük ücretsiz hak + cüzdan tek kapıda. Peşin harcama YOK: dönen
+    # geri çağrılar önbellek kaçırıldığında çalışır — abone, saatlik
+    # önbellekteki aynı çekilişe ikinci bakışında ödemez.
+    spend_cb, refund_cb = wallet.metered_callbacks(
+        user, "iching", FREE_ICHING_PER_DAY, lang=lang)
     try:
         cast = cast_iching(req.question, method=req.method)
-        report = report_service.iching_reading(user.uid, cast, lang=lang)
+        report = report_service.iching_reading(user.uid, cast, lang=lang,
+                                               spend=spend_cb,
+                                               refund=refund_cb)
         return {"status": "success", "data": {
             "cast": prompts.localize_iching(lang, cast),
             "report": report["text"],
         }}
+    except HTTPException:
+        # Cuzdan 402'si dahil kasitli HTTP hatalari 500'e sarilmasin.
+        raise
     except Exception as e:
         raise _internal(e, "iching", lang)
 
@@ -220,10 +246,14 @@ def dyad(req: DyadRequest,
         profile_service.birth_kwargs(me), profile_service.birth_kwargs(friend)
     )
     sky = prompts.localize_sky(lang, get_sky_now())
+    # Bedeli İSTEYEN taraf öder; arkadaş aynı gün içinde aynı okumayı
+    # önbellekten ücretsiz görür (anahtar çift bazlı).
     report = report_service.dyad_reading(
         user.uid, req.friend_uid,
         me.get("displayName") or "Gezgin", friend.get("displayName") or "Gezgin",
         synastry, sky, lang=lang,
+        spend=wallet.spender(user.uid, "dyad", lang=lang),
+        refund=lambda: wallet.refund_spend(user.uid, "dyad"),
     )
 
     return {"status": "success", "data": {
@@ -247,7 +277,13 @@ def synastry(req: SynastryReportRequest,
         result = astro_service.get_synastry(
             _natal_kwargs(req.person1), _natal_kwargs(req.person2)
         )
-        report = report_service.synastry_report(user.uid, result, lang=lang)
+        report = report_service.synastry_report(
+            user.uid, result, lang=lang,
+            spend=wallet.spender(user.uid, "synastry", lang=lang),
+            refund=lambda: wallet.refund_spend(user.uid, "synastry"))
         return {"status": "success", "data": {"synastry": result, "report": report["text"]}}
+    except HTTPException:
+        # Cuzdan 402'si dahil kasitli HTTP hatalari 500'e sarilmasin.
+        raise
     except Exception as e:
         raise _internal(e, "synastry", lang)

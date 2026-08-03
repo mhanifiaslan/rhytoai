@@ -2012,6 +2012,90 @@ abstract class AppLocalizations {
   /// **'Dil ve sesler'**
   String get languageAndSounds;
 
+  /// No description provided for @tokenStoreTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Token Mağazası'**
+  String get tokenStoreTitle;
+
+  /// No description provided for @tokenBalanceLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'BAKİYEN'**
+  String get tokenBalanceLabel;
+
+  /// No description provided for @tokenUnit.
+  ///
+  /// In tr, this message translates to:
+  /// **'token'**
+  String get tokenUnit;
+
+  /// No description provided for @tokenAllowanceRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık hak (dönem sonunda yenilenir)'**
+  String get tokenAllowanceRow;
+
+  /// No description provided for @tokenPurchasedRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satın alınan (aya devreder)'**
+  String get tokenPurchasedRow;
+
+  /// No description provided for @tokenRolloverNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık hak dönem sonunda yenilenir ve devretmez; satın aldığın tokenlar hiç yanmaz.'**
+  String get tokenRolloverNote;
+
+  /// No description provided for @tokenPacksHeader.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paketler'**
+  String get tokenPacksHeader;
+
+  /// No description provided for @tokenPackAmount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} token'**
+  String tokenPackAmount(int count);
+
+  /// No description provided for @tokenBuy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satın al'**
+  String get tokenBuy;
+
+  /// No description provided for @tokenPurchaseDone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paket yüklendi. İyi okumalar ✨'**
+  String get tokenPurchaseDone;
+
+  /// No description provided for @tokenPacksUnavailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paketler şu an listelenemiyor'**
+  String get tokenPacksUnavailable;
+
+  /// No description provided for @tokenPacksUnavailableBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mağaza bağlantısı kurulamadı. Biraz sonra tekrar dene.'**
+  String get tokenPacksUnavailableBody;
+
+  /// No description provided for @tokenCostsNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 token. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.'**
+  String get tokenCostsNote;
+
+  /// No description provided for @tokenBalanceChip.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} token'**
+  String tokenBalanceChip(int count);
+
   /// No description provided for @atlasSections.
   ///
   /// In tr, this message translates to:

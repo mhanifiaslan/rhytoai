@@ -1,0 +1,141 @@
+"""Webhook'un token paketi dallanması (Revize R1).
+
+En kritik değişmez: **paket iadesi aboneliğe dokunamaz.** REFUND,
+`_DEACTIVATING_EVENTS` kümesinde; ürün ayrımı olmasaydı 1,99$'lık paket
+iadesi kullanıcının AYRI ödediği aboneliğini kapatırdı. Bu dosyadaki
+testler o ayrımı ve NON_RENEWING_PURCHASE yolunu tutuyor.
+"""
+from __future__ import annotations
+
+import pytest
+from fastapi.testclient import TestClient
+
+from core import config, wallet
+
+try:
+    from main import app
+    _APP_IMPORT_ERROR = None
+except Exception as exc:  # pragma: no cover - ortama bagli
+    app = None
+    _APP_IMPORT_ERROR = str(exc)
+
+uygulama_gerekir = pytest.mark.skipif(
+    _APP_IMPORT_ERROR is not None,
+    reason=f"FastAPI uygulamasi ice aktarilamadi: {_APP_IMPORT_ERROR}",
+)
+
+
+@pytest.fixture()
+def sahte(monkeypatch):
+    """Webhook sırrı + cüzdan çağrılarının kaydı + abonelik yazım kaydı."""
+    monkeypatch.setattr(config, "REVENUECAT_WEBHOOK_SECRET", "anahtar")
+
+    kayit = {"credit": [], "refund": [], "subscription_set": []}
+
+    monkeypatch.setattr(
+        "api.billing.wallet.credit_pack",
+        lambda uid, pid, eid: kayit["credit"].append((uid, pid, eid)) or True)
+    monkeypatch.setattr(
+        "api.billing.wallet.debit_refund",
+        lambda uid, pid, eid: kayit["refund"].append((uid, pid, eid)) or True)
+    monkeypatch.setattr(
+        "api.billing.wallet.reset_allowance", lambda uid, exp: None)
+    monkeypatch.setattr(
+        "api.billing.wallet.transfer_wallet", lambda c, s, t: None)
+
+    class SahteKoleksiyon:
+        def document(self, _):
+            return self
+
+        def collection(self, _):
+            return self
+
+        def set(self, data, merge=False):
+            kayit["subscription_set"].append(data)
+
+    class SahteClient:
+        def collection(self, _):
+            return SahteKoleksiyon()
+
+    monkeypatch.setattr("api.billing.firestore_client.get_client",
+                        lambda: SahteClient())
+    return kayit
+
+
+def _gonder(client, event):
+    return client.post("/api/v1/billing/revenuecat", json={"event": event},
+                       headers={"Authorization": "anahtar"})
+
+
+@uygulama_gerekir
+def test_paket_satisi_cuzdana_yuklenir(sahte):
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "NON_RENEWING_PURCHASE", "app_user_id": "u",
+            "product_id": "rytho_tokens_small", "id": "evt-1"})
+
+    assert yanit.status_code == 200
+    assert sahte["credit"] == [("u", "rytho_tokens_small", "evt-1")]
+    # Paket olayı abonelik dokümanına YAZMAZ.
+    assert sahte["subscription_set"] == []
+
+
+@uygulama_gerekir
+def test_paket_iadesi_aboneligi_kapatamaz(sahte):
+    """REFUND _DEACTIVATING_EVENTS içinde; ürün ayrımı olmasaydı bu istek
+    `active: False` yazardı."""
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "REFUND", "app_user_id": "u",
+            "product_id": "rytho_tokens_large", "id": "evt-2"})
+
+    assert yanit.status_code == 200
+    assert sahte["refund"] == [("u", "rytho_tokens_large", "evt-2")]
+    assert sahte["subscription_set"] == []  # abonelik dokunulmadı
+
+
+@uygulama_gerekir
+def test_abonelik_iadesi_hala_kapatir(sahte):
+    """Ayrım yalnızca paket ürünlerine: abonelik iadesi eski davranışını
+    korur — erişim kesilir."""
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "REFUND", "app_user_id": "u",
+            "product_id": "rytho_plus_monthly", "id": "evt-3"})
+
+    assert yanit.status_code == 200
+    assert sahte["refund"] == []
+    assert len(sahte["subscription_set"]) == 1
+    assert sahte["subscription_set"][0]["active"] is False
+
+
+@uygulama_gerekir
+def test_kimliksiz_paket_olayi_atlanir(sahte):
+    """event.id yoksa idempotency kurulamaz; kredi yazılmaz, 200 dönülür
+    (kimlik yükün kalıcı özelliği — yeniden denemede de gelmez)."""
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "NON_RENEWING_PURCHASE", "app_user_id": "u",
+            "product_id": "rytho_tokens_small"})
+
+    assert yanit.status_code == 200
+    assert sahte["credit"] == []
+
+
+@uygulama_gerekir
+def test_pakette_bilinmeyen_olay_yutulur(sahte):
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "TEST_EVENT", "app_user_id": "u",
+            "product_id": "rytho_tokens_small", "id": "evt-4"})
+
+    assert yanit.status_code == 200
+    assert sahte["credit"] == []
+    assert sahte["refund"] == []
+
+
+def test_paket_listesi_sunucu_gercegi():
+    """İstemciden gelen hiçbir sayıya güvenilmez; adetler burada."""
+    assert set(wallet.TOKEN_PACKS) == {
+        "rytho_tokens_small", "rytho_tokens_medium", "rytho_tokens_large"}
+    assert all(v > 0 for v in wallet.TOKEN_PACKS.values())
