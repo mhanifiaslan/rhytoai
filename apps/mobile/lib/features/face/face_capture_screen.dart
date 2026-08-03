@@ -31,6 +31,7 @@ import 'face_hairline.dart';
 import 'face_motion.dart';
 import 'face_segmentation.dart';
 import 'face_scan_overlay.dart';
+import 'hairline_stabilizer.dart';
 
 /// Çekim sonucu: durağan oranlar + hareket ölçümü.
 ///
@@ -122,11 +123,46 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
   /// Kadraj hazırken yakalanan son ham kare — çekim anında segmentasyon için.
   CameraImage? _sonKare;
 
-  /// Çekim anında üretilen sınıf maskesi — saç çizgisi buradan çıkıyor.
+  /// Son üretilen sınıf maskesi — saç çizgisi buradan çıkıyor.
   SegmentationMask? _sonMaske;
+
+  /// Önizleme ölçümünün son anı.
+  DateTime? _sonSegAni;
+
+  /// Önizlemede iki ölçüm arası en az bu kadar beklenir.
+  ///
+  /// Kamera saniyede onlarca kare üretiyor; her karede ölçmek işçiyi sürekli
+  /// meşgul tutar, pili ısıtır ve hiçbir şey kazandırmaz — saç çizgisi kare
+  /// kare değişen bir şey değil. Yarım saniyeden kısa aralık kullanıcının
+  /// kadrajı düzeltmesini takip etmeye zaten yeter.
+  static const Duration _segAraligi = Duration(milliseconds: 700);
+
+  bool _segSirasiGeldi() {
+    final son = _sonSegAni;
+    if (son != null &&
+        DateTime.now().difference(son) < _segAraligi) {
+      return false;
+    }
+    _sonSegAni = DateTime.now();
+    return true;
+  }
 
   /// Saç çizgisi ölçümünün sonucu (hata ayıklama).
   String? _sacTuru;
+
+  /// Saç çizgisini tek kareye bırakmayan kararlılık katmanı.
+  final HairlineStabilizer _kararlilik = HairlineStabilizer();
+
+  /// Son geçerli tek kare ölçümünün türü ve güveni.
+  ///
+  /// Medyan yalnızca KONUMU kararlı hâle getiriyor; "saç sınırı mı, kafatası
+  /// tepesi mi" bilgisi ölçümün kendisinden geliyor ve okuma bunu söylemek
+  /// zorunda (kel bir kafada klasik San Ting olduğu gibi geçerli değil).
+  HairlineKind? _sonSacTuru;
+  double? _sonSacGuveni;
+
+  /// Son tek kare ölçümünün başarısızlık sebebi (hata ayıklama).
+  String? _sonSacHatasi;
 
   /// Alın örtülü uyarısı gösteriliyor mu.
   ///
@@ -257,15 +293,29 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
       // uygulanacak. `kalite` yukarıda hesaplandığı için atama BURADA.
       if (kalite == FrameQuality.ready) _sonKare = kare;
 
-      // Segmentasyon BURADA ÇALIŞMIYOR — bilinçli.
+      // Segmentasyon önizlemede de koşuyor — ama SEYREK.
       //
-      // Önce önizlemede her karede ölçülüyordu ve ölçülen süre 594 ms'ydi;
-      // arayüz o süre boyunca donuyordu. Oysa saç çizgisine yalnızca ÇEKİM
-      // anında ihtiyaç var ve orada zaten 3,3 saniyelik tarama animasyonu
-      // dönüyor — çıkarım onun içinde görünmüyor.
+      // Bir dönem yalnızca çekim anında koşuyordu ve gerekçesi geçerliydi:
+      // ölçüm ana isolate'ta 594 ms sürüyor, arayüz o süre boyunca donuyordu.
+      // O gerekçe artık yok — çıkarım işçi isolate'ta ve ana iş parçacığı
+      // hiç bloklanmıyor (bkz. face_segmentation.dart).
       //
-      // Ölçümü akışa yaymak, ihtiyaç olmayan bir işi saniyede onlarca kez
-      // yapmaktı.
+      // Geri getirilmesinin sebebi kozmetik değil: alın ölçülemiyorsa
+      // kullanıcı bunu ÇEKTİKTEN SONRA değil, ÖNCE bilmeli. Aksi hâlde poz
+      // verip deklanşöre basıyor ve okumanın yarısının eksik olduğunu en
+      // sonda öğreniyor.
+      //
+      // Ayrıca ölçülen oranların cihazda görünmesinin tek yolu bu: çekim
+      // anındaki ölçüm yalnızca log'a yazılıyordu ve ekran hemen sonuç
+      // sayfasına geçtiği için hiç görünmüyordu.
+      if (yuz != null &&
+          kalite != FrameQuality.noFace &&
+          _segmenter.ready &&
+          _segSirasiGeldi()) {
+        // `await` YOK: kare geri çağrısını bekletmek akışı geriletir.
+        // `FaceSegmenter` zaten üst üste binen istekleri kendisi eliyor.
+        unawaited(_segmentle());
+      }
 
       // Hareket ölçümü: yalnızca yüz çerçevedeyken anlamlı. Yüz yokken
       // ölçmek, tespit gürültüsünü ifade sanmak olurdu.
@@ -294,10 +344,16 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
             ? null
             : () {
                 final r = computeRatios(lm);
-                if (!r.foreheadMeasured) return 'saç çizgisi ÖLÇÜLEMEDİ';
+                // Başarısızlıkta SEBEP de yazılıyor. "ÖLÇÜLEMEDİ" tek başına
+                // teşhis değil: tek kare ölçümü mü düştü, örnek mi yetmedi,
+                // yoksa dağılım mı geniş? Üçü ayrı sorun.
+                if (!r.foreheadMeasured) {
+                  return 'ÖLÇÜLEMEDİ — ${_sonSacHatasi ?? _kararlilik.debugLabel}';
+                }
                 return 'üst ${r.upperThird.toStringAsFixed(2)}  '
                     'orta ${r.middleThird.toStringAsFixed(2)}  '
-                    'alt ${r.lowerThird.toStringAsFixed(2)}';
+                    'alt ${r.lowerThird.toStringAsFixed(2)}'
+                    '  · ${_kararlilik.debugLabel}';
               }();
         final hedef = guideOvalInImage(
           previewSize: rotatedImageSize(
@@ -356,6 +412,12 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     final gecen = DateTime.now().difference(bas).inMilliseconds;
     _sonMaske = maske;
 
+    // Kararlılık örneği BURADA toplanıyor — maske üretildiği anda, 700 ms'de
+    // bir, her iki derlemede de. Okuma yolunda toplamak iki kusur üretmişti:
+    // sürüm derlemesinde örnek hiç birikmiyordu ve teşhis okuması durumu
+    // değiştiriyordu.
+    _ornekAl(maske);
+
     assert(() {
       if (maske == null) {
         debugPrint('RYTHO-SEG basarisiz ${gecen}ms — ${_segmenter.lastError}');
@@ -374,9 +436,46 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
       }
       _segOlcum = maske == null
           ? 'seg başarısız: ${_segmenter.lastError}'
-          : 'seg ${gecen}ms';
+          : 'seg ${gecen}ms · ${_segmenter.lastTimings}';
       return true;
     }());
+  }
+
+  /// Yeni maskeden tek kare saç çizgisi ölçüp kararlılık penceresine ekler.
+  ///
+  /// Başarısızlığın SEBEBİ saklanıyor. "ÖLÇÜLEMEDİ" tek başına hiçbir şey
+  /// söylemiyor: tek kare ölçümü mü düştü, yoksa ölçüm var da dağılım mı
+  /// geniş — ikisi çok farklı sorunlar ve ikisi de sessiz.
+  void _ornekAl(SegmentationMask? maske) {
+    final yuz = _sonYuz;
+    if (maske == null || yuz == null) return;
+    final temel = landmarksFromFace(yuz);
+    if (temel == null) {
+      _sonSacHatasi = 'landmark yok';
+      return;
+    }
+
+    final tekKare = hairlineFromMask(
+      mask: maske,
+      imageSize: _sonBoyut,
+      browY: temel.browMid.dy,
+      chinY: temel.chin.dy,
+      axisX: temel.noseBase.dx,
+      faceWidth: (temel.cheekRight.dx - temel.cheekLeft.dx).abs(),
+    );
+    if (tekKare == null) {
+      _sonSacHatasi = 'tek kare ölçümü düştü (güven düşük ya da alın örtülü)';
+      return;
+    }
+
+    _sonSacTuru = tekKare.kind;
+    _sonSacGuveni = tekKare.confidence;
+    final eklendi = _kararlilik.add(
+      hairlineY: tekKare.y,
+      browY: temel.browMid.dy,
+      chinY: temel.chin.dy,
+    );
+    _sonSacHatasi = eklendi ? null : 'geçersiz geometri';
   }
 
   /// Landmark'lara **ölçülen** saç çizgisini iliştirir.
@@ -393,22 +492,35 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     final maske = _sonMaske;
     if (maske == null) return temel;
 
-    final sac = hairlineFromMask(
-      mask: maske,
-      imageSize: _sonBoyut,
+    // TEK KAREYE GÜVENİLMİYOR — ama örnek toplama BURADA DEĞİL.
+    //
+    // Bir sürüm boyunca örnekler tam burada toplanıyordu ve iki ayrı kusur
+    // üretti. Birincisi: burası hata ayıklama okumasının yolu, kare başına
+    // çağrılıyor; sürüm derlemesinde ise yalnızca deklanşörde bir kez
+    // çağrılıyor, yani üç örnek asla birikmiyor ve alın HİÇ ölçülmüyordu.
+    // İkincisi: teşhis okuması durumu değiştiriyordu — ölçmek ölçüleni
+    // etkilemez olmalı.
+    //
+    // Örnekler artık `_segmentle()` içinde, maske üretildiği anda toplanıyor
+    // (700 ms'de bir, her iki derlemede de). Burası yalnızca OKUYOR.
+    final y = _kararlilik.hairlineFor(
       browY: temel.browMid.dy,
       chinY: temel.chin.dy,
-      axisX: temel.noseBase.dx,
-      faceWidth: (temel.cheekRight.dx - temel.cheekLeft.dx).abs(),
     );
+    final sac = y == null
+        ? null
+        : Hairline(
+            y: y,
+            kind: _sonSacTuru ?? HairlineKind.hairline,
+            confidence: _sonSacGuveni ?? 0,
+          );
     // Log SONUCUN HESAPLANDIGI yerde. Önce `_segmentle()` içinde yazılıyordu
     // ve orası bu işlevden ÖNCE koştuğu için ilk çekimde hep boş çıkıyordu:
     // ölçüm yapılıyor ama görünmüyordu.
     assert(() {
       _sacTuru = sac == null
-          ? 'saç çizgisi: ÖLÇÜLEMEDİ (alın örtülü ya da güven düşük)'
-          : 'saç çizgisi: ${sac.kind.name} '
-              '(güven ${sac.confidence.toStringAsFixed(2)}, y=${sac.y.round()})';
+          ? 'saç çizgisi: ÖLÇÜLEMEDİ — ${_kararlilik.debugLabel}'
+          : 'saç çizgisi: ${sac.kind.name} · ${_kararlilik.debugLabel}';
       debugPrint('RYTHO-SEG $_sacTuru');
       final r = computeRatios(FaceLandmarks(
         faceOval: temel.faceOval,

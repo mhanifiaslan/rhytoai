@@ -158,8 +158,23 @@ Hairline? hairlineFromMask({
   // ölçüsü.
   final bant = math.max(3, (altYukseklik * 0.12 * olcekY).round());
 
-  // Alından yukarı yürü, tenin bittiği ilk satırı bul.
+  // Alından yukarı yürü, tenin bittiği satırları DEĞERLENDİR — ilkinde pes
+  // etme.
+  //
+  // Önceki sürüm tenin bittiği İLK satırda güvene bakıyor ve düşükse hemen
+  // `return null` diyordu. Cihazdaki sonucu şuydu: alın kırışığı ya da gölge
+  // tek bir gürültülü satır üretiyor, güven 0,72'nin altında kalıyor ve
+  // fonksiyon gerçek saç çizgisi yirmi piksel yukarıda TEMİZ dururken
+  // "ölçülemedi" dönüyordu. Kare kare değiştiği için de aynı yüz bazen 0,31
+  // veriyor bazen hiç ölçülemiyordu — kararsızlığın kaynağının bir parçası
+  // buydu.
+  //
+  // Artık aday satırlar arasında güveni EN YÜKSEK olan seçiliyor. Eşik hâlâ
+  // geçerli: hiçbir aday 0,72'yi geçemiyorsa ölçüm yine yapılmıyor — bulanık
+  // maskeyle ölçmüş gibi yapmıyoruz, sadece tek gürültülü satıra takılıp
+  // temiz sınırı kaçırmıyoruz.
   final ustSinir = math.max(0, (mBrow - altYukseklik * 1.6 * olcekY).round());
+  Hairline? enIyi;
   for (var my = kasUstu; my >= ustSinir; my--) {
     final (ten, _, _) = satir(my);
     if (ten >= kSkinMajority) continue;
@@ -174,20 +189,25 @@ Hairline? hairlineFromMask({
       arkaTop += a;
       adet++;
     }
-    if (adet == 0) return null;
+    if (adet == 0) continue;
 
     final sacOrt = sacTop / adet;
     final arkaOrt = arkaTop / adet;
     final baskin = sacOrt >= arkaOrt;
     final guven = (baskin ? sacOrt : arkaOrt).clamp(0.0, 1.0);
 
-    if (guven < kMinConfidence) return null;
-    return Hairline(
-      y: my / olcekY,
-      kind: baskin ? HairlineKind.hairline : HairlineKind.crown,
-      confidence: guven,
-    );
+    if (guven >= kMinConfidence &&
+        (enIyi == null || guven > enIyi.confidence)) {
+      enIyi = Hairline(
+        y: my / olcekY,
+        kind: baskin ? HairlineKind.hairline : HairlineKind.crown,
+        confidence: guven,
+      );
+      // Neredeyse kusursuz bir sınır bulunduysa yukarısını taramak yalnızca
+      // maliyet: daha yukarıdaki satırlar aynı saç kütlesinin içi.
+      if (guven >= 0.95) break;
+    }
   }
 
-  return null;
+  return enIyi;
 }

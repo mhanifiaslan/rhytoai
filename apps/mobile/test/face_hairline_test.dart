@@ -79,6 +79,67 @@ void main() {
       expect(s.y, closeTo(110, 6));
     });
 
+    test('alindaki GURULTULU satir olcumu oldurmez', () {
+      // Cihazda yakalanan kusur. Alindan yukari yurunurken tenin bittigi ILK
+      // satirda guvene bakiliyor ve dusukse fonksiyon HEMEN pes ediyordu.
+      // Alin kirisigi ya da golge tek bir gurultulu satir uretiyor, guven
+      // 0,72'nin altinda kaliyor ve gercek sac cizgisi yirmi piksel yukarida
+      // TEMIZ dururken "olculemedi" donuyordu.
+      //
+      // Cihazdaki gorunumu: ayni yuz bazen 0,31 veriyor, bazen hic
+      // olculemiyordu. Ekranda hata yok, sadece ozelligin yarisi yok.
+      final m = _maske(sacUst: 60, sacAlt: 110, tenUst: 110, tenAlt: 240);
+
+      // y=125 satirini "ne ten ne sac" yap: alin kirisigi/golge taklidi.
+      // Ustundeki bant hala tendir, yani guveni dusuktur.
+      const merkez = 256 ~/ 2;
+      for (var x = merkez - 40; x <= merkez + 40; x++) {
+        m.classes[125 * 256 + x] = SegClass.other;
+      }
+
+      final s = hairlineFromMask(
+        mask: m,
+        imageSize: goruntu,
+        browY: browY,
+        chinY: chinY,
+        axisX: axisX,
+        faceWidth: faceWidth,
+      );
+
+      expect(s, isNotNull,
+          reason: 'tek gurultulu satir gercek sac cizgisini gizliyor');
+      expect(s!.y, closeTo(110, 8),
+          reason: 'sinir gurultulu satira degil gercek sac cizgisine oturmali');
+    });
+
+    test('hicbir aday esigi gecemezse yine null', () {
+      // Duzeltme esigi GEVSETMIYOR: bulanik maskeyle olcmus gibi yapmak,
+      // bazi ten tonlarina sistematik olarak yanlis alin orani vermek olurdu
+      // (model kartinda en kotu durum IoU 71,86 / ortalama 81,10).
+      final b = Uint8List(256 * 256);
+      const merkez = 256 ~/ 2;
+      for (var y = 0; y < 256; y++) {
+        for (var x = merkez - 40; x <= merkez + 40; x++) {
+          // Ten bolgesi altta; ustunde saç ile arka plan YARI YARIYA —
+          // hicbir bant cogunluk tutturamaz.
+          if (y >= 110) {
+            b[y * 256 + x] = SegClass.faceSkin;
+          } else {
+            b[y * 256 + x] = x.isEven ? SegClass.hair : SegClass.background;
+          }
+        }
+      }
+      final s = hairlineFromMask(
+        mask: SegmentationMask(classes: b, width: 256, height: 256),
+        imageSize: goruntu,
+        browY: browY,
+        chinY: chinY,
+        axisX: axisX,
+        faceWidth: faceWidth,
+      );
+      expect(s, isNull, reason: 'bulanik sinir kullanilmamali');
+    });
+
     test('olculen sinir KLASIK orana yaklastirir', () {
       // Kusurun kendisi: kontur tepesi kullanilinca ust bolge 0,17 cikiyordu.
       final m = _maske(sacUst: 60, sacAlt: 110, tenUst: 110, tenAlt: 240);
