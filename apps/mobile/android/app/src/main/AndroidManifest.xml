@@ -7,6 +7,9 @@
          `required="false"` olmadan Play, kamerasiz cihazlara uygulamayi hic
          gostermezdi. -->
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Rehber eslesmesi (varsayilan KAPALI ayar): numaralar cihazda
+         hash'lenir, sunucuya yalnizca SHA-256 listesi gider. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
     <application

@@ -102,7 +102,15 @@ const LegalSections kPrivacyPolicyTr = [
     'Kullanıcı adın, karşılıklı onaylı arkadaşlıkların ve gönderdiğin hazır '
         'tepkiler saklanır. Uygulamada kullanıcılar birbirine serbest metin '
         'gönderemez; yalnızca önceden tanımlı bir tepki kümesinden seçim '
-        'yapılabilir. Rehberine erişilmez.'
+        'yapılabilir.\n\n'
+        'Rehberine varsayılan olarak ERİŞİLMEZ. "Rehberimden arkadaş öner" '
+        'ayarını açarsan rehberindeki telefon numaraları CİHAZINDA geri '
+        'döndürülemez özetlere (SHA-256) çevrilir ve yalnızca bu özetler '
+        'eşleştirme için sunucuya gönderilir; ad, soyad veya başka hiçbir '
+        'rehber alanı okunmaz ve gönderilmez. Özet listesi eşleştirme '
+        'yapıldıktan sonra atılır, sunucuda saklanmaz. Eşleşme '
+        'KARŞILIKLIDIR: yalnızca ikiniz de bu ayarı açtıysanız birbirinizi '
+        'görürsünüz. Ayarı kapattığın an görünmez olursun.'
   ),
   (
     'Bildirimler',
@@ -285,8 +293,15 @@ const LegalSections kPrivacyPolicyEn = [
     'The friends layer',
     'We store your username, your mutually accepted friendships and the '
         'preset reactions you send. Users cannot send each other free text in '
-        'this app; interaction is limited to a fixed set of reactions. We do '
-        'not access your contacts.'
+        'this app; interaction is limited to a fixed set of reactions.\n\n'
+        'By default we do NOT access your contacts. If you enable "Suggest '
+        'friends from my contacts", the phone numbers in your address book '
+        'are converted to irreversible digests (SHA-256) ON YOUR DEVICE and '
+        'only those digests are sent for matching; names and every other '
+        'contact field are never read or transmitted. The digest list is '
+        'discarded after matching and never stored on our servers. Matching '
+        'is MUTUAL: you only see each other if you have both enabled the '
+        'setting. Turning it off makes you invisible immediately.'
   ),
   (
     'Face reading',

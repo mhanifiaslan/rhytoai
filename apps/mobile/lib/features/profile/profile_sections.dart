@@ -18,7 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart' show apiProvider, friendlyError;
-import '../../core/friends.dart' show setStreakVisible;
+import '../../core/friends.dart' show setContactMatch, setStreakVisible;
 import '../../core/locale.dart';
 import '../../core/providers.dart';
 import '../../core/sound.dart';
@@ -94,6 +94,20 @@ class PrivacySettingsScreen extends ConsumerWidget {
                 activeThumbColor: RythoColors.magenta,
                 activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
                 onChanged: (v) => setStreakVisible(v),
+              ),
+            ),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            // Rehber eşleşmesi (Revize R3) — varsayılan KAPALI.
+            // Numaralar cihazda hash'lenir; karşılıklılık sunucuda aranır.
+            SettingsRow(
+              icon: Icons.contacts_outlined,
+              title: l10n.contactMatchSetting,
+              subtitle: l10n.contactMatchSettingBody,
+              trailing: Switch(
+                value: profile['contactMatch'] == true,
+                activeThumbColor: RythoColors.magenta,
+                activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
+                onChanged: (v) => setContactMatch(v),
               ),
             ),
             const Divider(height: 1, indent: RythoSpace.lg),

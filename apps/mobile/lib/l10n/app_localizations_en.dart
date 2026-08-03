@@ -126,7 +126,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get usernameBody =>
-      'Pick a username. We don\'t touch your contacts — friends are added by username or invite link only.';
+      'Pick a username. Friends are added by username or invite link; you can also enable contact matching under Privacy if you like.';
 
   @override
   String get usernameHint => 'username';
@@ -1054,6 +1054,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageAndSounds => 'Language and sounds';
+
+  @override
+  String get contactMatchSetting => 'Suggest friends from my contacts';
+
+  @override
+  String get contactMatchSettingBody =>
+      'Numbers are digested on your phone; your contacts are never uploaded. You only see each other if you\'ve both enabled this.';
+
+  @override
+  String get contactSuggestionsLabel => 'FROM YOUR CONTACTS';
 
   @override
   String get phoneSectionLabel => 'PHONE';

@@ -200,6 +200,17 @@ Future<void> setStreakVisible(bool visible) async {
   await syncPublicProfile();
 }
 
+/// Rehber eşleşmesini açar/kapatır (varsayılan: KAPALI).
+///
+/// Bu alan karşılıklılığın yarısı: sunucu eşleşme dönerken iki tarafın da
+/// açık olmasını arar — kapatmak seni ANINDA görünmez yapar.
+Future<void> setContactMatch(bool enabled) async {
+  final uid = _myUid;
+  if (uid == null) return;
+  await _db.collection('users').doc(uid).set(
+      {'contactMatch': enabled}, SetOptions(merge: true));
+}
+
 // ---------------------------------------------------------------------------
 // Arkadaşlık akışı
 // ---------------------------------------------------------------------------

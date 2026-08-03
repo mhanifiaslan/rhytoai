@@ -86,7 +86,10 @@ void main() {
           reason: 'riza buradan verilemez, yalnizca geri alinabilir');
     });
 
-    testWidgets('seri gorunurlugu de burada', (tester) async {
+    testWidgets('uc gizlilik anahtari da burada', (tester) async {
+      // Seri gorunurlugu + rehber eslesmesi (R3) + biyometrik riza.
+      // Sayi bilincli: yeni bir gizlilik anahtari eklenirse bu test duser
+      // ve eklenenin varsayilaninin KAPALI oldugu gozden gecirilir.
       await tester.pumpWidget(ProviderScope(
         overrides: [
           profileProvider
@@ -98,7 +101,7 @@ void main() {
       ));
       await _bekle(tester);
 
-      expect(find.byType(Switch), findsNWidgets(2));
+      expect(find.byType(Switch), findsNWidgets(3));
     });
   });
 

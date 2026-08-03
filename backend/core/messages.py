@@ -66,6 +66,14 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "Bu özellik Rytho+ aboneliğine dahildir.",
         "en": "This feature is part of Rytho+.",
     },
+    # --- Rehber eşleşmesi ---
+    "contacts.disabled": {
+        "tr": "Rehber eşleşmesi kapalı. Profil > Gizlilik bölümünden "
+              "açabilirsin.",
+        "en": "Contact matching is off. You can enable it under "
+              "Profile > Privacy.",
+    },
+
     # --- Telefon doğrulama ---
     "phone.not_verified": {
         "tr": "Telefon numarası doğrulanmamış görünüyor. Doğrulamayı "

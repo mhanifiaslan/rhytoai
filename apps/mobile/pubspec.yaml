@@ -68,6 +68,9 @@ dependencies:
   app_links: ^7.2.1
   sign_in_with_apple: ^8.1.0
   crypto: ^3.0.7
+  # Rehber eslesmesi (R3): numaralar CIHAZDA hash'lenir, sunucuya
+  # yalnizca SHA-256 listesi gider. Ayar varsayilan KAPALI.
+  flutter_contacts: ^1.1.9+2
   # Sac cizgisi olcumu icin CIHAZ USTU segmentasyon (bkz.
   # features/face/face_segmentation.dart). Model dosyasi assets altinda ve
   # Apache 2.0; goruntu telefondan cikmiyor.

@@ -66,6 +66,11 @@ service cloud.firestore {
           'lastSeenDaily', 'streakCount',
           // Serimi arkadaşlarım görebilsin mi (varsayılan: kapalı)
           'streakVisible',
+          // Rehber eşleşmesi (varsayılan: KAPALI). Karşılıklılık şartının
+          // yarısı: sunucu eşleşme dönerken iki tarafın da bu alanı açmış
+          // olmasını arar. Telefon hash'inin kendisi BURADA DEĞİL —
+          // sunucu yazımlı phoneHashes/{hash} + private/phone'da.
+          'contactMatch',
           // ---------- Bildirimler ----------
           // Saat dilimi IANA adıdır ("Europe/Istanbul"); sunucu kullanıcının
           // YEREL saatini bununla hesaplar. Doğum şehri kullanılamaz: kişi

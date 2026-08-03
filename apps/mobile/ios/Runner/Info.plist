@@ -6,7 +6,9 @@
 	     belirsiz gerekce tek basina red sebebi (Guideline 5.1.1). Metin ne
 	     yapildigini VE ne yapilmadigini soyluyor: kare cihazda islenir,
 	     yuklenmez, saklanmaz. -->
-	<key>NSCameraUsageDescription</key>
+		<key>NSContactsUsageDescription</key>
+	<string>Rehber eşleşmesini açarsan numaralar cihazında özetlenir; rehberin sunucuya gönderilmez.</string>
+<key>NSCameraUsageDescription</key>
 	<string>Yüz okuma için kameraya erişim gerekiyor. Görüntü yalnızca cihazında işlenir; hiçbir yere gönderilmez ve saklanmaz.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

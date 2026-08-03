@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/analytics.dart';
+import '../../core/contact_match.dart';
 import '../../core/deep_links.dart';
 import '../../core/friends.dart';
 import '../../core/providers.dart';
@@ -62,6 +63,9 @@ class FriendsScreen extends ConsumerWidget {
             streakVisible: profile?['streakVisible'] == true,
           ),
         _InboxPanel(friends: friendsAsync.value ?? const []),
+        // Rehber önerileri (Revize R3): yalnızca ayar AÇIKKEN görünür.
+        // Sonuçlar bellekte yaşar; ne istemci ne sunucu listeyi saklar.
+        if (profile?['contactMatch'] == true) const _ContactSuggestions(),
         friendsAsync.when(
           loading: () => const Padding(
             padding: EdgeInsets.only(top: 48),
@@ -158,6 +162,106 @@ class _UsernameSetupPanelState extends State<_UsernameSetupPanel> {
 }
 
 /// Kendi kartım: kullanıcı adı, davet bağlantısı ve seri görünürlüğü.
+/// Rehberden bulunan, karşılıklı ayarı açık kullanıcılar.
+class _ContactSuggestions extends ConsumerWidget {
+  const _ContactSuggestions();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final eslesmeler = ref.watch(contactMatchesProvider);
+
+    return eslesmeler.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (kisiler) {
+        if (kisiler.isEmpty) return const SizedBox.shrink();
+        return GlassPanel(
+          label: l10n.contactSuggestionsLabel,
+          child: Column(children: [
+            for (final kisi in kisiler)
+              _ContactSuggestionRow(kisi: kisi),
+          ]),
+        );
+      },
+    );
+  }
+}
+
+class _ContactSuggestionRow extends ConsumerStatefulWidget {
+  const _ContactSuggestionRow({required this.kisi});
+
+  final ContactMatch kisi;
+
+  @override
+  ConsumerState<_ContactSuggestionRow> createState() =>
+      _ContactSuggestionRowState();
+}
+
+class _ContactSuggestionRowState
+    extends ConsumerState<_ContactSuggestionRow> {
+  bool _gonderildi = false;
+  bool _mesgul = false;
+
+  Future<void> _ekle() async {
+    final l10n = AppLocalizations.of(context);
+    final mesajci = ScaffoldMessenger.of(context);
+    setState(() => _mesgul = true);
+    try {
+      await sendFriendRequest(widget.kisi.uid);
+      if (!mounted) return;
+      setState(() => _gonderildi = true);
+    } catch (e) {
+      if (!mounted) return;
+      mesajci.showSnackBar(SnackBar(content: Text(friendlyError(e, l10n))));
+    } finally {
+      if (mounted) setState(() => _mesgul = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final kisi = widget.kisi;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(children: [
+        CircleAvatar(
+          radius: 17,
+          backgroundColor: RythoColors.inkLighter,
+          backgroundImage:
+              kisi.photoUrl != null ? NetworkImage(kisi.photoUrl!) : null,
+          child: kisi.photoUrl == null
+              ? Text('☽', style: RythoText.display(13))
+              : null,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(kisi.displayName ?? l10n.defaultUserName,
+                    style: RythoText.body(14, w: FontWeight.w600)),
+                if (kisi.username != null)
+                  Text('@${kisi.username}',
+                      style: RythoText.mono(
+                          11, color: RythoColors.parchmentDim)),
+              ]),
+        ),
+        _gonderildi
+            ? Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Icon(Icons.check_rounded,
+                    size: 18, color: RythoColors.celadon),
+              )
+            : TextButton(
+                onPressed: _mesgul ? null : _ekle,
+                child: Text(l10n.addFriend, style: RythoText.label(12)),
+              ),
+      ]),
+    );
+  }
+}
+
 class _MyCardPanel extends StatelessWidget {
   const _MyCardPanel({
     required this.username,

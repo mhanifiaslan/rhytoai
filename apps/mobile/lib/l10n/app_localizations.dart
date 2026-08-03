@@ -317,7 +317,7 @@ abstract class AppLocalizations {
   /// No description provided for @usernameBody.
   ///
   /// In tr, this message translates to:
-  /// **'Bir kullanıcı adı seç. Rehberine erişmiyoruz; arkadaş eklemek yalnızca kullanıcı adı veya davet bağlantısıyla olur.'**
+  /// **'Bir kullanıcı adı seç. Arkadaş eklemek kullanıcı adı ve davet bağlantısıyla olur; istersen Gizlilik bölümünden rehber eşleşmesini de açabilirsin.'**
   String get usernameBody;
 
   /// No description provided for @usernameHint.
@@ -2011,6 +2011,24 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Dil ve sesler'**
   String get languageAndSounds;
+
+  /// No description provided for @contactMatchSetting.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehberimden arkadaş öner'**
+  String get contactMatchSetting;
+
+  /// No description provided for @contactMatchSettingBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numaralar telefonunda özetlenir; rehberin sunucuya gönderilmez. Yalnızca ikiniz de bu ayarı açtıysanız birbirinizi görürsünüz.'**
+  String get contactMatchSettingBody;
+
+  /// No description provided for @contactSuggestionsLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'REHBERİNDEN'**
+  String get contactSuggestionsLabel;
 
   /// No description provided for @phoneSectionLabel.
   ///

@@ -30,6 +30,7 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
 | Abonelik durumu | `users/{uid}/private/subscription` — RevenueCat webhook'u | Yetkilendirme | Evet | Hayır |
 | Token cüzdanı | `users/{uid}/private/wallet` — yalnızca sunucu yazar | Kullanım hakkı muhasebesi | Evet | Hayır |
 | **Telefon numarası (isteğe bağlı)** | Firebase Auth (numara); `phoneHashes/{sha256}` + `users/{uid}/private/phone` (yalnızca özet) | Numara-hesap eşleşmesi; açılırsa rehber eşleşmesi | Evet | Hayır |
+| **Rehber (isteğe bağlı, varsayılan KAPALI)** | SAKLANMAZ — numaralar cihazda SHA-256'lanır, özet listesi eşleştirme sonrası atılır; ad/soyad hiç okunmaz | Karşılıklı arkadaş önerisi | Hayır (geçici işleme) | Hayır |
 | Cihaz tanımlayıcısı (rastgele, donanım DEĞİL) | `users/{uid}/private/device` | Tek cihaz kilidi (yalnızca aboneler) | Evet | Hayır |
 | Bildirim kimliği (FCM token) | `users/{uid}.fcmToken` | Bildirim gönderimi | Evet | Hayır |
 | Saat dilimi (IANA adı) | `users/{uid}.timezone` | Bildirimin yerel sabaha denk gelmesi | Evet | Hayır |

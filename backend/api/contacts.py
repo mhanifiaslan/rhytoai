@@ -1,0 +1,117 @@
+"""Rehber eşleşmesi — hash tabanlı, durumsuz, karşılıklı (Revize R3).
+
+## Gizlilik sözleşmesi
+
+* İstemci rehberdeki numaraları CİHAZDA E.164'e çevirir ve SHA-256'lar;
+  sunucuya YALNIZCA hash listesi gelir. Ham numara ne ağdan geçer ne de
+  burada görülür.
+* Hash listesi SAKLANMAZ: eşleştir, sonucu dön, at. Loglara yalnızca adet
+  yazılır. "Kullanıcının sosyal grafiğini biriktirmiyoruz" cümlesinin
+  teknik karşılığı bu ucun durumsuzluğudur.
+* **Karşılıklılık**: eşleşme yalnızca İKİ TARAF da `contactMatch` ayarını
+  açmışsa döner. Tek taraflı açık ayar, kapalı tarafı görünür yapmaz —
+  aksi telefon numarası bilinen herkesin uygulamadaki varlığını ifşa
+  etmek olurdu.
+
+## Neden sunucuda
+
+Eşleşme dizini (`phoneHashes`) istemciye tamamen kapalı. Açık olsaydı bir
+istemci rastgele numara hash'leriyle "bu numara Rytho'da mı" taraması
+yapabilirdi (enumeration). Sunucu üzerinden geçince hem karşılıklılık
+şartı uygulanabiliyor hem de istek kimlikli ve hız sınırlı.
+"""
+from __future__ import annotations
+
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel, Field
+
+from core import firestore as firestore_client
+from core.auth import AuthUser, get_current_user
+from core.i18n import get_language
+from core.messages import text
+
+logger = logging.getLogger(__name__)
+router = APIRouter()
+
+#: Tek istekte kabul edilen en fazla hash. Ortalama rehber ~500 kişi;
+#: 2000 pratik tavanın üstü ve kötüye kullanım taramasını pahalılaştırır.
+MAX_HASHES = 2000
+
+
+class MatchRequest(BaseModel):
+    hashes: list[str] = Field(max_length=MAX_HASHES)
+
+
+def _kullanici(client, uid: str) -> dict:
+    try:
+        anlik = client.collection("users").document(uid).get()
+        return (anlik.to_dict() or {}) if anlik.exists else {}
+    except Exception:
+        return {}
+
+
+@router.post("/match")
+def match(req: MatchRequest,
+          user: AuthUser = Depends(get_current_user),
+          lang: str = Depends(get_language)):
+    """Rehber hash'lerini kayıtlı kullanıcılarla eşleştirir.
+
+    Dönen kartlar `publicProfiles` içeriğidir — arkadaş listesinde zaten
+    görünen türetilmiş alanlar; doğum verisi ASLA.
+    """
+    client = firestore_client.get_client()
+    if client is None:
+        raise HTTPException(status_code=503, detail=text("internal", lang))
+
+    # Çağıranın kendi ayarı açık olmalı: kapalıyken istemci bu ucu hiç
+    # çağırmaz; çağıran varsa istemci hatası ya da kötüye kullanım.
+    ben = _kullanici(client, user.uid)
+    if not ben.get("contactMatch"):
+        raise HTTPException(status_code=403,
+                            detail=text("contacts.disabled", lang))
+
+    hashes = list(dict.fromkeys(h.strip().lower() for h in req.hashes if h))
+    if not hashes:
+        return {"status": "success", "matches": []}
+
+    # Dizin okuması: doküman kimliği hash'in kendisi — sorgu değil get_all.
+    refs = [client.collection("phoneHashes").document(h) for h in hashes]
+    eslesen_uidler: list[str] = []
+    try:
+        for anlik in client.get_all(refs):
+            if not anlik.exists:
+                continue
+            uid = (anlik.to_dict() or {}).get("uid")
+            if uid and uid != user.uid:
+                eslesen_uidler.append(uid)
+    except Exception as exc:
+        logger.warning("Rehber eşleşmesi dizin okuması düştü: %s", exc)
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+
+    # Karşılıklılık + engel süzgeci + herkese açık kart.
+    kartlar = []
+    for uid in eslesen_uidler:
+        karsi = _kullanici(client, uid)
+        if not karsi.get("contactMatch"):
+            continue  # karşı taraf kapalı: görünmez
+        try:
+            kart_anlik = client.collection("publicProfiles").document(uid).get()
+        except Exception:
+            continue
+        if not kart_anlik.exists:
+            continue
+        kart = kart_anlik.to_dict() or {}
+        kartlar.append({
+            "uid": uid,
+            "displayName": kart.get("displayName"),
+            "username": kart.get("username"),
+            "sunSign": kart.get("sunSign"),
+            "photoUrl": kart.get("photoUrl"),
+        })
+
+    # Ham liste burada ölür: hiçbir hash kalıcı yazılmadı.
+    logger.info("Rehber eşleşmesi: uid=%s girdi=%d eşleşme=%d",
+                user.uid, len(hashes), len(kartlar))
+    return {"status": "success", "matches": kartlar}

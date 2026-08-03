@@ -126,7 +126,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get usernameBody =>
-      'Bir kullanıcı adı seç. Rehberine erişmiyoruz; arkadaş eklemek yalnızca kullanıcı adı veya davet bağlantısıyla olur.';
+      'Bir kullanıcı adı seç. Arkadaş eklemek kullanıcı adı ve davet bağlantısıyla olur; istersen Gizlilik bölümünden rehber eşleşmesini de açabilirsin.';
 
   @override
   String get usernameHint => 'kullaniciadi';
@@ -1051,6 +1051,16 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get languageAndSounds => 'Dil ve sesler';
+
+  @override
+  String get contactMatchSetting => 'Rehberimden arkadaş öner';
+
+  @override
+  String get contactMatchSettingBody =>
+      'Numaralar telefonunda özetlenir; rehberin sunucuya gönderilmez. Yalnızca ikiniz de bu ayarı açtıysanız birbirinizi görürsünüz.';
+
+  @override
+  String get contactSuggestionsLabel => 'REHBERİNDEN';
 
   @override
   String get phoneSectionLabel => 'TELEFON';
