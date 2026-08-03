@@ -486,6 +486,7 @@ FIRASA_SIGNS = {
     "forehead_dominant": "Üst bölge (alın) baskın",
     "forehead_short": "Üst bölge (alın) dar",
     "midface_dominant": "Orta bölge (göz-burun) baskın",
+    "midface_short": "Orta bölge (göz-burun) kısa",
     "jaw_dominant": "Alt bölge (ağız-çene) baskın",
     "jaw_short": "Alt bölge (ağız-çene) kısa",
     "face_broad": "Yüz geniş ve yuvarlağa yakın",

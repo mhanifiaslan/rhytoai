@@ -423,3 +423,71 @@ def test_tepeden_olcum_ingilizcede_de_bildirilir():
     }, "en")
     assert "CROWN" in blok
     assert "kafatası" not in blok, "Ingilizce blokta Turkce metin var"
+
+
+# ---------------------------------------------------------------------------
+# San Ting: baskinlik GORELI
+# ---------------------------------------------------------------------------
+
+r"""Bir yuzun IKI bolgesi ayni anda baskin olamaz.
+
+Uc bolge tanimi geregi 1'e toplaniyor. Once her biri kendi sabit esigiyle
+(0,37) karsilastiriliyordu ve bu mantiken tutarsiz sonuclar uretiyordu.
+
+Cihazda olculen GERCEK bir yuz: 0,26 / 0,37 / 0,37. Eski kuralla orta VE alt
+bolgenin ikisi birden "baskin" cikiyordu; kullaniciya ayni anda "orta bolgen
+one cikiyor" ve "alt bolgen one cikiyor" denmis oluyordu.
+
+Baskinlik ancak OTEKILERE GORE tanimlanabilir.
+"""
+
+
+def test_iki_bolge_ayni_anda_baskin_olamaz():
+    bulunan = firasa_service.descriptors({
+        "upperThird": 0.26,
+        "middleThird": 0.37,
+        "lowerThird": 0.37,
+    })
+    baskinlar = [b for b in bulunan if b.endswith("_dominant")]
+    assert len(baskinlar) <= 1, f"birden fazla baskin bolge: {baskinlar}"
+
+
+def test_gercek_olcumde_dogru_belirti_uretilir():
+    """0,26 / 0,37 / 0,37 -> "alin kisa". Oteki ikisi birbirine esit."""
+    bulunan = firasa_service.descriptors({
+        "upperThird": 0.26,
+        "middleThird": 0.37,
+        "lowerThird": 0.37,
+    })
+    assert "forehead_short" in bulunan
+    assert "midface_dominant" not in bulunan
+    assert "jaw_dominant" not in bulunan
+
+
+def test_belirgin_baskinlik_yakalanir():
+    """Goreli olmak, hicbir sey sSoylememek demek degil."""
+    bulunan = firasa_service.descriptors({
+        "upperThird": 0.45,
+        "middleThird": 0.30,
+        "lowerThird": 0.25,
+    })
+    assert "forehead_dominant" in bulunan
+    assert "jaw_short" in bulunan
+
+
+def test_dengeli_yuzde_belirti_yok():
+    """Ortalama bir yuz hakkinda soylenecek San Ting belirtisi yoktur."""
+    bulunan = firasa_service.descriptors({
+        "upperThird": 0.34,
+        "middleThird": 0.33,
+        "lowerThird": 0.33,
+    })
+    assert not [b for b in bulunan
+                if b.endswith("_dominant") or b.endswith("_short")]
+
+
+def test_uc_bolge_yoksa_hala_susulur():
+    """Goreli hesap, eksik olcumde belirti uretmeye baslamamali."""
+    bulunan = firasa_service.descriptors({"jawToCheek": 0.80})
+    assert not [b for b in bulunan
+                if b.endswith("_dominant") or b.endswith("_short")]

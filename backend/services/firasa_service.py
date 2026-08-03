@@ -35,8 +35,15 @@ from services import prompts
 #: sistem belirti üretmemeye eğilimli. Az belirti üretip emin olmak, çok
 #: belirti üretip uydurmaktan iyidir.
 _T = {
-    "third_dominant": 0.37,
-    "third_short": 0.29,
+    # San Ting: bir bölgenin "önde" ya da "geride" sayılması için ortalamadan
+    # ne kadar ayrılması gerektiği. Üç bölge 1'e toplandığı için ortalama her
+    # zaman 1/3; yani bu, mutlak bir eşik değil bir AYRIŞMA payı.
+    #
+    # Cihazda ölçülen gerçek bir yüz: 0,26 / 0,37 / 0,37. Ayrışmalar
+    # sırasıyla -0,073 / +0,037 / +0,037 — yani üst bölge belirgin şekilde
+    # geride, öteki ikisi birbirine eşit. Doğru okuma "alın kısa"; "orta ve
+    # alt baskın" değil.
+    "third_lead": 0.045,
     "face_broad": 0.75,
     "face_long": 0.65,
     "jaw_square": 0.85,
@@ -68,21 +75,34 @@ def descriptors(ratios: dict[str, Any]) -> list[str]:
 
     # San Ting — üç bölge.
     #
-    # "Kısa bölge" dallarında `0 <` koruması ŞART. Eksik ya da bozuk bir alan
-    # 0.0 olarak geliyor ve 0.0 her eşiğin altında kalıyor; koruma olmadan
-    # boş bir istek "alın dar, çene kısa" belirtileri üretiyordu — yani
-    # OLMAYAN bir ölçümden hüküm çıkıyordu. Test yakaladı.
+    # `> 0` koruması ŞART: eksik ya da gönderilmemiş alan 0.0 olarak geliyor.
+    # Koruma olmadan boş bir istek "alın dar, çene kısa" belirtileri
+    # üretiyordu — yani OLMAYAN bir ölçümden hüküm çıkıyordu.
+    #
+    # Baskınlık GÖRELİ ölçülür, mutlak eşikle değil.
+    #
+    # Once her bolge kendi sabit esigiyle karsilastiriliyordu ve bu mantiken
+    # tutarsiz sonuclar uretiyordu. Cihazda olculen gercek bir yuzde:
+    #
+    #     ust 0,26   orta 0,37   alt 0,37
+    #
+    # Eski kuralla orta VE alt bolgenin ikisi birden "baskin" cikiyordu.
+    # Bir yuzun iki bolgesi ayni anda baskin olamaz; ucu birden 1'e
+    # toplandigi icin baskinlik ancak OTEKILERE GORE tanimlanabilir.
+    #
+    # Gelenek de boyle okuyor: hangi bolge ONDE, hangisi geride. Artik en
+    # fazla BIR baskin ve en fazla BIR kisa belirti uretiliyor.
     ust, orta, alt = f("upperThird"), f("middleThird"), f("lowerThird")
-    if ust >= _T["third_dominant"]:
-        bulunan.append("forehead_dominant")
-    elif 0 < ust <= _T["third_short"]:
-        bulunan.append("forehead_short")
-    if orta >= _T["third_dominant"]:
-        bulunan.append("midface_dominant")
-    if alt >= _T["third_dominant"]:
-        bulunan.append("jaw_dominant")
-    elif 0 < alt <= _T["third_short"]:
-        bulunan.append("jaw_short")
+    if ust > 0 and orta > 0 and alt > 0:
+        bolgeler = {"forehead": ust, "midface": orta, "jaw": alt}
+        ortalama = (ust + orta + alt) / 3
+        en_buyuk = max(bolgeler, key=lambda k: bolgeler[k])
+        en_kucuk = min(bolgeler, key=lambda k: bolgeler[k])
+
+        if bolgeler[en_buyuk] - ortalama >= _T["third_lead"]:
+            bulunan.append(f"{en_buyuk}_dominant")
+        if ortalama - bolgeler[en_kucuk] >= _T["third_lead"]:
+            bulunan.append(f"{en_kucuk}_short")
 
     en_boy = f("widthToHeight")
     if en_boy >= _T["face_broad"]:

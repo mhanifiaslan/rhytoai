@@ -502,6 +502,7 @@ FIRASA_SIGNS = {
     "forehead_dominant": "Upper zone (forehead) predominates",
     "forehead_short": "Upper zone (forehead) is narrow",
     "midface_dominant": "Middle zone (eyes-nose) predominates",
+    "midface_short": "Middle zone (eyes-nose) is short",
     "jaw_dominant": "Lower zone (mouth-jaw) predominates",
     "jaw_short": "Lower zone (mouth-jaw) is short",
     "face_broad": "The face is broad, close to round",
