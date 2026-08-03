@@ -170,22 +170,5 @@ def chat(history: list[dict], user_message: str,
     return None
 
 
-def moderate(text: str) -> bool:
-    """Sosyal paylaşım içeriği için basit moderasyon. True = güvenli.
-    LLM erişilemezse içerik güvenli varsayılır (istemci tarafı raporlama devrede)."""
-    client = _get_client()
-    if client is None:
-        return True
-    try:
-        response = client.models.generate_content(
-            model=config.GEMINI_MODEL,
-            contents=(
-                "Aşağıdaki sosyal medya gönderisini denetle. Nefret söylemi, taciz, "
-                "şiddet tehdidi, cinsel istismar veya spam içeriyorsa SADECE 'UNSAFE', "
-                "aksi halde SADECE 'SAFE' yaz.\n\n---\n" + text[:2000]
-            ),
-            config={"temperature": 0.0},
-        )
-        return "UNSAFE" not in (response.text or "").upper()
-    except Exception:
-        return True
+# `moderate()` KALDIRILDI (Revize R0): tek çağıranı, hiçbir istemcinin
+# kullanmadığı kotasız `/chat/moderate` ucuydu — ayrıntı api/chat.py'de.

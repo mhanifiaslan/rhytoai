@@ -53,6 +53,15 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "BaZi analizi Rytho+ aboneliğine dahildir.",
         "en": "BaZi analysis is part of Rytho+.",
     },
+    # Uç `require_plus("firasa")` ile kilitli ama mesajı YOKTU: kullanıcı
+    # jenerik "Bu özellik..." metnine düşüyordu. test_messages.py'deki
+    # "her require_plus özelliğinin mesajı var" denetimi de bu anahtarı
+    # görmüyordu çünkü liste elle tutuluyor — anahtar eklenince liste de
+    # güncellendi.
+    "paywall.firasa": {
+        "tr": "Yüz okuma Rytho+ aboneliğine dahildir.",
+        "en": "Face reading is part of Rytho+.",
+    },
     "paywall.default": {
         "tr": "Bu özellik Rytho+ aboneliğine dahildir.",
         "en": "This feature is part of Rytho+.",

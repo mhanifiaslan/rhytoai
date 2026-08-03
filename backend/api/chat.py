@@ -38,10 +38,6 @@ class ChatRequest(BaseModel):
     message: str
 
 
-class ModerationRequest(BaseModel):
-    text: str
-
-
 def _sky_summary(lang: str, profile: dict | None = None) -> str:
     """Bugünün gökyüzünün kompakt özeti; hata durumunda boş döner.
 
@@ -166,7 +162,12 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         raise HTTPException(status_code=500, detail=text("internal", lang))
 
 
-@router.post("/moderate")
-def moderate(request: ModerationRequest, user: AuthUser = Depends(get_current_user)):
-    """Sosyal paylaşım öncesi içerik denetimi (istemci çağırır)."""
-    return {"status": "success", "safe": gemini_service.moderate(request.text)}
+# `/moderate` ucu KALDIRILDI (Revize R0).
+#
+# Docstring'i "istemci çağırır" diyordu ama hiçbir istemci çağırmıyordu:
+# sosyal katman serbest metin içermiyor (hazır tepkiler), moderasyona konu
+# içerik yok. Buna karşılık uç kotasız ve `require_plus`'sız bir LLM
+# çağrısıydı — kimliği doğrulanmış herhangi bir istemci 60 istek/dk hızında
+# bütçe yakabilirdi. Ölü VE masraflı kodun kotalanmış hâli değil, yokluğu
+# doğrudur. Sosyal serbest metin bir gün gelirse denetim, çağıranın kendi
+# ucunda kota arkasında kurulmalı.

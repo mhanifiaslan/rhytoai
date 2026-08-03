@@ -11,9 +11,10 @@ import '../../l10n/app_localizations.dart';
 /// v3'te ana ekrandaki "Kehanet Araçları" kartlarından push edilir;
 /// [initialTab] ile doğrudan ilgili disipline açılır.
 ///
-/// Yüz okuma sekmesi (face_tab.dart) v1 kapsamı dışıdır — biyometrik veri
-/// işlediği için ayrı bir hukuki uyum katmanı gerektiriyor. Dosya v2 referansı
-/// olarak repoda durur, hiçbir yerden bağlanmaz.
+/// Eski yüz okuma sekmesi (face_tab.dart) SİLİNDİ (Revize R0): "v2 referansı"
+/// diye tutuluyordu ama gerçek yüz okuma bambaşka kuruldu (cihaz üstü ölçüm,
+/// features/face/) ve sekme artık var olmayan bir sunucu ucuna görüntü
+/// yüklüyordu — yanıltıcı bir fosil.
 class OracleScreen extends ConsumerStatefulWidget {
   const OracleScreen({super.key, this.initialTab = 0});
 

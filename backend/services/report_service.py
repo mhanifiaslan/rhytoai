@@ -73,6 +73,14 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     # üretilmiş yorumu görür.
     cache_key = f"daily-{user_id}-{today}-{lang}"
 
+    # Önbellek isabeti prompt kurulumundan ÖNCE denetlenir (horoscope_reading
+    # ile aynı gerekçe): bu satırın altında bir RAG araması — yani her
+    # istekte ücretli bir embedding çağrısı — var. Aynı gün ikinci kez açılan
+    # okuma, düzeltmeden önce o çağrıyı BOŞUNA yapıyordu.
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
+
     # Burç adları da dile göre: "Aslan" yazan bir İngilizce prompt modeli
     # Türkçeye kaydırıyor.
     yerel_harita = prompts.localize_chart(lang, natal)
@@ -257,6 +265,11 @@ def natal_report(user_id: str, natal: dict[str, Any],
     cache_key = (f"natal-report-{user_id}-{natal.get('sun_sign')}"
                  f"-{natal.get('ascendant')}-{lang}")
 
+    # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
+
     # Harita adları isteğin diline çevrilir: koşulsuz `_tr` seçmek İngilizce
     # prompt'a Türkçe gezegen ve burç adları sokuyordu.
     yerel = prompts.localize_chart(lang, natal)
@@ -311,7 +324,6 @@ def firasa_report(user_id: str, ratios: dict[str, Any],
     biyometrik çıkarım ve ikisi de artık üretilmiyor.
     """
     p = prompts.get(lang)
-    belirtiler = firasa_service.prompt_block(ratios, lang)
 
     # Önbellek anahtarı oranların kendisiyle: aynı yüz aynı okumayı alır,
     # her açılışta yeni bir LLM çağrısı yapılmaz.
@@ -320,6 +332,12 @@ def firasa_report(user_id: str, ratios: dict[str, Any],
     cache_key = (f"firasa-{user_id}-{lang}-"
                  f"{hashlib.sha256(ozet.encode()).hexdigest()[:16]}")
 
+    # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
+
+    belirtiler = firasa_service.prompt_block(ratios, lang)
     rag = retrieve_context(
         p.FIRASA_RAG_QUERY, top_k=3, lang=lang)
 
@@ -335,6 +353,11 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
     cache_key = f"bazi-report-{user_id}-{bazi['pillars']['day']['label']}-{lang}"
+
+    # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
 
     # Element, hayvan ve On Tanri adlari hesap motorunda anahtar olarak
     # duruyor; prompt'a girmeden once istegin diline cevrilir.
@@ -383,6 +406,11 @@ def iching_reading(user_id: str, cast: dict[str, Any],
                  f"-{cast.get('question', '')[:48]}"
                  f"-{'-'.join(map(str, cast.get('moving_lines', [])))}-{lang}")
 
+    # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
+
     transformed_text = ""
     if yerel.get("transformed"):
         t = yerel["transformed"]
@@ -425,6 +453,11 @@ def synastry_report(user_id: str, synastry: dict[str, Any],
     yerel = prompts.localize_synastry(lang, synastry)
     p1, p2 = yerel["person1"], yerel["person2"]
     cache_key = f"synastry-{user_id}-{p1['name']}-{p2['name']}-{lang}"
+
+    # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
 
     aspects = "\n".join(
         f"- {a['p1_local']} ({p1['name']}) {a['aspect_local']} {a['p2_local']} "

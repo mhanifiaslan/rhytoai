@@ -70,9 +70,28 @@ def test_kota_metnine_limit_yerlesir():
 
 
 def test_her_ozellik_icin_paywall_metni_var():
-    """require_plus ile korunan her özellik adının bir metni olmalı."""
-    for özellik in ("personal_daily", "natal_report", "dyad", "synastry", "bazi"):
-        assert f"paywall.{özellik}" in _MESSAGES
+    """require_plus ile korunan her özellik adının bir metni olmalı.
+
+    Liste ELLE TUTULMUYOR: kaynak dosyalardan `require_plus("...")` çağrıları
+    taranıyor. Elle tutulan önceki liste "firasa"yı kaçırmıştı — özellik
+    kilitliydi ama kullanıcı jenerik metne düşüyordu ve bu test yeşildi.
+    Testin görmediği kusur, kusur değil sanılıyor.
+    """
+    import re
+    from pathlib import Path
+
+    api_klasoru = Path(__file__).resolve().parent.parent / "api"
+    bulunan: set[str] = set()
+    for dosya in api_klasoru.glob("*.py"):
+        bulunan.update(
+            re.findall(r'require_plus\(\s*"(\w+)"\s*\)', dosya.read_text(encoding="utf-8"))
+        )
+
+    assert bulunan, "hiç require_plus çağrısı bulunamadı — tarama bozuk"
+    for özellik in sorted(bulunan):
+        assert f"paywall.{özellik}" in _MESSAGES, (
+            f"require_plus({özellik!r}) kilitli ama paywall.{özellik} metni yok"
+        )
 
 
 # --------------------------------------------------------------------------
