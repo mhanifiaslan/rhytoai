@@ -24,7 +24,7 @@ import logging
 import os
 from typing import Any
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, Header, HTTPException
 
 from core import firestore as firestore_client
 from core.auth import AuthUser, get_current_user
@@ -174,16 +174,25 @@ def require_plus(feature: str):
     """Aboneliğe bagli uclar icin bagimlilik uretir.
 
     Kullanim:  ``user: AuthUser = Depends(require_plus("natal_report"))``
+
+    Tek cihaz kilidi de BURADAN uygulanir: kilit yalnizca abonelere ait ve
+    aboneli her yol bu bagimliliktan geciyor — ayri bir dependency her uca
+    tek tek eklenmek zorunda kalirdi ve biri unutulurdu.
     """
 
     def dependency(user: AuthUser = Depends(get_current_user),
-                   lang: str = Depends(get_language)) -> AuthUser:
+                   lang: str = Depends(get_language),
+                   x_device_id: str | None = Header(default=None)) -> AuthUser:
         if not is_subscriber(user.uid):
             raise HTTPException(
                 status_code=PAYWALL_STATUS,
                 detail=text(f"paywall.{feature}", lang,
                             fallback="paywall.default"),
             )
+        # Tembel import: core.device -> core.entitlements yonu zaten var,
+        # modul duzeyinde geri bag dongusel import olurdu.
+        from core import device
+        device.enforce_single_device(user.uid, x_device_id, lang=lang)
         return user
 
     return dependency

@@ -2012,6 +2012,144 @@ abstract class AppLocalizations {
   /// **'Dil ve sesler'**
   String get languageAndSounds;
 
+  /// No description provided for @phoneSectionLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'TELEFON'**
+  String get phoneSectionLabel;
+
+  /// No description provided for @phoneNotLinked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrulanmış numara yok'**
+  String get phoneNotLinked;
+
+  /// No description provided for @phoneVerifyAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrula'**
+  String get phoneVerifyAction;
+
+  /// No description provided for @phoneChangeAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değiştir'**
+  String get phoneChangeAction;
+
+  /// No description provided for @phoneVerifyTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefonunu doğrula'**
+  String get phoneVerifyTitle;
+
+  /// No description provided for @phoneVerifyBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numaran SMS ile doğrulanır ve hesabına bağlanır. Rehber eşleşmesini açarsan arkadaşların seni bu numarayla bulabilir; numaran hiçbir zaman açık şekilde saklanmaz ve kimseyle paylaşılmaz.'**
+  String get phoneVerifyBody;
+
+  /// No description provided for @phoneFieldLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefon numarası'**
+  String get phoneFieldLabel;
+
+  /// No description provided for @phoneSendCode.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kod gönder'**
+  String get phoneSendCode;
+
+  /// No description provided for @phoneCodeLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'SMS kodu'**
+  String get phoneCodeLabel;
+
+  /// No description provided for @phoneConfirmCode.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrula'**
+  String get phoneConfirmCode;
+
+  /// No description provided for @phoneCodeSentTo.
+  ///
+  /// In tr, this message translates to:
+  /// **'{number} numarasına kod gönderildi.'**
+  String phoneCodeSentTo(String number);
+
+  /// No description provided for @phoneChangeNumber.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numarayı değiştir'**
+  String get phoneChangeNumber;
+
+  /// No description provided for @phoneLinkedDone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefonun doğrulandı.'**
+  String get phoneLinkedDone;
+
+  /// No description provided for @phoneInvalid.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numarayı ülke koduyla yaz (örn. +905xxxxxxxxx).'**
+  String get phoneInvalid;
+
+  /// No description provided for @phoneCodeWrong.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kod yanlış görünüyor, tekrar dene.'**
+  String get phoneCodeWrong;
+
+  /// No description provided for @phoneTakenError.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu numara başka bir hesaba bağlı.'**
+  String get phoneTakenError;
+
+  /// No description provided for @phoneTooManyTries.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok fazla deneme yapıldı. Biraz sonra tekrar dene.'**
+  String get phoneTooManyTries;
+
+  /// No description provided for @deviceConflictTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aboneliğin başka bir cihazda'**
+  String get deviceConflictTitle;
+
+  /// No description provided for @deviceConflictBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; girişte cihazı devralmak isteyip istemediğin sorulacak.'**
+  String get deviceConflictBody;
+
+  /// No description provided for @deviceConflictAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Giriş ekranına dön'**
+  String get deviceConflictAction;
+
+  /// No description provided for @deviceTakeoverTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu cihazda kullan?'**
+  String get deviceTakeoverTitle;
+
+  /// No description provided for @deviceTakeoverBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aboneliğin başka bir cihazda kayıtlı. Devralırsan diğer cihaz oturumdan çıkarılır; aboneliğin tek cihazda çalışır.'**
+  String get deviceTakeoverBody;
+
+  /// No description provided for @deviceTakeoverConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu cihazda kullan'**
+  String get deviceTakeoverConfirm;
+
   /// No description provided for @tokenStoreTitle.
   ///
   /// In tr, this message translates to:

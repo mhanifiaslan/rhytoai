@@ -28,6 +28,9 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
 | **Sohbet mesajları** | Yalnızca istek anında Gemini'ye gider | Yanıt üretimi | Evet | Hayır |
 | **Kullanıcı hafızası (damıtılmış olgular)** | `users/{uid}/private/memory` | Kişiselleştirme | Evet | Hayır |
 | Abonelik durumu | `users/{uid}/private/subscription` — RevenueCat webhook'u | Yetkilendirme | Evet | Hayır |
+| Token cüzdanı | `users/{uid}/private/wallet` — yalnızca sunucu yazar | Kullanım hakkı muhasebesi | Evet | Hayır |
+| **Telefon numarası (isteğe bağlı)** | Firebase Auth (numara); `phoneHashes/{sha256}` + `users/{uid}/private/phone` (yalnızca özet) | Numara-hesap eşleşmesi; açılırsa rehber eşleşmesi | Evet | Hayır |
+| Cihaz tanımlayıcısı (rastgele, donanım DEĞİL) | `users/{uid}/private/device` | Tek cihaz kilidi (yalnızca aboneler) | Evet | Hayır |
 | Bildirim kimliği (FCM token) | `users/{uid}.fcmToken` | Bildirim gönderimi | Evet | Hayır |
 | Saat dilimi (IANA adı) | `users/{uid}.timezone` | Bildirimin yerel sabaha denk gelmesi | Evet | Hayır |
 | Arayüz dili | `users/{uid}.language` | Bildirim dilinin seçimi | Evet | Hayır |

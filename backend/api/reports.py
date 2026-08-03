@@ -2,7 +2,7 @@
 import logging
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from core.auth import AuthUser, get_current_user
@@ -12,7 +12,7 @@ from core.entitlements import (
     FREE_ICHING_PER_DAY,
     require_plus,
 )
-from core import wallet
+from core import device, wallet
 from services import astro_service, profile_service, prompts, report_service
 from services.bazi_service import get_bazi_chart
 from services.iching_service import cast_iching
@@ -192,12 +192,16 @@ def bazi(data: BirthData,
 @router.post("/iching")
 def iching(req: IChingReportRequest,
            user: AuthUser = Depends(get_current_user),
-           lang: str = Depends(get_language)):
+           lang: str = Depends(get_language),
+           x_device_id: str | None = Header(default=None)):
     """I Ching hafif gunluk ritual olarak ucretsiz kalir, ama gunde bir cekilis.
 
     Sinirsiz olsaydi ucretsiz kullanici basina acik uclu LLM maliyeti olusurdu;
     gunde bir cekilis hem ritueli korur hem maliyeti ongorulur tutar.
     """
+    # Tek cihaz kilidi (yalnızca abonede etkili) harcamadan önce.
+    device.enforce_single_device(user.uid, x_device_id, lang=lang)
+
     # Günlük ücretsiz hak + cüzdan tek kapıda. Peşin harcama YOK: dönen
     # geri çağrılar önbellek kaçırıldığında çalışır — abone, saatlik
     # önbellekteki aynı çekilişe ikinci bakışında ödemez.

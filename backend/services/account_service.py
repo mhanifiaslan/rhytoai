@@ -168,6 +168,12 @@ def delete_account(uid: str) -> DeletionReport:
     # 1. Başka kullanıcılardaki izler (önce: kendi listem hâlâ duruyorken)
     _delete_friend_edges(client, uid, sayac)
 
+    # 1.5. Telefon eşleme kaydı — `private/phone` SİLİNMEDEN önce: hash'in
+    # yeri oradan okunuyor. Kalırsa numaranın yeni sahibi kaydolamaz ve
+    # rehber eşleşmesi silinmiş hesaba işaret ederdi.
+    from services import phone_service
+    phone_service.release_phone(uid)
+
     # 2. Kendi alt koleksiyonlarım (hafıza, abonelik, bildirim kaydı, tepkiler)
     _delete_user_subcollections(client, uid, sayac)
 

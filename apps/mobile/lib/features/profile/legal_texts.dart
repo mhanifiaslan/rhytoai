@@ -36,6 +36,24 @@ const LegalSections kPrivacyPolicyTr = [
         'oturumunu doğrulamak. Hukuki dayanak: sözleşmenin ifası.'
   ),
   (
+    'Telefon numarası (isteğe bağlı)',
+    'Telefonunu doğrularsan numaran SMS ile doğrulanır ve kimlik '
+        'sağlayıcımızda (Firebase Authentication) hesabına bağlanır. '
+        'Sunucularımızda numaranın kendisi DEĞİL, geri döndürülemez bir '
+        'özeti (SHA-256) tutulur; bu özet yalnızca bir numaranın tek hesaba '
+        'bağlı kalmasını sağlamak ve — açarsan — rehber eşleşmesinde '
+        'kullanılır. Numaranı doğrulamak zorunlu değildir; doğrulamazsan '
+        'uygulamanın geri kalanı aynen çalışır.'
+  ),
+  (
+    'Abonelik ve tek cihaz',
+    'Rytho+ aboneliği aynı anda tek cihazda kullanılır. Bunu sağlamak için '
+        'cihazında rastgele üretilmiş bir tanımlayıcı saklanır ve '
+        'isteklerinle birlikte gönderilir. Bu tanımlayıcı donanım kimliği '
+        'değildir, reklam veya takip amacıyla kullanılmaz; uygulamayı silip '
+        'yeniden kurduğunda değişir.'
+  ),
+  (
     'Doğum verisi',
     'Doğum tarihin, saatin ve şehrin; natal harita, BaZi ve günlük okuma '
         'hesaplamaları için işlenir ve hesabında saklanır. Bu üçlü hassas bir '
@@ -224,6 +242,23 @@ const LegalSections kPrivacyPolicyEn = [
         'name, email address and profile photo if you have one. Purpose: to '
         'create your account and verify your session. Legal basis: '
         'performance of a contract.'
+  ),
+  (
+    'Phone number (optional)',
+    'If you verify your phone, the number is confirmed via SMS and linked '
+        'to your account by our identity provider (Firebase Authentication). '
+        'Our servers store an irreversible digest (SHA-256) of the number, '
+        'NOT the number itself; the digest is used only to keep one number '
+        'bound to one account and — if you enable it — for contact '
+        'matching. Verification is optional; without it, the rest of the '
+        'app works unchanged.'
+  ),
+  (
+    'Subscription and single device',
+    'A Rytho+ subscription works on one device at a time. To enforce this, '
+        'a randomly generated identifier is stored on your device and sent '
+        'with your requests. It is not a hardware identifier, is never used '
+        'for advertising or tracking, and changes if you reinstall the app.'
   ),
   (
     'Birth data',

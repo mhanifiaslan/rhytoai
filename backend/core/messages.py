@@ -66,6 +66,26 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "Bu özellik Rytho+ aboneliğine dahildir.",
         "en": "This feature is part of Rytho+.",
     },
+    # --- Telefon doğrulama ---
+    "phone.not_verified": {
+        "tr": "Telefon numarası doğrulanmamış görünüyor. Doğrulamayı "
+              "tamamlayıp tekrar dene.",
+        "en": "Your phone number doesn't look verified yet. Complete "
+              "verification and try again.",
+    },
+    "phone.taken": {
+        "tr": "Bu numara başka bir hesaba bağlı.",
+        "en": "This number is linked to another account.",
+    },
+
+    # 409 + X-Device-Conflict: 1 ile birlikte döner; istemci oturumu kapatıp
+    # cihaz çakışması ekranına düşer.
+    "device.conflict": {
+        "tr": "Aboneliğin başka bir cihazda kullanılıyor. Bu cihazda devam "
+              "etmek için yeniden giriş yapıp cihazı devralabilirsin.",
+        "en": "Your subscription is in use on another device. Sign in again "
+              "and take over to continue on this one.",
+    },
     # 402 + X-Paywall-Reason: tokens ile birlikte döner; istemci bu metni
     # token mağazası ekranında gösterir.
     "tokens.empty": {

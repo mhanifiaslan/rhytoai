@@ -1,9 +1,10 @@
 import logging
 from typing import List
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
 from pydantic import BaseModel
 
+from core import device
 from core.auth import AuthUser, get_current_user
 from core.entitlements import FREE_CHAT_PER_DAY
 from core.wallet import charge_metered, refund_spend
@@ -91,7 +92,8 @@ def _sky_summary(lang: str, profile: dict | None = None) -> str:
 @router.post("/")
 def chat(request: ChatRequest, background: BackgroundTasks,
          user: AuthUser = Depends(get_current_user),
-         lang: str = Depends(get_language)):
+         lang: str = Depends(get_language),
+         x_device_id: str | None = Header(default=None)):
     """Sohbet: ucretsiz katmanda gunde [FREE_CHAT_PER_DAY] mesaj; abonede
     aylik token hakkindan, hak bitince satin alinan paketten harcanir.
 
@@ -105,6 +107,10 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         kategori, reply = blocked
         logger.info("Yasak alan reddedildi: %s", kategori)
         return {"status": "success", "reply": reply, "blocked": kategori}
+
+    # Tek cihaz kilidi (yalnızca abonede etkili) HARCAMADAN önce: 409 alan
+    # istek token da yakmamalı.
+    device.enforce_single_device(user.uid, x_device_id, lang=lang)
 
     # Ücretsiz günlük hak + token cüzdanı tek kapıda (Revize R1). Abone
     # cüzdanından harcar; ücretsiz kullanıcı önce günlük hakkını yer, sonra

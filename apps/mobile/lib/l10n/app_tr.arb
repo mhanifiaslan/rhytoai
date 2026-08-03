@@ -456,6 +456,36 @@
   "edit": "Düzenle",
   "birthRecordRowSubtitle": "Tüm okumaların temeli",
   "languageAndSounds": "Dil ve sesler",
+  "phoneSectionLabel": "TELEFON",
+  "phoneNotLinked": "Doğrulanmış numara yok",
+  "phoneVerifyAction": "Doğrula",
+  "phoneChangeAction": "Değiştir",
+  "phoneVerifyTitle": "Telefonunu doğrula",
+  "phoneVerifyBody": "Numaran SMS ile doğrulanır ve hesabına bağlanır. Rehber eşleşmesini açarsan arkadaşların seni bu numarayla bulabilir; numaran hiçbir zaman açık şekilde saklanmaz ve kimseyle paylaşılmaz.",
+  "phoneFieldLabel": "Telefon numarası",
+  "phoneSendCode": "Kod gönder",
+  "phoneCodeLabel": "SMS kodu",
+  "phoneConfirmCode": "Doğrula",
+  "phoneCodeSentTo": "{number} numarasına kod gönderildi.",
+  "@phoneCodeSentTo": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneChangeNumber": "Numarayı değiştir",
+  "phoneLinkedDone": "Telefonun doğrulandı.",
+  "phoneInvalid": "Numarayı ülke koduyla yaz (örn. +905xxxxxxxxx).",
+  "phoneCodeWrong": "Kod yanlış görünüyor, tekrar dene.",
+  "phoneTakenError": "Bu numara başka bir hesaba bağlı.",
+  "phoneTooManyTries": "Çok fazla deneme yapıldı. Biraz sonra tekrar dene.",
+  "deviceConflictTitle": "Aboneliğin başka bir cihazda",
+  "deviceConflictBody": "Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; girişte cihazı devralmak isteyip istemediğin sorulacak.",
+  "deviceConflictAction": "Giriş ekranına dön",
+  "deviceTakeoverTitle": "Bu cihazda kullan?",
+  "deviceTakeoverBody": "Aboneliğin başka bir cihazda kayıtlı. Devralırsan diğer cihaz oturumdan çıkarılır; aboneliğin tek cihazda çalışır.",
+  "deviceTakeoverConfirm": "Bu cihazda kullan",
   "tokenStoreTitle": "Token Mağazası",
   "tokenBalanceLabel": "BAKİYEN",
   "tokenUnit": "token",

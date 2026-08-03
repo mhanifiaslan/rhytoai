@@ -87,10 +87,15 @@ _bearer = HTTPBearer(auto_error=False)
 
 
 class AuthUser:
-    def __init__(self, uid: str, email: str | None = None, anonymous: bool = False):
+    def __init__(self, uid: str, email: str | None = None,
+                 anonymous: bool = False, phone: str | None = None):
         self.uid = uid
         self.email = email
         self.anonymous = anonymous
+        #: Firebase'in DOĞRULADIĞI telefon numarası (E.164), token'dan gelir.
+        #: İstemcinin beyanı değil — SMS doğrulaması Firebase'de bitmiş
+        #: numara. Rehber eşleşmesinin güven zinciri buradan başlıyor.
+        self.phone = phone
 
 
 def _verify(token: str) -> dict:
@@ -116,7 +121,8 @@ async def get_current_user(
             # bir işlevin içinde doğrudan çağrılırsa o ağ turu boyunca olay
             # döngüsü durur ve TÜM istekler bekler.
             decoded = await run_in_threadpool(_verify, credentials.credentials)
-            return AuthUser(uid=decoded["uid"], email=decoded.get("email"))
+            return AuthUser(uid=decoded["uid"], email=decoded.get("email"),
+                            phone=decoded.get("phone_number"))
         except Exception as exc:
             logger.info("Token doğrulanamadı: %s", exc)
             if not config.DEV_MODE:

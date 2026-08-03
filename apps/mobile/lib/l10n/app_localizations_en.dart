@@ -1056,6 +1056,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageAndSounds => 'Language and sounds';
 
   @override
+  String get phoneSectionLabel => 'PHONE';
+
+  @override
+  String get phoneNotLinked => 'No verified number';
+
+  @override
+  String get phoneVerifyAction => 'Verify';
+
+  @override
+  String get phoneChangeAction => 'Change';
+
+  @override
+  String get phoneVerifyTitle => 'Verify your phone';
+
+  @override
+  String get phoneVerifyBody =>
+      'Your number is verified via SMS and linked to your account. If you enable contact matching, friends can find you by this number; it\'s never stored in the clear or shared with anyone.';
+
+  @override
+  String get phoneFieldLabel => 'Phone number';
+
+  @override
+  String get phoneSendCode => 'Send code';
+
+  @override
+  String get phoneCodeLabel => 'SMS code';
+
+  @override
+  String get phoneConfirmCode => 'Verify';
+
+  @override
+  String phoneCodeSentTo(String number) {
+    return 'A code was sent to $number.';
+  }
+
+  @override
+  String get phoneChangeNumber => 'Change number';
+
+  @override
+  String get phoneLinkedDone => 'Your phone is verified.';
+
+  @override
+  String get phoneInvalid => 'Include the country code (e.g. +15551234567).';
+
+  @override
+  String get phoneCodeWrong => 'That code doesn\'t look right — try again.';
+
+  @override
+  String get phoneTakenError => 'This number is linked to another account.';
+
+  @override
+  String get phoneTooManyTries => 'Too many attempts. Please try again later.';
+
+  @override
+  String get deviceConflictTitle => 'Your subscription is on another device';
+
+  @override
+  String get deviceConflictBody =>
+      'Rytho+ works on one device at a time, and it\'s currently registered to another one. Sign in again to continue here; you\'ll be asked whether to take over.';
+
+  @override
+  String get deviceConflictAction => 'Back to sign-in';
+
+  @override
+  String get deviceTakeoverTitle => 'Use on this device?';
+
+  @override
+  String get deviceTakeoverBody =>
+      'Your subscription is registered to another device. If you take over, the other device will be signed out; your subscription works on one device at a time.';
+
+  @override
+  String get deviceTakeoverConfirm => 'Use here';
+
+  @override
   String get tokenStoreTitle => 'Token Store';
 
   @override

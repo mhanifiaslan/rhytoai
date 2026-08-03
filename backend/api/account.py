@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
-from services import account_service
+from services import account_service, phone_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -49,3 +49,31 @@ def delete_me(user: AuthUser = Depends(get_current_user),
         raise HTTPException(status_code=500, detail=text("internal", lang))
 
     return DeleteResult(status="deleted", deleted=dict(sayim))
+
+
+@router.post("/phone/sync")
+def sync_phone(user: AuthUser = Depends(get_current_user),
+               lang: str = Depends(get_language)):
+    """Doğrulanmış telefonu eşleme dizinine kaydeder (Revize R2).
+
+    Numara İSTEMCİDEN ALINMAZ: Firebase Phone Auth doğrulaması bitmiş numara
+    ID token'ının `phone_number` claim'inde gelir. Gövdesiz bir uç — istemci
+    yalnızca "bağladım, kaydet" der.
+    """
+    if not user.phone:
+        # Token'da numara yok: istemci bağlamayı bitirmeden çağırmış ya da
+        # token henüz tazelenmemiş (istemci linkten sonra getIdToken(true)
+        # çağırmalı).
+        raise HTTPException(status_code=400,
+                            detail=text("phone.not_verified", lang))
+    try:
+        sonuc = phone_service.sync_phone(user.uid, user.phone)
+    except phone_service.PhoneTakenError:
+        raise HTTPException(status_code=409,
+                            detail=text("phone.taken", lang))
+    except Exception as exc:
+        logger.exception("Telefon kaydı yazılamadı (%s)", user.uid,
+                         exc_info=exc)
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+
+    return {"status": "success", **sonuc}

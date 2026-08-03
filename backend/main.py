@@ -17,6 +17,7 @@ from api.astrology import router as astrology_router
 from api.bazi import router as bazi_router
 from api.billing import router as billing_router
 from api.chat import router as chat_router
+from api.device import router as device_router
 from api.face_reading import router as face_reading_router
 from api.iching import router as iching_router
 from api.notify import router as notify_router
@@ -117,6 +118,7 @@ app.include_router(sky_router, prefix="/api/v1/sky", tags=["Sky"])
 app.include_router(chat_router, prefix="/api/v1/chat", tags=["Chat"])
 app.include_router(reports_router, prefix="/api/v1/reports", tags=["Reports"])
 app.include_router(billing_router, prefix="/api/v1/billing", tags=["Billing"])
+app.include_router(device_router, prefix="/api/v1/device", tags=["Device"])
 # Bildirimler (Faz 6). Eski notify.py istemcinin serbestçe başlık/gövde
 # göndermesine izin verdiği için kaldırılmıştı; yenisinde metin SUNUCUDA
 # üretilir, toplu gönderim yalnızca Cloud Scheduler'ın paylaşılan anahtarıyla

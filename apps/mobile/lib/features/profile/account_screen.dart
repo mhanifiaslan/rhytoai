@@ -17,6 +17,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'phone_verify_screen.dart';
+
 import '../../core/friends.dart';
 import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
@@ -175,6 +177,37 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               // düzenlenemediği söylenmeli.
               Text(l10n.emailChangeNote, style: RythoType.caption),
             ],
+            // Telefon (Revize R2): doğrulanmış numara rehber eşleşmesinin
+            // anahtarı. Durum yerelden okunur (FirebaseAuth.phoneNumber) —
+            // Firestore'a ham numara hiç yazılmıyor.
+            const SizedBox(height: RythoSpace.xl),
+            Text(l10n.phoneSectionLabel, style: RythoType.label),
+            const SizedBox(height: RythoSpace.xs),
+            Builder(builder: (context) {
+              final numara =
+                  FirebaseAuth.instance.currentUser?.phoneNumber;
+              return Row(children: [
+                Expanded(
+                  child: Text(
+                    numara ?? l10n.phoneNotLinked,
+                    style: numara != null
+                        ? RythoType.data
+                        : RythoType.bodyDim,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context)
+                      .push(MaterialPageRoute(
+                          builder: (_) => const PhoneVerifyScreen()))
+                      .then((_) => setState(() {})),
+                  child: Text(
+                      numara != null
+                          ? l10n.phoneChangeAction
+                          : l10n.phoneVerifyAction,
+                      style: RythoType.button),
+                ),
+              ]);
+            }),
             const SizedBox(height: RythoSpace.xxl),
             GoldButton(
               text: l10n.save,

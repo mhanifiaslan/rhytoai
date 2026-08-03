@@ -456,6 +456,36 @@
   "edit": "Edit",
   "birthRecordRowSubtitle": "The basis of every reading",
   "languageAndSounds": "Language and sounds",
+  "phoneSectionLabel": "PHONE",
+  "phoneNotLinked": "No verified number",
+  "phoneVerifyAction": "Verify",
+  "phoneChangeAction": "Change",
+  "phoneVerifyTitle": "Verify your phone",
+  "phoneVerifyBody": "Your number is verified via SMS and linked to your account. If you enable contact matching, friends can find you by this number; it's never stored in the clear or shared with anyone.",
+  "phoneFieldLabel": "Phone number",
+  "phoneSendCode": "Send code",
+  "phoneCodeLabel": "SMS code",
+  "phoneConfirmCode": "Verify",
+  "phoneCodeSentTo": "A code was sent to {number}.",
+  "@phoneCodeSentTo": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneChangeNumber": "Change number",
+  "phoneLinkedDone": "Your phone is verified.",
+  "phoneInvalid": "Include the country code (e.g. +15551234567).",
+  "phoneCodeWrong": "That code doesn't look right — try again.",
+  "phoneTakenError": "This number is linked to another account.",
+  "phoneTooManyTries": "Too many attempts. Please try again later.",
+  "deviceConflictTitle": "Your subscription is on another device",
+  "deviceConflictBody": "Rytho+ works on one device at a time, and it's currently registered to another one. Sign in again to continue here; you'll be asked whether to take over.",
+  "deviceConflictAction": "Back to sign-in",
+  "deviceTakeoverTitle": "Use on this device?",
+  "deviceTakeoverBody": "Your subscription is registered to another device. If you take over, the other device will be signed out; your subscription works on one device at a time.",
+  "deviceTakeoverConfirm": "Use here",
   "tokenStoreTitle": "Token Store",
   "tokenBalanceLabel": "YOUR BALANCE",
   "tokenUnit": "tokens",

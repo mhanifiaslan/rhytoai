@@ -1053,6 +1053,81 @@ class AppLocalizationsTr extends AppLocalizations {
   String get languageAndSounds => 'Dil ve sesler';
 
   @override
+  String get phoneSectionLabel => 'TELEFON';
+
+  @override
+  String get phoneNotLinked => 'Doğrulanmış numara yok';
+
+  @override
+  String get phoneVerifyAction => 'Doğrula';
+
+  @override
+  String get phoneChangeAction => 'Değiştir';
+
+  @override
+  String get phoneVerifyTitle => 'Telefonunu doğrula';
+
+  @override
+  String get phoneVerifyBody =>
+      'Numaran SMS ile doğrulanır ve hesabına bağlanır. Rehber eşleşmesini açarsan arkadaşların seni bu numarayla bulabilir; numaran hiçbir zaman açık şekilde saklanmaz ve kimseyle paylaşılmaz.';
+
+  @override
+  String get phoneFieldLabel => 'Telefon numarası';
+
+  @override
+  String get phoneSendCode => 'Kod gönder';
+
+  @override
+  String get phoneCodeLabel => 'SMS kodu';
+
+  @override
+  String get phoneConfirmCode => 'Doğrula';
+
+  @override
+  String phoneCodeSentTo(String number) {
+    return '$number numarasına kod gönderildi.';
+  }
+
+  @override
+  String get phoneChangeNumber => 'Numarayı değiştir';
+
+  @override
+  String get phoneLinkedDone => 'Telefonun doğrulandı.';
+
+  @override
+  String get phoneInvalid => 'Numarayı ülke koduyla yaz (örn. +905xxxxxxxxx).';
+
+  @override
+  String get phoneCodeWrong => 'Kod yanlış görünüyor, tekrar dene.';
+
+  @override
+  String get phoneTakenError => 'Bu numara başka bir hesaba bağlı.';
+
+  @override
+  String get phoneTooManyTries =>
+      'Çok fazla deneme yapıldı. Biraz sonra tekrar dene.';
+
+  @override
+  String get deviceConflictTitle => 'Aboneliğin başka bir cihazda';
+
+  @override
+  String get deviceConflictBody =>
+      'Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; girişte cihazı devralmak isteyip istemediğin sorulacak.';
+
+  @override
+  String get deviceConflictAction => 'Giriş ekranına dön';
+
+  @override
+  String get deviceTakeoverTitle => 'Bu cihazda kullan?';
+
+  @override
+  String get deviceTakeoverBody =>
+      'Aboneliğin başka bir cihazda kayıtlı. Devralırsan diğer cihaz oturumdan çıkarılır; aboneliğin tek cihazda çalışır.';
+
+  @override
+  String get deviceTakeoverConfirm => 'Bu cihazda kullan';
+
+  @override
   String get tokenStoreTitle => 'Token Mağazası';
 
   @override

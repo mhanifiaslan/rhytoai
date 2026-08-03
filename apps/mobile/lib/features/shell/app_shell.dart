@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
+import '../../core/device_claim.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/glass.dart';
@@ -22,12 +23,27 @@ final shellTabProvider = StateProvider<int>((_) => 0);
 
 /// Ana kabuk: yıldız alanı zemin + 4 sekme + merkez degrade AI butonu
 /// (Rytho sohbetini açar). Kehanet araçlarına ana ekran kartlarından gidilir.
-class AppShell extends ConsumerWidget {
+class AppShell extends ConsumerStatefulWidget {
   const AppShell({super.key});
 
+  @override
+  ConsumerState<AppShell> createState() => _AppShellState();
+}
+
+class _AppShellState extends ConsumerState<AppShell> {
+  @override
+  void initState() {
+    super.initState();
+    // Tek cihaz kilidi: abonelik başka cihazda kayıtlıysa devralma onayı
+    // BURADA sorulur — kullanıcı 409 duvarına çarpmadan önce, girişin hemen
+    // ardından. Oturum başına bir kez; ücretsiz kullanıcı hiç görmez.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) maybeConfirmDeviceTakeover(context, ref);
+    });
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final index = ref.watch(shellTabProvider);
     final l10n = AppLocalizations.of(context);
     // Etiketler dile göre üretildiği için const olamaz.
