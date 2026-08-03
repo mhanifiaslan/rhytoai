@@ -80,6 +80,9 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  # Uygulama ikonu uretimi (Revize R7). Kaynak assets/icon/*.png;
+  # yeniden uretmek icin: dart run flutter_launcher_icons
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
@@ -88,7 +91,29 @@ flutter:
 
   assets:
     - assets/sounds/
+    # Marka: giris basligindaki logo (Revize R7). SVG kaynak olarak repoda
+    # duruyor, pakete yalnizca PNG giriyor.
+    - assets/brand/rytho_logo_512.png
     # MediaPipe Selfie Multiclass — 6 sinif (arka plan, sac, govde-teni,
     # yuz-teni, giysi, aksesuar). Sac cizgisini bundan cikariyoruz.
     # Lisans: Apache 2.0 (model karti, Google, 10 Mayis 2023).
     - assets/models/selfie_multiclass_256x256.tflite
+
+# Uygulama ikonu (Revize R7). Kaynak PNG'ler assets/icon/ altinda; SVG asli
+# assets/brand/rytho_logo.svg. Zemin rengi RythoColors.ink (#0B0710).
+# Uretim: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#0B0710"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
+  # Android 13+ temali ikon: ayni beyaz sekiller, sistem renklendirir.
+  adaptive_icon_monochrome: "assets/icon/app_icon_foreground.png"
+  # iOS ikonunda saydamlik Apple tarafindan reddedilir.
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    background_color: "#0B0710"
+    theme_color: "#0B0710"

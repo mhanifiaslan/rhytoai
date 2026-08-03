@@ -1,11 +1,11 @@
 {
-    "name": "rytho",
-    "short_name": "rytho",
+    "name": "Rytho",
+    "short_name": "Rytho",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0B0710",
+    "theme_color": "#0B0710",
+    "description": "Kadim bilgelik ve gökyüzü: astroloji, İching, BaZi ve firaset.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

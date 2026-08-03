@@ -428,23 +428,17 @@ class _LoginScreenState extends State<LoginScreen> {
               // başına ~250 px, yani ekranın üçte biri, klavye açılmadan.
               //
               // Rozet ve ad artık YAN YANA. Aynı bilgi, ~140 px daha az yer.
+              // Gerçek logo (Revize R7): beyaz hilal + takımyıldız,
+              // assets/brand. ✦ rozeti + RYTHO yazısının yerini aldı;
+              // nefes animasyonu ve satır düzeni aynen korunuyor.
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: RythoColors.primaryGradient,
-                      boxShadow: [
-                        BoxShadow(
-                            color: RythoColors.magentaGlow, blurRadius: 30),
-                      ],
-                    ),
-                    child: const Text('✦',
-                        style: TextStyle(fontSize: 24, color: Colors.white)),
+                  Image.asset(
+                    'assets/brand/rytho_logo_512.png',
+                    width: 56,
+                    height: 56,
+                    filterQuality: FilterQuality.medium,
                   )
                       .animate(onPlay: (c) => c.repeat(reverse: true))
                       .scale(
