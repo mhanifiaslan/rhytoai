@@ -5,6 +5,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/friends.dart' show setStreakVisible;
 import '../../core/locale.dart';
+import '../../theme/rytho_tokens.dart';
+import '../../widgets/common.dart';
+import 'account_screen.dart';
+import 'birth_record_screen.dart';
 import 'delete_account.dart';
 import 'notification_settings.dart';
 import '../../core/providers.dart';
@@ -159,13 +163,40 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 count: (profile['streakCount'] as num?)?.toInt() ?? 0),
           ]),
         ),
+        // Doğum kaydı ve hesap artık DÜZELTİLEBİLİR. Daha önce ikisi de bir
+        // kez yazılıp kilitleniyordu; yanlış giren kullanıcının tek çıkışı
+        // hesabı silmekti. Doğum verisi her okumayı beslediği için bu aynı
+        // zamanda bir veri kalitesi kusuruydu.
         Plaque(
           label: l10n.birthRecord,
           child: Column(children: [
             _row(l10n.birthDate, profile['birthDate'] ?? '—'),
             _row(l10n.birthTime, profile['birthTime'] ?? '—'),
             _row(l10n.birthCity, profile['birthCity'] ?? '—'),
+            const SizedBox(height: RythoSpace.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const BirthRecordScreen())),
+                icon: const Icon(Icons.edit_outlined, size: 15),
+                label: Text(l10n.edit, style: RythoType.button),
+              ),
+            ),
           ]),
+        ),
+        Plaque(
+          label: l10n.accountSection,
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: SettingsRow(
+            title: l10n.displayName,
+            value: profile['username'] != null
+                ? '@${profile['username']}'
+                : profile['displayName'] ?? '—',
+            icon: Icons.person_outline_rounded,
+            onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AccountScreen())),
+          ),
         ),
         // Ayarlar: sesler aç/kapa
         Plaque(

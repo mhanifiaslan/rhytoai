@@ -1,0 +1,155 @@
+/// Doğum kaydının tek yazma yolu.
+///
+/// ## Neden ayrı bir dosya
+///
+/// Doğum verisi uygulamadaki **her** astroloji çıktısını besliyor: günlük
+/// okuma, natal rapor, BaZi, sohbetin gördüğü harita. Bu yüzden nasıl
+/// yazıldığı tek yerde durmalı — ilk kurulumda (onboarding) ve sonradan
+/// düzeltmede (profil) aynı kod çalışır, yoksa iki yol zamanla ayrışır.
+///
+/// ## Buradaki asıl mesele: bayat Büyük Üçlü
+///
+/// Profilde `sunSign` / `moonSign` / `ascendant` **önbelleklenmiş** değerler.
+/// Kullanıcı doğum tarihini düzeltir de harita çağrısı başarısız olursa,
+/// dokümanda *yeni tarih* ile *eski burçlar* yan yana kalır. Kimse hata
+/// görmez; profil çalışmaya devam eder, sadece yalan söyler.
+///
+/// Bu yüzden kural: **burçlar ya doğum verisiyle birlikte tazelenir ya da
+/// silinir.** Rozet göstermemek, yanlış rozet göstermekten iyidir. Silmek
+/// güvenli çünkü okumalar bu alanlardan değil, ham doğum verisinden
+/// hesaplanıyor (`birthPayload`); ilk başarılı çağrıda kendiliğinden geri
+/// gelirler.
+library;
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:dio/dio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'api.dart';
+import 'friends.dart';
+
+/// Kullanıcının girdiği doğum anı.
+class BirthRecord {
+  const BirthRecord({
+    required this.date,
+    required this.time,
+    required this.city,
+    required this.gender,
+  });
+
+  /// Yalnızca gün/ay/yıl anlamlı.
+  final DateTime date;
+
+  /// `HH:mm`.
+  final String time;
+
+  final String city;
+
+  /// `female` | `male` | `other`.
+  final String gender;
+
+  String get dateText => '${date.year.toString().padLeft(4, '0')}-'
+      '${date.month.toString().padLeft(2, '0')}-'
+      '${date.day.toString().padLeft(2, '0')}';
+
+  /// Var olan profil dokümanından oku. Eksik alanlar için makul varsayılan.
+  factory BirthRecord.fromProfile(Map<String, dynamic>? profile) {
+    final ham = (profile?['birthDate'] as String?) ?? '';
+    final parcalar = ham.split('-');
+    var tarih = DateTime(2000, 1, 1);
+    if (parcalar.length == 3) {
+      final y = int.tryParse(parcalar[0]);
+      final a = int.tryParse(parcalar[1]);
+      final g = int.tryParse(parcalar[2]);
+      if (y != null && a != null && g != null) tarih = DateTime(y, a, g);
+    }
+    return BirthRecord(
+      date: tarih,
+      time: (profile?['birthTime'] as String?) ?? '12:00',
+      city: (profile?['birthCity'] as String?) ?? 'Istanbul',
+      gender: (profile?['gender'] as String?) ?? 'female',
+    );
+  }
+
+  bool sameAs(BirthRecord other) =>
+      dateText == other.dateText &&
+      time == other.time &&
+      city.trim() == other.city.trim() &&
+      gender == other.gender;
+}
+
+/// [saveBirthRecord] sonucu.
+enum BirthSaveResult {
+  /// Doğum verisi yazıldı, Büyük Üçlü de tazelendi.
+  ok,
+
+  /// Doğum verisi yazıldı ama harita hesaplanamadı; burç rozetleri silindi.
+  /// Kullanıcıya söylenmeli — sessizce geçilirse rozetlerin kaybolması
+  /// açıklanamayan bir davranış olur.
+  savedWithoutChart,
+}
+
+/// Firestore'a gidecek alanları üretir. **Saf** — bu yüzden test edilebilir.
+///
+/// [chart] `null` ise harita hesaplanamamıştır ve Büyük Üçlü alanları
+/// `FieldValue.delete()` ile işaretlenir. Dosya başındaki açıklamaya bakın:
+/// bayat burç bırakmak, burcu hiç göstermemekten kötüdür.
+Map<String, dynamic> birthWriteData(
+  BirthRecord record, {
+  required String uid,
+  required Map<String, dynamic>? chart,
+}) {
+  return <String, dynamic>{
+    'uid': uid,
+    'birthDate': record.dateText,
+    'birthTime': record.time,
+    'birthCity': record.city.trim(),
+    'gender': record.gender,
+    'onboardingCompleted': true,
+    'sunSign': chart?['sun_sign'] ?? FieldValue.delete(),
+    'moonSign': chart?['moon_sign'] ?? FieldValue.delete(),
+    'ascendant': chart?['ascendant'] ?? FieldValue.delete(),
+  };
+}
+
+/// Doğum kaydını yazar ve Büyük Üçlü'yü onunla birlikte tazeler.
+///
+/// Sıra önemli: harita **önce** hesaplanır, sonra tek yazımda her şey birlikte
+/// gider. Böylece dokümanda hiçbir an "yeni tarih + eski burç" hâli oluşmaz.
+///
+/// Yazma başarısız olursa istisna fırlatır; çağıran kullanıcıya söylemeli.
+Future<BirthSaveResult> saveBirthRecord(
+  BirthRecord record, {
+  required Dio dio,
+  FirebaseFirestore? db,
+  FirebaseAuth? auth,
+}) async {
+  final store = db ?? FirebaseFirestore.instance;
+  final user = (auth ?? FirebaseAuth.instance).currentUser;
+  if (user == null) throw StateError('Oturum yok');
+
+  Map<String, dynamic>? harita;
+  try {
+    final yanit = await dio.post('/api/v1/astrology/natal-chart',
+        data: birthPayload({
+          'birthDate': record.dateText,
+          'birthTime': record.time,
+          'birthCity': record.city.trim(),
+          'gender': record.gender,
+          'displayName': user.displayName,
+        }));
+    harita = Map<String, dynamic>.from(yanit.data['data'] as Map);
+  } catch (_) {
+    harita = null;
+  }
+
+  await store.collection('users').doc(user.uid).set(
+        birthWriteData(record, uid: user.uid, chart: harita),
+        SetOptions(merge: true),
+      );
+  // Arkadaş listesindeki kart `sunSign` gösteriyor; o da tazelenmeli.
+  await syncPublicProfile();
+  return harita == null
+      ? BirthSaveResult.savedWithoutChart
+      : BirthSaveResult.ok;
+}

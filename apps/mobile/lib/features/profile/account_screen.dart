@@ -1,0 +1,189 @@
+/// Hesap: görünen ad ve kullanıcı adı düzenleme.
+///
+/// ## Neden var
+///
+/// İkisi de bir kez yazılıp kilitleniyordu. Görünen ad kimlik sağlayıcıdan
+/// (Google/Apple) ne geldiyse oydu; kullanıcı adı ise Arkadaşlar sekmesindeki
+/// kurulum panelinden bir defa alınıyordu — panel `username == null` iken
+/// gösterildiği için ikinci kez açılmıyordu. Yazım hatası yapan kullanıcının
+/// düzeltme yolu yoktu.
+///
+/// Veri katmanı değişikliği zaten destekliyordu: `claimUsername` yeni adı
+/// rezerve edip eskisini serbest bırakıyor. Eksik olan yalnızca ekrandı.
+library;
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/friends.dart';
+import '../../core/providers.dart';
+import '../../l10n/app_localizations.dart';
+import '../../theme/rytho_theme.dart';
+import '../../theme/rytho_tokens.dart';
+import '../../widgets/atlas_widgets.dart';
+import '../../widgets/cosmic_scaffold.dart';
+
+class AccountScreen extends ConsumerStatefulWidget {
+  const AccountScreen({super.key});
+
+  @override
+  ConsumerState<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends ConsumerState<AccountScreen> {
+  final _ad = TextEditingController();
+  final _kullaniciAdi = TextEditingController();
+  String _ilkAd = '';
+  String _ilkKullaniciAdi = '';
+  bool _dolduruldu = false;
+  bool _mesgul = false;
+  String? _hata;
+
+  void _ilkDoldur(Map<String, dynamic>? profil) {
+    if (_dolduruldu || profil == null) return;
+    _dolduruldu = true;
+    _ilkAd = (profil['displayName'] as String?) ?? '';
+    _ilkKullaniciAdi = (profil['username'] as String?) ?? '';
+    _ad.text = _ilkAd;
+    _kullaniciAdi.text = _ilkKullaniciAdi;
+  }
+
+  bool get _degisti =>
+      _dolduruldu &&
+      (_ad.text.trim() != _ilkAd ||
+          _kullaniciAdi.text.trim().toLowerCase() != _ilkKullaniciAdi);
+
+  @override
+  void dispose() {
+    _ad.dispose();
+    _kullaniciAdi.dispose();
+    super.dispose();
+  }
+
+  String _hataMetni(UsernameError e, AppLocalizations l10n) => switch (e) {
+        UsernameError.empty => l10n.usernameEmpty,
+        UsernameError.invalid => l10n.usernameInvalid,
+        UsernameError.taken => l10n.usernameTaken,
+      };
+
+  Future<void> _kaydet() async {
+    final l10n = AppLocalizations.of(context);
+    final gezgin = Navigator.of(context);
+    final mesajci = ScaffoldMessenger.of(context);
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final yeniAd = _ad.text.trim();
+    if (yeniAd.isEmpty) {
+      setState(() => _hata = l10n.displayNameEmpty);
+      return;
+    }
+    final yeniKullaniciAdi = _kullaniciAdi.text.trim().toLowerCase();
+
+    setState(() {
+      _mesgul = true;
+      _hata = null;
+    });
+    try {
+      // Kullanıcı adı ÖNCE: benzersizlik çakışması burada çıkar ve bu
+      // durumda hiçbir şey yazılmamış olur. Ters sırada ad yazılıp kullanıcı
+      // adı reddedilseydi kısmen kaydedilmiş bir form kalırdı.
+      if (yeniKullaniciAdi != _ilkKullaniciAdi &&
+          yeniKullaniciAdi.isNotEmpty) {
+        await claimUsername(yeniKullaniciAdi);
+      }
+      if (yeniAd != _ilkAd) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .set({'displayName': yeniAd}, SetOptions(merge: true));
+        // Arkadaş listesindeki kart ayrı dokümandan besleniyor.
+        await syncPublicProfile();
+      }
+      if (!mounted) return;
+      mesajci.showSnackBar(SnackBar(content: Text(l10n.accountSaved)));
+      gezgin.pop();
+    } on UsernameException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _mesgul = false;
+        _hata = _hataMetni(e.error, l10n);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _mesgul = false;
+        _hata = l10n.genericError;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final profil = ref.watch(profileProvider).value;
+    _ilkDoldur(profil);
+    final eposta = FirebaseAuth.instance.currentUser?.email;
+
+    return CosmicScaffold(
+      appBar: AppBar(title: Text(l10n.accountSection)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(RythoSpace.xl, RythoSpace.md,
+              RythoSpace.xl, RythoSpace.xxl),
+          children: [
+            TextField(
+              controller: _ad,
+              style: RythoType.body,
+              textCapitalization: TextCapitalization.words,
+              onChanged: (_) => setState(() => _hata = null),
+              decoration: InputDecoration(labelText: l10n.displayName),
+            ),
+            const SizedBox(height: RythoSpace.lg),
+            TextField(
+              controller: _kullaniciAdi,
+              style: RythoType.body,
+              autocorrect: false,
+              onChanged: (_) => setState(() => _hata = null),
+              decoration: InputDecoration(
+                labelText: l10n.usernameLabel,
+                prefixText: '@',
+                hintText: l10n.usernameHint,
+              ),
+            ),
+            const SizedBox(height: RythoSpace.sm),
+            Text(
+                _ilkKullaniciAdi.isEmpty
+                    ? l10n.usernameBody
+                    : l10n.usernameChangeNote,
+                style: RythoType.caption),
+            if (_hata != null) ...[
+              const SizedBox(height: RythoSpace.md),
+              Text(_hata!,
+                  style: RythoText.body(13, color: RythoColors.madder)),
+            ],
+            if (eposta != null) ...[
+              const SizedBox(height: RythoSpace.xl),
+              Text(l10n.email, style: RythoType.label),
+              const SizedBox(height: RythoSpace.xs),
+              Text(eposta, style: RythoType.data),
+              const SizedBox(height: RythoSpace.xs),
+              // E-posta kimlik doğrulamanın anahtarı; buradan değiştirilirse
+              // yeniden kimlik doğrulama gerekir. Kapsam dışı, ama neden
+              // düzenlenemediği söylenmeli.
+              Text(l10n.emailChangeNote, style: RythoType.caption),
+            ],
+            const SizedBox(height: RythoSpace.xxl),
+            GoldButton(
+              text: l10n.save,
+              busy: _mesgul,
+              onPressed: _degisti ? _kaydet : null,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

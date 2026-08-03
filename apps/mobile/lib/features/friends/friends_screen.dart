@@ -13,6 +13,7 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../profile/account_screen.dart' show AccountScreen;
 import 'friend_detail_screen.dart' show FriendDetailScreen, reactionLabel;
 import '../../core/api.dart' show friendlyError;
 import '../../l10n/app_localizations.dart';
@@ -177,6 +178,17 @@ class _MyCardPanel extends StatelessWidget {
         Row(children: [
           Expanded(
             child: Text('@$username', style: RythoText.display(19)),
+          ),
+          // Kullanıcı adı bir dönem yalnızca BİR KEZ yazılabiliyordu: kurulum
+          // paneli `username == null` iken gösterildiği için yazım hatası
+          // yapan kullanıcının düzeltme yolu yoktu.
+          IconButton(
+            tooltip: l10n.edit,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.edit_outlined,
+                size: 17, color: RythoColors.lilac),
+            onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AccountScreen())),
           ),
           StreakBadge(count: streakCount),
         ]),

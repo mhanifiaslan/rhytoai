@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/api.dart';
-import '../../core/friends.dart' show syncPublicProfile;
+import '../../core/birth_record.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
@@ -48,38 +48,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final user = FirebaseAuth.instance.currentUser!;
     setState(() => _busy = true);
     try {
-      final profile = {
+      // Kimlik alanları yalnızca ilk kurulumda yazılır; doğum verisi ve Büyük
+      // Üçlü ortak yoldan gider (bkz. core/birth_record.dart) — sonradan
+      // düzeltme ekranıyla aynı kod.
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
         'uid': user.uid,
         'displayName': user.displayName ?? 'Gezgin',
         'photoUrl': user.photoURL,
         'email': user.email,
-        'birthDate': DateFormat('yyyy-MM-dd').format(_birthDate),
-        'birthTime':
-            '${_birthTime.hour.toString().padLeft(2, '0')}:${_birthTime.minute.toString().padLeft(2, '0')}',
-        'birthCity': _cityController.text.trim(),
-        'gender': _gender,
-        'onboardingCompleted': true,
         'createdAt': FieldValue.serverTimestamp(),
-      };
+      }, SetOptions(merge: true));
 
-      // Büyük Üçlü'yü hesapla (başarısız olsa da onboarding tamamlanır)
-      try {
-        final dio = ref.read(apiProvider);
-        final response = await dio.post('/api/v1/astrology/natal-chart',
-            data: birthPayload(profile));
-        final data = response.data['data'];
-        profile['sunSign'] = data['sun_sign'];
-        profile['moonSign'] = data['moon_sign'];
-        profile['ascendant'] = data['ascendant'];
-      } catch (_) {}
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .set(profile, SetOptions(merge: true));
-      // Arkadaş listesinde görünen alanları herkese açık karta yansıt
-      // (users/{uid} yalnızca sahibine okunabilir — doğum verisi içeriyor).
-      await syncPublicProfile();
+      await saveBirthRecord(
+        BirthRecord(
+          date: _birthDate,
+          time: '${_birthTime.hour.toString().padLeft(2, '0')}:'
+              '${_birthTime.minute.toString().padLeft(2, '0')}',
+          city: _cityController.text,
+          gender: _gender,
+        ),
+        dio: ref.read(apiProvider),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
