@@ -2000,6 +2000,18 @@ abstract class AppLocalizations {
   /// **'Düzenle'**
   String get edit;
 
+  /// No description provided for @birthRecordRowSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm okumaların temeli'**
+  String get birthRecordRowSubtitle;
+
+  /// No description provided for @languageAndSounds.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dil ve sesler'**
+  String get languageAndSounds;
+
   /// No description provided for @atlasSections.
   ///
   /// In tr, this message translates to:

@@ -454,6 +454,8 @@
   "faceCameraDeniedHint": "İzni reddettiysen, telefon ayarlarından Rytho için kamera iznini açıp buraya dönebilirsin.",
   "save": "Kaydet",
   "edit": "Düzenle",
+  "birthRecordRowSubtitle": "Tüm okumaların temeli",
+  "languageAndSounds": "Dil ve sesler",
   "atlasSections": "Haritanda ne var",
   "atlasTraitsSubtitle": "Element dağılımın",
   "atlasPlanetsSubtitle": "Doğduğun andaki konumlar",

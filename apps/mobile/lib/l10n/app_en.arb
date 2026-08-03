@@ -454,6 +454,8 @@
   "faceCameraDeniedHint": "If you declined, you can enable camera access for Rytho in your phone settings and come back.",
   "save": "Save",
   "edit": "Edit",
+  "birthRecordRowSubtitle": "The basis of every reading",
+  "languageAndSounds": "Language and sounds",
   "atlasSections": "What's in your chart",
   "atlasTraitsSubtitle": "Your element balance",
   "atlasPlanetsSubtitle": "Positions at your birth",

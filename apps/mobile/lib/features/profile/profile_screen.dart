@@ -3,26 +3,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../../core/friends.dart' show setStreakVisible;
-import '../../core/locale.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/common.dart';
 import 'account_screen.dart';
 import 'birth_record_screen.dart';
 import 'delete_account.dart';
-import 'notification_settings.dart';
+import 'profile_sections.dart';
 import '../../core/providers.dart';
-import '../../core/sound.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../../l10n/app_localizations.dart';
-import 'legal_page.dart';
-import '../face/face_consent.dart';
-import '../../core/api.dart' show apiProvider, friendlyError;
 
-/// SİCİL — kendi profilin: rozetler, günlük seri, doğum kaydı, gizlilik ve
-/// uygulama ayarları, hukuki metinler ve oturum işlemleri.
+/// SİCİL — kendi profilin: kimlik, günlük seri ve **altı ayar satırı**.
+///
+/// ## Yeniden kurgulandı
+///
+/// Önceki hâl ~1400 px'di: yedi kart ve satır içine serpiştirilmiş on dört
+/// kontrol. Kullanıcının tarifi "aşağı doğru uzayan bir liste" idi ve önerisi
+/// de doğruydu — "aynı kategoriler bir başlıkta toplanılarak tıklanınca alt
+/// seçenekler çıkabilir".
+///
+/// Gruplama aslında **vardı**; sorun tek seviyeli olmasıydı. Yedi başlık
+/// hepsi açık hâlde alt alta duruyordu, yani gruplama hiçbir şey gizlemiyor,
+/// yalnızca araya başlık koyuyordu. Şimdi her grup kendi sayfasında
+/// (bkz. profile_sections.dart).
 ///
 /// Bu ekran yalnızca kullanıcının kendisine gösterilir; `users/{uid}` dokümanı
 /// doğum verisi içerdiği için Firestore'da da yalnızca sahibine okunabilir.
@@ -35,18 +40,9 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  bool _soundsEnabled = true;
-
-  @override
-  void initState() {
-    super.initState();
-    // Bildirim izni buradan İSTENMİYOR: profil ekranını açmak izin sormak için
-    // yanlış an. İzin, kullanıcı ilk değeri gördükten sonra ana ekranda
-    // isteniyor (bkz. core/notifications.dart ve sky_screen).
-    SoundFx.loadEnabled().then((v) {
-      if (mounted) setState(() => _soundsEnabled = v);
-    });
-  }
+  // Bildirim izni buradan İSTENMİYOR: profil ekranını açmak izin sormak için
+  // yanlış an. İzin, kullanıcı ilk değeri gördükten sonra ana ekranda
+  // isteniyor (bkz. core/notifications.dart ve sky_screen).
 
   @override
   Widget build(BuildContext context) {
@@ -163,162 +159,58 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 count: (profile['streakCount'] as num?)?.toInt() ?? 0),
           ]),
         ),
-        // Doğum kaydı ve hesap artık DÜZELTİLEBİLİR. Daha önce ikisi de bir
-        // kez yazılıp kilitleniyordu; yanlış giren kullanıcının tek çıkışı
-        // hesabı silmekti. Doğum verisi her okumayı beslediği için bu aynı
-        // zamanda bir veri kalitesi kusuruydu.
+        // ---------- İKİ SEVİYELİ AYARLAR ----------
+        //
+        // Önceki hâl: yedi kart ve satır içine serpiştirilmiş on dört
+        // kontrol, ~1400 px. Gruplama vardı ama TEK SEVİYELİYDİ — her grup
+        // açıktı, hepsi aynı anda görünüyordu. Gruplamanın işe yaraması için
+        // kapanabilmesi gerekiyor.
+        //
+        // Doğum kaydı ve hesap ayrıca DÜZELTİLEBİLİR oldu; daha önce ikisi
+        // de bir kez yazılıp kilitleniyordu.
         Plaque(
-          label: l10n.birthRecord,
+          padding: const EdgeInsets.symmetric(vertical: RythoSpace.xs),
           child: Column(children: [
-            _row(l10n.birthDate, profile['birthDate'] ?? '—'),
-            _row(l10n.birthTime, profile['birthTime'] ?? '—'),
-            _row(l10n.birthCity, profile['birthCity'] ?? '—'),
-            const SizedBox(height: RythoSpace.sm),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton.icon(
-                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const BirthRecordScreen())),
-                icon: const Icon(Icons.edit_outlined, size: 15),
-                label: Text(l10n.edit, style: RythoType.button),
-              ),
+            SettingsRow(
+              icon: Icons.cake_outlined,
+              title: l10n.birthRecord,
+              subtitle: l10n.birthRecordRowSubtitle,
+              value: profile['birthDate'] as String?,
+              onTap: () => _ac(const BirthRecordScreen()),
             ),
-          ]),
-        ),
-        Plaque(
-          label: l10n.accountSection,
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          child: SettingsRow(
-            title: l10n.displayName,
-            value: profile['username'] != null
-                ? '@${profile['username']}'
-                : profile['displayName'] ?? '—',
-            icon: Icons.person_outline_rounded,
-            onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AccountScreen())),
-          ),
-        ),
-        // Ayarlar: sesler aç/kapa
-        Plaque(
-          label: l10n.settings,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Row(children: [
-            const Icon(Icons.music_note_outlined,
-                size: 18, color: RythoColors.lilac),
-            const SizedBox(width: 10),
-            Expanded(
-                child: Text(l10n.sounds, style: RythoText.body(14))),
-            Switch(
-              value: _soundsEnabled,
-              activeThumbColor: RythoColors.magenta,
-              activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
-              onChanged: (v) {
-                setState(() => _soundsEnabled = v);
-                SoundFx.setEnabled(v);
-                if (v) SoundFx.like();
-              },
+            const Divider(height: 1, indent: RythoSpace.lg),
+            SettingsRow(
+              icon: Icons.person_outline_rounded,
+              title: l10n.accountSection,
+              value: profile['username'] != null
+                  ? '@${profile['username']}'
+                  : profile['displayName'] as String?,
+              onTap: () => _ac(const AccountScreen()),
             ),
-          ]),
-        ),
-        // Dil: arayüz metinlerini VE backend'in ürettiği yorumların dilini
-        // birlikte belirler (Accept-Language ile taşınır, bkz. core/locale.dart).
-        Plaque(
-          label: l10n.language,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Column(children: [
-            for (final secim in <(String, Locale?)>[
-              (l10n.languageSystem, null),
-              (l10n.languageTurkish, const Locale('tr')),
-              (l10n.languageEnglish, const Locale('en')),
-            ])
-              Builder(builder: (_) {
-                final secili = ref.watch(localeProvider)?.languageCode ==
-                    secim.$2?.languageCode;
-                return ListTile(
-                  dense: true,
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(secim.$1, style: RythoText.body(14)),
-                  trailing: Icon(
-                    secili
-                        ? Icons.radio_button_checked_rounded
-                        : Icons.radio_button_unchecked_rounded,
-                    size: 20,
-                    color: secili
-                        ? RythoColors.magenta
-                        : RythoColors.parchmentDim,
-                  ),
-                  onTap: () => ref.read(localeProvider.notifier).set(secim.$2),
-                );
-              }),
-          ]),
-        ),
-        // Bildirimler. Metinler sunucuda üretiliyor ve zamanlama kullanıcının
-        // YEREL saatine göre yapılıyor (bkz. core/notifications.dart).
-        const NotificationSettings(),
-        // Gizlilik: arkadaşlara ne göründüğü. Tüm görünürlük ayarları
-        // varsayılan olarak KAPALIDIR ve yalnızca buradan açılır.
-        Plaque(
-          label: l10n.privacy,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          child: Column(children: [
-            Row(children: [
-              const Icon(Icons.local_fire_department_outlined,
-                  size: 18, color: RythoColors.lilac),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l10n.streakVisibleSetting,
-                          style: RythoText.body(14)),
-                      Text(
-                        l10n.streakVisibleSettingBody,
-                        style: RythoText.body(11.5,
-                            color: RythoColors.parchmentDim),
-                      ),
-                    ]),
-              ),
-              Switch(
-                value: profile['streakVisible'] == true,
-                activeThumbColor: RythoColors.magenta,
-                activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
-                onChanged: (v) => setStreakVisible(v),
-              ),
-            ]),
-            // Biyometrik rıza. Verildiği kadar kolay geri alınabilmeli
-            // (GDPR Md.7/3) — o yüzden diğer gizlilik ayarlarıyla aynı
-            // yerde ve aynı biçimde duruyor, ayrı bir menüye gömülü değil.
-            const Divider(height: 18),
-            const _FaceConsentRow(),
-          ]),
-        ),
-        Plaque(
-          label: l10n.about,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(
-              l10n.aboutBody,
-              style: RythoText.body(13, color: RythoColors.parchmentDim),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            SettingsRow(
+              icon: Icons.notifications_none_rounded,
+              title: l10n.notifications,
+              onTap: () => _ac(const NotificationSettingsScreen()),
             ),
-            const SizedBox(height: 10),
-            Text(l10n.ephemerisCredit,
-                style: RythoText.mono(10, color: RythoColors.parchmentDim)),
-            const SizedBox(height: 12),
-            const Divider(height: 1),
-            _legalLink(
-                context,
-                l10n.privacyPolicy,
-                () => LegalPage(
-                    title: l10n.privacyPolicy,
-                    sections: privacyPolicySections(
-                        Localizations.localeOf(context).languageCode))),
-            const Divider(height: 1),
-            _legalLink(
-                context,
-                l10n.termsOfUse,
-                () => LegalPage(
-                    title: l10n.termsOfUse,
-                    sections: termsOfUseSections(
-                        Localizations.localeOf(context).languageCode))),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            SettingsRow(
+              icon: Icons.lock_outline_rounded,
+              title: l10n.privacy,
+              onTap: () => _ac(const PrivacySettingsScreen()),
+            ),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            SettingsRow(
+              icon: Icons.tune_rounded,
+              title: l10n.languageAndSounds,
+              onTap: () => _ac(const AppearanceSettingsScreen()),
+            ),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            SettingsRow(
+              icon: Icons.info_outline_rounded,
+              title: l10n.about,
+              onTap: () => _ac(const AboutScreen()),
+            ),
           ]),
         ),
         Padding(
@@ -354,106 +246,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  /// Hukuki metin sayfasını açan sade satır.
-  Widget _legalLink(
-      BuildContext context, String title, Widget Function() pageBuilder) {
-    return InkWell(
-      onTap: () => Navigator.of(context)
-          .push(MaterialPageRoute(builder: (_) => pageBuilder())),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Row(children: [
-          Expanded(child: Text(title, style: RythoText.body(13.5))),
-          Text('›',
-              style: RythoText.body(16, color: RythoColors.parchmentDim)),
-        ]),
-      ),
-    );
-  }
+  void _ac(Widget sayfa) =>
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => sayfa));
 
-  Widget _row(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(children: [
-        SizedBox(
-            width: 90,
-            child: Text(label.toUpperCase(),
-                style: RythoText.mono(10, color: RythoColors.parchmentDim))),
-        Text(value, style: RythoText.body(14)),
-      ]),
-    );
-  }
 }
 
-/// Biyometrik işleme rızası satırı.
-///
-/// Yalnızca **geri alma** yönünde çalışıyor: buradan açmak, kullanıcıya neye
-/// rıza gösterdiğini anlatan metni göstermeden rıza almak olurdu. Vermek için
-/// yüz okuma akışındaki rıza ekranından geçilir; burası kapatma yeridir.
-///
-/// Geri alma üretilmiş okumaları da siler; kullanıcıya kaç tanesinin
-/// silindiği söyleniyor çünkü "geri aldım ama verim ne oldu" sorusu cevapsız
-/// kalmamalı.
-class _FaceConsentRow extends ConsumerWidget {
-  const _FaceConsentRow();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final riza = ref.watch(faceConsentProvider);
-    final verildi = riza.value?.granted ?? false;
-
-    return Row(children: [
-      const Icon(Icons.face_retouching_natural_outlined,
-          size: 18, color: RythoColors.lilac),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l10n.faceConsentSetting, style: RythoText.body(14)),
-          Text(
-            verildi ? l10n.faceConsentSettingOn : l10n.faceConsentSettingOff,
-            style: RythoText.body(11.5, color: RythoColors.parchmentDim),
-          ),
-        ]),
-      ),
-      Switch(
-        value: verildi,
-        activeThumbColor: RythoColors.magenta,
-        activeTrackColor: RythoColors.violet.withValues(alpha: 0.5),
-        // Açma yönü kapalı: rıza ancak metnini gösteren ekrandan alınır.
-        onChanged: !verildi
-            ? null
-            : (_) async {
-                final onay = await showDialog<bool>(
-                  context: context,
-                  builder: (c) => AlertDialog(
-                    title: Text(l10n.faceConsentWithdrawTitle),
-                    content: Text(l10n.faceConsentWithdrawBody),
-                    actions: [
-                      TextButton(
-                          onPressed: () => Navigator.pop(c, false),
-                          child: Text(l10n.cancel)),
-                      TextButton(
-                          onPressed: () => Navigator.pop(c, true),
-                          child: Text(l10n.faceConsentWithdrawConfirm)),
-                    ],
-                  ),
-                );
-                if (onay != true || !context.mounted) return;
-                try {
-                  final silinen =
-                      await withdrawFaceConsent(ref.read(apiProvider));
-                  ref.invalidate(faceConsentProvider);
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                      content: Text(l10n.faceConsentWithdrawn(silinen))));
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(friendlyError(e, l10n))));
-                }
-              },
-      ),
-    ]);
-  }
-}
+// `_row` ve `_FaceConsentRow` KALDIRILDI (Tasarım A4). Etiket-değer
+// satırı `LabelValueRow`'a, rıza satırı da gizlilik alt sayfasına
+// taşındı (bkz. profile_sections.dart).

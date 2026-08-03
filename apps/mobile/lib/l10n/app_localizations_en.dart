@@ -1050,6 +1050,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get edit => 'Edit';
 
   @override
+  String get birthRecordRowSubtitle => 'The basis of every reading';
+
+  @override
+  String get languageAndSounds => 'Language and sounds';
+
+  @override
   String get atlasSections => 'What\'s in your chart';
 
   @override

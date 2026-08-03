@@ -1047,6 +1047,12 @@ class AppLocalizationsTr extends AppLocalizations {
   String get edit => 'Düzenle';
 
   @override
+  String get birthRecordRowSubtitle => 'Tüm okumaların temeli';
+
+  @override
+  String get languageAndSounds => 'Dil ve sesler';
+
+  @override
   String get atlasSections => 'Haritanda ne var';
 
   @override
