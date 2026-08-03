@@ -113,32 +113,42 @@ Burada yalnızca konsol tarafını ilgilendiren özet var.
 - Veri güvenliği formunda **hesap silmenin uygulama içinden yapılabildiğini**
   işaretle — Play bunu ayrıca soruyor.
 
-## 5. Monetizasyon (uygulandı)
+## 5. Monetizasyon (uygulandı — Revize R1: abonelik + token)
 
-Abonelik altyapısı **kodda mevcut**: RevenueCat (`purchases_flutter`) +
-webhook ile sunucu tarafı yetkilendirme.
+Altyapı **kodda mevcut**: RevenueCat (`purchases_flutter`) + webhook ile
+sunucu tarafı yetkilendirme + token cüzdanı (`backend/core/wallet.py`).
 
 | Katman | İçerik |
 |---|---|
 | **Ücretsiz** | Burç yorumu (günlük/haftalık/aylık), gerçek gökyüzü, günde 5 sohbet mesajı, günde 1 I Ching çekimi, arkadaş listesi, seri ve hazır tepkiler |
-| **Rytho+** (yalnızca aylık) | Kişiye özel günlük okuma, derin natal rapor, BaZi analizi, sinastri, arkadaşlarla günlük ikili dinamik, sınırsız sohbet |
+| **Rytho+** (yalnızca aylık) | Kişiye özel günlük okuma + **aylık 300 token** hakkı. Token'la: sohbet (1), I Ching (2), ikili dinamik (3), natal/BaZi/sinastri/yüz okuma (5). Aylık hak dönem sonunda yenilenir, DEVRETMEZ. |
+| **Token paketleri** (consumable) | `rytho_tokens_small` 100 · `rytho_tokens_medium` 300 · `rytho_tokens_large` 1000. Tekrar tekrar alınabilir, bakiye aya DEVREDER, abonelik şartı yok (ücretsiz kullanıcı sohbet/I Ching taşması için kullanabilir). |
 
-Kilit sunucuda: kilitli uçlar HTTP **402** döner, istemci bunu görünce paywall
-açar (`backend/core/entitlements.py`, `apps/mobile/lib/core/api.dart`).
+Kurallar:
+- Token yalnızca **yeni üretimde** düşer; önbellekten tekrar okuma ücretsiz.
+- LLM yanıt üretemezse bedel iade edilir.
+- Kilit sunucuda: 402 + (token bitiminde) `X-Paywall-Reason: tokens` başlığı;
+  istemci başlığa göre paywall ya da token mağazası açar.
+- `RYTHO_TOKENS_ENFORCE=0` (varsayılan): kuru çalışma — harcama loglanır ama
+  reddedilmez. Eski sürümler yayılınca `1` yapılır.
 
 ### Kalan konsol işleri — uygulama sahibinin
 
 1. **App Store Connect** ve **Play Console**'da abonelik ürününü oluştur:
    önerilen kimlik `rytho_plus_monthly`, **3 gün ücretsiz deneme**.
-2. RevenueCat panelinde ürünü `RhytoAI Pro` yetkisine (`entitlement`) bağla.
+2. Aynı konsollarda ÜÇ **consumable** ürün oluştur — kimlikler birebir:
+   `rytho_tokens_small`, `rytho_tokens_medium`, `rytho_tokens_large`
+   (önerilen fiyatlar: $1,99 / $4,99 / $12,99). RevenueCat'te bu ürünleri
+   içeri aktar; entitlement'a BAĞLAMA (consumable — webhook cüzdana yükler).
+3. RevenueCat panelinde abonelik ürününü `RhytoAI Pro` yetkisine bağla.
    Yetki kimliği koddaki `RYTHO_PLUS_ENTITLEMENT` ile birebir aynı olmalı;
    farklıysa satın alma sonrası yetki açılmaz.
-3. RevenueCat webhook'unu şu adrese kur:
+4. RevenueCat webhook'unu şu adrese kur:
    `https://<cloud-run-url>/api/v1/billing/revenuecat`
    Authorization başlığına Secret Manager'daki `REVENUECAT_WEBHOOK_SECRET`
    değerini yaz. Anahtar tanımsızken uç 503 döner ve **hiçbir kullanıcı abone
    olarak işaretlenemez** — bu bilinçli.
-4. `test_` önekli RevenueCat anahtarlarını gerçek anahtarlarla değiştir
+5. `test_` önekli RevenueCat anahtarlarını gerçek anahtarlarla değiştir
    (`apps/mobile/dart_defines.local.json`; dosya .gitignore'da).
 
 > RevenueCat **TRANSFER** olayı işleniyor: kullanıcı oturum açmadan satın alma
