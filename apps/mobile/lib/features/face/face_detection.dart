@@ -158,8 +158,29 @@ FaceLandmarks? landmarksFromFace(Face face) {
   final enSol = ovalNoktalar.reduce((a, b) => a.dx < b.dx ? a : b);
   final enSag = ovalNoktalar.reduce((a, b) => a.dx > b.dx ? a : b);
 
-  final solKas = nokta(FaceContourType.leftEyebrowTop);
-  final sagKas = nokta(FaceContourType.rightEyebrowTop);
+  // Kaş sınırı için ÜST kenar değil kaşın ORTA hattı kullanılıyor.
+  //
+  // Klasik San Ting üst bölgeyi "saç çizgisi -> kaş" diye tanımlıyor ve
+  // kastettiği şey kaşın kendisi. Yalnızca üst kenarı almak sınırı kaş
+  // kalınlığı kadar yukarı kaydiriyor; bu, üst bölgeyi küçültüp orta bölgeyi
+  // büyüten SISTEMATIK bir sapma. Cihazda ölçülen üst bölge sekiz ölçümde
+  // 0,25-0,27 arasında oturdu (klasik ~0,33) ve bu sapma o farkın bir
+  // parçası.
+  //
+  // Alt kenar bulunamazsa üst kenara düşülüyor: ölçüm yapmamaktansa bilinen
+  // sapmayla yapmak yeğ.
+  Offset? kasOrta(FaceContourType ust, FaceContourType alt) {
+    final u = nokta(ust);
+    if (u == null) return null;
+    final a = nokta(alt);
+    if (a == null) return u;
+    return Offset((u.dx + a.dx) / 2, (u.dy + a.dy) / 2);
+  }
+
+  final solKas = kasOrta(
+      FaceContourType.leftEyebrowTop, FaceContourType.leftEyebrowBottom);
+  final sagKas = kasOrta(
+      FaceContourType.rightEyebrowTop, FaceContourType.rightEyebrowBottom);
   final burunAlt = nokta(FaceContourType.noseBottom);
   final ustDudak = nokta(FaceContourType.upperLipTop);
   final altDudak = nokta(FaceContourType.lowerLipBottom);
