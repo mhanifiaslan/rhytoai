@@ -8,26 +8,42 @@ import '../../core/providers.dart';
 import '../../core/subscription.dart'
     show introPaywallShown, markIntroPaywallShown, subscriptionProvider;
 import '../../theme/rytho_theme.dart';
+import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
-import '../../widgets/glass.dart';
+import '../../widgets/common.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../../widgets/reading_card.dart';
 import '../chat/chat_screen.dart';
 import '../oracle/oracle_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
-import '../shell/app_shell.dart';
+import 'sign_story_screen.dart';
+import 'sky_now_screen.dart';
 import '../../core/api.dart' show friendlyError;
 import '../../core/notifications.dart'
     show
         markNotificationPromptShown,
         notificationPromptShown,
         requestNotificationPermission;
-import '../share/share_card.dart';
 import '../../l10n/app_localizations.dart';
 
-/// GÖKYÜZÜ — ana ekran v3: selamlama, burç çipleri, promo banner,
-/// günün içgörüsü (+ seri ve kişisel nudge), kehanet araçları karuseli
-/// ve canlı gökyüzü kartı. Kartlar 70ms stagger ile girer.
+/// GÖKYÜZÜ — **bugün** ekranı.
+///
+/// ## Yeniden kurgulandı
+///
+/// Önceki hâli ~1500 px uzunluğundaydı ve kullanıcı tarifi şuydu: "tamamen
+/// karışık bir yer". Sebebi, bir bakışta görülecek şeyle üç dakika okunacak
+/// şeyin aynı seviyede, tek kaydırma sütununda durmasıydı.
+///
+/// Üç şey akıştan çıktı:
+///
+/// * **Burç yorumu** → hikâye okuyucusu ([SignStoryScreen]). Şerit zaten
+///   hikâye halkası gibi görünüyordu; artık öyle davranıyor.
+/// * **Gökyüzü çarkı** → [SkyNowScreen]. Akışta tek satırlık özet kaldı.
+/// * **Tanıtım bandı** → silindi. Satış mesajı [PlusLockedCard]'da, yani
+///   kullanıcının kilitli içeriğe baktığı yerde duruyor.
+///
+/// Kalan yapı üç bölüm: bugün senin için · şu an · araçlar.
 class SkyScreen extends ConsumerStatefulWidget {
   const SkyScreen({super.key});
 
@@ -62,26 +78,9 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   /// göstermemek ise kilitli karta dokunmayan kullanıcıya Rytho+'ın varlığını
   /// hiç duyurmuyor. Bu yüzden tetikleyici, ücretsiz günlük yorumun ekrana
   /// gelmesidir.
-  /// Günlük yorumu görsel kart olarak paylaşır.
   ///
-  /// Karta yalnızca burç, tarih, yorumdan bir alıntı ve ay evresi girer —
-  /// ham doğum verisi ASLA. Kullanıcı doğum tarihini paylaştığını fark
-  /// etmeden paylaşmamalı.
-  Future<void> _shareReading(
-      AppLocalizations l10n, int signIndex, Map<String, dynamic> data) async {
-    final moon = data['moon_phase'] as Map<String, dynamic>?;
-    await shareReadingCard(
-      context,
-      signName: signDisplayName(l10n, signIndex),
-      signGlyph: kSignGlyphs[signIndex],
-      reading: data['reading'] ?? '',
-      dateLabel: DateFormat('d MMMM yyyy',
-              Localizations.localeOf(context).toLanguageTag())
-          .format(DateTime.now()),
-      moonEmoji: moon?['emoji'] as String?,
-      moonName: moon?['name'] as String?,
-    );
-  }
+  /// Yorum paylaşımı akıştan hikâye okuyucusuna taşındı — paylaşılacak metnin
+  /// tamamı orada görünüyor (bkz. sign_story_screen.dart).
 
   /// İlk değer ekrana geldikten sonraki tek seferlik akış.
   ///
@@ -159,9 +158,9 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.only(bottom: 130),
+            padding: const EdgeInsets.only(bottom: RythoSpace.dockClearance),
             children: [
-              const SizedBox(height: 10),
+              const SizedBox(height: RythoSpace.sm),
               _Header(
                 greeting: _greeting(l10n),
                 name: profile['displayName'] ?? 'Gezgin',
@@ -169,101 +168,90 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                 streak: streak,
               ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
                   begin: 0.08, curve: Curves.easeOutCubic),
-              const SizedBox(height: 16),
-              // Burç çipleri şeridi
+              const SizedBox(height: RythoSpace.lg),
+              // Burç şeridi — HİKÂYE halkası. Dokunma tam ekran okuyucu açar.
+              //
+              // Eskiden bu şerit bir "seçici"ydi: dokunulunca 200 px aşağıdaki
+              // bölümün metni değişiyordu, arada da alakasız bir tanıtım bandı
+              // duruyordu. Görünüşü hikâye, davranışı sekme filtresiydi.
               SizedBox(
                 height: 78,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: RythoSpace.lg),
                   itemCount: signOrder.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) =>
+                      const SizedBox(width: RythoSpace.md),
                   itemBuilder: (_, i) => ZodiacChip(
                     signIndex: signOrder[i],
                     selected: signOrder[i] == selected,
-                    onTap: () =>
-                        setState(() => _selectedSign = signOrder[i]),
+                    onTap: () => _openStory(signOrder, i),
                   ),
                 ),
               ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
                   begin: 0.08, curve: Curves.easeOutCubic),
-              const SizedBox(height: 8),
-              // Premium/upsell banner'ı → Atlas'ın derin raporu
-              PromoBanner(
-                title: l10n.promoTitle,
-                subtitle: l10n.promoBody,
-                buttonText: l10n.promoAction,
-                onTap: () =>
-                    ref.read(shellTabProvider.notifier).state = 1,
-              ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
-                  begin: 0.08, curve: Curves.easeOutCubic),
-              // Bugünün içgörüsü
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
-                child: Row(children: [
-                  Text(l10n.todaysInsight, style: RythoText.display(19)),
-                  const Spacer(),
-                  Text(
-                    // Tarih biçimi de dile bağlı: sabit 'tr_TR' İngilizce
-                    // arayüzde Türkçe ay adı gösteriyordu.
-                    DateFormat('d MMMM', Localizations.localeOf(context)
-                        .toLanguageTag()).format(DateTime.now()),
-                    style: RythoText.mono(11, color: RythoColors.parchmentDim),
-                  ),
-                ]),
+
+              // ---------- BUGÜN SENİN İÇİN ----------
+              SectionHeader(
+                l10n.todaysInsight,
+                trailing: Text(
+                  // Tarih biçimi de dile bağlı: sabit 'tr_TR' İngilizce
+                  // arayüzde Türkçe ay adı gösteriyordu.
+                  DateFormat('d MMMM',
+                          Localizations.localeOf(context).toLanguageTag())
+                      .format(DateTime.now()),
+                  style: RythoType.dataSmall,
+                ),
               ).animate(delay: next()).fadeIn(duration: 360.ms),
-              // Ücretsiz katman: seçili burcun günlük yorumu. Paylaşımlı
-              // önbellekten geldiği için her zaman doludur ve kullanıcı
-              // sayısından bağımsız maliyettedir.
+
+              // Ücretsiz katman: kullanıcının kendi burcunun günlük yorumu.
+              // Paylaşımlı önbellekten geldiği için her zaman doludur ve
+              // kullanıcı sayısından bağımsız maliyettedir.
               ref.watch(signHoroscopeProvider(kSignKeys[selected])).when(
                     loading: () => const Padding(
-                      padding: EdgeInsets.all(28),
+                      padding: EdgeInsets.all(RythoSpace.xl),
                       child: Center(child: AstrolabeSpinner()),
                     ),
-                    error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
+                    error: (e, _) => Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: RythoSpace.lg),
+                      child: ErrorCard(
+                        message: friendlyError(e, l10n),
+                        onRetry: () => ref.invalidate(
+                            signHoroscopeProvider(kSignKeys[selected])),
+                      ),
+                    ),
                     data: (data) {
                       // Kullanıcı ilk değerini gördü: tanıtım paywall'ı
                       // buradan tetiklenir (hesap ömründe bir kez).
                       _maybeShowIntroPaywall();
-                      return GlassPanel(
-                      label: l10n.signToday(signDisplayName(l10n, selected)),
-                      // Buradaki konserve motivasyon cümlesi kaldırıldı:
-                      // hemen üstünde AI'ın gerçek gökyüzü verisiyle ürettiği
-                      // burç yorumu duruyor, altına hazır bir cümle eklemek
-                      // yorumu ucuzlatıyordu.
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            TypewriterText(
-                              text: data['reading'] ?? '',
-                              style: RythoText.body(14.5, height: 1.6),
-                            ),
-                            const SizedBox(height: 10),
-                            // Dışa paylaşım: kategorinin en güçlü büyüme
-                            // kanalı. Sosyal graf gerektirmez ve paylaşılan
-                            // metni kullanıcı yazmadığı için moderasyon
-                            // yükü yok.
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: TextButton.icon(
-                                onPressed: () => _shareReading(
-                                    l10n, selected, data),
-                                icon: const Icon(Icons.ios_share_rounded,
-                                    size: 16),
-                                label: Text(l10n.shareReading,
-                                    style: RythoText.label(11)),
-                              ),
-                            ),
-                          ]),
-                    ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
+                      return ReadingCard(
+                        label: l10n
+                            .signToday(signDisplayName(l10n, selected)),
+                        title: signDisplayName(l10n, selected),
+                        body: data['reading'] ?? '',
+                        // Kart yalnızca ÖNİZLEME. Tam metin hikâye
+                        // okuyucusunda; iki ayrı "tam metin" yeri olmamalı.
+                        onOpen: () => _openStory(
+                            signOrder, signOrder.indexOf(selected)),
+                      ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
                           begin: 0.06, curve: Curves.easeOutCubic);
                     },
                   ),
+
               // Rytho+: kişiye özel okuma. Abone değilse istek atılmaz;
               // kilitli kart gösterilir ve paywall ancak dokununca açılır.
               daily.when(
                 loading: () => const SizedBox.shrink(),
-                error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
+                error: (e, _) => Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
+                  child: ErrorCard(
+                    message: friendlyError(e, l10n),
+                    onRetry: () => ref.invalidate(dailyReadingProvider),
+                  ),
+                ),
                 data: (data) => data == null
                     ? PlusLockedCard(
                         title: l10n.personalReadingLocked,
@@ -272,44 +260,60 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                             : l10n.personalReadingLockedBodyWithSign(
                                 signDisplayName(l10n, userSignIndex)),
                       )
-                    : GlassPanel(
+                    : ReadingCard(
                         label:
                             '☀️ ${data['sun_sign']} · 🌙 ${data['moon_sign']} · ⬆️ ${data['ascendant']}',
+                        title: l10n.personalReadingTitle,
+                        body: data['reading'] ?? '',
                         glow: true,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(l10n.personalReadingTitle,
-                                style: RythoText.label(
-                                    11, color: RythoColors.goldBright)),
-                            const SizedBox(height: 8),
-                            Text(data['reading'] ?? '',
-                                style: RythoText.body(14.5, height: 1.6)),
-                          ],
-                        ),
                       ).animate(delay: next()).fadeIn(duration: 380.ms),
               ),
-              // Kehanet araçları karuseli
+
+              // ---------- ŞU AN ----------
+              // Çark ve açı çipleri kendi sayfasına taşındı; akışta tek
+              // satırlık özet duruyor (bkz. sky_now_screen.dart).
+              SectionHeader(l10n.skyNow)
+                  .animate(delay: next())
+                  .fadeIn(duration: 360.ms),
+              sky.when(
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(RythoSpace.xl),
+                  child: Center(child: AstrolabeSpinner()),
+                ),
+                error: (e, _) => Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
+                  child: ErrorCard(
+                    message: friendlyError(e, l10n),
+                    onRetry: () => ref.invalidate(skyNowProvider),
+                  ),
+                ),
+                data: (data) => SkyNowSummary(sky: data)
+                    .animate(delay: next())
+                    .fadeIn(duration: 380.ms)
+                    .slideY(begin: 0.06, curve: Curves.easeOutCubic),
+              ),
+
+              // ---------- ARAÇLAR ----------
+              SectionHeader(l10n.oracleTools)
+                  .animate(delay: next())
+                  .fadeIn(duration: 360.ms),
               Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-                child: Text(l10n.oracleTools, style: RythoText.display(19)),
-              ).animate(delay: next()).fadeIn(duration: 360.ms),
-              SizedBox(
-                height: 118,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
+                // Sabit yükseklik: `_OracleCard` içindeki `Spacer` sınırlı
+                // yükseklik ister, `ListView` içinde satır sınırsızdır.
+                child: SizedBox(
+                  height: 108,
+                  child: Row(
                   children: [
-                    // Yüz Okuma kartı v1 kapsamı dışında (biyometrik veri).
-                    // Sinastri kartı da kaldırıldı: giriş noktası Meclis'teki
-                    // kullanıcı profilleriydi. Faz 5'te arkadaş katmanının
-                    // "günlük ikili dinamik" özelliği olarak geri gelecek.
+                    // Yüz Okuma Atlas'ta ("sen" sekmesi), burada değil.
                     for (final (i, tool) in [
                       ('🪙', l10n.iChing, l10n.iChingSubtitle),
                       ('🀄', l10n.baZi, l10n.baZiSubtitle),
-                    ].indexed)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 12),
+                    ].indexed) ...[
+                      if (i > 0) const SizedBox(width: RythoSpace.md),
+                      Expanded(
                         child: _OracleCard(
                           emoji: tool.$1,
                           title: tool.$2,
@@ -318,43 +322,31 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                               MaterialPageRoute(
                                   builder: (_) => OracleScreen(initialTab: i))),
                         )
-                            .animate(delay: Duration(milliseconds: 70 * stagger + i * 70))
+                            .animate(
+                                delay: Duration(
+                                    milliseconds: 70 * stagger + i * 70))
                             .fadeIn(duration: 360.ms)
-                            .slideX(begin: 0.1, curve: Curves.easeOutCubic),
+                            .slideY(begin: 0.1, curve: Curves.easeOutCubic),
                       ),
+                    ],
                   ],
+                  ),
                 ),
               ),
-              // Canlı gökyüzü
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 6),
-                child: Text(l10n.skyNow, style: RythoText.display(19)),
-              ).animate(delay: next()).fadeIn(duration: 360.ms),
-              sky.when(
-                loading: () => const SizedBox(
-                    height: 180, child: Center(child: AstrolabeSpinner())),
-                error: (e, _) => _ErrorCard(error: friendlyError(e, l10n)),
-                data: (data) => GlassPanel(
-                  child: Column(children: [
-                    Center(
-                      child: ZodiacRing(
-                        planets:
-                            List<Map<String, dynamic>>.from(data['planets']),
-                        size: 230,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    _SkyStrip(sky: data),
-                  ]),
-                ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
-                    begin: 0.06, curve: Curves.easeOutCubic),
-              ),
-              const SizedBox(height: 16),
             ],
           ),
         ),
       ),
     );
+  }
+
+  /// Burç hikâyesini tam ekran açar.
+  void _openStory(List<int> order, int index) {
+    if (index < 0) return;
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SignStoryScreen(order: order, initialIndex: index),
+      fullscreenDialog: true,
+    ));
   }
 }
 
@@ -463,78 +455,6 @@ class _OracleCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: RythoText.body(10.5, color: RythoColors.parchmentDim)),
         ]),
-      ),
-    );
-  }
-}
-
-class _SkyStrip extends StatelessWidget {
-  const _SkyStrip({required this.sky});
-  final Map<String, dynamic> sky;
-
-  @override
-  Widget build(BuildContext context) {
-    final moon = sky['moon_phase'] as Map<String, dynamic>? ?? {};
-    final retros = List<String>.from(sky['retrogrades'] ?? []);
-    final aspects = List<Map<String, dynamic>>.from(sky['aspects'] ?? []);
-
-    return Column(children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('${moon['emoji'] ?? ''} ${moon['name'] ?? ''}',
-              style: RythoText.body(13.5, w: FontWeight.w600)),
-          Text('  ·  ',
-              style: RythoText.body(13.5, color: RythoColors.parchmentDim)),
-          Text(
-              AppLocalizations.of(context)
-                  .moonIllumination(moon['illumination'] ?? '—'),
-              style: RythoText.mono(11.5, color: RythoColors.parchmentDim)),
-        ],
-      ),
-      if (retros.isNotEmpty) ...[
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 6,
-          alignment: WrapAlignment.center,
-          children: [
-            for (final r in retros)
-              InfoChip(
-                  text: '↩️ ${AppLocalizations.of(context).retrogradeChip(r)}',
-                  color: RythoColors.magenta),
-          ],
-        ),
-      ],
-      if (aspects.isNotEmpty) ...[
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 32,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: aspects.length.clamp(0, 8),
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (_, i) {
-              final a = aspects[i];
-              return InfoChip(text: '${a['p1']} ${a['aspect']} ${a['p2']}');
-            },
-          ),
-        ),
-      ],
-    ]);
-  }
-}
-
-class _ErrorCard extends StatelessWidget {
-  const _ErrorCard({required this.error});
-  final String error;
-
-  @override
-  Widget build(BuildContext context) {
-    return GlassPanel(
-      child: Text(
-        '${AppLocalizations.of(context).errorSkyUnavailable}\n$error',
-        style: RythoText.body(13, color: RythoColors.parchmentDim),
       ),
     );
   }

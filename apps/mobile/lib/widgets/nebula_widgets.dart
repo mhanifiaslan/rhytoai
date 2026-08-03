@@ -157,83 +157,10 @@ class ZodiacChip extends StatelessWidget {
   }
 }
 
-/// Degrade promo/motivasyon banner'ı — hafif shimmer döngüsüyle yaşar.
-class PromoBanner extends StatelessWidget {
-  const PromoBanner({
-    super.key,
-    required this.title,
-    required this.subtitle,
-    required this.buttonText,
-    required this.onTap,
-    this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-  });
-
-  final String title;
-  final String subtitle;
-  final String buttonText;
-  final VoidCallback onTap;
-  final EdgeInsets margin;
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        margin: margin,
-        padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          gradient: RythoColors.primaryGradient,
-          boxShadow: const [
-            BoxShadow(color: RythoColors.goldGlow, blurRadius: 24, spreadRadius: -6),
-          ],
-        ),
-        child: Stack(children: [
-          // Sağda dekoratif çark
-          Positioned(
-            right: -26,
-            top: -22,
-            bottom: -22,
-            child: Opacity(
-              opacity: 0.22,
-              child: Text('☸',
-                  style: TextStyle(
-                      fontSize: 110,
-                      color: Colors.white.withValues(alpha: 0.9))),
-            ),
-          ),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title,
-                style: RythoText.display(17,
-                    color: Colors.white, w: FontWeight.w700)),
-            const SizedBox(height: 5),
-            Padding(
-              padding: const EdgeInsets.only(right: 64),
-              child: Text(subtitle,
-                  style: RythoText.body(12.5,
-                      color: Colors.white.withValues(alpha: 0.9))),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(buttonText,
-                  style: RythoText.label(11.5, color: RythoColors.inkDeep)),
-            ),
-          ]),
-        ]),
-      )
-          .animate(onPlay: (c) => c.repeat())
-          .shimmer(
-              delay: 2400.ms,
-              duration: 1600.ms,
-              color: Colors.white.withValues(alpha: 0.18)),
-    );
-  }
-}
+// `PromoBanner` KALDIRILDI (Tasarım A2). Gökyüzü akışında burç şeridi ile
+// içgörü kartının arasında duruyordu: şeride dokunuluyor, sonuç bandın
+// ÖTESİNDE değişiyordu. Satış mesajı artık yalnızca `PlusLockedCard`'da —
+// yani kullanıcının kilitli içeriğe baktığı yerde.
 
 /// Animasyonlu degrade ilerleme çubuğu — 800ms'de dolar.
 class GradientProgressBar extends StatelessWidget {

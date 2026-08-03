@@ -208,48 +208,10 @@ class MarginNote extends StatelessWidget {
   }
 }
 
-/// Metni daktilo/akış hissiyle beliren blok — AI okumaları için.
-class TypewriterText extends StatefulWidget {
-  const TypewriterText({super.key, required this.text, required this.style});
-  final String text;
-  final TextStyle style;
+// `TypewriterText` KALDIRILDI (Tasarım A2). Uzun okuma metnini harf harf
+// yazdırmak, metin akıştan kendi sayfasına taşındıktan sonra okumayı
+// yavaşlatan bir süse dönüştü.
 
-  @override
-  State<TypewriterText> createState() => _TypewriterTextState();
-}
-
-class _TypewriterTextState extends State<TypewriterText>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: Duration(milliseconds: (widget.text.length * 9).clamp(600, 6000)),
-  )..forward();
-
-  @override
-  void didUpdateWidget(TypewriterText old) {
-    super.didUpdateWidget(old);
-    if (old.text != widget.text) _controller.forward(from: 0);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (_, _) {
-        final count =
-            (widget.text.length * Curves.easeOut.transform(_controller.value))
-                .round();
-        return Text(widget.text.substring(0, count), style: widget.style);
-      },
-    );
-  }
-}
 
 /// Yükleme göstergesi: dönen usturlap kadranı.
 class AstrolabeSpinner extends StatefulWidget {
