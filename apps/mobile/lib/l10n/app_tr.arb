@@ -451,5 +451,38 @@
     }
   },
   "faceOpenSettings": "Tekrar dene",
-  "faceCameraDeniedHint": "İzni reddettiysen, telefon ayarlarından Rytho için kamera iznini açıp buraya dönebilirsin."
+  "faceCameraDeniedHint": "İzni reddettiysen, telefon ayarlarından Rytho için kamera iznini açıp buraya dönebilirsin.",
+  "save": "Kaydet",
+  "edit": "Düzenle",
+  "atlasSections": "Haritanda ne var",
+  "atlasTraitsSubtitle": "Element dağılımın",
+  "atlasPlanetsSubtitle": "Doğduğun andaki konumlar",
+  "atlasFullReport": "Tam rapor",
+  "atlasFullReportSubtitle": "Rytho'nun okuması",
+  "atlasAspectsCount": "{count, plural, =0{Açı yok} =1{1 açı} other{{count} açı}}",
+  "@atlasAspectsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "retrogradeCount": "{count, plural, =1{1 gezegen retro} other{{count} gezegen retro}}",
+  "@retrogradeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "genericError": "Bir şeyler ters gitti. Tekrar dener misin?",
+  "birthRecordEditBody": "Bu bilgiler haritanın temeli: günlük okuman, natal raporun ve sohbetin gördüğü her şey buradan hesaplanıyor. Değiştirirsen okumaların yeniden hesaplanır.",
+  "birthCityEmpty": "Doğum şehri boş olamaz.",
+  "birthRecordSaved": "Doğum kaydın güncellendi. Okumaların yeni haritana göre hesaplanacak.",
+  "birthRecordSavedNoChart": "Doğum kaydın güncellendi ama haritan şu an hesaplanamadı. Burç rozetlerin bağlantı gelince geri dönecek.",
+  "accountSection": "Hesap",
+  "accountSaved": "Hesap bilgilerin güncellendi.",
+  "displayNameEmpty": "Adın boş olamaz.",
+  "usernameChangeNote": "Değiştirirsen eski kullanıcı adın serbest kalır ve başkası alabilir.",
+  "emailChangeNote": "E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç."
 }

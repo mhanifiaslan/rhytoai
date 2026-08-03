@@ -1042,4 +1042,83 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get faceCameraDeniedHint =>
       'If you declined, you can enable camera access for Rytho in your phone settings and come back.';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get edit => 'Edit';
+
+  @override
+  String get atlasSections => 'What\'s in your chart';
+
+  @override
+  String get atlasTraitsSubtitle => 'Your element balance';
+
+  @override
+  String get atlasPlanetsSubtitle => 'Positions at your birth';
+
+  @override
+  String get atlasFullReport => 'Full report';
+
+  @override
+  String get atlasFullReportSubtitle => 'Rytho\'s reading';
+
+  @override
+  String atlasAspectsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count aspects',
+      one: '1 aspect',
+      zero: 'No aspects',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String retrogradeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count planets retrograde',
+      one: '1 planet retrograde',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get genericError => 'Something went wrong. Want to try again?';
+
+  @override
+  String get birthRecordEditBody =>
+      'This is the foundation of your chart: your daily reading, natal report and everything the chat sees are calculated from it. Changing it recalculates your readings.';
+
+  @override
+  String get birthCityEmpty => 'Birth city can\'t be empty.';
+
+  @override
+  String get birthRecordSaved =>
+      'Your birth record is updated. Readings will use your new chart.';
+
+  @override
+  String get birthRecordSavedNoChart =>
+      'Your birth record is saved, but your chart couldn\'t be calculated right now. Your sign badges will come back once you\'re online.';
+
+  @override
+  String get accountSection => 'Account';
+
+  @override
+  String get accountSaved => 'Your account details are updated.';
+
+  @override
+  String get displayNameEmpty => 'Your name can\'t be empty.';
+
+  @override
+  String get usernameChangeNote =>
+      'If you change it, your old username is released and someone else can take it.';
+
+  @override
+  String get emailChangeNote =>
+      'Your email is the key to your sign-in; contact support to change it.';
 }

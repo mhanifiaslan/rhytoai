@@ -1039,4 +1039,83 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get faceCameraDeniedHint =>
       'İzni reddettiysen, telefon ayarlarından Rytho için kamera iznini açıp buraya dönebilirsin.';
+
+  @override
+  String get save => 'Kaydet';
+
+  @override
+  String get edit => 'Düzenle';
+
+  @override
+  String get atlasSections => 'Haritanda ne var';
+
+  @override
+  String get atlasTraitsSubtitle => 'Element dağılımın';
+
+  @override
+  String get atlasPlanetsSubtitle => 'Doğduğun andaki konumlar';
+
+  @override
+  String get atlasFullReport => 'Tam rapor';
+
+  @override
+  String get atlasFullReportSubtitle => 'Rytho\'nun okuması';
+
+  @override
+  String atlasAspectsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count açı',
+      one: '1 açı',
+      zero: 'Açı yok',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String retrogradeCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count gezegen retro',
+      one: '1 gezegen retro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get genericError => 'Bir şeyler ters gitti. Tekrar dener misin?';
+
+  @override
+  String get birthRecordEditBody =>
+      'Bu bilgiler haritanın temeli: günlük okuman, natal raporun ve sohbetin gördüğü her şey buradan hesaplanıyor. Değiştirirsen okumaların yeniden hesaplanır.';
+
+  @override
+  String get birthCityEmpty => 'Doğum şehri boş olamaz.';
+
+  @override
+  String get birthRecordSaved =>
+      'Doğum kaydın güncellendi. Okumaların yeni haritana göre hesaplanacak.';
+
+  @override
+  String get birthRecordSavedNoChart =>
+      'Doğum kaydın güncellendi ama haritan şu an hesaplanamadı. Burç rozetlerin bağlantı gelince geri dönecek.';
+
+  @override
+  String get accountSection => 'Hesap';
+
+  @override
+  String get accountSaved => 'Hesap bilgilerin güncellendi.';
+
+  @override
+  String get displayNameEmpty => 'Adın boş olamaz.';
+
+  @override
+  String get usernameChangeNote =>
+      'Değiştirirsen eski kullanıcı adın serbest kalır ve başkası alabilir.';
+
+  @override
+  String get emailChangeNote =>
+      'E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç.';
 }

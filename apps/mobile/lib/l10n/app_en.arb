@@ -451,5 +451,38 @@
     }
   },
   "faceOpenSettings": "Try again",
-  "faceCameraDeniedHint": "If you declined, you can enable camera access for Rytho in your phone settings and come back."
+  "faceCameraDeniedHint": "If you declined, you can enable camera access for Rytho in your phone settings and come back.",
+  "save": "Save",
+  "edit": "Edit",
+  "atlasSections": "What's in your chart",
+  "atlasTraitsSubtitle": "Your element balance",
+  "atlasPlanetsSubtitle": "Positions at your birth",
+  "atlasFullReport": "Full report",
+  "atlasFullReportSubtitle": "Rytho's reading",
+  "atlasAspectsCount": "{count, plural, =0{No aspects} =1{1 aspect} other{{count} aspects}}",
+  "@atlasAspectsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "retrogradeCount": "{count, plural, =1{1 planet retrograde} other{{count} planets retrograde}}",
+  "@retrogradeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "genericError": "Something went wrong. Want to try again?",
+  "birthRecordEditBody": "This is the foundation of your chart: your daily reading, natal report and everything the chat sees are calculated from it. Changing it recalculates your readings.",
+  "birthCityEmpty": "Birth city can't be empty.",
+  "birthRecordSaved": "Your birth record is updated. Readings will use your new chart.",
+  "birthRecordSavedNoChart": "Your birth record is saved, but your chart couldn't be calculated right now. Your sign badges will come back once you're online.",
+  "accountSection": "Account",
+  "accountSaved": "Your account details are updated.",
+  "displayNameEmpty": "Your name can't be empty.",
+  "usernameChangeNote": "If you change it, your old username is released and someone else can take it.",
+  "emailChangeNote": "Your email is the key to your sign-in; contact support to change it."
 }

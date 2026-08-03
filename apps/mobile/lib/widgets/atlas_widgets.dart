@@ -32,8 +32,19 @@ class Plaque extends StatelessWidget {
   }
 }
 
-/// Birincil CTA butonu — v3: mor→magenta degrade dolgu, glow,
-/// basınca scale 0.96 + haptic. Adı tarihsel (v1 "altın buton").
+/// CTA butonu — iki ağırlıkta.
+///
+/// `filled: true` (varsayılan) birincil: mor→magenta degrade, glow.
+/// `filled: false` ikincil: dolgusuz, ince kontur, glow yok.
+///
+/// **İkincil varyant bir dönem YOKTU.** Parametre tanımlıydı ama gövdede hiç
+/// okunmuyordu; `filled: false` geçen çağrılar sessizce birincil buton
+/// üretiyordu. Sonucu giriş ekranında görülüyordu: e-posta, Apple ve Google
+/// butonları birebir aynı degradede alt alta duruyor, hangisinin asıl yol
+/// olduğu anlaşılmıyordu. Bir ekranda birden fazla "birincil" varsa hiçbiri
+/// birincil değildir.
+///
+/// Adı tarihsel (v1 "altın buton"); renk v3'te mor.
 class GoldButton extends StatefulWidget {
   const GoldButton({
     super.key,
@@ -41,12 +52,18 @@ class GoldButton extends StatefulWidget {
     this.onPressed,
     this.busy = false,
     this.filled = true,
+    this.icon,
   });
 
   final String text;
   final VoidCallback? onPressed;
   final bool busy;
+
+  /// `false` → ikincil ağırlık. Bir ekranda yalnızca BİR tane `true` olmalı.
   final bool filled;
+
+  /// Metnin solunda küçük bir işaret (ör. sağlayıcı logosu).
+  final Widget? icon;
 
   @override
   State<GoldButton> createState() => _GoldButtonState();
@@ -77,25 +94,50 @@ class _GoldButtonState extends State<GoldButton> {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            gradient: enabled
-                ? RythoColors.primaryGradient
-                : const LinearGradient(colors: [
-                    RythoColors.inkLighter,
-                    RythoColors.inkLighter,
-                  ]),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-            boxShadow: enabled
-                ? const [BoxShadow(color: RythoColors.goldGlow, blurRadius: 22, spreadRadius: -4)]
+            gradient: widget.filled
+                ? (enabled
+                    ? RythoColors.primaryGradient
+                    : const LinearGradient(colors: [
+                        RythoColors.inkLighter,
+                        RythoColors.inkLighter,
+                      ]))
+                : null,
+            color: widget.filled ? null : RythoColors.inkLighter,
+            border: Border.all(
+              color: widget.filled
+                  ? Colors.white.withValues(alpha: 0.12)
+                  : RythoColors.lilac.withValues(alpha: 0.26),
+            ),
+            // Glow YALNIZCA birincilde. İkincil butonun da parlaması,
+            // hiyerarşiyi yeniden siler.
+            boxShadow: widget.filled && enabled
+                ? const [
+                    BoxShadow(
+                        color: RythoColors.goldGlow,
+                        blurRadius: 22,
+                        spreadRadius: -4)
+                  ]
                 : null,
           ),
           child: widget.busy
               ? const SizedBox(
                   width: 22, height: 22, child: AstrolabeSpinner(size: 22))
-              : Text(widget.text,
-                  style: RythoText.label(14,
-                      color: enabled
-                          ? Colors.white
-                          : RythoColors.parchmentDim)),
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.icon != null) ...[
+                      widget.icon!,
+                      const SizedBox(width: 10),
+                    ],
+                    Text(widget.text,
+                        style: RythoText.label(14,
+                            color: enabled
+                                ? (widget.filled
+                                    ? Colors.white
+                                    : RythoColors.parchment)
+                                : RythoColors.parchmentDim)),
+                  ],
+                ),
         ),
       ),
     );

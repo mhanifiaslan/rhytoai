@@ -1987,6 +1987,120 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'İzni reddettiysen, telefon ayarlarından Rytho için kamera iznini açıp buraya dönebilirsin.'**
   String get faceCameraDeniedHint;
+
+  /// No description provided for @save.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet'**
+  String get save;
+
+  /// No description provided for @edit.
+  ///
+  /// In tr, this message translates to:
+  /// **'Düzenle'**
+  String get edit;
+
+  /// No description provided for @atlasSections.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritanda ne var'**
+  String get atlasSections;
+
+  /// No description provided for @atlasTraitsSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Element dağılımın'**
+  String get atlasTraitsSubtitle;
+
+  /// No description provided for @atlasPlanetsSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğduğun andaki konumlar'**
+  String get atlasPlanetsSubtitle;
+
+  /// No description provided for @atlasFullReport.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tam rapor'**
+  String get atlasFullReport;
+
+  /// No description provided for @atlasFullReportSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun okuması'**
+  String get atlasFullReportSubtitle;
+
+  /// No description provided for @atlasAspectsCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =0{Açı yok} =1{1 açı} other{{count} açı}}'**
+  String atlasAspectsCount(int count);
+
+  /// No description provided for @retrogradeCount.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count, plural, =1{1 gezegen retro} other{{count} gezegen retro}}'**
+  String retrogradeCount(int count);
+
+  /// No description provided for @genericError.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir şeyler ters gitti. Tekrar dener misin?'**
+  String get genericError;
+
+  /// No description provided for @birthRecordEditBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu bilgiler haritanın temeli: günlük okuman, natal raporun ve sohbetin gördüğü her şey buradan hesaplanıyor. Değiştirirsen okumaların yeniden hesaplanır.'**
+  String get birthRecordEditBody;
+
+  /// No description provided for @birthCityEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum şehri boş olamaz.'**
+  String get birthCityEmpty;
+
+  /// No description provided for @birthRecordSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum kaydın güncellendi. Okumaların yeni haritana göre hesaplanacak.'**
+  String get birthRecordSaved;
+
+  /// No description provided for @birthRecordSavedNoChart.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum kaydın güncellendi ama haritan şu an hesaplanamadı. Burç rozetlerin bağlantı gelince geri dönecek.'**
+  String get birthRecordSavedNoChart;
+
+  /// No description provided for @accountSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap'**
+  String get accountSection;
+
+  /// No description provided for @accountSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap bilgilerin güncellendi.'**
+  String get accountSaved;
+
+  /// No description provided for @displayNameEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adın boş olamaz.'**
+  String get displayNameEmpty;
+
+  /// No description provided for @usernameChangeNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değiştirirsen eski kullanıcı adın serbest kalır ve başkası alabilir.'**
+  String get usernameChangeNote;
+
+  /// No description provided for @emailChangeNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç.'**
+  String get emailChangeNote;
 }
 
 class _AppLocalizationsDelegate
