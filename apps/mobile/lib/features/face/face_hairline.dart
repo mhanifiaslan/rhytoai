@@ -145,33 +145,48 @@ Hairline? hairlineFromMask({
   if (sacKas > kOccludedThreshold) return null;
   if (tenKas < 0.25) return null;
 
+  // Sınırın üstünde bakılacak bant yüksekliği.
+  //
+  // Karar TEK SATIRA bakarak veriliyordu ve cihazda kırılgan çıktı: aynı
+  // yüzde üç çekimin ikisi "ölçülemedi" döndü, tutan da eşiğin hemen
+  // üstündeydi (0,78). Sebep saç sınırının kademeli olması — o satırda saç
+  // telleri ile alın derisi karışık ve ne saç ne arka plan çoğunluğu
+  // tutturabiliyor.
+  //
+  // Bandın ORTALAMASI hem daha kararlı hem daha anlamlı: güven değeri artık
+  // tek gürültülü satırın değil, sınırın üstündeki bölgenin ne olduğunun
+  // ölçüsü.
+  final bant = math.max(3, (altYukseklik * 0.12 * olcekY).round());
+
   // Alından yukarı yürü, tenin bittiği ilk satırı bul.
   final ustSinir = math.max(0, (mBrow - altYukseklik * 1.6 * olcekY).round());
   for (var my = kasUstu; my >= ustSinir; my--) {
-    final (ten, sac, arka) = satir(my);
+    final (ten, _, _) = satir(my);
     if (ten >= kSkinMajority) continue;
 
     // Ten bitti. ÜSTÜNDE ne var? Bu, iki durumu ayıran soru.
-    if (sac >= kAboveMajority) {
-      final guven = sac.clamp(0.0, 1.0);
-      if (guven < kMinConfidence) return null;
-      return Hairline(
-        y: my / olcekY,
-        kind: HairlineKind.hairline,
-        confidence: guven,
-      );
+    var sacTop = 0.0;
+    var arkaTop = 0.0;
+    var adet = 0;
+    for (var b = my; b > my - bant && b >= 0; b--) {
+      final (_, s, a) = satir(b);
+      sacTop += s;
+      arkaTop += a;
+      adet++;
     }
-    if (arka >= kAboveMajority) {
-      // Saç yok, doğrudan arka plan: kafatası tepesi.
-      final guven = arka.clamp(0.0, 1.0);
-      if (guven < kMinConfidence) return null;
-      return Hairline(
-        y: my / olcekY,
-        kind: HairlineKind.crown,
-        confidence: guven,
-      );
-    }
-    // Ne saç ne arka plan baskın — sınır bulanık. Bir satır daha bak.
+    if (adet == 0) return null;
+
+    final sacOrt = sacTop / adet;
+    final arkaOrt = arkaTop / adet;
+    final baskin = sacOrt >= arkaOrt;
+    final guven = (baskin ? sacOrt : arkaOrt).clamp(0.0, 1.0);
+
+    if (guven < kMinConfidence) return null;
+    return Hairline(
+      y: my / olcekY,
+      kind: baskin ? HairlineKind.hairline : HairlineKind.crown,
+      confidence: guven,
+    );
   }
 
   return null;

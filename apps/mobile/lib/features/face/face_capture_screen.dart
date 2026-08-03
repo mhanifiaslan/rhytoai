@@ -375,9 +375,6 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
       _segOlcum = maske == null
           ? 'seg başarısız: ${_segmenter.lastError}'
           : 'seg ${gecen}ms';
-      if (_sacTuru != null) {
-        debugPrint('RYTHO-SEG $_sacTuru');
-      }
       return true;
     }());
   }
@@ -404,11 +401,38 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
       axisX: temel.noseBase.dx,
       faceWidth: (temel.cheekRight.dx - temel.cheekLeft.dx).abs(),
     );
+    // Log SONUCUN HESAPLANDIGI yerde. Önce `_segmentle()` içinde yazılıyordu
+    // ve orası bu işlevden ÖNCE koştuğu için ilk çekimde hep boş çıkıyordu:
+    // ölçüm yapılıyor ama görünmüyordu.
     assert(() {
       _sacTuru = sac == null
-          ? 'saç çizgisi: ÖLÇÜLEMEDİ (alın örtülü?)'
+          ? 'saç çizgisi: ÖLÇÜLEMEDİ (alın örtülü ya da güven düşük)'
           : 'saç çizgisi: ${sac.kind.name} '
-              '(güven ${sac.confidence.toStringAsFixed(2)})';
+              '(güven ${sac.confidence.toStringAsFixed(2)}, y=${sac.y.round()})';
+      debugPrint('RYTHO-SEG $_sacTuru');
+      final r = computeRatios(FaceLandmarks(
+        faceOval: temel.faceOval,
+        foreheadTop: temel.foreheadTop,
+        browMid: temel.browMid,
+        noseBase: temel.noseBase,
+        chin: temel.chin,
+        cheekLeft: temel.cheekLeft,
+        cheekRight: temel.cheekRight,
+        jawLeft: temel.jawLeft,
+        jawRight: temel.jawRight,
+        mouthLeft: temel.mouthLeft,
+        mouthRight: temel.mouthRight,
+        upperLip: temel.upperLip,
+        lowerLip: temel.lowerLip,
+        eyeLeft: temel.eyeLeft,
+        eyeRight: temel.eyeRight,
+        hairlineY: sac?.y,
+        hairlineFromCrown: sac?.kind == HairlineKind.crown,
+      ));
+      debugPrint('RYTHO-SEG bolgeler ust=${r.upperThird.toStringAsFixed(2)} '
+          'orta=${r.middleThird.toStringAsFixed(2)} '
+          'alt=${r.lowerThird.toStringAsFixed(2)} '
+          'olculdu=${r.foreheadMeasured}');
       return true;
     }());
     if (sac == null) return temel;
