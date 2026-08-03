@@ -12,6 +12,7 @@ from core.i18n import get_language
 from core.messages import text
 from services import (
     chart_context,
+    chat_history,
     chart_query,
     gemini_service,
     memory_extractor,
@@ -38,6 +39,8 @@ class ChatMessageItem(BaseModel):
 class ChatRequest(BaseModel):
     history: List[ChatMessageItem] = []
     message: str
+    #: Sürdürülen konunun kimliği; boşsa yeni konu açılır ve yanıtta döner.
+    conversation_id: str | None = None
 
 
 def _sky_summary(lang: str, profile: dict | None = None) -> str:
@@ -117,8 +120,18 @@ def chat(request: ChatRequest, background: BackgroundTasks,
     # varsa satın alınmış paketten. Sohbet ÖNBELLEKSİZ tek uç olduğu için
     # harcama peşin; LLM yanıt veremezse aşağıda iade edilir.
     token_harcandi = charge_metered(user, "chat", FREE_CHAT_PER_DAY, lang=lang)
+
+    # Konu hedefi SENKRON çözülür (yanıt kimliği döndürmek zorunda), mesaj
+    # yazımı arka planda (kullanıcı Firestore'u beklemez). Kırpma 422 yerine:
+    # uzun yazan kullanıcının mesajını reddetmek yerine kısaltıyoruz.
+    mesaj_metni = chat_history.clip_message(request.message)
+    hazir_konu = chat_history.prepare(user.uid, request.conversation_id)
+
     try:
-        history = [{"sender": m.sender, "text": m.text} for m in request.history]
+        history = [
+            {"sender": m.sender, "text": chat_history.clip_message(m.text)}
+            for m in request.history[-20:]
+        ]
 
         # Profil bir kez okunur, iki yerde kullanılır: haritayı prompt'a
         # iliştirmek ve bilgi tabanı sorgusunu kurmak.
@@ -155,7 +168,7 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.
         sky = _sky_summary(lang, profile)
 
-        message = compose_chat_message(request.message, passages,
+        message = compose_chat_message(mesaj_metni, passages,
                                        memory=memory, chart=chart, sky=sky,
                                        lang=lang)
 
@@ -171,10 +184,39 @@ def chat(request: ChatRequest, background: BackgroundTasks,
             memory_extractor.extract_and_store, user.uid, history, request.message
         )
 
-        return {"status": "success", "reply": reply}
+        # Arşiv yazımı da arka planda (Revize R4). Hafıza çıkarıcı AYNEN
+        # duruyor: damıtılmış olgular ile ham arşiv farklı işler görüyor —
+        # biri "seni tanıyorum", öteki "kaldığın yerden devam".
+        if hazir_konu is not None:
+            background.add_task(
+                chat_history.write_turn, user.uid, hazir_konu,
+                mesaj_metni, reply, lang,
+            )
+
+        return {"status": "success", "reply": reply,
+                "conversation_id": (hazir_konu.conversation_id
+                                    if hazir_konu else None)}
     except Exception as e:
         logger.exception("Sohbet ucunda hata", exc_info=e)
         raise HTTPException(status_code=500, detail=text("internal", lang))
+
+
+@router.delete("/conversations/{conversation_id}")
+def delete_conversation(conversation_id: str,
+                        user: AuthUser = Depends(get_current_user),
+                        lang: str = Depends(get_language)):
+    """Konuyu mesajlarıyla siler.
+
+    Uçtan, çünkü istemci `conversations` altına YAZAMAZ (rules) — silme de
+    bir yazımdır. Yalnızca kendi konuları: yol kimliği değil, doğrulanmış
+    oturum kimliği kullanılır.
+    """
+    try:
+        silinen = chat_history.delete_conversation(user.uid, conversation_id)
+    except Exception as exc:
+        logger.exception("Konu silinemedi (%s)", user.uid, exc_info=exc)
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+    return {"status": "success", "deleted_messages": silinen}
 
 
 # `/moderate` ucu KALDIRILDI (Revize R0).

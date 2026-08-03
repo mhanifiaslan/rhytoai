@@ -25,7 +25,7 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
 | Arkadaşlıklar | `users/{uid}/friends` | Arkadaş katmanı | Evet | Hayır |
 | Hazır tepkiler | `users/{uid}/nudges` | Arkadaş etkileşimi (kapalı küme, serbest metin yok) | Evet | Hayır |
 | Günlük seri | `users/{uid}.streakCount`, `lastSeenDaily` | Alışkanlık takibi | Evet | Hayır |
-| **Sohbet mesajları** | Yalnızca istek anında Gemini'ye gider | Yanıt üretimi | Evet | Hayır |
+| **Sohbet mesajları (konu arşivi)** | `users/{uid}/conversations/{id}/messages` — sunucu yazar; 30 gün kullanılmayan konu otomatik silinir; yanıt üretimi için Gemini'ye gider | Konuşmayı sürdürme + yanıt üretimi | Evet | Hayır |
 | **Kullanıcı hafızası (damıtılmış olgular)** | `users/{uid}/private/memory` | Kişiselleştirme | Evet | Hayır |
 | Abonelik durumu | `users/{uid}/private/subscription` — RevenueCat webhook'u | Yetkilendirme | Evet | Hayır |
 | Token cüzdanı | `users/{uid}/private/wallet` — yalnızca sunucu yazar | Kullanım hakkı muhasebesi | Evet | Hayır |

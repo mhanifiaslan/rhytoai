@@ -1053,6 +1053,15 @@ class AppLocalizationsTr extends AppLocalizations {
   String get languageAndSounds => 'Dil ve sesler';
 
   @override
+  String get newConversation => 'Yeni konu';
+
+  @override
+  String get chatEmptyTitle => 'Rytho ile konuş';
+
+  @override
+  String get conversationDeleted => 'Konu silindi.';
+
+  @override
   String get contactMatchSetting => 'Rehberimden arkadaş öner';
 
   @override

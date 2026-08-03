@@ -3,21 +3,30 @@ import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+
 import '../../core/api.dart';
+import '../../core/conversations.dart';
 import '../../core/sound.dart';
 import '../../core/wallet.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
+import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../paywall/token_store_screen.dart';
 import '../../l10n/app_localizations.dart';
 
-/// Rytho AI sohbeti — v3: kullanıcı sağda beyaz balon, Rytho solda mor
-/// degrade balon; öneri çipleri, "yazıyor" üç noktası, yaylanan giriş
-/// animasyonları ve gönder/al sesleri.
+/// Rytho AI sohbeti — v4 (Revize R4): KONU bazlı.
+///
+/// [conversationId] verilirse konuşma arşivden tohumlanır ve kaldığı
+/// yerden sürer; verilmezse ilk mesajla yeni konu açılır (kimliği sunucu
+/// döndürür, buradan izlenir). Mesaj balonu davranışı aynı: kullanıcı
+/// sağda beyaz, Rytho solda mor degrade.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key});
+  const ChatScreen({super.key, this.conversationId});
+
+  final String? conversationId;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -28,6 +37,55 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   bool _busy = false;
+
+  /// Sürdürülen konunun kimliği; ilk yanıtta sunucudan gelir.
+  String? _conversationId;
+
+  /// Arşiv tohumu yükleniyor mu (yalnızca var olan konu açılırken).
+  bool _seeding = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _conversationId = widget.conversationId;
+    if (_conversationId != null) _seed();
+  }
+
+  /// Arşivden TEK SEFERLİK tohum. Stream değil — sunucu her turu saniyeler
+  /// sonra arka planda arşive yazıyor; canlı dinleseydik her mesaj ekranda
+  /// iki kez belirirdi (yerel + arşiv kopyası).
+  Future<void> _seed() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final id = _conversationId;
+    if (uid == null || id == null) return;
+    setState(() => _seeding = true);
+    try {
+      final gecmis = await loadConversation(uid, id);
+      if (!mounted) return;
+      setState(() {
+        _messages.insertAll(
+            0, gecmis.map((m) => (sender: m.sender, text: m.text)));
+      });
+      _scrollDown();
+    } catch (e) {
+      debugPrint('Konu tohumu yüklenemedi: $e');
+    } finally {
+      if (mounted) setState(() => _seeding = false);
+    }
+  }
+
+  /// Yeni konu: yerel durum sıfırlanır; ilk mesaj sunucuda yeni konu açar.
+  ///
+  /// "+" ikonunun İŞLEVİ bu. Eski sürümde ikon çıplak bir Container'dı —
+  /// handler'ı hiç yoktu, dokununca ripple bile vermiyordu. Kaldırmak
+  /// yerine tam da eksik olan işlev verildi (kullanıcının sorusuna cevap).
+  void _newConversation() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _messages.clear();
+      _conversationId = null;
+    });
+  }
 
   /// Öneri çipleri dile göre üretildiği için const olamaz.
   List<String> _suggestions(AppLocalizations l10n) => [
@@ -52,24 +110,48 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
 
     try {
       final dio = ref.read(apiProvider);
+      // Bağlam penceresi: sunucu zaten son 20 turla sınırlıyor; uzun
+      // arşivli konuda tamamını taşımak boşuna bant genişliği.
       final history = _messages
           .map((m) => {'sender': m.sender, 'text': m.text})
           .toList()
         ..removeLast();
-      final response = await dio.post('/api/v1/chat',
-          data: {'history': history, 'message': text});
-      setState(() =>
-          _messages.add((sender: 'AI', text: response.data['reply'] ?? '')));
+      final son20 = history.length > 20
+          ? history.sublist(history.length - 20)
+          : history;
+      final response = await dio.post('/api/v1/chat', data: {
+        'history': son20,
+        'message': text,
+        'conversation_id': _conversationId,
+      });
+      final veri = response.data as Map;
+      setState(() {
+        _messages.add((sender: 'AI', text: veri['reply'] ?? ''));
+        // Yeni konunun kimliği ilk yanıtla gelir; sonraki mesajlar aynı
+        // konuya yazılır ve liste ekranında görünür.
+        _conversationId =
+            (veri['conversation_id'] as String?) ?? _conversationId;
+      });
       SoundFx.receive();
     } catch (e) {
+      if (!mounted) return;
       setState(() => _messages.add((
             sender: 'AI',
-            text: friendlyError(e)
+            text: friendlyError(e, AppLocalizations.of(context))
           )));
     } finally {
-      setState(() => _busy = false);
+      if (mounted) setState(() => _busy = false);
       _scrollDown();
     }
+  }
+
+  @override
+  void dispose() {
+    // Sızıntı düzeltmesi: her açılış/kapanışta iki controller askıda
+    // kalıyordu.
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _scrollDown() {
@@ -146,7 +228,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       body: Column(children: [
         Expanded(
-          child: _messages.isEmpty
+          child: _seeding
+              ? const Center(child: AstrolabeSpinner())
+              : _messages.isEmpty
               ? _EmptyState(onSuggestion: (s) => _send(s))
               : ListView.builder(
                   controller: _scrollController,
@@ -204,17 +288,25 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
           child: SafeArea(
             child: Row(children: [
-              Container(
-                width: 42,
-                height: 42,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: RythoColors.inkLight,
-                  border: Border.all(color: RythoColors.glassStroke),
+              // "+" = YENİ KONU. Bir dönem handler'sız çıplak Container'dı
+              // — dokununca hiçbir şey olmuyordu (kullanıcı fark etti).
+              Pressable(
+                onTap: _newConversation,
+                child: Tooltip(
+                  message: l10n.newConversation,
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: RythoColors.inkLight,
+                      border: Border.all(color: RythoColors.glassStroke),
+                    ),
+                    child: const Icon(Icons.add_comment_outlined,
+                        size: 19, color: RythoColors.lilac),
+                  ),
                 ),
-                child: const Icon(Icons.add,
-                    size: 20, color: RythoColors.parchmentDim),
               ),
               const SizedBox(width: 10),
               Expanded(

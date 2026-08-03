@@ -1,10 +1,14 @@
 """Sohbetten şemalı olgu çıkarımı — uygulamanın kullanıcıyı tanıma mekanizması.
 
-Ham sohbet metni SAKLANMAZ. Konuşmadan yalnızca `memory_service.CATEGORIES`
-içindeki kapalı kümeye oturan kısa olgular damıtılır. Gerekçe iki katlı:
-gizlilik yüzeyi küçük kalır (bir sızıntıda ifşa olan şey transkript değil, kısa
-ve sınırlı bir liste olur) ve prompt'a enjekte edilecek bağlam öngörülebilir
-boyutta kalır.
+Konuşmadan yalnızca `memory_service.CATEGORIES` içindeki kapalı kümeye
+oturan kısa olgular damıtılır; prompt'a enjekte edilecek bağlam böylece
+öngörülebilir boyutta kalır.
+
+NOT (Revize R4): Bu dosyanın eski "Ham sohbet metni SAKLANMAZ" duruşu ürün
+kararıyla revize edildi — konuşmalar artık konu bazlı arşivleniyor
+(`chat_history.py`, 30 gün kullanılmayan silinir, gizlilik politikası
+güncellendi). Bu çıkarıcı DEĞİŞMEDİ ve arşivin yerini tutmaz: arşiv
+"kaldığın yerden devam", buradaki olgular "seni tanıyorum" — iki ayrı iş.
 
 **Maliyet kontrolü:** çıkarım kullanıcı başına ek bir LLM çağrısıdır. Her
 mesajda çalıştırılırsa sohbetin maliyeti ikiye katlanır. Bu yüzden iki şart

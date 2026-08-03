@@ -88,6 +88,20 @@ service cloud.firestore {
         && faceConsentDegismedi();
       allow delete: if isOwner(uid);
 
+      // ---------- Sohbet arşivi (Revize R4) ----------
+      // Yazma SUNUCUDAN (Admin SDK): sunucu her mesajı zaten görüyor,
+      // moderasyon kapısı tek yerde kalıyor ve dosya başındaki UGC duruşu
+      // korunuyor — serbest metne İSTEMCİ yazamıyor. İstemci yalnızca kendi
+      // konuşmalarını OKUR; silme sunucu ucundan (DELETE /chat/conversations).
+      match /conversations/{convId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+        match /messages/{msgId} {
+          allow read: if isOwner(uid);
+          allow write: if false;
+        }
+      }
+
       // Engellenen kullanıcılar: yalnızca liste sahibi yazar/siler/okur.
       match /blocked/{targetUid} {
         allow read, create, delete: if isOwner(uid);

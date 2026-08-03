@@ -1,5 +1,13 @@
 {
-  "_comment": "posts ve chats indeksleri kaldırıldı: gönderi akışı, kanallar ve DM v1 kapsamı dışında (bkz. firestore.rules). Faz 5'te arkadaş katmanı için yeni indeksler eklenecek.",
+  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil.",
   "indexes": [],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    {
+      "collectionGroup": "conversations",
+      "fieldPath": "expireAt",
+      "indexes": [
+        { "queryScope": "COLLECTION_GROUP", "order": "ASCENDING" }
+      ]
+    }
+  ]
 }

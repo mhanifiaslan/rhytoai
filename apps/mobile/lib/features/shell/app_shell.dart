@@ -7,7 +7,7 @@ import '../../widgets/cosmic_scaffold.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/glass.dart';
 import '../atlas/atlas_screen.dart';
-import '../chat/chat_screen.dart';
+import '../chat/conversation_list_screen.dart';
 import '../friends/friends_screen.dart';
 import '../profile/profile_screen.dart';
 import '../sky/sky_screen.dart';
@@ -85,8 +85,10 @@ class _AppShellState extends ConsumerState<AppShell> {
         items: tabs,
         index: index,
         onChanged: (i) => ref.read(shellTabProvider.notifier).state = i,
+        // Sohbet artık KONU listesine açılır (Revize R4): kaldığı yerden
+        // devam ya da yeni konu — AI uygulamalarındaki desen.
         onCenterTap: () => Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const ChatScreen()),
+          MaterialPageRoute(builder: (_) => const ConversationListScreen()),
         ),
       ),
     );

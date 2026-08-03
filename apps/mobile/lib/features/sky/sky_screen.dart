@@ -13,7 +13,7 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/common.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../../widgets/reading_card.dart';
-import '../chat/chat_screen.dart';
+import '../chat/conversation_list_screen.dart';
 import '../oracle/oracle_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
@@ -399,8 +399,8 @@ class _Header extends StatelessWidget {
         StreakBadge(count: streak),
         const SizedBox(width: 10),
         Pressable(
-          onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ChatScreen())),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => const ConversationListScreen())),
           child: Container(
             width: 42,
             height: 42,

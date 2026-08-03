@@ -1056,6 +1056,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageAndSounds => 'Language and sounds';
 
   @override
+  String get newConversation => 'New topic';
+
+  @override
+  String get chatEmptyTitle => 'Talk with Rytho';
+
+  @override
+  String get conversationDeleted => 'Conversation deleted.';
+
+  @override
   String get contactMatchSetting => 'Suggest friends from my contacts';
 
   @override

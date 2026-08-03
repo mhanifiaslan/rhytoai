@@ -66,8 +66,14 @@ const LegalSections kPrivacyPolicyTr = [
   (
     'Sohbet ve kullanıcı hafızası',
     'Sohbet mesajların yanıt üretmek üzere yapay zeka sağlayıcımıza '
-        'iletilir. Konuşmaların HAM METNİ sunucularımızda saklanmaz. Bunun '
-        'yerine, seni sonraki konuşmalarda daha iyi anlayabilmek için '
+        'iletilir.\n\n'
+        'Konuşmaların kaldığın yerden sürebilmesi için mesajların konu konu '
+        'hesabına bağlı olarak SAKLANIR. Bu arşiv yalnızca sana görünür; '
+        'başka kullanıcılara gösterilmez, reklam veya profilleme için '
+        'kullanılmaz. Bir konuyu istediğin an silebilirsin; 30 gün boyunca '
+        'hiç açılmayan konular mesajlarıyla birlikte otomatik silinir. '
+        'Hesabını sildiğinde tüm konuşmaların da silinir.\n\n'
+        'Ayrıca seni sonraki konuşmalarda daha iyi anlayabilmek için '
         'konuşmadan kısa ve yapılandırılmış olgular damıtılır (örneğin '
         'tekrar eden bir tema, dile getirdiğin bir hedef, tercih ettiğin '
         'anlatım tonu). Bu olgular yalnızca kapalı bir kategori kümesine '
@@ -280,14 +286,20 @@ const LegalSections kPrivacyPolicyEn = [
   ),
   (
     'Chat and user memory',
-    'Your chat messages are sent to our AI provider to generate a reply. We '
-        'do NOT store the raw text of your conversations on our servers. '
-        'Instead, short structured facts are distilled from the conversation '
-        'so that later conversations can understand you better — for example '
-        'a recurring theme, a goal you mentioned, or the tone you prefer. '
-        'These facts fit a closed set of categories, are stored against your '
-        'account, and are never shown to other users. Health conditions, '
-        'diagnoses and medication are explicitly NOT retained.'
+    'Your chat messages are sent to our AI provider to generate a reply.\n\n'
+        'So that conversations can continue where you left off, your '
+        'messages ARE stored against your account, organised by topic. This '
+        'archive is visible only to you; it is never shown to other users '
+        'and never used for advertising or profiling. You can delete any '
+        'topic at any time; topics untouched for 30 days are deleted '
+        'automatically together with their messages. Deleting your account '
+        'deletes all conversations.\n\n'
+        'In addition, short structured facts are distilled from the '
+        'conversation so that later conversations can understand you better '
+        '— for example a recurring theme, a goal you mentioned, or the tone '
+        'you prefer. These facts fit a closed set of categories, are stored '
+        'against your account, and are never shown to other users. Health '
+        'conditions, diagnoses and medication are explicitly NOT retained.'
   ),
   (
     'The friends layer',

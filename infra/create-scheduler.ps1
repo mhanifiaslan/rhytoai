@@ -108,10 +108,16 @@ Write-Host "3/4 Zamanlayici isleri kuruluyor..."
 $isler = @(
     @{ ad = "rytho-notify-daily";  tur = "daily";  cron = "5 * * * *" },
     @{ ad = "rytho-notify-streak"; tur = "streak"; cron = "10 * * * *" }
+    # Sohbet arsivi temizligi (R4): 30 gundur kullanilmayan konusmalar.
+    @{ ad = "rytho-cleanup"; uri = "/api/v1/maintenance/cleanup"; cron = "20 3 * * *" }
 )
 
 foreach ($is in $isler) {
-    $uri = "$URL/api/v1/notify/run?type=$($is.tur)"
+    if ($is.ContainsKey("uri")) {
+        $uri = "$URL$($is.uri)"
+    } else {
+        $uri = "$URL/api/v1/notify/run?type=$($is.tur)"
+    }
     $isVar = Test-GcloudKaynak {
         gcloud scheduler jobs describe $is.ad `
             --project $PROJECT --location $REGION

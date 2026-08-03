@@ -27,7 +27,16 @@ from core import config, firestore as firestore_client
 logger = logging.getLogger(__name__)
 
 #: Kullanıcı dokümanının altındaki tüm koleksiyonlar.
-_SUB_COLLECTIONS = ("private", "friends", "nudges", "blocked")
+_SUB_COLLECTIONS = ("private", "friends", "nudges", "blocked",
+                    "conversations")
+
+#: Alt koleksiyonu OLAN alt koleksiyonlar: doküman silinmeden önce içi
+#: boşaltılmalı, yoksa alt doküманlar yetim kalır (faturalanır, erişilemez).
+_NESTED = {
+    "conversations": ("messages",),
+    # Cüzdan defteri `private/wallet` dokümanının altında; `private`
+    # koleksiyonu silinirken wallet dokümanının ledger'ı ayrıca boşaltılır.
+}
 
 #: Tek seferde silinecek doküman sayısı.
 _BATCH = 200
@@ -53,8 +62,28 @@ def _delete_collection(coll_ref, sayac: DeletionReport, ad: str) -> None:
 def _delete_user_subcollections(client, uid: str,
                                 sayac: DeletionReport) -> None:
     kullanici = client.collection("users").document(uid)
+
+    # Cüzdan defteri: `private/wallet` DOKÜMANININ alt koleksiyonu.
+    # `_delete_collection` yalnızca doküманları siler; defter önce
+    # boşaltılmazsa yetim kalırdı (faturalanır, sahibi erişemez).
+    try:
+        _delete_collection(
+            kullanici.collection("private").document("wallet")
+            .collection("ledger"), sayac, "walletLedger")
+    except Exception as exc:
+        logger.warning("Cüzdan defteri silinemedi (%s): %s", uid, exc)
+
     for ad in _SUB_COLLECTIONS:
         try:
+            icler = _NESTED.get(ad, ())
+            if icler:
+                # Önce her dokümanın alt koleksiyonları (mesajlar), sonra
+                # dokümanın kendisi — ters sıra yetim bırakır.
+                for belge in kullanici.collection(ad).stream():
+                    for ic in icler:
+                        _delete_collection(
+                            belge.reference.collection(ic), sayac,
+                            f"{ad}.{ic}")
             _delete_collection(kullanici.collection(ad), sayac, ad)
         except Exception as exc:
             logger.warning("Alt koleksiyon silinemedi (%s/%s): %s", uid, ad, exc)

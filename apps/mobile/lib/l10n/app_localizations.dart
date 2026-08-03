@@ -2012,6 +2012,24 @@ abstract class AppLocalizations {
   /// **'Dil ve sesler'**
   String get languageAndSounds;
 
+  /// No description provided for @newConversation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni konu'**
+  String get newConversation;
+
+  /// No description provided for @chatEmptyTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho ile konuş'**
+  String get chatEmptyTitle;
+
+  /// No description provided for @conversationDeleted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Konu silindi.'**
+  String get conversationDeleted;
+
   /// No description provided for @contactMatchSetting.
   ///
   /// In tr, this message translates to:
