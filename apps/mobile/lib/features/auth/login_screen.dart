@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/auth_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
+import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
@@ -417,50 +418,59 @@ class _LoginScreenState extends State<LoginScreen> {
         // olarak görmüyor ve kaydetmeyi önermiyor.
         child: AutofillGroup(
           child: ListView(
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            padding: const EdgeInsets.symmetric(
+                horizontal: RythoSpace.xl, vertical: RythoSpace.lg),
             children: [
-              const SizedBox(height: 12),
-              Center(
-                child: Container(
-                  width: 92,
-                  height: 92,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RythoColors.primaryGradient,
-                    boxShadow: [
-                      BoxShadow(color: RythoColors.magentaGlow, blurRadius: 44),
-                    ],
-                  ),
-                  child: const Text('✦',
-                      style: TextStyle(fontSize: 40, color: Colors.white)),
-                )
-                    .animate(onPlay: (c) => c.repeat(reverse: true))
-                    .scale(
-                        begin: const Offset(1, 1),
-                        end: const Offset(1.06, 1.06),
-                        duration: 1500.ms,
-                        curve: Curves.easeInOut),
+              // ---------- MARKA BLOĞU ----------
+              //
+              // Eskiden dikey bir kule idi: 92 px rozet, altında RYTHO, altında
+              // 30 punto başlık, altında slogan — aralarında 26/8/12 px. Tek
+              // başına ~250 px, yani ekranın üçte biri, klavye açılmadan.
+              //
+              // Rozet ve ad artık YAN YANA. Aynı bilgi, ~140 px daha az yer.
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RythoColors.primaryGradient,
+                      boxShadow: [
+                        BoxShadow(
+                            color: RythoColors.magentaGlow, blurRadius: 30),
+                      ],
+                    ),
+                    child: const Text('✦',
+                        style: TextStyle(fontSize: 24, color: Colors.white)),
+                  )
+                      .animate(onPlay: (c) => c.repeat(reverse: true))
+                      .scale(
+                          begin: const Offset(1, 1),
+                          end: const Offset(1.06, 1.06),
+                          duration: 1500.ms,
+                          curve: Curves.easeInOut),
+                  const SizedBox(width: RythoSpace.md),
+                  Text('RYTHO',
+                      style: RythoText.label(22, color: RythoColors.lilac)),
+                ],
               ).animate(delay: next()).fadeIn(duration: 500.ms),
-              const SizedBox(height: 26),
-              Center(
-                child: Text('RYTHO',
-                    style: RythoText.label(20, color: RythoColors.lilac)),
-              ).animate(delay: next()).fadeIn(duration: 400.ms),
-              const SizedBox(height: 8),
+              const SizedBox(height: RythoSpace.lg),
               Center(
                 child: Text(l10n.appHeadline,
                     textAlign: TextAlign.center,
-                    style: RythoText.display(30)),
+                    style: RythoText.display(24)),
               ).animate(delay: next()).fadeIn(duration: 400.ms).slideY(
                   begin: 0.1, curve: Curves.easeOutCubic),
-              const SizedBox(height: 12),
+              const SizedBox(height: RythoSpace.sm),
               Text(
                 l10n.appTagline,
                 textAlign: TextAlign.center,
-                style: RythoText.body(14.5, color: RythoColors.parchmentDim),
+                style: RythoType.bodyDim,
               ).animate(delay: next()).fadeIn(duration: 400.ms),
-              const SizedBox(height: 26),
+              const SizedBox(height: RythoSpace.xl),
 
               // Form önce.
               GlassPanel(
@@ -485,44 +495,59 @@ class _LoginScreenState extends State<LoginScreen> {
                   begin: 0.06, curve: Curves.easeOutCubic),
 
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+                padding:
+                    const EdgeInsets.symmetric(vertical: RythoSpace.md),
                 child: Row(children: [
                   const Expanded(child: Divider()),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(l10n.orDivider,
-                        style: RythoText.body(11,
-                            color: RythoColors.parchmentDim)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: RythoSpace.md),
+                    child: Text(l10n.orDivider, style: RythoType.caption),
                   ),
                   const Expanded(child: Divider()),
                 ]),
               ),
 
-              // Sosyal giriş sonra. iOS'ta Apple ÜSTTE: Apple'ın kuralı
-              // kendi düğmesinin diğerlerinden daha az görünür olmamasını
-              // istiyor.
+              // ---------- SOSYAL GİRİŞ: İKİSİ DE İKİNCİL ----------
+              //
+              // Üçü de (e-posta, Apple, Google) birebir aynı degradede alt
+              // alta duruyordu. Bir ekranda birden fazla "birincil" varsa
+              // hiçbiri birincil değildir; kullanıcı hangisinin asıl yol
+              // olduğunu okuyamıyordu.
+              //
+              // Tek degrade buton formun içindeki gönder butonu. Apple ve
+              // Google eşit ağırlıkta ikincil — Apple'ın kuralı kendi
+              // düğmesinin DİĞER ÜÇÜNCÜ TARAF seçeneklerinden daha az
+              // görünür olmamasını istiyor; eşitlik bunu karşılıyor. iOS'ta
+              // yine de üstte duruyor.
+              //
+              // Marka işareti YOK: hem Apple hem Google kendi logolarının
+              // yalnızca resmi varlıkla kullanılmasını şart koşuyor.
+              // Yaklaştırılmış bir logo çizmek marka kuralını çiğner; metin
+              // tek başına ikisinde de kurala uygun.
               if (appleSignInAvailable) ...[
                 GoldButton(
                   text: l10n.signInWithApple,
                   busy: _appleBusy,
+                  filled: false,
                   onPressed: _busy
                       ? null
                       : () => _runSocial(signInWithApple,
                           (v) => _appleBusy = v),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: RythoSpace.sm),
               ],
               GoldButton(
                 text: l10n.signInWithGoogle,
                 busy: _googleBusy,
-                filled: !appleSignInAvailable,
+                filled: false,
                 onPressed: _busy
                     ? null
                     : () => _runSocial(signInWithGoogle,
                         (v) => _googleBusy = v),
               ),
 
-              const SizedBox(height: 22),
+              const SizedBox(height: RythoSpace.lg),
               _buildConsent().animate(delay: next()).fadeIn(duration: 400.ms),
               const SizedBox(height: 8),
             ],

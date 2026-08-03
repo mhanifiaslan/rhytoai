@@ -284,7 +284,20 @@ class _DockItem extends StatelessWidget {
   }
 }
 
-/// Segment seçici (Takip/Keşfet vb.) — aktif segment degrade dolgulu.
+/// Segment seçici — seçili segment **ince bir zemin farkıyla** belirtilir.
+///
+/// ## Neden degrade değil
+///
+/// Seçili segment eskiden `primaryGradient` + `goldGlow` alıyordu; yani
+/// birincil butonla **birebir aynı** görsel muameleyi. Giriş ekranında
+/// sonucu şuydu — kullanıcının kendi ifadesi:
+///
+/// > "giriş yap, üye ol tab isimleri giriş yap butonlarına benziyor ve
+/// > tıklanılarak girileceğini çağrıştırıyor, bu yanlış bir his."
+///
+/// Doğru teşhis: segment bir **durum göstergesi**, buton bir **eylem**.
+/// İkisine aynı ağırlığı verirsen kullanıcı sekmeye basınca giriş yapacağını
+/// sanır. Degrade ve glow yalnızca eyleme ait.
 class GlassSegments extends StatelessWidget {
   const GlassSegments({
     super.key,
@@ -321,16 +334,16 @@ class GlassSegments extends StatelessWidget {
                 curve: Curves.easeOutCubic,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  gradient: index == i ? RythoColors.primaryGradient : null,
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: index == i
-                      ? const [BoxShadow(color: RythoColors.goldGlow, blurRadius: 14)]
+                  // Degrade ve glow YOK — bkz. sınıf açıklaması.
+                  color: index == i
+                      ? RythoColors.parchment.withValues(alpha: 0.10)
                       : null,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(labels[i],
                     style: RythoText.label(12,
                         color: index == i
-                            ? Colors.white
+                            ? RythoColors.parchment
                             : RythoColors.parchmentDim)),
               ),
             ),
