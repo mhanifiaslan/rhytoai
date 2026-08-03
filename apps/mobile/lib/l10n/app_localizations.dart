@@ -230,6 +230,12 @@ abstract class AppLocalizations {
   /// **'Değişimler Kitabı'**
   String get iChingSubtitle;
 
+  /// No description provided for @faceReadingTileSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Firaset sanatı'**
+  String get faceReadingTileSubtitle;
+
   /// No description provided for @baZi.
   ///
   /// In tr, this message translates to:
@@ -2011,6 +2017,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Dil ve sesler'**
   String get languageAndSounds;
+
+  /// No description provided for @addFriendNeedsUsername.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önce bir kullanıcı adı almalısın — hemen aşağıdaki panelden seçebilirsin.'**
+  String get addFriendNeedsUsername;
 
   /// No description provided for @newConversation.
   ///

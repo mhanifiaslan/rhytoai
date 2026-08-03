@@ -106,8 +106,19 @@ class _TokenStoreScreenState extends ConsumerState<TokenStoreScreen> {
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('${cuzdan.total}',
-                          style: RythoText.display(34)),
+                      // Satın alma sonrası yoklama bakiyeyi büyütür; büyük
+                      // sayı yumuşak geçsin ki "kredi geldi" anı görülsün
+                      // (madde 12 — süre RythoMotion'dan).
+                      AnimatedSwitcher(
+                        duration: RythoMotion.base,
+                        transitionBuilder: (child, anim) => FadeTransition(
+                          opacity: anim,
+                          child: ScaleTransition(scale: anim, child: child),
+                        ),
+                        child: Text('${cuzdan.total}',
+                            key: ValueKey(cuzdan.total),
+                            style: RythoText.display(34)),
+                      ),
                       const SizedBox(width: RythoSpace.sm),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 5),

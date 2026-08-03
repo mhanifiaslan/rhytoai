@@ -78,6 +78,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get iChingSubtitle => 'Book of Changes';
 
   @override
+  String get faceReadingTileSubtitle => 'The art of firasa';
+
+  @override
   String get baZi => 'BaZi';
 
   @override
@@ -1054,6 +1057,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageAndSounds => 'Language and sounds';
+
+  @override
+  String get addFriendNeedsUsername =>
+      'Pick a username first — you can claim one in the panel below.';
 
   @override
   String get newConversation => 'New topic';

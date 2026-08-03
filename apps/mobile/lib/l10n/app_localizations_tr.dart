@@ -78,6 +78,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get iChingSubtitle => 'Değişimler Kitabı';
 
   @override
+  String get faceReadingTileSubtitle => 'Firaset sanatı';
+
+  @override
   String get baZi => 'BaZi';
 
   @override
@@ -1051,6 +1054,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get languageAndSounds => 'Dil ve sesler';
+
+  @override
+  String get addFriendNeedsUsername =>
+      'Önce bir kullanıcı adı almalısın — hemen aşağıdaki panelden seçebilirsin.';
 
   @override
   String get newConversation => 'Yeni konu';

@@ -15,8 +15,16 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Write-Host "0/2 Vektor artefakti dogrulaniyor..."
 $pythonExe = Join-Path $repoRoot "backend\.venv\Scripts\python.exe"
 if (Test-Path $pythonExe) {
-    & $pythonExe (Join-Path $repoRoot "backend\scripts\build_embeddings.py") --check
-    if ($LASTEXITCODE -ne 0) {
+    # PS 5.1 tuzagi: dogrulama betigi INFO loglarini STDERR'e yazar ve
+    # ErrorActionPreference=Stop bunu gercek hata sanip deploy'u yarida
+    # keser ("INFO [tr] 42 parca, 0 eksik vektor" bir kez tam boyle kesti).
+    # Cikti dosyaya yonlendirilir, karar YALNIZCA cikis koduna bakar.
+    $eskiTercih = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    & $pythonExe (Join-Path $repoRoot "backend\scripts\build_embeddings.py") --check 2>$null
+    $kontrolKodu = $LASTEXITCODE
+    $ErrorActionPreference = $eskiTercih
+    if ($kontrolKodu -ne 0) {
         throw "Vektor artefakti korpusla uyumsuz. Once su komutu calistir: backend\scripts\build_embeddings.py"
     }
 } else {

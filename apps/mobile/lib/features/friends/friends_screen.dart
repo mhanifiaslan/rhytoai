@@ -10,6 +10,7 @@ import '../../core/friends.dart';
 import '../../core/providers.dart';
 import '../../core/safety.dart';
 import '../../theme/rytho_theme.dart';
+import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
@@ -44,12 +45,35 @@ class FriendsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(l10n.friendsTitle),
         actions: [
-          IconButton(
-            tooltip: l10n.addFriend,
-            icon: const Icon(Icons.person_add_alt_1_rounded, size: 21),
-            onPressed: username == null
-                ? null
-                : () => _showAddFriendSheet(context, username),
+          // Görünür, dolgulu düğme (Revize R6). Eski hâli AppBar varsayılan
+          // renkli IconButton'dı ve kullanıcı adı yokken disabled-griydi —
+          // "görünmez" şikayetinin iki sebebi. Devre dışı bırakmak yerine
+          // dokununca SEBEBİ söylüyor: görünmez düğme değil, açıklayan düğme.
+          Padding(
+            padding: const EdgeInsets.only(right: RythoSpace.md),
+            child: Pressable(
+              onTap: () {
+                if (username == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(l10n.addFriendNeedsUsername)));
+                  return;
+                }
+                _showAddFriendSheet(context, username);
+              },
+              child: Container(
+                width: 40,
+                height: 40,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: RythoColors.inkLighter,
+                  border: Border.all(
+                      color: RythoColors.lilac.withValues(alpha: 0.55)),
+                ),
+                child: const Icon(Icons.person_add_alt_1_rounded,
+                    size: 20, color: RythoColors.parchment),
+              ),
+            ),
           ),
         ],
       ),

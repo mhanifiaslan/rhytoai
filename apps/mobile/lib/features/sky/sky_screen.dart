@@ -14,7 +14,6 @@ import '../../widgets/common.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../../widgets/reading_card.dart';
 import '../chat/conversation_list_screen.dart';
-import '../oracle/oracle_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
 import 'sign_story_screen.dart';
@@ -43,7 +42,8 @@ import '../../l10n/app_localizations.dart';
 /// * **Tanıtım bandı** → silindi. Satış mesajı [PlusLockedCard]'da, yani
 ///   kullanıcının kilitli içeriğe baktığı yerde duruyor.
 ///
-/// Kalan yapı üç bölüm: bugün senin için · şu an · araçlar.
+/// Kalan yapı iki bölüm: bugün senin için · şu an. (Araçlar Atlas'a
+/// taşındı — Revize R6, madde 11.)
 class SkyScreen extends ConsumerStatefulWidget {
   const SkyScreen({super.key});
 
@@ -294,45 +294,10 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                     .slideY(begin: 0.06, curve: Curves.easeOutCubic),
               ),
 
-              // ---------- ARAÇLAR ----------
-              SectionHeader(l10n.oracleTools)
-                  .animate(delay: next())
-                  .fadeIn(duration: 360.ms),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
-                // Sabit yükseklik: `_OracleCard` içindeki `Spacer` sınırlı
-                // yükseklik ister, `ListView` içinde satır sınırsızdır.
-                child: SizedBox(
-                  height: 108,
-                  child: Row(
-                  children: [
-                    // Yüz Okuma Atlas'ta ("sen" sekmesi), burada değil.
-                    for (final (i, tool) in [
-                      ('🪙', l10n.iChing, l10n.iChingSubtitle),
-                      ('🀄', l10n.baZi, l10n.baZiSubtitle),
-                    ].indexed) ...[
-                      if (i > 0) const SizedBox(width: RythoSpace.md),
-                      Expanded(
-                        child: _OracleCard(
-                          emoji: tool.$1,
-                          title: tool.$2,
-                          subtitle: tool.$3,
-                          onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                  builder: (_) => OracleScreen(initialTab: i))),
-                        )
-                            .animate(
-                                delay: Duration(
-                                    milliseconds: 70 * stagger + i * 70))
-                            .fadeIn(duration: 360.ms)
-                            .slideY(begin: 0.1, curve: Curves.easeOutCubic),
-                      ),
-                    ],
-                  ],
-                  ),
-                ),
-              ),
+              // ARAÇLAR bölümü buradan KALKTI (Revize R6, madde 11):
+              // İching + BaZi artık Atlas'ta, Yüz Okuma ile tek satırda
+              // (atlas_screen.dart → _DivinationRow). Gökyüzü ~140 px
+              // kısaldı ve "bugün" anlatısına odaklandı.
             ],
           ),
         ),
@@ -398,20 +363,32 @@ class _Header extends StatelessWidget {
         ),
         StreakBadge(count: streak),
         const SizedBox(width: 10),
+        // Dock'taki merkez balonun MİNİSİ — aynı hedef (sohbet), aynı işaret.
+        // Eski hâli `forum_outlined` lilac @ inkLight zemindi: düşük kontrast
+        // ("görünmüyor" şikayeti) ve dock'la alakasız ikinci bir işaretti.
         Pressable(
           onTap: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => const ConversationListScreen())),
           child: Container(
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: RythoColors.inkLight,
-              border: Border.all(color: RythoColors.glassStroke),
+              gradient: RythoColors.primaryGradient,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(15),
+                topRight: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+                bottomLeft: Radius.circular(5),
+              ),
+              border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.22)),
+              boxShadow: const [
+                BoxShadow(color: RythoColors.magentaGlow, blurRadius: 14),
+              ],
             ),
-            child: const Icon(Icons.forum_outlined,
-                size: 20, color: RythoColors.lilac),
+            child: const Text('✦',
+                style: TextStyle(fontSize: 17, color: Colors.white)),
           ),
         ),
       ]),
@@ -419,43 +396,3 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Kehanet aracı kartı.
-class _OracleCard extends StatelessWidget {
-  const _OracleCard({
-    required this.emoji,
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final String emoji;
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Pressable(
-      onTap: onTap,
-      child: Container(
-        width: 128,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: RythoColors.glassFill,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: RythoColors.glassStroke),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(emoji, style: const TextStyle(fontSize: 26)),
-          const Spacer(),
-          Text(title, style: RythoText.body(14.5, w: FontWeight.w700)),
-          const SizedBox(height: 2),
-          Text(subtitle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: RythoText.body(10.5, color: RythoColors.parchmentDim)),
-        ]),
-      ),
-    );
-  }
-}

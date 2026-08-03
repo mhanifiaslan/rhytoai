@@ -204,6 +204,13 @@ class _CenterAiButtonState extends State<_CenterAiButton>
         builder: (_, _) {
           final t = Curves.easeInOut.transform(_pulse.value);
           final scale = (_pressed ? 0.94 : 1.0) * (1.0 + 0.06 * t);
+          // KONUŞMA BALONU formu (Revize R6). Eski hâli düz bir '✦' orb'du
+          // ve kullanıcı işlevi okuyamıyordu: "footer'daki mesajlaşma ikonu
+          // çok sıradan, daha mesajlaşmayı andıran bir tasarım". Balon
+          // işlevi söylüyor, içindeki ✦ markayı koruyor; degrade ve nefes
+          // animasyonu aynen kalıyor. Alt-sol köşenin sivri oluşu balonu
+          // balon yapan tek ipucu — dört köşe de yuvarlak olsaydı yine
+          // "yuvarlak düğme" okunurdu.
           return Transform.scale(
             scale: scale,
             child: Container(
@@ -211,9 +218,15 @@ class _CenterAiButtonState extends State<_CenterAiButton>
               height: 62,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
                 gradient: RythoColors.primaryGradient,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 1.4),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(24),
+                  topRight: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
+                  bottomLeft: Radius.circular(7),
+                ),
+                border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.25), width: 1.4),
                 boxShadow: [
                   BoxShadow(
                     color: RythoColors.magentaGlow,

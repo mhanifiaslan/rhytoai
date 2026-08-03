@@ -12,6 +12,8 @@ import '../../widgets/natal_wheel.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../../widgets/reading_card.dart';
 import '../face/face_reading_flow.dart';
+import '../oracle/oracle_screen.dart';
+import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
 import 'atlas_detail_screens.dart';
 import '../../core/subscription.dart' show subscriptionProvider;
@@ -51,16 +53,18 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(title: Text(l10n.atlasTitle)),
-      // Yüz okuma girişi natal raporun DIŞINDA duruyor.
+      // Kehanet satırı natal raporun DIŞINDA duruyor.
       //
-      // Önce `data != null` dalının içindeydi; sonuç şuydu: natal rapor
-      // kilitliyken ya da yüklenemezken firaset girişi de hiç görünmüyordu.
-      // Oysa firaset natal rapordan bağımsız bir özellik — harita varsa
-      // okumaya katılıyor, yoksa yalnız başına da çalışıyor.
+      // Yüz okuma önce `data != null` dalının içindeydi; sonuç şuydu: natal
+      // rapor kilitliyken firaset girişi de hiç görünmüyordu. Oysa üç araç
+      // da natal rapordan bağımsız çalışıyor (İching ücretsiz bile).
+      //
+      // Madde 11 (Revize R6): İching + BaZi Gökyüzü'nden BURAYA taşındı —
+      // Yüz Okuma ile tek satır. Gökyüzü'nden ARAÇLAR bölümü kalktı.
       body: Column(children: [
         const Padding(
           padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: FaceReadingEntry(),
+          child: _DivinationRow(),
         ),
         Expanded(
           child: natal.when(
@@ -325,44 +329,119 @@ class _AtlasTile extends StatelessWidget {
   }
 }
 
-/// Yüz okuma giriş kartı.
+/// Kehanet satırı: Yüz Okuma · İching · BaZi — üç eşit karo, tek satır.
 ///
-/// Ücretli uca **istek atmadan** kilit gösteriyor: abone olmayan biri karta
-/// dokununca paywall açılıyor, kamera hiç başlamıyor. Kamerayı açıp sonunda
-/// 402 almak, kullanıcıya yüzünü boşuna taratmak olurdu.
-class FaceReadingEntry extends ConsumerWidget {
-  const FaceReadingEntry({super.key});
+/// Madde 11 (Revize R6): İching + BaZi Gökyüzü'ndeki ARAÇLAR bölümünden
+/// buraya taşındı; kullanıcının istediği "tek satırda yan yana" düzen bu.
+/// Rotalar değişmedi — karolar hâlâ `OracleScreen`'i açıyor.
+///
+/// Yüz Okuma karosu ücretli uca **istek atmadan** kilit gösteriyor: abone
+/// olmayan biri karoda 🔒 görür, dokununca paywall açılır, kamera hiç
+/// başlamaz. Kamerayı açıp sonunda 402 almak, kullanıcıya yüzünü boşuna
+/// taratmak olurdu. (Eski tam genişlik `FaceReadingEntry` kartının kuralı,
+/// karo biçiminde devam ediyor.)
+class _DivinationRow extends ConsumerWidget {
+  const _DivinationRow();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final abonelik = ref.watch(subscriptionProvider);
-    final acik = abonelik.value?.active ?? false;
+    final faceAcik = abonelik.value?.active ?? false;
 
-    if (!acik) {
-      return PlusLockedCard(
-        emoji: '👁️',
-        title: l10n.faceReadingTitle,
-        description: l10n.faceReadingLockedBody,
-      );
-    }
+    void paywall() => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const PaywallScreen(),
+          fullscreenDialog: true,
+        ));
 
-    return GlassPanel(
-      onTap: () => startFaceReading(context, ref),
+    void oracle(int tab) => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => OracleScreen(initialTab: tab)));
+
+    return SizedBox(
+      height: 100,
       child: Row(children: [
-        const Text('👁️', style: TextStyle(fontSize: 20)),
-        const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(l10n.faceReadingTitle, style: RythoText.display(16)),
-            const SizedBox(height: 3),
-            Text(l10n.faceReadingEntryBody,
-                style: RythoText.body(12.5, color: RythoColors.parchmentDim)),
-          ]),
+          child: _DivinationTile(
+            emoji: '👁️',
+            title: l10n.faceReadingTitle,
+            subtitle: l10n.faceReadingTileSubtitle,
+            locked: !faceAcik,
+            onTap: () =>
+                faceAcik ? startFaceReading(context, ref) : paywall(),
+          ),
         ),
-        const Icon(Icons.chevron_right_rounded,
-            size: 18, color: RythoColors.parchmentDim),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _DivinationTile(
+            emoji: '🪙',
+            title: l10n.iChing,
+            subtitle: l10n.iChingSubtitle,
+            onTap: () => oracle(0),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _DivinationTile(
+            emoji: '🀄',
+            title: l10n.baZi,
+            subtitle: l10n.baZiSubtitle,
+            onTap: () => oracle(1),
+          ),
+        ),
       ]),
+    );
+  }
+}
+
+/// Kehanet karosu — Gökyüzü'ndeki eski `_OracleCard`'ın üçlü satıra
+/// sıkıştırılmış hâli. Üç karo yan yana ~110 px genişlik bırakır; alt yazı
+/// tek satıra kırpılır, başlık taşarsa üç nokta alır.
+class _DivinationTile extends StatelessWidget {
+  const _DivinationTile({
+    required this.emoji,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+    this.locked = false,
+  });
+
+  final String emoji;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+  final bool locked;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: RythoColors.glassFill,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: RythoColors.glassStroke),
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text(emoji, style: const TextStyle(fontSize: 22)),
+            const Spacer(),
+            if (locked)
+              const Icon(Icons.lock_rounded,
+                  size: 13, color: RythoColors.parchmentDim),
+          ]),
+          const Spacer(),
+          Text(title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RythoText.body(13.5, w: FontWeight.w700)),
+          const SizedBox(height: 2),
+          Text(subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RythoText.body(10.5, color: RythoColors.parchmentDim)),
+        ]),
+      ),
     );
   }
 }

@@ -214,10 +214,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     const Text('🪙', style: TextStyle(fontSize: 13)),
                     const SizedBox(width: RythoSpace.xs),
-                    Text(
-                      AppLocalizations.of(context)
-                          .tokenBalanceChip(cuzdan.total),
-                      style: RythoType.dataSmall,
+                    // Her mesajda bakiye düşüyor; sayı yumuşak geçişle
+                    // değişsin ki harcama fark edilsin (madde 12 — ölçülü
+                    // mikro animasyon, süre RythoMotion'dan).
+                    AnimatedSwitcher(
+                      duration: RythoMotion.base,
+                      transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: SlideTransition(
+                          position: Tween(
+                                  begin: const Offset(0, 0.5),
+                                  end: Offset.zero)
+                              .animate(anim),
+                          child: child,
+                        ),
+                      ),
+                      child: Text(
+                        AppLocalizations.of(context)
+                            .tokenBalanceChip(cuzdan.total),
+                        key: ValueKey(cuzdan.total),
+                        style: RythoType.dataSmall,
+                      ),
                     ),
                   ]),
                 ),
