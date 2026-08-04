@@ -53,6 +53,35 @@ BRANCHES = [
 # Degerler dilden bagimsiz ANAHTARDIR; adlar services/prompts altinda.
 _ELEMENT_ORDER = ["wood", "fire", "earth", "metal", "water"]
 
+#: Gizli kökler (藏干) — dal indeksi → [(gövde indeksi, ağırlık), ...].
+#:
+#: Her dal tek elementten ibaret değildir: 寅 (Yin) içinde Jia ahşabının
+#: yanında Bing ateşi ve Wu toprağı da yatar. Bunlar sayılmadan element
+#: dağılımı sistematik yanlış çıkar — "haritanda hiç su yok" denen kişinin
+#: suyu çoğu zaman bir dalın içindedir (Revize B2).
+#:
+#: Ana qi önce. Kaynak: kanonik Ziping tablosu (Zi Ping Zhen Quan geleneği).
+#: Si ve Xu'nun artık-qi SIRASI kaynaklar arasında oynayabilir; seçilen
+#: sürüm budur ve test_bazi_engine ile dondurulmuştur.
+#:
+#: Ağırlıklar: tek gövdeli 1.0; iki gövdeli 0.7/0.3; üç gövdeli 0.6/0.3/0.1.
+#: Her dal toplam 1.0 dağıtır — böylece 8 karakterlik dağılımın toplamı
+#: 8.0 kalır (saatsiz haritada 6.0). Değişmez, testle korunur.
+HIDDEN_STEMS: dict[int, list[tuple[int, float]]] = {
+    0: [(9, 1.0)],                       # Zi   子: Gui
+    1: [(5, 0.6), (9, 0.3), (7, 0.1)],   # Chou 丑: Ji, Gui, Xin
+    2: [(0, 0.6), (2, 0.3), (4, 0.1)],   # Yin  寅: Jia, Bing, Wu
+    3: [(1, 1.0)],                       # Mao  卯: Yi
+    4: [(4, 0.6), (1, 0.3), (9, 0.1)],   # Chen 辰: Wu, Yi, Gui
+    5: [(2, 0.6), (6, 0.3), (4, 0.1)],   # Si   巳: Bing, Geng, Wu
+    6: [(3, 0.7), (5, 0.3)],             # Wu   午: Ding, Ji
+    7: [(5, 0.6), (3, 0.3), (1, 0.1)],   # Wei  未: Ji, Ding, Yi
+    8: [(6, 0.6), (8, 0.3), (4, 0.1)],   # Shen 申: Geng, Ren, Wu
+    9: [(7, 1.0)],                       # You  酉: Xin
+    10: [(4, 0.6), (7, 0.3), (3, 0.1)],  # Xu   戌: Wu, Xin, Ding
+    11: [(8, 0.7), (0, 0.3)],            # Hai  亥: Ren, Jia
+}
+
 # On Tanri (Ten Gods) — Day Master ile diger govdeler arasindaki iliski.
 #
 # Pinyin ad dilden bagimsizdir; ACIKLAMA metni tasinmaz, yerine anahtar
@@ -90,6 +119,55 @@ def _ten_god(day_stem: int, other_stem: int) -> dict[str, str]:
     same_polarity = me["polarity"] == other["polarity"]
     name, meaning_key = _TEN_GODS[(relation, same_polarity)]
     return {"name": name, "meaning_key": meaning_key}
+
+
+def attach_hidden_stems(pillars: dict[str, Any], day_stem: int) -> None:
+    """Her dalın gizli köklerini ve ana-qi On Tanrısını iliştirir (B2).
+
+    Gün gövdesinin kendisi On Tanrı almaz (Day Master'dır); gizli köklerin
+    HEPSİ alır — gün dalındaki gizli kök Day Master'la aynı gövdeyse bu
+    meşru bir Bi Jian'dır (omuzdaş), istisna değil.
+    """
+    for p in pillars.values():
+        if p is None:
+            continue
+        dal = p["branch"]
+        hidden = []
+        for s_idx, agirlik in HIDDEN_STEMS[dal["index"]]:
+            hidden.append({
+                "index": s_idx,
+                **STEMS[s_idx],
+                "weight": agirlik,
+                "ten_god": _ten_god(day_stem, s_idx),
+            })
+        dal["hidden"] = hidden
+        # Ana qi'nin On Tanrısı dalın kendisinin On Tanrısı sayılır —
+        # klasik kullanım bu (dalın "temsilcisi" ana qi'dir).
+        dal["ten_god"] = hidden[0]["ten_god"]
+
+
+def element_distribution_for(
+        pillars: dict[str, Any]) -> dict[str, float]:
+    """Gizli kök ağırlıklı element dağılımı (B2). Saf — test edilebilir.
+
+    Gövdeler 1.0, dalın gizli kökleri kendi ağırlıklarıyla (dal başına
+    toplam 1.0). Değişmez: 4 sütunda toplam 8.0, saatsizde 6.0.
+    """
+    sayim = {e: 0.0 for e in _ELEMENT_ORDER}
+    for p in pillars.values():
+        if p is None:
+            continue
+        sayim[p["stem"]["element"]] += 1.0
+        for h in p["branch"]["hidden"]:
+            sayim[h["element"]] += h["weight"]
+    return {e: round(v, 2) for e, v in sayim.items()}
+
+
+#: "Eksik element" eşiği: ağırlıklı toplam bunun altındaysa element fiilen
+#: beslenmiyor sayılır. Düz "hiç yok" tanımı gizli kökler yüzünden yanıltıcı
+#: olurdu; 0.35, tek bir zayıf artık-qi'nin (0.1-0.3) "var" sayılmamasını,
+#: bir ana-qi'nin (0.6+) sayılmasını sağlar.
+MISSING_THRESHOLD = 0.35
 
 
 def _sun_longitude(when_utc: dt.datetime) -> float:
@@ -238,15 +316,12 @@ def get_bazi_chart(
     if hour_pillar is not None:
         ten_gods["hour"] = _ten_god(day_stem, hour_pillar["stem"]["index"])
 
-    # --- Element dağılımı (saat bilinmiyorsa 6 karakter üzerinden) ---
-    element_count: dict[str, int] = {e: 0 for e in _ELEMENT_ORDER}
-    for p in pillars.values():
-        if p is None:
-            continue
-        element_count[p["stem"]["element"]] += 1
-        element_count[p["branch"]["element"]] += 1
+    # --- Gizli kökler + ağırlıklı element dağılımı (B2) ---
+    attach_hidden_stems(pillars, day_stem)
+    element_count = element_distribution_for(pillars)
     dominant = max(element_count, key=element_count.get)
-    missing = [e for e, c in element_count.items() if c == 0]
+    missing = [e for e, c in element_count.items()
+               if c < MISSING_THRESHOLD]
 
     # --- Şans Sütunları (Da Yun) ---
     yang_year = STEMS[year_stem]["polarity"] == "Yang"
@@ -289,8 +364,9 @@ def get_bazi_chart(
         # Hesap sürümü: hesap davranışı değişen her fazda artar ve rapor
         # önbellek anahtarına girer — eski metinler kendiliğinden düşer,
         # "yeni harita + 30 günlük eski rapor" çelişkisi hiç yaşanmaz.
-        # v3: Gerçek Güneş Zamanı (B1).
-        "calc_version": "3",
+        # v3: Gerçek Güneş Zamanı (B1). v4: gizli kökler + ağırlıklı
+        # dağılım (B2) — missing listesi değişebildiği için sürüm arttı.
+        "calc_version": "4",
         "note_keys": note_keys,
         "hour_known": hour_known,
         # Güneş duvar saati ve duvar saatine göre sapma — beyan bundan

@@ -194,7 +194,8 @@ class TestSaatBilinmiyor:
         assert chart["pillars"]["hour"] is None
         assert "hour" not in chart["ten_gods"]
         assert chart["hour_known"] is False
-        assert sum(chart["element_distribution"].values()) == 6
+        assert sum(chart["element_distribution"].values()) == \
+            pytest.approx(6.0, abs=0.05)
         assert "hour_unknown" in chart["note_keys"]
         assert chart["luck_start_uncertainty_months"] == 4
         assert chart["solar_time"] is None
@@ -256,16 +257,58 @@ class TestOnTanri:
 # Değişmezler ve beyanlar
 # --------------------------------------------------------------------------
 
+class TestGizliKokler:
+    def test_her_dal_toplam_bir_dagitir(self):
+        # Ağırlık korunumu: dal başına 1.0 — dağılım toplamı 8.0 değişmezi
+        # buna dayanıyor. Tablodaki tek bir yazım hatası burada yakalanır.
+        for dal_idx, kokler in bazi_service.HIDDEN_STEMS.items():
+            toplam = sum(w for _, w in kokler)
+            assert toplam == pytest.approx(1.0), (
+                f"dal {dal_idx} toplam {toplam}")
+
+    def test_yin_dalinin_kokleri(self):
+        # Kanonik tablo: 寅 = Jia(ana), Bing, Wu. Ana qi önce gelmeli —
+        # dalın On Tanrısı ana qi'den okunuyor.
+        kokler = bazi_service.HIDDEN_STEMS[2]
+        assert [s for s, _ in kokler] == [0, 2, 4]
+        assert kokler[0][1] == 0.6
+
+    def test_haritada_gizli_kokler_ve_dal_tanrisi(self):
+        # 15 Haziran 1990 (XinHai günü): gün dalı Hai = Ren(0.7) + Jia(0.3).
+        # Dalın On Tanrısı ana qi'den: Xin (Yin metal) SUYU üretir
+        # (i_produce) ve Ren Yang'dır (farklı polarite) → Shang Guan.
+        chart = get_bazi_chart(1990, 6, 15, 14, 0, city="Istanbul",
+                               gender="male")
+        dal = chart["pillars"]["day"]["branch"]
+        assert [h["pinyin"] for h in dal["hidden"]] == ["Ren", "Jia"]
+        assert dal["ten_god"]["name"] == "Shang Guan"
+
+    def test_duz_sayimin_gordugu_eksik_agirlikli_sayimda_var(self):
+        # Saf fonksiyon üzerinde kurgu: Shen (Ren 0.3) + Chen (Gui 0.1)
+        # dallarında su YALNIZ gizli köklerde. Düz element sayımı "su yok"
+        # derdi; ağırlıklı sayım 0.4 bulur ve 0.35 eşiği onu VAR sayar.
+        pillars = {
+            "a": bazi_service._pillar(0, 8),   # Jia Shen
+            "b": bazi_service._pillar(2, 4),   # Bing Chen
+        }
+        bazi_service.attach_hidden_stems(pillars, day_stem=0)
+        dagilim = bazi_service.element_distribution_for(pillars)
+        assert dagilim["water"] == pytest.approx(0.4)
+        assert dagilim["water"] >= bazi_service.MISSING_THRESHOLD
+
+
 class TestDegismezler:
     def test_element_dagilimi_sekiz_karakter(self):
+        # B2'den beri ağırlıklı: gövdeler 1.0 + dal başına gizli kök 1.0.
         chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
                                gender="female")
-        assert sum(chart["element_distribution"].values()) == 8
+        assert sum(chart["element_distribution"].values()) == \
+            pytest.approx(8.0, abs=0.05)
 
     def test_calc_version_var(self):
         chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
                                gender="female")
-        assert chart["calc_version"] == "3"
+        assert chart["calc_version"] == "4"
 
     def test_ikili_cinsiyette_cinsiyet_beyani_yok(self):
         for cinsiyet in ("male", "female"):

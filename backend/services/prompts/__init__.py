@@ -127,28 +127,43 @@ def localize_bazi(lang: str | None, chart: dict | None) -> dict:
     def polarity(key: str | None) -> str:
         return p.POLARITY_NAMES.get(key or "", key or "")
 
-    def sutun(pillar: dict | None) -> dict:
-        if not pillar:
-            return {}
-        gövde = pillar.get("stem") or {}
-        dal = pillar.get("branch") or {}
-        return {
-            **pillar,
-            "stem": {**gövde,
-                     "element": element(gövde.get("element")),
-                     "polarity": polarity(gövde.get("polarity"))},
-            "branch": {**dal,
-                       "element": element(dal.get("element")),
-                       "animal": p.BAZI_ANIMALS.get(dal.get("animal") or "",
-                                                    dal.get("animal") or "")},
-        }
-
     def tanri(god: dict | None) -> dict:
         if not god:
             return {}
         return {**god,
                 "meaning": p.TEN_GOD_MEANINGS.get(god.get("meaning_key") or "",
                                                   god.get("meaning_key") or "")}
+
+    def sutun(pillar: dict | None) -> dict:
+        if not pillar:
+            return {}
+        gövde = pillar.get("stem") or {}
+        dal = pillar.get("branch") or {}
+        çevrili_dal = {
+            **dal,
+            "element": element(dal.get("element")),
+            "animal": p.BAZI_ANIMALS.get(dal.get("animal") or "",
+                                         dal.get("animal") or ""),
+        }
+        # Gizli kökler (B2): element/polarite adları ve On Tanrı açıklaması
+        # da isteğin dilinde.
+        if dal.get("hidden"):
+            çevrili_dal["hidden"] = [
+                {**h,
+                 "element": element(h.get("element")),
+                 "polarity": polarity(h.get("polarity")),
+                 "ten_god": tanri(h.get("ten_god"))}
+                for h in dal["hidden"]
+            ]
+        if dal.get("ten_god"):
+            çevrili_dal["ten_god"] = tanri(dal["ten_god"])
+        return {
+            **pillar,
+            "stem": {**gövde,
+                     "element": element(gövde.get("element")),
+                     "polarity": polarity(gövde.get("polarity"))},
+            "branch": çevrili_dal,
+        }
 
     day_master = chart.get("day_master") or {}
     çevrilmiş_dm = {
