@@ -138,6 +138,50 @@ def test_natal_sorgu_ingilizce_dolgu_icermez(monkeypatch, temiz_onbellek):
     assert "Mizaç" in sorgu
 
 
+def test_iching_promptu_cizgi_metnini_tasir(monkeypatch, temiz_onbellek):
+    """İ4: hareketli çizginin METNİ prompt'ta — numarası değil.
+
+    Metin düşerse hata çıkmaz; model yalnız 'çizgi 3 hareketli' bilgisiyle
+    genelleme yapar. Bu test o sessiz gerilemeyi tutar.
+    """
+    from services import iching_service
+    kutu = _kur(monkeypatch)
+    beslenen = iter([7, 7, 9, 8, 8, 8])   # 11 Tai, hareketli 3. çizgi
+    monkeypatch.setattr(iching_service, "_cast_line_coins",
+                        lambda: next(beslenen))
+    cekim = iching_service.cast_iching("işim ne olacak", method="coins")
+    cekim = iching_service.enrich_cast(
+        cekim, day_pillar={"label": "甲子 (Jia Zi)", "cycle": 0},
+        day_master_element="wood", basis="utc")
+    report_service.iching_reading("u-i4", cekim, lang="tr")
+
+    prompt = kutu["prompt"]
+    h11 = iching_service.get_hexagram(11)
+    assert h11["lines_tr"][2] in prompt            # 3. çizginin METNİ
+    assert "甲子" in prompt                         # gün sütunu etiketi
+    assert "üç para" in prompt                     # yöntem adı çevrili
+    assert "coins" not in prompt
+    assert "saray" in prompt.lower() or "qian" in prompt.lower()
+    # RAG sorgusu isteğin dilinde.
+    assert "Değişimler Kitabı" in kutu["sorgu"]
+
+
+def test_iching_hareketsizde_donusum_bloku_yok(monkeypatch, temiz_onbellek):
+    from services import iching_service
+    kutu = _kur(monkeypatch)
+    beslenen = iter([7, 8, 7, 8, 7, 8])   # 63 Ji Ji, hareketli yok
+    monkeypatch.setattr(iching_service, "_cast_line_coins",
+                        lambda: next(beslenen))
+    cekim = iching_service.cast_iching("soru", method="coins")
+    report_service.iching_reading("u-i4b", cekim, lang="tr")
+
+    prompt = kutu["prompt"]
+    assert "DÖNÜŞEN HEKSAGRAM" not in prompt
+    assert "METİNLERİ (yorumun ağırlık merkezi): -" in prompt
+    # Bağlamsız çekimde kişiselleştirme satırı "-".
+    assert "Danışanla bağ (Day Master ↔ trigramlar): -" in prompt
+
+
 def test_bazi_promptu_derin_veriyi_tasir(monkeypatch, temiz_onbellek):
     """B6: rapor promptu motorun yeni ürettiklerini gerçekten görüyor.
 

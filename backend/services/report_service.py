@@ -564,11 +564,16 @@ def iching_reading(user_id: str, cast: dict[str, Any],
     # kullanıcı, coins ile üretilmiş yorumu görüyordu — oysa prompt yöntemi
     # metne yazıyor. Ham soru da anahtara gömülmekten kurtuldu.
     from services.iching_service import ICHING_CALC_VERSION
+    baglam = yerel.get("context") or {}
+    gun_etiketi = (baglam.get("day_pillar") or {}).get("label", "")
     ozet = "|".join([
         str(primary["number"]),
         cast.get("question", "")[:48],
         "-".join(map(str, cast.get("moving_lines", []))),
         cast.get("method", ""),
+        # Gün etiketi anahtara girer (İ4): gün bağlamı prompt'ta —
+        # gece yarısı sınırında dünün bağlamı servis edilmesin.
+        gun_etiketi,
         ICHING_CALC_VERSION,
     ])
     cache_key = (f"iching-v2-{user_id}-"
@@ -583,22 +588,95 @@ def iching_reading(user_id: str, cast: dict[str, Any],
     if yerel.get("transformed"):
         t = yerel["transformed"]
         transformed_text = p.ICHING_TRANSFORMED.format(
-            lines=cast["moving_lines"], number=t["number"],
-            name_tr=t["name_local"], name=t["name"], judgment=t["judgment"],
+            number=t["number"], name_tr=t["name_local"], name=t["name"],
+            judgment=t["judgment"],
         )
 
+    # --- Hareketli çizgi METİNLERİ (İ4) — yorumun ağırlık merkezi ---
+    moving = cast.get("moving_lines") or []
+    metinler = primary.get("line_texts") or []
+    parcalar = [p.ICHING_LINE_FMT.format(n=n, text=metinler[n - 1])
+                for n in moving if 0 < n <= len(metinler)]
+    if len(moving) == 6 and primary.get("all_lines"):
+        parcalar.append(
+            f"{p.ICHING_ALL_LINES_LABEL}: {primary['all_lines']}")
+    moving_texts = "\n  ".join(parcalar) or "-"
+
+    # --- Trigramlar: ad + element + aile (İ1 atributları) ---
+    def _trig(t: dict[str, Any]) -> str:
+        aile = p.TRIGRAM_FAMILY_NAMES.get(t.get("family") or "", "")
+        return f"{t['name']} ({t['element']}" + (f", {aile})" if aile else ")")
+
+    nukleer = yerel.get("nuclear") or {}
+    nuclear_line = (f"#{nukleer['number']} {nukleer['name_local']}: "
+                    f"{nukleer['judgment']}") if nukleer else "-"
+
+    # --- Liu Yao özeti (İ3) ---
+    liu = yerel.get("liu_yao") or {}
+    ly_lines = liu.get("lines") or []
+    palace = liu.get("palace", "-")
+    palace_element = p.BAZI_ELEMENTS.get(liu.get("palace_element") or "",
+                                         liu.get("palace_element") or "-")
+    shi_ying = "-"
+    if ly_lines and liu.get("shi") and liu.get("ying"):
+        shi_c = ly_lines[liu["shi"] - 1]
+        ying_c = ly_lines[liu["ying"] - 1]
+        shi_ying = p.ICHING_SHI_YING_FMT.format(
+            shi=liu["shi"], shi_rel=shi_c.get("relative_name", ""),
+            shi_branch=shi_c.get("branch", ""),
+            ying=liu["ying"], ying_rel=ying_c.get("relative_name", ""),
+            ying_branch=ying_c.get("branch", ""))
+
+    # --- Çekim günü bağlamı (İ2) + boşluk/çarpışma işaretleri ---
+    day_context = "-"
+    if gun_etiketi:
+        bos = ", ".join(str(c["position"]) for c in ly_lines
+                        if c.get("void"))
+        carpisan = ", ".join(str(c["position"]) for c in ly_lines
+                             if c.get("clash"))
+        ekler = ""
+        if bos:
+            ekler += p.ICHING_VOID_FMT.format(lines=bos)
+        if carpisan:
+            ekler += p.ICHING_CLASH_FMT.format(lines=carpisan)
+        day_context = p.ICHING_DAY_FMT.format(
+            day=gun_etiketi,
+            month=(baglam.get("month_pillar") or {}).get("label", "-"),
+            basis=p.ICHING_BASIS_UTC
+            if baglam.get("basis") == "utc" else "") + ekler
+
+    # --- Danışanla bağ (İ2): Day Master ↔ trigram ilişkileri ---
+    dm_line = "-"
+    iliskiler = baglam.get("trigram_relation_names") or {}
+    if iliskiler and baglam.get("day_master_element"):
+        dm_line = p.ICHING_DM_FMT.format(
+            element=p.BAZI_ELEMENTS.get(baglam["day_master_element"],
+                                        baglam["day_master_element"]),
+            lower=iliskiler.get("lower", "-"),
+            upper=iliskiler.get("upper", "-"))
+
+    # Kullanıcı hafızası: soru genelde kişisel — bağlam okumaya değer katar.
+    memory = memory_service.memory_context(user_id, max_chars=400)
+
     rag = retrieve_context(
-        f"I Ching hexagram {primary['name']} change synchronicity", lang=lang)
+        p.ICHING_RAG_QUERY.format(name=primary["name_local"]), lang=lang)
 
     prompt = p.ICHING.format(
-        question=cast.get("question"), method=cast.get("method"),
+        question=cast.get("question"),
+        method=p.ICHING_METHOD_NAMES.get(cast.get("method") or "",
+                                         cast.get("method") or ""),
         number=primary["number"], name_tr=primary["name_local"],
         name=primary["name"], name_cn=primary["name_cn"],
         unicode=primary["unicode"], judgment=primary["judgment"],
         image=primary["image"],
-        lower=primary["lower_trigram"]["name"],
-        upper=primary["upper_trigram"]["name"],
-        transformed=transformed_text, rag=rag,
+        lower=_trig(primary["lower_trigram"]),
+        upper=_trig(primary["upper_trigram"]),
+        nuclear=nuclear_line,
+        moving_texts=moving_texts,
+        transformed=transformed_text,
+        palace=palace, palace_element=palace_element, shi_ying=shi_ying,
+        day_context=day_context, dm_line=dm_line,
+        rag=rag, memory=_memory_block(memory, lang),
     )
     fallback = (
         f"#{primary['number']} {primary['name_local']} {primary['unicode']}: "

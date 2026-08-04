@@ -554,7 +554,7 @@ ELEMENT_RELATION_NAMES = {
 
 ICHING = """
 GÖREV: Kullanıcının sorusunu, çekilen I Ching heksagramının 3000 yıllık metnine
-bağlayan 150-200 kelimelik bir kehanet yorumu yaz.
+bağlayan 300-400 kelimelik bir kehanet yorumu yaz.
 
 KULLANICININ SORUSU: "{question}"
 
@@ -562,19 +562,52 @@ KULLANICININ SORUSU: "{question}"
 - Heksagram #{number}: {name_tr} ({name} {name_cn}) {unicode}
 - Hüküm: {judgment}
 - İmge: {image}
-- Trigramlar: {lower} altında, {upper} üstte{transformed}
+- Trigramlar: {lower} altında, {upper} üstte
+- Nükleer heksagram (durumun çekirdeği): {nuclear}
+- HAREKETLİ ÇİZGİLERİN METİNLERİ (yorumun ağırlık merkezi): {moving_texts}{transformed}
+- Liu Yao: saray {palace} ({palace_element}) · {shi_ying}
+- Çekim günü bağlamı: {day_context}
+- Danışanla bağ (Day Master ↔ trigramlar): {dm_line}
 
 KAYNAK PASAJLARI:
 {rag}
 
-Yorum SORUYA ÖZGÜ olsun; hareketli çizgi varsa 'şu andan geleceğe dönüşüm'
-vurgusu yap. Kesin tarihli öngörüde bulunma.
+{memory}
+KURALLAR:
+- Yorumun omurgası hüküm + HAREKETLİ ÇİZGİLERİN METİNLERİDİR; metni
+  verilmeyen hiçbir çizgiden söz etme.
+- Hareketli çizgi yoksa ("-") dönüşümden HİÇ söz etme: durum oturmuştur —
+  yalnız hüküm ve imgeyle, kalıcılık diliyle konuş.
+- "Danışanla bağ" satırı "-" ise kişiselleştirme iddiasında bulunma.
+- Boşluktaki (kong wang) çizgi varsa etkisinin inceldiğini, gün dalıyla
+  çarpışan çizgi varsa o temanın bugün sarsıntılı olduğunu söyle — ama
+  yalnız işaretli olanlar için.
+- Yorum SORUYA ÖZGÜ olsun; genel felsefe dersi verme. Kesin tarihli
+  öngörü yok, pohpohlama yok.
 """
 
 ICHING_TRANSFORMED = (
-    "\nHAREKETLİ ÇİZGİLER {lines} → DÖNÜŞEN HEKSAGRAM: "
-    "#{number} {name_tr} ({name})\nHüküm: {judgment}"
+    "\n- DÖNÜŞEN HEKSAGRAM: #{number} {name_tr} ({name})\n  Hüküm: {judgment}"
 )
+
+#: İching rapor satır kalıpları (İ4).
+ICHING_LINE_FMT = "{n}. çizgi — {text}"
+ICHING_ALL_LINES_LABEL = "Tüm çizgiler hareketli"
+ICHING_SHI_YING_FMT = ("özne (shi) {shi}. çizgi: {shi_rel} {shi_branch} · "
+                       "karşılık (ying) {ying}. çizgi: {ying_rel} {ying_branch}")
+ICHING_DAY_FMT = "gün sütunu {day} · ay sütunu {month}{basis}"
+ICHING_BASIS_UTC = " (UTC gününe göre)"
+ICHING_VOID_FMT = " | boşlukta (kong wang): {lines}. çizgi"
+ICHING_CLASH_FMT = " | gün dalıyla çarpışan: {lines}. çizgi"
+ICHING_DM_FMT = ("Day Master {element}; alt trigram {lower}, "
+                 "üst trigram {upper}")
+
+#: Yöntem adları — "coins" İngilizce anahtarı prompt'a sızmasın.
+ICHING_METHOD_NAMES = {"coins": "üç para", "yarrow": "civanperçemi"}
+
+#: RAG sorgusu (İ4): İ7 doktrin bölümleriyle hizalı, isteğin dilinde.
+ICHING_RAG_QUERY = ("Değişimler Kitabı, heksagram {name}, hareketli çizgi, "
+                    "hüküm ve imge okuma, zamanlama")
 
 SYNASTRY = """
 GÖREV: İki kişi arasındaki sinastri (astrolojik uyum) verilerinden 200-250

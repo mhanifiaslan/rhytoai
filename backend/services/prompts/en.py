@@ -572,7 +572,7 @@ ELEMENT_RELATION_NAMES = {
 }
 
 ICHING = """
-TASK: Write a 150-200 word reading that ties the questioner's question to the
+TASK: Write a 300-400 word reading that ties the questioner's question to the
 three-thousand-year-old text of the hexagram they cast.
 
 THE QUESTION: "{question}"
@@ -581,20 +581,55 @@ THE CAST ({method} method, with true probability distribution):
 - Hexagram #{number}: {name_tr} ({name} {name_cn}) {unicode}
 - Judgment: {judgment}
 - Image: {image}
-- Trigrams: {lower} below, {upper} above{transformed}
+- Trigrams: {lower} below, {upper} above
+- Nuclear hexagram (the core of the situation): {nuclear}
+- TEXTS OF THE MOVING LINES (the heart of the reading): {moving_texts}{transformed}
+- Liu Yao: palace {palace} ({palace_element}) · {shi_ying}
+- Day of the cast: {day_context}
+- Bond with the questioner (Day Master ↔ trigrams): {dm_line}
 
 SOURCE PASSAGES:
 {rag}
 
-Make the reading SPECIFIC to the question. If there are moving lines, stress
-the transformation from the present toward what is coming. Do not predict
-dated events.
+{memory}
+RULES:
+- The spine of the reading is the judgment plus the TEXTS OF THE MOVING
+  LINES; never speak of a line whose text was not given.
+- If there are no moving lines ("-"), do NOT speak of transformation: the
+  situation has settled — read only the judgment and image, in the
+  language of steadiness.
+- If the "bond with the questioner" line is "-", make no claim of
+  personalisation.
+- If a line is marked void (kong wang), say its influence runs thin; if a
+  line clashes with the day branch, say that theme is shaken today — but
+  only for the lines so marked.
+- Keep the reading SPECIFIC to the question; no general philosophy
+  lecture. No dated predictions, no flattery.
 """
 
 ICHING_TRANSFORMED = (
-    "\nMOVING LINES {lines} → TRANSFORMED HEXAGRAM: "
-    "#{number} {name_tr} ({name})\nJudgment: {judgment}"
+    "\n- TRANSFORMED HEXAGRAM: #{number} {name_tr} ({name})\n"
+    "  Judgment: {judgment}"
 )
+
+#: I Ching report line formats (İ4).
+ICHING_LINE_FMT = "line {n} — {text}"
+ICHING_ALL_LINES_LABEL = "All lines moving"
+ICHING_SHI_YING_FMT = ("subject (shi) line {shi}: {shi_rel} {shi_branch} · "
+                       "response (ying) line {ying}: {ying_rel} {ying_branch}")
+ICHING_DAY_FMT = "day pillar {day} · month pillar {month}{basis}"
+ICHING_BASIS_UTC = " (by the UTC day)"
+ICHING_VOID_FMT = " | void (kong wang): line {lines}"
+ICHING_CLASH_FMT = " | clashing with the day branch: line {lines}"
+ICHING_DM_FMT = ("Day Master {element}; lower trigram {lower}, "
+                 "upper trigram {upper}")
+
+#: Method names — keep raw keys out of the prompt.
+ICHING_METHOD_NAMES = {"coins": "three coins", "yarrow": "yarrow stalks"}
+
+#: RAG query (İ4): aligned with the İ7 doctrine sections, in-language.
+ICHING_RAG_QUERY = ("Book of Changes, hexagram {name}, moving lines, "
+                    "reading judgment and image, timing")
 
 SYNASTRY = """
 TASK: Write a 200-250 word synastry (astrological compatibility) reading from
