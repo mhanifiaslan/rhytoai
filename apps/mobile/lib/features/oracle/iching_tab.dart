@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dio/dio.dart';
+
 import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../core/sound.dart';
+import '../../core/wallet.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
@@ -20,11 +23,23 @@ class IChingTab extends ConsumerStatefulWidget {
   ConsumerState<IChingTab> createState() => _IChingTabState();
 }
 
-class _IChingTabState extends ConsumerState<IChingTab> {
+class _IChingTabState extends ConsumerState<IChingTab>
+    with AutomaticKeepAliveClientMixin {
   final _controller = TextEditingController();
   String _method = 'coins';
   bool _busy = false;
   Map<String, dynamic>? _result;
+
+  // Sekme değişince çekim kaybolmasın (İ0): kullanıcı BaZi'ye bakıp
+  // dönünce günde bir hakkı olan çekiminin sonucu hâlâ ekranda olmalı.
+  @override
+  bool get wantKeepAlive => true;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   Future<void> _cast() async {
     final l10n = AppLocalizations.of(context);
@@ -46,6 +61,16 @@ class _IChingTabState extends ConsumerState<IChingTab> {
           data: {'question': question, 'method': _method});
       setState(() => _result = Map<String, dynamic>.from(response.data['data']));
       Analytics.ichingCast(_method);
+      // Abone çekimi cüzdandan 2 token düşer; sohbetteki bakiye çipi
+      // bayat kalmasın (İ0).
+      ref.invalidate(walletProvider);
+    } on DioException catch (e) {
+      // 402'de interceptor zaten paywall'ı açıyor; arkasına bir de
+      // SnackBar basmak aynı mesajı iki kez göstermekti (İ0).
+      if (mounted && e.response?.statusCode != 402) {
+        messenger.showSnackBar(
+            SnackBar(content: Text(friendlyError(e, l10n))));
+      }
     } catch (e) {
       if (mounted) {
         messenger.showSnackBar(
@@ -58,6 +83,7 @@ class _IChingTabState extends ConsumerState<IChingTab> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // AutomaticKeepAliveClientMixin gereği.
     final l10n = AppLocalizations.of(context);
     return ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
@@ -72,7 +98,12 @@ class _IChingTabState extends ConsumerState<IChingTab> {
       TextField(
         controller: _controller,
         style: RythoText.body(15),
-        decoration: InputDecoration(hintText: l10n.iChingQuestionHint),
+        // Sunucu şemasıyla hizalı sınır (İ0): soru prompt'a ham giriyor.
+        maxLength: 280,
+        decoration: InputDecoration(
+          hintText: l10n.iChingQuestionHint,
+          counterText: '',
+        ),
       ),
       const SizedBox(height: 12),
       Row(children: [

@@ -66,9 +66,6 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
-  String get oracleTools => 'Kehanet Araçları';
-
-  @override
   String get skyNow => 'Şu An Gökyüzünde';
 
   @override
@@ -718,9 +715,6 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get iChingQuestionRequired => 'Önce kalbindeki soruyu yaz.';
-
-  @override
-  String get iChingCastFailed => 'Çekim yapılamadı.';
 
   @override
   String get iChingCoinsInAir => 'Paralar havada...';

@@ -559,9 +559,20 @@ def iching_reading(user_id: str, cast: dict[str, Any],
     # diline indirgenir (name_local / judgment / image).
     yerel = prompts.localize_iching(lang, cast)
     primary = yerel["primary"]
-    cache_key = (f"iching-{user_id}-{primary['number']}"
-                 f"-{cast.get('question', '')[:48]}"
-                 f"-{'-'.join(map(str, cast.get('moving_lines', [])))}-{lang}")
+    # Anahtar ÖZETLE ve YÖNTEMLE (Revize İ0). Eski anahtarda method yoktu:
+    # aynı soru + aynı heksagram + aynı hareketli çizgilerle yarrow çeken
+    # kullanıcı, coins ile üretilmiş yorumu görüyordu — oysa prompt yöntemi
+    # metne yazıyor. Ham soru da anahtara gömülmekten kurtuldu.
+    from services.iching_service import ICHING_CALC_VERSION
+    ozet = "|".join([
+        str(primary["number"]),
+        cast.get("question", "")[:48],
+        "-".join(map(str, cast.get("moving_lines", []))),
+        cast.get("method", ""),
+        ICHING_CALC_VERSION,
+    ])
+    cache_key = (f"iching-v2-{user_id}-"
+                 f"{hashlib.sha256(ozet.encode()).hexdigest()[:16]}-{lang}")
 
     # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
     cached = cache.get(cache_key)

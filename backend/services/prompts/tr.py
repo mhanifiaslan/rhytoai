@@ -516,6 +516,10 @@ BAZI_FALLBACK = (
 BAZI_LUCK_START_FMT = "{years} yıl {months} ay ({date})"
 BAZI_CLIMATE_FMT = " | Mevsim iklimi düzenleyici ister: {element}"
 
+#: Sorusuz çekimde kullanılan varsayılan soru (İ0). Şemadaki Türkçe sabit
+#: İngilizce prompt'a sızıyordu; artık dil modülünden gelir.
+ICHING_DEFAULT_QUESTION = "Önümdeki yol"
+
 ICHING = """
 GÖREV: Kullanıcının sorusunu, çekilen I Ching heksagramının 3000 yıllık metnine
 bağlayan 150-200 kelimelik bir kehanet yorumu yaz.

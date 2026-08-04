@@ -206,12 +206,6 @@ abstract class AppLocalizations {
   /// **'{sign} · bugün'**
   String signToday(String sign);
 
-  /// No description provided for @oracleTools.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kehanet Araçları'**
-  String get oracleTools;
-
   /// No description provided for @skyNow.
   ///
   /// In tr, this message translates to:
@@ -1429,12 +1423,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Önce kalbindeki soruyu yaz.'**
   String get iChingQuestionRequired;
-
-  /// No description provided for @iChingCastFailed.
-  ///
-  /// In tr, this message translates to:
-  /// **'Çekim yapılamadı.'**
-  String get iChingCastFailed;
 
   /// No description provided for @iChingCoinsInAir.
   ///

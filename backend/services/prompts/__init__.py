@@ -257,14 +257,16 @@ def _bazi_notes(p, chart: dict) -> list[str]:
     return notes
 
 
-def localize_iching(lang: str | None, cast: dict | None) -> dict:
-    """I Ching çekilişindeki heksagram metinlerini isteğin diline indirger.
+def localize_hexagram(lang: str | None, h: dict | None) -> dict:
+    """Tek heksagramı isteğin diline indirger (Revize İ0).
 
     Veri katmanı her dili ayrı alanda tutuyor (``judgment_tr`` /
-    ``judgment_en``); burada tek bir ``judgment``/``image``/``name`` alanına
-    düşürülür ki prompt şablonları dilden habersiz kalabilsin.
+    ``judgment_en``); burada tek bir ``judgment``/``image``/``name_local``
+    alanına düşürülür. `localize_iching`'in içindeki kapatıcının dışarı
+    çıkarılmış hâli — /iching/hexagram/{n} sözlük ucu da bunu kullanır
+    (eskiden localize'sız dönüyor, judgment_tr sızıyordu).
     """
-    if not cast:
+    if not h:
         return {}
     son_ek = "en" if (lang or DEFAULT) == "en" else "tr"
     p = get(lang)
@@ -277,21 +279,24 @@ def localize_iching(lang: str | None, cast: dict | None) -> dict:
                 "element": p.BAZI_ELEMENTS.get(t.get("element") or "",
                                                t.get("element") or "")}
 
-    def heksagram(h: dict | None) -> dict:
-        if not h:
-            return {}
-        return {
-            **h,
-            "name_local": h.get(f"name_{son_ek}") or h.get("name_tr") or "",
-            "judgment": h.get(f"judgment_{son_ek}") or h.get("judgment_tr") or "",
-            "image": h.get(f"image_{son_ek}") or h.get("image_tr") or "",
-            "lower_trigram": trigram(h.get("lower_trigram")),
-            "upper_trigram": trigram(h.get("upper_trigram")),
-        }
+    return {
+        **h,
+        "name_local": h.get(f"name_{son_ek}") or h.get("name_tr") or "",
+        "judgment": h.get(f"judgment_{son_ek}") or h.get("judgment_tr") or "",
+        "image": h.get(f"image_{son_ek}") or h.get("image_tr") or "",
+        "lower_trigram": trigram(h.get("lower_trigram")),
+        "upper_trigram": trigram(h.get("upper_trigram")),
+    }
 
-    sonuç = {**cast, "primary": heksagram(cast.get("primary"))}
+
+def localize_iching(lang: str | None, cast: dict | None) -> dict:
+    """I Ching çekilişindeki heksagram metinlerini isteğin diline indirger."""
+    if not cast:
+        return {}
+    sonuç = {**cast,
+             "primary": localize_hexagram(lang, cast.get("primary"))}
     if cast.get("transformed"):
-        sonuç["transformed"] = heksagram(cast["transformed"])
+        sonuç["transformed"] = localize_hexagram(lang, cast["transformed"])
     return sonuç
 
 

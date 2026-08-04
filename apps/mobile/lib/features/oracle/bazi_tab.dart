@@ -58,7 +58,15 @@ class BaziTab extends ConsumerWidget {
           Plaque(
             label: l10n.baziFourPillars,
             padding: const EdgeInsets.all(12),
-            child: Row(children: [
+            // IntrinsicHeight + stretch (Revize İ0): saatsiz doğumda "—"
+            // sütunu dolu sütunlardan ~75 px kısa kalıyordu; fonta bağımlı
+            // SizedBox dengeleyicisi yerine sütunlar birbirinin yüksekliğini
+            // alıyor — CJK yedek font yüksekliği cihazdan cihaza değişse de
+            // hiza bozulmaz.
+            child: IntrinsicHeight(
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
               for (final (i, key) in [
                 ('hour', l10n.baziPillarHour),
                 ('day', l10n.baziPillarDay),
@@ -85,7 +93,7 @@ class BaziTab extends ConsumerWidget {
                       .fadeIn(duration: 380.ms)
                       .slideY(begin: 0.18, curve: Curves.easeOutCubic),
                 ),
-            ]),
+            ])),
           ),
           // ---------- GÜÇ HÜKMÜ (B3 → B9) ----------
           if (chart['strength'] != null)
@@ -224,13 +232,24 @@ class BaziTab extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                              '${lp['from_year']}-${lp['to_year']}'
-                              '${aktif ? ' · ${l10n.baziCurrentTag}' : ''}',
-                              style: RythoText.mono(10,
-                                  color: aktif
-                                      ? RythoColors.goldBright
-                                      : RythoColors.parchmentDim)),
+                          // FittedBox + maxLines 1: "1984-1993 · şimdi" 88
+                          // px'lik karta sığmayıp ikinci satıra kırılıyor ve
+                          // kartı ~2 px taşırıyordu (kullanıcının bildirdiği
+                          // "bottom overflowed"). %95'lik görünmez ölçekleme,
+                          // metni kırdırmadan sığdırır ve textScaler'a da
+                          // dayanıklıdır (Revize İ0).
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                                '${lp['from_year']}-${lp['to_year']}'
+                                '${aktif ? ' · ${l10n.baziCurrentTag}' : ''}',
+                                maxLines: 1,
+                                style: RythoText.mono(10,
+                                    color: aktif
+                                        ? RythoColors.goldBright
+                                        : RythoColors.parchmentDim)),
+                          ),
                           Text(l10n.baziAgeRange(lp['from_age'], lp['to_age']),
                               style: RythoText.mono(9,
                                   color: RythoColors.parchmentDim)),
@@ -303,6 +322,9 @@ class _PillarColumn extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = pillar;
     if (p == null) {
+      // Yükseklik IntrinsicHeight + stretch'ten geliyor (İ0): dolu
+      // sütunlarla aynı boy; "—" içeriği ortada durur, fonta bağımlı
+      // SizedBox dengeleyicisi kalktı.
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 3),
         padding: const EdgeInsets.symmetric(vertical: 10),
@@ -313,11 +335,11 @@ class _PillarColumn extends StatelessWidget {
         child: Column(children: [
           Text(label,
               style: RythoText.mono(9, color: RythoColors.parchmentDim)),
-          const SizedBox(height: 8),
+          const Spacer(),
           Text('—',
               style:
                   RythoText.display(24, color: RythoColors.parchmentDim)),
-          const SizedBox(height: 26),
+          const Spacer(),
         ]),
       );
     }

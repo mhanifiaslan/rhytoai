@@ -18,6 +18,11 @@ from typing import Any, Literal
 
 DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "hexagrams.json"
 
+#: Hesap sürümü (Revize İ0): çekimin ürettiği yapı değiştiğinde artar ve
+#: rapor önbellek anahtarına girer — BaZi'deki calc_version disiplininin
+#: birebir aynısı. Eski yorumlar kendiliğinden düşer, migrasyon gerekmez.
+ICHING_CALC_VERSION = "2"
+
 Method = Literal["coins", "yarrow"]
 
 

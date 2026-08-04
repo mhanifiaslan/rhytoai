@@ -25,7 +25,6 @@
       }
     }
   },
-  "oracleTools": "Kehanet Araçları",
   "skyNow": "Şu An Gökyüzünde",
   "iChing": "I Ching",
   "iChingSubtitle": "Değişimler Kitabı",
@@ -284,7 +283,6 @@
   "iChingMethodYarrow": "Civanperçemi 🌿",
   "iChingCastAction": "Çekimi yap",
   "iChingQuestionRequired": "Önce kalbindeki soruyu yaz.",
-  "iChingCastFailed": "Çekim yapılamadı.",
   "iChingCoinsInAir": "Paralar havada...",
   "iChingHexagramLabel": "HEKSAGRAM {number}",
   "@iChingHexagramLabel": {

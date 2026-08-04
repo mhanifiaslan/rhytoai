@@ -533,6 +533,10 @@ BAZI_FALLBACK = (
 BAZI_LUCK_START_FMT = "{years}y {months}m ({date})"
 BAZI_CLIMATE_FMT = " | The season's climate calls for a regulator: {element}"
 
+#: Default question for a cast without one (İ0). The Turkish constant in
+#: the schema used to leak into the English prompt; now language-bound.
+ICHING_DEFAULT_QUESTION = "The path ahead of me"
+
 ICHING = """
 TASK: Write a 150-200 word reading that ties the questioner's question to the
 three-thousand-year-old text of the hexagram they cast.

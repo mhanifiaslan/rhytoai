@@ -25,7 +25,6 @@
       }
     }
   },
-  "oracleTools": "Oracle Tools",
   "skyNow": "In the Sky Right Now",
   "iChing": "I Ching",
   "iChingSubtitle": "Book of Changes",
@@ -284,7 +283,6 @@
   "iChingMethodYarrow": "Yarrow Stalks 🌿",
   "iChingCastAction": "Cast",
   "iChingQuestionRequired": "Write your question first.",
-  "iChingCastFailed": "The cast couldn't be made.",
   "iChingCoinsInAir": "Coins in the air...",
   "iChingHexagramLabel": "HEXAGRAM {number}",
   "@iChingHexagramLabel": {

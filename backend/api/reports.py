@@ -66,7 +66,10 @@ class BirthData(BaseModel):
 
 
 class IChingReportRequest(BaseModel):
-    question: str = "Geleceğim"
+    # None = soru verilmedi; varsayılan metin İSTEĞİN DİLİNDE uçta doldurulur
+    # (Revize İ0). Şemadaki Türkçe sabit ("Geleceğim") İngilizce prompt'a
+    # sızıyordu. Uzunluk sınırı da yeni: soru prompt'a ham giriyor.
+    question: str | None = Field(default=None, max_length=280)
     method: Literal["coins", "yarrow"] = "coins"
 
 
@@ -220,7 +223,9 @@ def iching(req: IChingReportRequest,
     spend_cb, refund_cb = wallet.metered_callbacks(
         user, "iching", FREE_ICHING_PER_DAY, lang=lang)
     try:
-        cast = cast_iching(req.question, method=req.method)
+        # Soru verilmediyse varsayılan metin İSTEĞİN DİLİNDE (Revize İ0).
+        soru = req.question or prompts.get(lang).ICHING_DEFAULT_QUESTION
+        cast = cast_iching(soru, method=req.method)
         report = report_service.iching_reading(user.uid, cast, lang=lang,
                                                spend=spend_cb,
                                                refund=refund_cb)

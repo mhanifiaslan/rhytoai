@@ -66,9 +66,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get oracleTools => 'Oracle Tools';
-
-  @override
   String get skyNow => 'In the Sky Right Now';
 
   @override
@@ -719,9 +716,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get iChingQuestionRequired => 'Write your question first.';
-
-  @override
-  String get iChingCastFailed => 'The cast couldn\'t be made.';
 
   @override
   String get iChingCoinsInAir => 'Coins in the air...';
