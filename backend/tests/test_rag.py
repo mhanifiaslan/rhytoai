@@ -493,3 +493,23 @@ def test_turkce_korpus_hala_yuklenir():
     assert parcalar
     metin = " ".join(c.text for c in parcalar).lower()
     assert "day master" in metin or "günün efendisi" in metin
+
+
+# --------------------------------------------------------------------------
+# BaZi doktrini (Revize B7)
+# --------------------------------------------------------------------------
+
+@pytest.mark.parametrize("lang,sorgu,kaynak", [
+    ("tr", "Dört Sütun, Günün Efendisi, On Tanrı, güç ve denge",
+     "bazi_doktrin"),
+    ("en", "Four Pillars, Day Master, Ten Gods, strength and balance",
+     "bazi_doctrine"),
+])
+def test_bazi_sorgusu_doktrin_bolumu_getirir(lang, sorgu, kaynak):
+    """Rapor RAG'inin bazi tohumu (chart_query) doktrin dosyasına düşmeli.
+
+    Düşmezse hata çıkmaz — rapor yalnızca genel mizaç pasajlarıyla kalır
+    ve B7'nin tüm içeriği sessizce ölü ağırlığa döner.
+    """
+    metin = rag_service.retrieve_context(sorgu, lang=lang, top_k=2)
+    assert kaynak in metin

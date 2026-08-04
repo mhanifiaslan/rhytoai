@@ -39,11 +39,23 @@ Güvenli zemin üçe iner:
 |---|---|---|
 | `corpus/tr/cin_metafizigi.md` | tr | Rytho özgün metni |
 | `corpus/tr/ilmi_nucum.md` | tr | Rytho özgün metni |
+| `corpus/tr/bazi_doktrin.md` | tr | Rytho özgün metni (2026-08-04) |
 | `corpus/en/chinese_metaphysics.md` | en | Rytho özgün metni |
 | `corpus/en/islamic_astrology.md` | en | Rytho özgün metni |
+| `corpus/en/bazi_doctrine.md` | en | Rytho özgün metni (2026-08-04) |
 
 Bunlar kamu malı kaynaklardan ve genel alan bilgisinden yazılmış özet
 metinlerdir; hiçbir telifli eserden alıntı içermez. Telif RythoAI'ye aittir.
+
+> **BaZi doktrin dosyaları hakkında (2026-08-04, Revize B7):** Sütun
+> sarayları, On Tanrı aileleri, gizli kökler, ay komutu/güç hükmü, yararlı
+> element, mevsim-iklim ayarı ve beş Shen Sha bölümleri; motorun (B0-B5)
+> hesapladığı kavramların YORUM zeminidir. Esin kaynakları klasik BaZi
+> külliyatıdır — *Di Tian Sui*, *Zi Ping Zhen Quan*, *San Ming Tong Hui*,
+> *Qiong Tong Bao Jian* (hepsi kamu malı Çince klasikler) — ancak metin
+> hiçbir MODERN çeviriden cümle almaz: modern İngilizce çeviriler telifli
+> olduğu için "kapat ve kendi cümlenle yaz" disipliniyle, genel alan
+> bilgisinden sentezlendi. Telif RythoAI'ye aittir.
 
 > `corpus/tr/kiyafetname_marifetname.md` ve `corpus/en/temperaments_physiognomy.md`
 > **kaldırıldı** (2026-08-02): yerlerini aşağıdaki Marifetname aktarımı aldı.
