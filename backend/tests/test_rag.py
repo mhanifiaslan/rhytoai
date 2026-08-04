@@ -513,3 +513,15 @@ def test_bazi_sorgusu_doktrin_bolumu_getirir(lang, sorgu, kaynak):
     """
     metin = rag_service.retrieve_context(sorgu, lang=lang, top_k=2)
     assert kaynak in metin
+
+
+@pytest.mark.parametrize("lang,sorgu,kaynak", [
+    ("tr", "Değişimler Kitabı, heksagram, hareketli çizgi, hüküm ve imge okuma, zamanlama",
+     "iching_doktrin"),
+    ("en", "Book of Changes, hexagram, moving lines, reading judgment and image, timing",
+     "iching_doctrine"),
+])
+def test_iching_sorgusu_doktrin_bolumu_getirir(lang, sorgu, kaynak):
+    """İ7: rapor RAG'inin İching tohumu doktrin dosyasına düşmeli."""
+    metin = rag_service.retrieve_context(sorgu, lang=lang, top_k=2)
+    assert kaynak in metin

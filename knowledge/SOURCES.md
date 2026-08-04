@@ -40,9 +40,11 @@ Güvenli zemin üçe iner:
 | `corpus/tr/cin_metafizigi.md` | tr | Rytho özgün metni |
 | `corpus/tr/ilmi_nucum.md` | tr | Rytho özgün metni |
 | `corpus/tr/bazi_doktrin.md` | tr | Rytho özgün metni (2026-08-04) |
+| `corpus/tr/iching_doktrin.md` | tr | Rytho özgün metni (2026-08-04, İ7) |
 | `corpus/en/chinese_metaphysics.md` | en | Rytho özgün metni |
 | `corpus/en/islamic_astrology.md` | en | Rytho özgün metni |
 | `corpus/en/bazi_doctrine.md` | en | Rytho özgün metni (2026-08-04) |
+| `corpus/en/iching_doctrine.md` | en | Rytho özgün metni + işaretli kısa Legge alıntıları (kamu malı; 2026-08-04, İ7) |
 
 Bunlar kamu malı kaynaklardan ve genel alan bilgisinden yazılmış özet
 metinlerdir; hiçbir telifli eserden alıntı içermez. Telif RythoAI'ye aittir.
