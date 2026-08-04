@@ -21,8 +21,9 @@ DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "hexagrams.json"
 #: Hesap sürümü (Revize İ0): çekimin ürettiği yapı değiştiğinde artar ve
 #: rapor önbellek anahtarına girer — BaZi'deki calc_version disiplininin
 #: birebir aynısı. Eski yorumlar kendiliğinden düşer, migrasyon gerekmez.
-#: v3: nükleer heksagram + çekim günü bağlamı (İ2).
-ICHING_CALC_VERSION = "3"
+#: v3: nükleer heksagram + çekim günü bağlamı (İ2). v4: Liu Yao — najia,
+#: saray, altı akraba, shi/ying, boşluk/çarpışma (İ3).
+ICHING_CALC_VERSION = "4"
 
 Method = Literal["coins", "yarrow"]
 
@@ -130,6 +131,13 @@ def cast_iching(question: str, method: Method = "coins") -> dict[str, Any]:
             primary_lines[1:4] + primary_lines[2:5]),
     }
 
+    # Liu Yao (İ3): najia + saray + altı akraba çekimin KENDİSİNE aittir,
+    # tarihe değil — burada temel hâliyle iliştirilir; boşluk/çarpışma gün
+    # bağlamıyla enrich_cast'te tazelenir. İçe aktarma fonksiyon içinde:
+    # liuyao_service trigram desenlerini bu modülden okuyor (döngü kırıcı).
+    from services import liuyao_service
+    result["liu_yao"] = liuyao_service.analyze(primary_lines)
+
     if moving:
         transformed = [
             (1 - line) if (i + 1) in moving else line
@@ -162,6 +170,13 @@ def enrich_cast(cast: dict[str, Any], *,
     context: dict[str, Any] = {"basis": basis}
     if day_pillar:
         context["day_pillar"] = day_pillar
+        # Gün döngüsü biliniyorsa Liu Yao boşluk/çarpışma işaretleriyle
+        # yeniden kurulur (İ3) — analyze saf ve ucuz.
+        if day_pillar.get("cycle") is not None and cast.get("lines"):
+            from services import liuyao_service
+            cast = {**cast,
+                    "liu_yao": liuyao_service.analyze(
+                        cast["lines"], day_cycle=day_pillar["cycle"])}
     if month_pillar:
         context["month_pillar"] = month_pillar
     if day_master_element:

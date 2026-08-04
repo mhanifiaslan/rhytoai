@@ -166,6 +166,88 @@ class TestGunBaglami:
         assert cekim["context"]["basis"] == "utc"
 
 
+class TestLiuYao:
+    """İ3: Jing Fang najia/saray/altı akraba — altın vektörler.
+
+    Kaynaklar: klasik saray dizileri + najia şeması; her vektör iki
+    bağımsız kaynaktan doğrulanıp donduruldu (transkripsiyon hatasının
+    tek panzehiri — B0 kuralı).
+    """
+
+    @staticmethod
+    def _liu_yao(numara: int, day_cycle=None):
+        from services import liuyao_service
+        h = get_hexagram(numara)
+        alt = iching_service._load()["trigrams"]
+        # get_hexagram çizgileri döndürmüyor; desen trigramlardan kurulur.
+        data = iching_service._load()
+        hx = next(x for x in data["hexagrams"] if x["number"] == numara)
+        lines = (data["trigrams"][hx["lower"]]["lines"]
+                 + data["trigrams"][hx["upper"]]["lines"])
+        assert h["number"] == numara and alt
+        return liuyao_service.analyze(lines, day_cycle=day_cycle)
+
+    def test_qian_sarayi_tam_zinciri(self):
+        # Klasik dizi: 1 Qian → 44 Gou → 33 Dun → 12 Pi → 20 Guan →
+        # 23 Bo → 35 Jin (gezgin ruh) → 14 Da You (dönen ruh).
+        beklenen = {1: 0, 44: 1, 33: 2, 12: 3, 20: 4, 23: 5, 35: 6, 14: 7}
+        for numara, konum in beklenen.items():
+            ly = self._liu_yao(numara)
+            assert ly["palace"] == "qian", f"#{numara}"
+            from services.liuyao_service import SHI_SEQUENCE
+            assert ly["shi"] == SHI_SEQUENCE[konum], f"#{numara}"
+
+    def test_ji_ji_kan_sarayinda(self):
+        # 63 Ji Ji = Kan sarayının 3. dünyası (29→60→3→63): shi 3, ying 6.
+        ly = self._liu_yao(63)
+        assert (ly["palace"], ly["shi"], ly["ying"]) == ("kan", 3, 6)
+
+    def test_hex1_najia_altin_vektoru(self):
+        # Klasik: 甲子 甲寅 甲辰 壬午 壬申 壬戌 (alttan üste).
+        ly = self._liu_yao(1)
+        ciftler = [(c["stem"], c["branch"]) for c in ly["lines"]]
+        assert ciftler == [("Jia", "Zi"), ("Jia", "Yin"), ("Jia", "Chen"),
+                           ("Ren", "Wu"), ("Ren", "Shen"), ("Ren", "Xu")]
+
+    def test_hex2_najia_altin_vektoru(self):
+        # Klasik: 乙未 乙巳 乙卯 癸丑 癸亥 癸酉 (alttan üste).
+        ly = self._liu_yao(2)
+        ciftler = [(c["stem"], c["branch"]) for c in ly["lines"]]
+        assert ciftler == [("Yi", "Wei"), ("Yi", "Si"), ("Yi", "Mao"),
+                           ("Gui", "Chou"), ("Gui", "Hai"), ("Gui", "You")]
+
+    def test_alti_akraba_turetimi(self):
+        # Qian sarayı (metal): Zi (su) → metal suyu üretir → Evlat;
+        # Yin (ağaç) → metal ağacı yönetir → Servet; Wu (ateş) → ateş
+        # metali yönetir → Yönetici — klasik Qian tablosuyla birebir.
+        ly = self._liu_yao(1)
+        akraba = {c["branch"]: c["relative"] for c in ly["lines"]}
+        assert akraba["Zi"] == "offspring"
+        assert akraba["Yin"] == "wealth"
+        assert akraba["Wu"] == "officer"
+        assert akraba["Chen"] == "parent"   # toprak metali üretir
+        assert akraba["Shen"] == "sibling"  # metal = saray elementi
+
+    def test_bosluk_ve_carpisma(self):
+        # Gün döngüsü 0 (JiaZi): boşluk Xu/Hai; gün dalı Zi ↔ Wu çarpışır.
+        ly = self._liu_yao(1, day_cycle=0)
+        satirlar = {c["branch"]: c for c in ly["lines"]}
+        assert satirlar["Xu"]["void"] is True
+        assert satirlar["Zi"]["void"] is False
+        assert satirlar["Wu"]["clash"] is True
+        assert satirlar["Shen"]["clash"] is False
+
+    def test_gun_verilmezse_isaretler_none(self):
+        # Bilinmeyen, yanlış bilinenden iyidir: gün yoksa void/clash None.
+        ly = self._liu_yao(11)
+        assert all(c["void"] is None and c["clash"] is None
+                   for c in ly["lines"])
+
+    def test_64_heksagramin_tamami_saraylanir(self):
+        from services.liuyao_service import _palace_index
+        assert len(_palace_index()) == 64
+
+
 class TestSozlukVeYerlestirme:
     def test_localize_hexagram_dil_indirger(self):
         # /hexagram/{n} artık localize'dan geçiyor (İ0): İngilizce istemci

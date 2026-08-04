@@ -314,6 +314,18 @@ def localize_iching(lang: str | None, cast: dict | None) -> dict:
                 for konum, rel in
                 (baglam.get("trigram_relations") or {}).items()},
         }
+    # Liu Yao (İ3): akraba adları isteğin dilinde eklenir.
+    liu_yao = cast.get("liu_yao")
+    if liu_yao:
+        sonuç["liu_yao"] = {
+            **liu_yao,
+            "lines": [
+                {**c,
+                 "relative_name": p.LIU_QIN_NAMES.get(
+                     c.get("relative") or "", c.get("relative") or "")}
+                for c in (liu_yao.get("lines") or [])
+            ],
+        }
     return sonuç
 
 

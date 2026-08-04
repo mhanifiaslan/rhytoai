@@ -555,6 +555,12 @@ TRIGRAM_ATTRIBUTE_NAMES = {
     "clinging": "the clinging", "joyous": "the joyous",
 }
 
+#: Six relatives names (İ3, Liu Yao). Keys match liuyao_service.
+LIU_QIN_NAMES = {
+    "sibling": "Sibling", "offspring": "Offspring", "parent": "Parent",
+    "wealth": "Wealth", "officer": "Officer",
+}
+
 #: Element relation names (İ2) — Day Master ↔ trigram element.
 #: Keys match bazi_service._element_relation output.
 ELEMENT_RELATION_NAMES = {

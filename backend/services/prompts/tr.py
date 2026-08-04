@@ -536,6 +536,12 @@ TRIGRAM_ATTRIBUTE_NAMES = {
     "penetrating": "nüfuz eden", "clinging": "tutunan", "joyous": "sevinçli",
 }
 
+#: Altı akraba adları (İ3, Liu Yao). Anahtarlar liuyao_service ile aynı.
+LIU_QIN_NAMES = {
+    "sibling": "Kardeş", "offspring": "Evlat", "parent": "Ebeveyn",
+    "wealth": "Servet", "officer": "Yönetici",
+}
+
 #: Element ilişkisi adları (İ2) — Day Master ↔ trigram elementi.
 #: Anahtarlar bazi_service._element_relation çıktısıyla aynı.
 ELEMENT_RELATION_NAMES = {
