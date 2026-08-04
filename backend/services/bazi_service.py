@@ -241,6 +241,21 @@ def _true_solar_time(local: dt.datetime, lng: float) -> tuple[dt.datetime, int]:
     return solar, sapma
 
 
+def year_pillar_for_date(date: dt.date) -> dict[str, Any]:
+    """Verilen tarihin yıl sütunu — Liu Nian (yıllık sütun) için (B5).
+
+    Li Chun sınırı burada da geçerli: 15 Ocak hâlâ önceki yılın
+    sütunundadır. Doğum yılı formülünün tarihe genellenmiş hâli.
+    """
+    ogle = dt.datetime(date.year, date.month, date.day, 12,
+                       tzinfo=dt.timezone.utc)
+    lon = _sun_longitude(ogle)
+    y = date.year
+    if date.month <= 2 and 270 <= lon < 315:
+        y -= 1
+    return _pillar((y - 4) % 10, (y - 4) % 12)
+
+
 def get_bazi_chart(
     year: int, month: int, day: int, hour: int | None, minute: int,
     city: str = "Istanbul", nation: str | None = None,
@@ -355,18 +370,50 @@ def get_bazi_chart(
         note_keys.append("tst_fallback_city")
     boundary = _find_jie_boundary(utc, forward=forward)
     days_to_boundary = abs((boundary - utc).total_seconds()) / 86400
-    start_age = max(1, round(days_to_boundary / 3))
+
+    # Klasik dönüşüm TAM çözünürlükle (B5): 3 gün = 1 yıl → 1 gün = 4 ay.
+    # Eski `round(days/3)` ay/gün bilgisini atıyordu ve geçiş tarihi ±6
+    # aya kadar kayıyordu; `max(1,...)` kelepçesi de 0-1 gün mesafeli
+    # doğumları gizliyordu — "0 yaş 4 ay" meşru bir sonuçtur.
+    toplam_ay = max(0, round(days_to_boundary * 4))
+    start_years, start_months = divmod(toplam_ay, 12)
+    ay_indeksi = local.month - 1 + toplam_ay
+    start_takvim_yili = local.year + ay_indeksi // 12
+    luck_start = {
+        "years": start_years,
+        "months": start_months,
+        # Ay çözünürlüğü bilinçli: gün bileşeni doğum saatine bağlı ve
+        # saatsiz haritada zaten ±4 ay belirsizlik var.
+        "date": f"{start_takvim_yili}-{ay_indeksi % 12 + 1:02d}",
+    }
 
     luck_pillars = []
     for i in range(1, 9):
         offset = i if forward else -i
         lp = _pillar(month_stem + offset, month_branch + offset)
+        from_year = start_takvim_yili + (i - 1) * 10
         luck_pillars.append({
-            "from_age": start_age + (i - 1) * 10,
-            "to_age": start_age + i * 10 - 1,
+            "from_age": start_years + (i - 1) * 10,
+            "to_age": start_years + i * 10 - 1,
+            # Takvim yılları (B5): "3-13 yaş" tek başına kullanıcıya hesap
+            # yaptırıyordu; "1993-2003" yaptırmaz.
+            "from_year": from_year,
+            "to_year": from_year + 9,
             **lp,
             "ten_god": _ten_god(day_stem, (month_stem + offset) % 10),
         })
+
+    # --- Liu Nian: içinde bulunulan yılın sütunu + aktif Da Yun (B5) ---
+    bugun = dt.date.today()
+    yillik = year_pillar_for_date(bugun)
+    current_year_pillar = {
+        **yillik,
+        "year": bugun.year,
+        "ten_god": _ten_god(day_stem, yillik["stem"]["index"]),
+    }
+    current_luck_index = next(
+        (i for i, lp in enumerate(luck_pillars)
+         if lp["from_year"] <= bugun.year <= lp["to_year"]), None)
 
     return {
         "name": name,
@@ -375,8 +422,9 @@ def get_bazi_chart(
         # önbellek anahtarına girer — eski metinler kendiliğinden düşer,
         # "yeni harita + 30 günlük eski rapor" çelişkisi hiç yaşanmaz.
         # v3: Gerçek Güneş Zamanı (B1). v4: gizli kökler + ağırlıklı
-        # dağılım (B2) — missing listesi değişebildiği için sürüm arttı.
-        "calc_version": "4",
+        # dağılım (B2). v5: şans başlangıcı ay çözünürlüğü + takvim
+        # yılları + Liu Nian (B5).
+        "calc_version": "5",
         "note_keys": note_keys,
         "hour_known": hour_known,
         # Güneş duvar saati ve duvar saatine göre sapma — beyan bundan
@@ -396,7 +444,10 @@ def get_bazi_chart(
         "zodiac_animal": BRANCHES[year_branch]["animal"],
         "luck_pillars": luck_pillars,
         "luck_direction": "forward" if forward else "backward",
+        "luck_start": luck_start,
         # Saat bilinmeden Jie mesafesi gün ortasından hesaplanır; gün içi
         # ±12 saat, klasik dönüşümle (1 gün = 4 ay) ±4 ay eder.
         "luck_start_uncertainty_months": 0 if hour_known else 4,
+        "current_year_pillar": current_year_pillar,
+        "current_luck_index": current_luck_index,
     }

@@ -198,6 +198,11 @@ def localize_bazi(lang: str | None, chart: dict | None) -> dict:
                                             chart.get("zodiac_animal") or ""),
         "luck_pillars": [{**sutun(lp), "ten_god": tanri(lp.get("ten_god"))}
                          for lp in (chart.get("luck_pillars") or [])],
+        # Liu Nian (B5): içinde bulunulan yılın sütunu da çevrilir.
+        "current_year_pillar": (
+            {**sutun(chart["current_year_pillar"]),
+             "ten_god": tanri(chart["current_year_pillar"].get("ten_god"))}
+            if chart.get("current_year_pillar") else None),
         # Güç hükmü (B3): anahtarlar korunur, *_name alanları isteğin
         # dilinde eklenir — UI ve prompt cümleyi buradan okur.
         "strength": _strength_local(p, element, chart.get("strength")),

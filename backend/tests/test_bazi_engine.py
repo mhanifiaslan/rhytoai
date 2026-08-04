@@ -236,6 +236,43 @@ class TestSansSutunlari:
         assert len(lp) == 8
         for onceki, sonraki in zip(lp, lp[1:]):
             assert sonraki["from_age"] == onceki["to_age"] + 1
+            assert sonraki["from_year"] == onceki["to_year"] + 1
+
+    def test_jie_sinirina_yakin_dogum_ay_cozunurlugu(self):
+        # 3 Mart 1984 (Jing Zhe'ye ~2 gün) + JiaZi yang yıl + erkek →
+        # ileri sayım: klasik dönüşümle 1 gün = 4 ay → 0 yıl, ~8-10 ay.
+        # Eski round(days/3) burada "1 yaş" derdi — ay bilgisi yoktu.
+        chart = get_bazi_chart(1984, 3, 3, 12, 0, city="Beijing",
+                               gender="male")
+        ls = chart["luck_start"]
+        assert ls["years"] == 0
+        assert 7 <= ls["months"] <= 11
+        assert ls["date"].startswith("1984-")
+        assert chart["luck_pillars"][0]["from_year"] == 1984
+
+    def test_liu_nian_sabit_tarihlerle(self):
+        # Zamana bağlı altın değer YOK: yardımcı fonksiyon sabit tarihle
+        # test edilir. 2026-08-04 → BingWu (至 2026 At yılı); 2026-01-15
+        # Li Chun'dan önce → 2025 = YiSi.
+        import datetime as dtm
+        p1 = bazi_service.year_pillar_for_date(dtm.date(2026, 8, 4))
+        assert (p1["stem"]["pinyin"], p1["branch"]["pinyin"]) == \
+            ("Bing", "Wu")
+        p2 = bazi_service.year_pillar_for_date(dtm.date(2026, 1, 15))
+        assert (p2["stem"]["pinyin"], p2["branch"]["pinyin"]) == \
+            ("Yi", "Si")
+
+    def test_guncel_donem_isaretcisi(self):
+        # 1990 doğumlu için bugün bir Da Yun dönemi aktif olmalı ve
+        # işaretçi takvim yılını kapsayan dönemi göstermeli.
+        chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                               gender="female")
+        idx = chart["current_luck_index"]
+        assert idx is not None
+        lp = chart["luck_pillars"][idx]
+        import datetime as dtm
+        assert lp["from_year"] <= dtm.date.today().year <= lp["to_year"]
+        assert chart["current_year_pillar"]["ten_god"]["name"]
 
 
 # --------------------------------------------------------------------------
@@ -474,7 +511,7 @@ class TestDegismezler:
     def test_calc_version_var(self):
         chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
                                gender="female")
-        assert chart["calc_version"] == "4"
+        assert chart["calc_version"] == "5"
 
     def test_ikili_cinsiyette_cinsiyet_beyani_yok(self):
         for cinsiyet in ("male", "female"):
