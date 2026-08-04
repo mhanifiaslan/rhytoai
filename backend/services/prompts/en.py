@@ -253,6 +253,11 @@ CHART_TRANSITS_LABEL = "Transits touching the chart today"
 CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
 CHART_ASPECT_FMT = "{p1} {aspect} {p2} ({orb}°)"
 
+#: BaZi whisper line labels (B8).
+CHART_BAZI_DM_LABEL = "BaZi Day Master"
+CHART_BAZI_FAV_LABEL = "favorable"
+CHART_BAZI_YEAR_LABEL = "year pillar"
+
 # --- Notifications ---
 #
 # Titles and bodies are TEMPLATES: the streak and friend-reaction pushes never

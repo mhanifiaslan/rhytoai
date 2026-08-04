@@ -291,3 +291,71 @@ def test_blok_prompt_butcesini_asmaz(temiz_onbellek):
     """Blok HER sohbet turunda gidiyor; buyumesi dogrudan maliyet demek."""
     blok = chart_context.chart_whisper("u-butce", PROFIL, lang="tr")
     assert len(blok) < 900, f"Harita blogu {len(blok)} karaktere cikti"
+
+
+# --------------------------------------------------------------------------
+# BaZi fisiltisi (Revize B8)
+# --------------------------------------------------------------------------
+
+_BAZI_OLGULAR = {
+    "day_master": {"pinyin": "Xin", "element": "metal", "polarity": "Yin"},
+    "verdict": "weak",
+    "season_state": "si",
+    "favorable_elements": ["earth", "metal"],
+    "current_luck": {"label": "丙戌 (Bing Xu)", "from_year": 2020,
+                     "to_year": 2029, "ten_god": "Zheng Guan"},
+    "current_year": {"label": "丙午 (Bing Wu)", "ten_god": "Zheng Guan"},
+    "stars": [{"key": "tian_yi", "pillar": "year"}],
+    "hour_known": True,
+}
+
+
+def test_bazi_fisiltisi_bicimi_tr():
+    blok = chart_context.render_bazi(_BAZI_OLGULAR, lang="tr")
+    assert "BaZi Günün Efendisi" in blok
+    assert "Zayıf" in blok                      # hüküm adı çevrili
+    assert "Da Yun" in blok and "2020-2029" in blok
+    assert "Göksel Soylu" in blok               # yıldız adı çevrili
+
+
+def test_bazi_fisiltisi_ingilizce_turkce_tasimaz():
+    blok = chart_context.render_bazi(_BAZI_OLGULAR, lang="en")
+    assert "Weak" in blok
+    for tr_iz in ("Günün", "Zayıf", "yararlı", "yıl sütunu"):
+        assert tr_iz not in blok
+
+
+def test_bazi_fisiltisi_yalnizca_kapida_acilir(temiz_onbellek, monkeypatch):
+    """BaZi ücretli ürün: include_bazi=False iken fısıltıya SIZMAZ.
+
+    Kapı chart_whisper imzasında; sohbet ucu bayrağı abonelikten kurar.
+    Sızıntı olursa hata çıkmaz — ücretsiz kullanıcı ücretli veriyi görür.
+    """
+    monkeypatch.setattr(chart_context, "chart_facts",
+                        lambda uid, profile: {"sun": None, "moon": None,
+                                              "placements": [],
+                                              "transits": []})
+    monkeypatch.setattr(chart_context, "bazi_facts",
+                        lambda uid, profile: _BAZI_OLGULAR)
+
+    kapali = chart_context.chart_whisper("u-b8", PROFIL, lang="tr",
+                                         include_bazi=False)
+    assert "BaZi" not in kapali
+
+    acik = chart_context.chart_whisper("u-b8", PROFIL, lang="tr",
+                                       include_bazi=True)
+    assert "BaZi Günün Efendisi" in acik
+
+
+def test_bazi_olgulari_kompakt_ve_ham_dogum_tasimiyor(temiz_onbellek):
+    """Fısıltı olgusu her tura girer: küçük kalmalı ve ham doğum verisi
+    (tarih/saat/şehir) taşımamalı — gizlilik değişmezi natal fısıltıyla aynı."""
+    olgular = chart_context.bazi_facts("u-b8-olgu", PROFIL)
+    assert olgular is not None
+    assert set(olgular) <= {"day_master", "verdict", "season_state",
+                            "favorable_elements", "current_luck",
+                            "current_year", "stars", "hour_known"}
+    import json
+    metin = json.dumps(olgular, ensure_ascii=False)
+    assert "07:35" not in metin
+    assert "Istanbul" not in metin

@@ -4,7 +4,7 @@ from typing import List
 from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException
 from pydantic import BaseModel
 
-from core import device
+from core import device, entitlements
 from core.auth import AuthUser, get_current_user
 from core.entitlements import FREE_CHAT_PER_DAY
 from core.wallet import charge_metered, refund_spend
@@ -161,8 +161,12 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # bugün haritaya dokunan transitler de geliyor — cevabın "herkese
         # uyan" olmaktan çıkması bu ayrıntılara bağlı. Efemeris hesabı
         # önbellekli, LLM maliyeti yok.
+        # BaZi fısıltısı yalnızca Rytho+ sohbetinde (Revize B8): BaZi
+        # ücretli üründür; abone olmayanın prompt'una girmez — dürüst
+        # kapı. Abonede "Day Master'ım ne?" deterministik veriyle yanıtlanır.
         chart = chart_context.chart_whisper(
-            user.uid, profile, lang=lang, facts=facts)
+            user.uid, profile, lang=lang, facts=facts,
+            include_bazi=entitlements.is_subscriber(user.uid))
 
         # Bugünün gökyüzü paylaşımlı önbellekten gelir (kullanıcı başına
         # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.

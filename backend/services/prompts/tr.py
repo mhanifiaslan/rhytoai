@@ -240,6 +240,11 @@ CHART_TRANSITS_LABEL = "Bugün haritasına dokunan transitler"
 CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
 CHART_ASPECT_FMT = "{p1} {aspect} {p2} ({orb}°)"
 
+#: Sohbet fısıltısının BaZi satır etiketleri (B8).
+CHART_BAZI_DM_LABEL = "BaZi Günün Efendisi"
+CHART_BAZI_FAV_LABEL = "yararlı"
+CHART_BAZI_YEAR_LABEL = "yıl sütunu"
+
 # --- Bildirimler ---
 #
 # Başlıklar ve gövdeler ŞABLONDUR: seri ve arkadaş tepkisi bildirimleri hiç

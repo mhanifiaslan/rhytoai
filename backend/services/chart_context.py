@@ -322,6 +322,65 @@ def chart_facts(uid: str, profile: dict[str, Any],
     return {**natal, "transits": (transit or {}).get("hits", [])}
 
 
+def bazi_facts(uid: str, profile: dict[str, Any]) -> dict[str, Any] | None:
+    """Sohbet fısıltısı için KOMPAKT BaZi olguları (Revize B8).
+
+    Motorun tam çıktısı değil, sohbete her turda girecek kadar küçük bir
+    özet: Day Master, güç hükmü, yararlı elementler, aktif Da Yun, yıl
+    sütunu ve en fazla iki yıldız. "BaZi'm ne?" sorusunun cevabı artık
+    modelin hafızasından değil deterministik hesaptan gelir.
+
+    Anahtar ay damgası taşır: Liu Nian Li Chun'da değişir; yıl+ay
+    granülariteli anahtar en fazla ~1 aylık sınır bulanıklığıyla bunu
+    izler — günlük yeniden hesap israf olurdu.
+    """
+    if not has_birth_data(profile):
+        return None
+    birth = profile_service.birth_kwargs(profile)
+    ozet = _birth_digest(birth)
+    bugun = dt.date.today()
+
+    def uret() -> dict[str, Any]:
+        from services import bazi_service
+        chart = bazi_service.get_bazi_chart(
+            name=birth["name"], year=birth["year"], month=birth["month"],
+            day=birth["day"],
+            # Profilde saat yoksa BaZi saat sütunu kurmaz (B1) — fısıltı
+            # da kurmamalı; birth_kwargs'ın 12:00 dolgusu natal içindir.
+            hour=birth["hour"] if profile.get("birthTime") else None,
+            minute=birth["minute"], city=birth["city"],
+            nation=birth.get("nation"),
+            gender=profile.get("gender") or "",
+        )
+        s = chart.get("strength") or {}
+        idx = chart.get("current_luck_index")
+        aktif = (chart["luck_pillars"][idx]
+                 if idx is not None else None)
+        return {
+            "day_master": {k: chart["day_master"][k]
+                           for k in ("pinyin", "element", "polarity")},
+            "verdict": s.get("verdict"),
+            "season_state": s.get("season_state"),
+            "favorable_elements": s.get("favorable_elements") or [],
+            "current_luck": ({"label": aktif["label"],
+                              "from_year": aktif["from_year"],
+                              "to_year": aktif["to_year"],
+                              "ten_god": aktif["ten_god"]["name"]}
+                             if aktif else None),
+            "current_year": {
+                "label": chart["current_year_pillar"]["label"],
+                "ten_god": chart["current_year_pillar"]["ten_god"]["name"],
+            },
+            "stars": [{"key": y["key"], "pillar": y["pillar"]}
+                      for y in (chart.get("shen_sha") or [])[:2]],
+            "hour_known": chart.get("hour_known", True),
+        }
+
+    return _cached(
+        f"bazi-facts-v1-{uid}-{ozet}-{bugun.year}-{bugun.month:02d}",
+        uid, NATAL_TTL_SECONDS, uret)
+
+
 # --------------------------------------------------------------------------
 # Adlandırma (dile bağlı tek aşama)
 # --------------------------------------------------------------------------
@@ -434,9 +493,48 @@ def transit_lines(hits: list[dict[str, Any]],
         orb=f"{t['orb']:.1f}") for t in hits)
 
 
+def render_bazi(facts: dict[str, Any], lang: str | None = None) -> str:
+    """BaZi olgularını 2-3 satırlık fısıltı bloğuna çevirir (B8)."""
+    p = prompts.get(lang)
+    satirlar: list[str] = []
+
+    dm = facts.get("day_master") or {}
+    parcalar = [f"{p.CHART_BAZI_DM_LABEL}: {dm.get('pinyin', '?')} "
+                f"{p.POLARITY_NAMES.get(dm.get('polarity', ''), '')} "
+                f"{p.BAZI_ELEMENTS.get(dm.get('element', ''), '')}".strip()]
+    if facts.get("verdict"):
+        parcalar.append(
+            f"{p.BAZI_STRENGTH_NAMES.get(facts['verdict'], facts['verdict'])}"
+            f" ({p.BAZI_SEASON_STATES.get(facts.get('season_state') or '', '')})")
+    if facts.get("favorable_elements"):
+        parcalar.append(p.CHART_BAZI_FAV_LABEL + ": " + ", ".join(
+            p.BAZI_ELEMENTS.get(e, e) for e in facts["favorable_elements"]))
+    satirlar.append("- " + " · ".join(parcalar))
+
+    donem = []
+    aktif = facts.get("current_luck")
+    if aktif:
+        donem.append(f"Da Yun {aktif['label']} "
+                     f"({aktif['from_year']}-{aktif['to_year']}, "
+                     f"{aktif['ten_god']})")
+    yil = facts.get("current_year")
+    if yil:
+        donem.append(f"{p.CHART_BAZI_YEAR_LABEL} {yil['label']} "
+                     f"({yil['ten_god']})")
+    if donem:
+        satirlar.append("- " + " · ".join(donem))
+
+    if facts.get("stars"):
+        satirlar.append("- " + " · ".join(
+            f"{p.SHEN_SHA_NAMES.get(y['key'], y['key'])} [{y['pillar']}]"
+            for y in facts["stars"]))
+    return "\n".join(satirlar)
+
+
 def chart_whisper(uid: str, profile: dict[str, Any] | None,
                   lang: str | None = None,
-                  facts: dict[str, Any] | None = None) -> str:
+                  facts: dict[str, Any] | None = None,
+                  include_bazi: bool = False) -> str:
     """Sohbete iliştirilecek harita bloğu.
 
     Derin sürüm ancak gerçek doğum verisi varsa ve hesap başarılıysa üretilir;
@@ -446,6 +544,10 @@ def chart_whisper(uid: str, profile: dict[str, Any] | None,
     ``facts`` verilirse yeniden hesaplanmaz. Sohbet ucu olguları bilgi tabanı
     sorgusunu kurmak için zaten üretiyor; ikinci kez istemek gereksiz bir
     önbellek turu demek olurdu.
+
+    ``include_bazi`` (Revize B8) yalnızca Rytho+ sohbetinde açılır: BaZi
+    ücretli üründür ve fısıltıdan sızdırılmaz — dürüst kapı, gizli tanıtım
+    değil. Açıkken "BaZi'm ne?" sorusu deterministik veriyle cevaplanır.
     """
     if not profile:
         return ""
@@ -454,4 +556,12 @@ def chart_whisper(uid: str, profile: dict[str, Any] | None,
     if not facts:
         return profile_service.chart_summary(profile, lang=lang)
     metin = render(facts, lang=lang).strip()
+    if include_bazi:
+        bazi = bazi_facts(uid, profile)
+        if bazi:
+            try:
+                metin = (metin + "\n" +
+                         render_bazi(bazi, lang=lang)).strip()
+            except Exception as exc:  # fısıltı süsü sohbeti düşürmesin
+                logger.warning("BaZi fısıltısı üretilemedi: %s", exc)
     return metin or profile_service.chart_summary(profile, lang=lang)
