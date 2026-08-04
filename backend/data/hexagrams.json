@@ -10,7 +10,10 @@
       "name_tr": "Gök",
       "element": "metal",
       "symbol": "☰",
-      "name_en": "Heaven"
+      "name_en": "Heaven",
+      "family": "father",
+      "attribute": "creative",
+      "direction": "NW"
     },
     "zhen": {
       "lines": [
@@ -22,7 +25,10 @@
       "name_tr": "Gök Gürültüsü",
       "element": "wood",
       "symbol": "☳",
-      "name_en": "Thunder"
+      "name_en": "Thunder",
+      "family": "eldest_son",
+      "attribute": "arousing",
+      "direction": "E"
     },
     "kan": {
       "lines": [
@@ -34,7 +40,10 @@
       "name_tr": "Su",
       "element": "water",
       "symbol": "☵",
-      "name_en": "Water"
+      "name_en": "Water",
+      "family": "middle_son",
+      "attribute": "abysmal",
+      "direction": "N"
     },
     "gen": {
       "lines": [
@@ -46,7 +55,10 @@
       "name_tr": "Dağ",
       "element": "earth",
       "symbol": "☶",
-      "name_en": "Mountain"
+      "name_en": "Mountain",
+      "family": "youngest_son",
+      "attribute": "stillness",
+      "direction": "NE"
     },
     "kun": {
       "lines": [
@@ -58,7 +70,10 @@
       "name_tr": "Yeryüzü",
       "element": "earth",
       "symbol": "☷",
-      "name_en": "Earth"
+      "name_en": "Earth",
+      "family": "mother",
+      "attribute": "receptive",
+      "direction": "SW"
     },
     "xun": {
       "lines": [
@@ -70,7 +85,10 @@
       "name_tr": "Rüzgar",
       "element": "wood",
       "symbol": "☴",
-      "name_en": "Wind"
+      "name_en": "Wind",
+      "family": "eldest_daughter",
+      "attribute": "penetrating",
+      "direction": "SE"
     },
     "li": {
       "lines": [
@@ -82,7 +100,10 @@
       "name_tr": "Ateş",
       "element": "fire",
       "symbol": "☲",
-      "name_en": "Fire"
+      "name_en": "Fire",
+      "family": "middle_daughter",
+      "attribute": "clinging",
+      "direction": "S"
     },
     "dui": {
       "lines": [
@@ -94,7 +115,10 @@
       "name_tr": "Göl",
       "element": "metal",
       "symbol": "☱",
-      "name_en": "Lake"
+      "name_en": "Lake",
+      "family": "youngest_daughter",
+      "attribute": "joyous",
+      "direction": "W"
     }
   },
   "hexagrams": [
@@ -109,7 +133,25 @@
       "judgment_tr": "Saf yang enerjisi: yüce başarı, sebat eden için kazanç. Gökyüzü gibi durmaksızın hareket et; yaratıcı gücün zirvesindesin.",
       "image_tr": "Gök güçlü hareket eder; bilge kişi kendini durmadan güçlendirir.",
       "judgment_en": "Pure yang: supreme success, and gain for the one who perseveres. Move without pause, as the sky does; your creative force is at its height.",
-      "image_en": "Heaven moves with strength; the wise keep making themselves stronger."
+      "image_en": "Heaven moves with strength; the wise keep making themselves stronger.",
+      "lines_en": [
+        "In the first (or lowest) NINE, undivided, (we see its subject as) the dragon lying hid (in the deep). It is not the time for active doing.",
+        "In the second NINE, undivided, (we see its subject as) the dragon appearing in the field. It will be advantageous to meet with the great man.",
+        "In the third NINE, undivided, (we see its subject as) the superior man active and vigilant all the day, and in the evening still careful and apprehensive. (The position is) dangerous, but there will be no mistake.",
+        "In the fourth NINE, undivided, (we see its subject as the dragon looking) as if he were leaping up, but still in the deep. There will be no mistake.",
+        "In the fifth NINE, undivided, (we see its subject as) the dragon on the wing in the sky. It will be advantageous to meet with the great man.",
+        "In the sixth (or topmost) NINE, undivided, (we see its subject as) the dragon exceeding the proper limits. There will be occasion for repentance."
+      ],
+      "all_lines_en": "(The lines of this hexagram are all strong and undivided, as appears from) the use of the number NINE. If the host of dragons (thus) appearing were to divest themselves of their heads, there would be good fortune.",
+      "lines_tr": [
+        "Ejderha derinde gizli yatar; eyleme geçmenin vakti değildir.",
+        "Ejderha tarlada görünür; büyük insanla görüşmek kazanç getirir.",
+        "Soylu insan gün boyu uyanık çalışır, akşam yine tetiktedir; tehlike vardır ama kusur yoktur.",
+        "Ejderha sıçramayı dener, hâlâ derinliğin üstündedir; ilerlese de kusur olmaz.",
+        "Ejderha gökte kanat açar; büyük insanla görüşmek kazanç getirir.",
+        "Haddini aşan ejderha pişman olur; doruğun ötesi düşüştür."
+      ],
+      "all_lines_tr": "Bütün çizgiler dokuz: başsız ejderhalar sürüsü görünür — güç öndersiz ve gösterişsiz akarsa talih gelir."
     },
     {
       "number": 2,
@@ -122,7 +164,25 @@
       "judgment_tr": "Saf yin enerjisi: kabul ediş ve adanmışlık kazanç getirir. Öncülük etme, izle; sana yol gösterecek olanı bul.",
       "image_tr": "Yeryüzünün doğası adanmıştır; bilge kişi geniş erdemiyle her şeyi taşır.",
       "judgment_en": "Pure yin: acceptance and devotion bring gain. Do not lead — follow, and find the one who will show you the way.",
-      "image_en": "The nature of earth is devotion; the wise carry everything with a broad virtue."
+      "image_en": "The nature of earth is devotion; the wise carry everything with a broad virtue.",
+      "lines_en": [
+        "In the first SIX, divided, (we see its subject) treading on hoarfrost. The strong ice will come (by and by).",
+        "The second SIX, divided, (shows the attribute of) being straight, square, and great. (Its operation), without repeated efforts, will be in every respect advantageous.",
+        "The third SIX, divided, (shows its subject) keeping his excellence under restraint, but firmly maintaining it. If he should have occasion to engage in the king's service, though he will not claim the success (for himself), he will bring affairs to a good issue.",
+        "The fourth SIX, divided, (shows the symbol of) a sack tied up. There will be no ground for blame or for praise.",
+        "The fifth SIX, divided, (shows) the yellow lower garment. There will be great good fortune.",
+        "The sixth SIX, divided (shows) dragons fighting in the wild. Their blood is purple and yellow."
+      ],
+      "all_lines_en": "(The lines of this hexagram are all weak and divided, as appears from) the use of the number six. If those (who are thus represented) be perpetually correct and firm, advantage will arise.",
+      "lines_tr": [
+        "Kırağıya basan ayak bilir: katı buz yakındır — küçük işaret büyük gidişi haber verir.",
+        "Doğru, kare ve geniş ol; çaba gösterişsizken bile hiçbir şey kazançsız kalmaz.",
+        "Yeteneğini örtük tut; devlet işine girsen de başarıyı sahiplenme, tamamlamakla yetin.",
+        "Ağzı bağlanmış çuval gibi ol: ne övgü gelir ne suçlama — temkin kusuru önler.",
+        "Sarı alt giysi gibi ölçülü asalet: en yüksek talih ortada durmasını bilendedir.",
+        "Ejderhalar kırda savaşır, kanları mor ve sarı akar; yin haddini aşarsa çatışma doğar."
+      ],
+      "all_lines_tr": "Bütün çizgiler altı: kalıcı doğrulukta sebat et — teslimiyetin gücü süreklilikte belli olur."
     },
     {
       "number": 3,
@@ -135,7 +195,23 @@
       "judgment_tr": "Doğum sancısı: kaos içinde büyüme tohumu var. Acele etme, yardımcılar bul, düzeni adım adım kur.",
       "image_tr": "Bulutlar ve gök gürültüsü; bilge kişi düzenleyerek ve ayıklayarak ilerler.",
       "judgment_en": "The pain of birth: inside the chaos is the seed of growth. Do not rush, find helpers, build order one step at a time.",
-      "image_en": "Clouds and thunder; the wise move forward by ordering and sorting."
+      "image_en": "Clouds and thunder; the wise move forward by ordering and sorting.",
+      "lines_en": [
+        "The first NINE, undivided, shows the difficulty (its subject has) in advancing. It will be advantageous for him to abide correct and firm; advantageous (also) to be made a feudal ruler.",
+        "The second SIX, divided, shows (its subject) distressed and obliged to return; (even) the horses of her chariot (also) seem to be retreating. (But) not by a spoiler (is she assailed), but by one who seeks her to be his wife. The young lady maintains her firm correctness, and declines a union. After ten years she will be united, and have children.",
+        "The third SIX, divided, shows one following the deer without (the guidance of) the forester, and only finding himself in the midst of the forest. The superior man, acquainted with the secret risks, thinks it better to give up the chase. If he went forward, he would regret it.",
+        "The fourth SIX, divided, shows (its subject as a lady), the horses of whose chariot appear in retreat. She seeks, however, (the help of) him who seeks her to be his wife. Advance will be fortunate; all will turn out advantageously.",
+        "The fifth NINE, undivided, shows the difficulties in the way of (its subject's) dispensing the rich favours that might be expected from him. With firmness and correctness there will be good fortune in small things; (even) with them in great things there will be evil.",
+        "The topmost SIX, divided, shows (its subject) with the horses of his chariot obliged to retreat, and weeping tears of blood in streams."
+      ],
+      "lines_tr": [
+        "İlk adımda engel var: kayayı çevirip yerinde sağlam dur; doğru kalmak ve destek bulmak kazançlıdır.",
+        "Atlar koşulur, sonra geri döner; zorla istenmez — kız on yıl bekler, sonra evlenir. Olgunlaşmamış bağa acele edilmez.",
+        "Kılavuzsuz geyik kovalayan ormanda kaybolur; soylu insan vazgeçmeyi bilir, ısrar utanç getirir.",
+        "Atlar koşulmuş bekler: ittifak arayışına gitmek doğrudur; ilerlemek talih getirir, kusur olmaz.",
+        "Nimetini biriktirmek zorlaşır: küçükte doğruluk talih, büyükte zorlamak felaket getirir.",
+        "Atlar koşulmuş ama yol yok; kan ve gözyaşı akar — çıkışsız ısrarın resmi budur."
+      ]
     },
     {
       "number": 4,
@@ -148,7 +224,23 @@
       "judgment_tr": "Deneyimsizlik ayıp değildir; öğrenme isteği kıymetlidir. Doğru soruyu içtenlikle bir kez sor ve cevabı ciddiye al.",
       "image_tr": "Dağın eteğinde kaynak fışkırır; bilge kişi kararlılıkla karakterini besler.",
       "judgment_en": "Inexperience is no disgrace; the will to learn is what is precious. Ask the right question sincerely, once, and take the answer seriously.",
-      "image_en": "A spring wells up at the foot of the mountain; the wise feed their character with resolve."
+      "image_en": "A spring wells up at the foot of the mountain; the wise feed their character with resolve.",
+      "lines_en": [
+        "The first SIX, divided, (has respect to) the dispelling of ignorance. It will be advantageous to use punishment (for that purpose), and to remove the shackles (from the mind). But going on in that way (of punishment) will give occasion for regret.",
+        "The second NINE, undivided, (shows its subject) exercising forbearance with the ignorant, in which there will be good fortune; and admitting (even the goodness of women, which will also be fortunate. (He may be described also as) a son able to (sustain the burden of) his family.",
+        "The third SIX, divided, (seems to say) that one should not marry a woman whose emblem it might be, for that, when she sees a man of wealth, she will not keep her person from him, and in no wise will advantage come from her.",
+        "The fourth SIX, divided, (shows its subject as if) bound in chains of ignorance. There will be occasion for regret.",
+        "The fifth SIX, divided, shows its subject as a simple lad without experience. There will be good fortune.",
+        "In the topmost NINE, undivided, we see one smiting the ignorant (youth). But no advantage will come from doing him an injury. Advantage would come from warding off injury from him."
+      ],
+      "lines_tr": [
+        "Tomurcuğu açmak için disiplin gerekir; ceza yalnız yolu göstermek içindir, zincire dönüşürse utanç doğar.",
+        "Toyluğu hoşgörüyle kucaklayan talihlidir; eve gelin almak hayırlıdır — oğul ocağı taşıyabilir.",
+        "Altın gören kadını alma: kendini kaybedene bağlanmak hiçbir yerde kazanç bırakmaz.",
+        "Toyluğun içine hapsolmak utançtır; gerçeklikten kopan öğrenci yalnız kalır.",
+        "Saf ve alçakgönüllü toyluk talih getirir; öğrenmeye açık çocuk yolu bulur.",
+        "Toyluğu cezalandırırken saldırgan olma; taşkını savuşturmak yeter — amaç kırmak değil korumaktır."
+      ]
     },
     {
       "number": 5,
@@ -161,7 +253,23 @@
       "judgment_tr": "Güvenle beklemek zayıflık değil olgunluktur. Işık içinde bekle; büyük su, zamanı gelince geçilir.",
       "image_tr": "Bulutlar göğe yükselir; bilge kişi yiyip içerek, neşeyle bekler.",
       "judgment_en": "Waiting with confidence is not weakness but maturity. Wait inside the light; the great water is crossed when its time comes.",
-      "image_en": "Clouds rise into the sky; the wise eat, drink and wait in good cheer."
+      "image_en": "Clouds rise into the sky; the wise eat, drink and wait in good cheer.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject waiting in the distant border. It will be well for him constantly to maintain (the purpose thus shown), in which case there will be no error.",
+        "The second NINE, undivided, shows its subject waiting on the sand (of the mountain stream). He will (suffer) the small (injury of) being spoken (against), but in the end there will be good fortune.",
+        "The third NINE, undivided, shows its subject in the mud (close by the stream). He thereby invites the approach of injury.",
+        "The fourth SIX, divided, shows its subject waiting in (the place of) blood. But he will get out of the cavern.",
+        "The fifth NINE, undivided, shows its subject waiting amidst the appliances of a feast. Through his firmness and correctness there will be good fortune.",
+        "The topmost SIX, divided, shows its subject entered into the cavern. (But) there are three guests coming, without being urged, (to his help). If he receive them respectfully, there will be good fortune in the end."
+      ],
+      "lines_tr": [
+        "Kırda beklemek: sabrı bozmadan olağan işinde kal; kusur doğmaz.",
+        "Kumsalda beklemek: küçük söylentiler çıkar ama sonu talihlidir.",
+        "Çamurda beklemek düşmanı davet eder; dikkat yaralanmayı önler.",
+        "Kan içinde beklemek: çukurdan çık — teslimiyet değil, yerini değiştirme vaktidir.",
+        "Şarap ve yemekle beklemek: güç toplama molası da doğruluğun parçasıdır, talih getirir.",
+        "Çukura düşülür; çağrılmamış üç konuk gelir — onları ağırlamasını bilen sonunda talihi bulur."
+      ]
     },
     {
       "number": 6,
@@ -174,7 +282,23 @@
       "judgment_tr": "Haklı olsan da çatışmayı sonuna kadar götürme. Ortada durmayı bil; büyük işlere bu enerjiyle girişme.",
       "image_tr": "Gök ile su zıt yönde akar; bilge kişi işin başlangıcını iyice düşünür.",
       "judgment_en": "Even when you are right, do not push conflict to its end. Know how to stop halfway; do not begin great works with this energy.",
-      "image_en": "Heaven and water flow in opposite directions; the wise think a matter through at its start."
+      "image_en": "Heaven and water flow in opposite directions; the wise think a matter through at its start.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject not perpetuating the matter about which (the contention is). He will suffer the small (injury) of being spoken against, but the end will be fortunate.",
+        "The second NINE, undivided, shows its subject unequal to the contention. If he retire and keep concealed (where) the inhabitants of his city are (only) three hundred families, he will fall into no mistake.",
+        "The third SIX, divided, shows its subject keeping in the old place assigned for his support, and firmly correct. Perilous as the position is, there will be good fortune in the end. Should he perchance engage in the king's business, he will not (claim the merit of) achievement.",
+        "The fourth NINE, undivided, shows its subject unequal to the contention. He returns to (the study of Heaven's) ordinances, changes (his wish to contend), and rests in being firm and correct. There will be good fortune.",
+        "The fifth NINE, undivided, shows its subject contending;--and with great good fortune.",
+        "The topmost NINE, undivided, shows how its subject may have the leathern belt conferred on him (by the sovereign), and thrice it shall be taken from him in a morning."
+      ],
+      "lines_tr": [
+        "Davayı uzatma; küçük söz işitilir ama sonu talihe döner.",
+        "Çekişmeyi kaldıramayacaksan geri çekil ve gizlen; kasabanın üç yüz hanesi böylece beladan kurtulur.",
+        "Eski hakkınla geçin, doğru kal; tehlike sonunda talihe döner. Devlet işine girsen de başarıyı sahiplenme.",
+        "Çekişmeye gücün yetmez; kadere dön, tavrını değiştir, doğrulukta huzur bul — talih gelir.",
+        "Çekişmeyi büyük insanın önünde çözmek: en yüksek talih adil hakemdedir.",
+        "Çekişmeyle kazanılan kemer sabah verilir, akşam üç kez geri alınır — dava ile gelen onur eğreti durur."
+      ]
     },
     {
       "number": 7,
@@ -187,7 +311,23 @@
       "judgment_tr": "Disiplin ve haklı bir amaç: güç ancak düzenle işe yarar. Deneyimli bir öndere ihtiyaç var; kitleyi adaletle yönet.",
       "image_tr": "Yerin ortasında su; bilge kişi halkı cömertliğiyle çoğaltır.",
       "judgment_en": "Discipline and a just cause: force only works through order. An experienced leader is needed; govern the many with fairness.",
-      "image_en": "Water in the middle of the earth; the wise increase their people through generosity."
+      "image_en": "Water in the middle of the earth; the wise increase their people through generosity.",
+      "lines_en": [
+        "The first SIX, divided, shows the host going forth according to the rules (for such a movement). If these be not good, there will be evil.",
+        "The second NINE, undivided, shows (the leader) in the midst of the host. There will be good fortune and no error. The king has thrice conveyed to him the orders (of his favour).",
+        "The third SIX, divided, shows how the host may, possibly, have many inefficient leaders. There will be evil.",
+        "The fourth SIX, divided, shows the host in retreat. There is no error.",
+        "The fifth SIX, divided, shows birds in the fields, which it will be advantageous to seize (and destroy). In that case there will be no error. If the oldest son leads the host, and younger men (idly occupy offices assigned to them), however firm and correct he may be, there will be evil.",
+        "The topmost SIX, divided, shows the great ruler delivering his charges, (appointing some) to be rulers of states, and others to undertake the headship of clans; but small men should not be employed (in such positions)."
+      ],
+      "lines_tr": [
+        "Ordu düzenle çıkar; düzen bozulursa zafer bile felakete döner.",
+        "Komutan ordunun ortasında durur: talih ondadır, kusur doğmaz; hükümdar üç kez onur bahşeder.",
+        "Ordu araba dolusu ceset taşır — ehil olmayana komuta vermenin sonu budur.",
+        "Ordu geri çekilip konaklar; yenilgi değil, ölçülü manevradır — kusur yoktur.",
+        "Tarlada av varsa yakalamak doğrudur; ama büyük oğul orduyu yönetirken küçüğe bırakılırsa cesetler taşınır.",
+        "Zafer sonrası büyük hükümdar devletler kurar, aileler onurlandırır; küçük insana yetki verilmez."
+      ]
     },
     {
       "number": 8,
@@ -200,7 +340,23 @@
       "judgment_tr": "Dayanışma zamanı: insanlar bir merkez etrafında toplanıyor. Katılacaksan tereddütsüz katıl; geç kalan kaybeder.",
       "image_tr": "Yeryüzünde su; eski krallar beylikler kurup dostluk bağları kurdu.",
       "judgment_en": "A time of solidarity: people are gathering around a centre. If you are going to join, join without hesitation; the latecomer loses.",
-      "image_en": "Water over the earth; the ancient kings founded domains and bound friendships."
+      "image_en": "Water over the earth; the ancient kings founded domains and bound friendships.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject seeking by his sincerity to win the attachment of his object. There will be no error. Let (the breast) be full of sincerity as an earthenware vessel is of its contents, and it will in the end bring other advantages.",
+        "In the second SIX, divided, we see the movement towards union and attachment proceeding from the inward (mind). With firm correctness there will be good fortune.",
+        "In the third SIX, divided, we see its subject seeking for union with such as ought not to be associated with.",
+        "In the fourth SIX, divided, we see its subject seeking for union with the one beyond himself. With firm correctness there will be good fortune.",
+        "The fifth NINE, undivided, affords the most illustrious instance of seeking union and attachment. (We seem to see in it) the king urging his pursuit of the game (only) in three directions, and allowing the escape of all the animals before him, while the people of his towns do not warn one another (to prevent it). There will be good fortune.",
+        "In the topmost SIX, divided, we see one seeking union and attachment without having taken the first step (to such an end). There will be evil."
+      ],
+      "lines_tr": [
+        "İçtenlikle bağlan: toprak testi kadar sade bir samimiyet bile sonunda beklenmedik talih çeker.",
+        "Birliğe içten, kendi merkezinden katıl; doğruluk talih getirir.",
+        "Bağlanılmaması gerekenlerle birlik aramak — kayıp buradan başlar.",
+        "Dışarıdakiyle de birlik kurulur; ehline bağlanmak doğrudur, talih getirir.",
+        "Birliğin en parlak hali: kral avda üç yandan kuşatır, önden kaçana dokunmaz — gönüllü bağlılık zorla gelmez.",
+        "Başsız birlik: ilk adımı atacak öncü yoksa sonu kötüdür."
+      ]
     },
     {
       "number": 9,
@@ -213,7 +369,23 @@
       "judgment_tr": "Küçük engeller, ince ayarlarla aşılır. Fırtına henüz kopmadı; küçük adımlarla biriktir, inceliğe yatırım yap.",
       "image_tr": "Rüzgar gökte eser; bilge kişi doğasının inceliğini işler.",
       "judgment_en": "Small obstacles are cleared by fine adjustment. The storm has not yet broken; accumulate in small steps, invest in subtlety.",
-      "image_en": "Wind blows across the sky; the wise work on the finer grain of their nature."
+      "image_en": "Wind blows across the sky; the wise work on the finer grain of their nature.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject returning and pursuing his own course. What mistake should he fall into? There will be good fortune.",
+        "The second NINE, undivided, shows its subject, by the attraction (of the former line), returning (to the proper course). There will be good fortune.",
+        "The third NINE, undivided, suggests the idea of a carriage, the strap beneath which has been removed, or of a husband and wife looking on each other with averted eyes.",
+        "The fourth SIX, divided, shows its subject possessed of sincerity. The danger of bloodshed is thereby averted, and his (ground for) apprehension dismissed. There will be no mistake.",
+        "The fifth NINE, undivided, shows its subject possessed of sincerity, and drawing others to unite with him. Rich in resources, he employs his neighbours (in the same cause with himself).",
+        "The topmost NINE, undivided, shows how the rain has fallen, and the (onward progress) is stayed;--(so) must we value the full accumulation of the virtue (represented by the upper trigram). But a wife (exercising restraint), however firm and correct she may be, is in a position of peril, (and like) the moon approaching to the full. If the superior man prosecute his measures (in such circumstances), there will be evil."
+      ],
+      "lines_tr": [
+        "Kendi yoluna geri dönmek: bunda ne kusur var ne engel — dönüş talihlidir.",
+        "El birliğiyle dönüş: ortak istikamet talih getirir.",
+        "Arabanın jant teli fırlar; karı koca birbirine ters bakar — küçük engel içeride gerilim doğurur.",
+        "İçtenlik kanı uzaklaştırır, korkuyu dağıtır; kusur doğmaz.",
+        "İçtenlik bağ kurar: komşusuyla zenginliğini paylaşan yalnız kalmaz.",
+        "Yağmur yağdı, duruldu; erdem yüklü araba doldu. Küçüğün doruğunda ısrar kadını da soyluyu da tehlikeye sokar — ay dolunaya vardı, ileri gitme."
+      ]
     },
     {
       "number": 10,
@@ -226,7 +398,23 @@
       "judgment_tr": "Tehlikeli bir güçle nezaketle ilişki kur: kaplanın kuyruğuna basarsın ama ısırmaz. Görgü ve zarafet koruyucudur.",
       "image_tr": "Üstte gök, altta göl; bilge kişi yüksekle alçağı ayırt ederek halkın iradesini sağlamlaştırır.",
       "judgment_en": "Deal with a dangerous power through courtesy: you tread on the tiger's tail and it does not bite. Manners and grace are protection.",
-      "image_en": "Heaven above, lake below; the wise steady the will of the people by telling high from low."
+      "image_en": "Heaven above, lake below; the wise steady the will of the people by telling high from low.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject treading his accustomed path. If he go forward, there will be no error.",
+        "The second NINE, undivided, shows its subject treading the path that is level and easy;--a quiet and solitary man, to whom, if he be firm and correct, there will be good fortune.",
+        "The third SIX, divided, shows a one-eyed man (who thinks he) can see; a lame man (who thinks he) can walk well; one who treads on the tail of a tiger and is bitten. (All this indicates) ill fortune. We have a (mere) bravo acting the part of a great ruler.",
+        "The fourth NINE, undivided, shows its subject treading on the tail of a tiger. He becomes full of apprehensive caution, and in the end there will be good fortune.",
+        "The fifth NINE, undivided, shows the resolute tread of its subject. Though he be firm and correct, there will be peril.",
+        "The sixth NINE, undivided, tells us to look at (the whole course) that is trodden, and examine the presage which that gives. If it be complete and without failure, there will be great good fortune."
+      ],
+      "lines_tr": [
+        "Sade ayakla yürü: gösterişsiz ilerleyen kusursuz gider.",
+        "Düz ve sakin yolda yürüyen münzevi, doğruluğunda talihlidir.",
+        "Tek gözlü görürüm der, topal yürürüm der; kaplanın kuyruğuna basar, ısırılır — gücünü aşan iddia savaşçıyı bile düşürür.",
+        "Kaplanın kuyruğuna basar ama çekinerek, dikkatle; sonunda talih gelir.",
+        "Kararlı yürüyüş: doğru olsa da tetikte ol — güvenli görünen adım da tehlike taşır.",
+        "Yürüdüğün yola dön, işaretleri tart; devir tamamlanmışsa en yüksek talih gelir."
+      ]
     },
     {
       "number": 11,
@@ -239,7 +427,23 @@
       "judgment_tr": "Gök ile yer birleşiyor: uyum, refah ve akış zamanı. Küçük gider, büyük gelir; bereketi paylaşarak çoğalt.",
       "image_tr": "Gök ile yer birleşir; hükümdar doğanın akışını tamamlayıp halkına dağıtır.",
       "judgment_en": "Heaven and earth join: a time of harmony, prosperity and flow. The small departs, the great arrives; multiply the abundance by sharing it.",
-      "image_en": "Heaven and earth unite; the ruler completes nature's course and distributes it to the people."
+      "image_en": "Heaven and earth unite; the ruler completes nature's course and distributes it to the people.",
+      "lines_en": [
+        "The first NINE, undivided, suggests the idea of grass pulled up, and bringing with it other stalks with whose roots it is connected. Advance (on the part of its subject) will be fortunate.",
+        "The second NINE, undivided, shows one who can bear with the uncultivated, will cross the Ho without a boat, does not forget the distant, and has no (selfish) friendships. Thus does he prove himself acting in accordance with the course of the due Mean.",
+        "The third NINE, undivided, shows that, while there is no state of peace that is not liable to be disturbed, and no departure (of evil men) so that they shall not return, yet when one is firm and correct, as he realises the distresses that may arise, he will commit no error. There is no occasion for sadness at the certainty (of such recurring changes); and in this mood the happiness (of the present) may be (long) enjoyed.",
+        "The fourth SIX, divided, shows its subject fluttering (down);--not relying on his own rich resources, but calling in his neighbours. (They all come) not as having received warning, but in the sincerity (of their hearts).",
+        "The fifth six, divided, reminds us of (king) Tî-yî's (rule about the) marriage of his younger sister. By such a course there is happiness and there will be great good fortune.",
+        "The sixth six, divided, shows us the city wall returned into the moat. It is not the time to use the army. (The subject of the line) may, indeed, announce his orders to the people of his own city; but however correct and firm he may be, he will have cause for regret."
+      ],
+      "lines_tr": [
+        "Ot sökülünce kökleri birlikte gelir: ehil biri yükselince benzerlerini de taşır — ilerleyiş talihlidir.",
+        "Kaba olanı taşı, nehri sandalsız geç, uzağı unutma, hizbi bırak: ortada yürüyenin ödülü budur.",
+        "Düzlük yok ki yokuşu olmasın, gidiş yok ki dönüşü olmasın; zorlukta doğru kalana kusur yazılmaz.",
+        "Kanat çırpıp iner, zenginliğine yaslanmaz; komşusuyla içtenlikle bağ kurar.",
+        "Hükümdar kız kardeşini gelin verir: alçalan yücelik en büyük talihi getirir.",
+        "Sur hendeğe devrilir; ordu kullanma vakti değildir — emir kendi şehrinde duyurulur, ısrar utanç getirir."
+      ]
     },
     {
       "number": 12,
@@ -252,7 +456,23 @@
       "judgment_tr": "İletişim koptu, kanallar tıkalı. Geri çekil, değerlerini koru; kötü döneme ortak olma, sabırla geçmesini bekle.",
       "image_tr": "Gök ile yer birleşmez; bilge kişi içine döner ve erdemini gizler.",
       "judgment_en": "Communication has broken; the channels are blocked. Withdraw and keep your values; do not take part in a bad season, wait it out with patience.",
-      "image_en": "Heaven and earth do not unite; the wise turn inward and conceal their virtue."
+      "image_en": "Heaven and earth do not unite; the wise turn inward and conceal their virtue.",
+      "lines_en": [
+        "The first SIX, divided, suggests the idea of grass pulled up, and bringing with it other stalks with whose roots it is connected. With firm correctness (on the part of its subject), there will be good fortune and progress.",
+        "The second SIX, divided, shows its subject patient and obedient. To the small man (comporting himself so) there will be good fortune. If the great man (comport himself) as the distress and obstruction require, he will have success.",
+        "The third SIX, divided, shows its subject ashamed of the purpose folded (in his breast).",
+        "The fourth NINE, undivided, shows its subject acting in accordance with the ordination (of Heaven), and committing no error. His companions will come and share in his happiness.",
+        "In the fifth NINE, undivided, we see him who brings the distress and obstruction to a close,--the great man and fortunate. (But let him say), 'We may perish! We may perish!' (so shall the state of things become firm, as if) bound to a clump of bushy mulberry trees.",
+        "The sixth NINE, undivided, shows the overthrow (and removal of) the condition of distress and obstruction. Before this there was that condition. Hereafter there will be joy."
+      ],
+      "lines_tr": [
+        "Ot sökülünce kökleri birlikte gelir: tıkanıklık çağında doğrularla birlikte çekilmek talihtir.",
+        "Küçük insan taşıyıp katlanır; büyük insan tıkanıklıkta bile ilkesinden ödün vermez — başarı budur.",
+        "Utancı sırtında taşır: ehliyetsiz makam er geç yüz kızartır.",
+        "Yukarının çağrısıyla davranan kusursuzdur; aynı tarlayı sürenler nimeti paylaşır.",
+        "Tıkanıklık duruyor ama büyük insan tetikte: 'ya kopup düşerse' diye dut ağacının sürgünlerine bağlar.",
+        "Tıkanıklık devrilir: önce kapanma, sonra sevinç — hiçbir kapanış sonsuz değildir."
+      ]
     },
     {
       "number": 13,
@@ -265,7 +485,23 @@
       "judgment_tr": "Açık alanda kurulan dostluk başarı getirir. Kapalı kapılar ardında değil, şeffaf ortak hedeflerde birleş.",
       "image_tr": "Gökle birlikte ateş; bilge kişi türleri ayırt eder ama insanları birleştirir.",
       "judgment_en": "Fellowship formed in the open brings success. Unite around transparent shared aims, not behind closed doors.",
-      "image_en": "Fire together with heaven; the wise distinguish kinds yet bring people together."
+      "image_en": "Fire together with heaven; the wise distinguish kinds yet bring people together.",
+      "lines_en": [
+        "The first NINE, undivided, (shows the representative of) the union of men just issuing from his gate. There will be no error.",
+        "The second SIX, divided, (shows the representative of) the union of men in relation with his kindred. There will be occasion for regret.",
+        "The third NINE, undivided, (shows its subject) with his arms hidden in the thick grass, and at the top of a high mound. (But) for three years he makes no demonstration.",
+        "The fourth NINE, undivided, (shows its subject) mounted on the city wall; but he does not proceed to make the attack (he contemplates). There will be good fortune.",
+        "In the fifth NINE, undivided, (the representative of) the union of men first wails and cries out, and then laughs. His great host conquers, and he (and the subject of the second line) meet together.",
+        "The topmost NINE, undivided, (shows the representative of) the union of men in the suburbs. There will be no occasion for repentance."
+      ],
+      "lines_tr": [
+        "Kapının hemen dışında dostluk: açık başlangıçta kusur olmaz.",
+        "Yalnız kendi soyuyla dostluk kuran dar kalır; hizip utanç getirir.",
+        "Pusuya silah gizler, tepeden gözetler; üç yıl kımıldayamaz — gizli niyet dostluğu dondurur.",
+        "Surun üstüne çıkar ama saldırmaz; dönüşü talihe çevirir.",
+        "Dostlar önce ağlar, sonra güler: büyük ordular buluşunca ayrılık biter.",
+        "Kır açıklığında dostluk: yakınlık idealin gerisinde kalsa da pişmanlık doğmaz."
+      ]
     },
     {
       "number": 14,
@@ -278,7 +514,23 @@
       "judgment_tr": "Bolluk ve yüksek başarı dönemi. Gücünü alçakgönüllülükle taşı; ışığın herkesi aydınlatsın, kibre dönüşmesin.",
       "image_tr": "Göğün üstünde ateş; bilge kişi kötüyü engeller, iyiyi yüceltir.",
       "judgment_en": "A season of plenty and high achievement. Carry your power with humility; let your light warm everyone rather than turn to pride.",
-      "image_en": "Fire above heaven; the wise curb what is bad and honour what is good."
+      "image_en": "Fire above heaven; the wise curb what is bad and honour what is good.",
+      "lines_en": [
+        "In the first NINE, undivided, there is no approach to what is injurious, and there is no error. Let there be a realisation of the difficulty (and danger of the position), and there will be no error (to the end).",
+        "In the second NINE, undivided, we have a large waggon with its load. In whatever direction advance is made, there will be no error.",
+        "The third NINE, undivided, shows us a feudal prince presenting his offerings to the Son of Heaven. A small man would be unequal (to such a duty).",
+        "The fourth NINE, undivided, shows its subject keeping his great resources under restraint. There will be no error.",
+        "The fifth SIX, divided, shows the sincerity of its subject reciprocated by that of all the others (represented in the hexagram). Let him display a proper majesty, and there will be good fortune.",
+        "The topmost NINE, undivided, shows its subject with help accorded to him from Heaven. There will be good fortune, advantage in every respect."
+      ],
+      "lines_tr": [
+        "Zararlıyla teması olmayan zenginlik: başlangıçtaki temkin kusuru önler; zorluğu bilen hazırlıklı olur.",
+        "Büyük araba yük taşır; nereye gidilse gidilsin kusur doğmaz — kapasite sorumluluğu karşılar.",
+        "Prens hazinesini Göğün Oğlu'na sunar; küçük insan bunu beceremez — bolluk paylaşanın elinde büyür.",
+        "Gücünü şişirmeden taşıyan komşusunu gölgelemez; kusur doğmaz.",
+        "İçten ve vakur bağlılık: samimiyet saygıyla birleşince talih gelir.",
+        "Gök yardım eder: bolluğun doruğunda bile alçakgönüllü kalan her yönden kazançlıdır."
+      ]
     },
     {
       "number": 15,
@@ -291,7 +543,23 @@
       "judgment_tr": "Alçakgönüllülük her kapıyı açar: dağ, yerin altında durmayı bilir. Fazlayı azalt, eksiği tamamla; denge kur.",
       "image_tr": "Yerin içinde dağ; bilge kişi çoğu azaltır, aza ekler ve teraziyi dengeler.",
       "judgment_en": "Modesty opens every door: the mountain knows how to stand below the earth. Reduce the excess, complete the lack, restore balance.",
-      "image_en": "Mountain within the earth; the wise take from the much, add to the little, and level the scales."
+      "image_en": "Mountain within the earth; the wise take from the much, add to the little, and level the scales.",
+      "lines_en": [
+        "The first SIX, divided, shows us the superior man who adds humility to humility. (Even) the great stream may be crossed with this, and there will be good fortune.",
+        "The second SIX, divided, shows us humility that has made itself recognised. With firm correctness there will be good fortune.",
+        "The third NINE, undivided, shows the superior man of (acknowledged) merit. He will maintain his success to the end, and have good fortune.",
+        "The fourth SIX, divided, shows one, whose action would be in every way advantageous, stirring up (the more) his humility.",
+        "The fifth SIX, divided, shows one who, without being rich, is able to employ his neighbours. He may advantageously use the force of arms. All his movements will be advantageous.",
+        "The sixth SIX, divided, shows us humility that has made itself recognised. The subject of it will with advantage put his hosts in motion; but (he will only) punish his own towns and state."
+      ],
+      "lines_tr": [
+        "Alçakgönüllünün alçakgönüllüsü soylu insan: büyük nehri bile böyle geçer, talihle.",
+        "Alçakgönüllülük sese vurur: içtenlik duyulunca doğruluk talih getirir.",
+        "Emeğiyle yükselen ama övünmeyen soylu insan işini sonuna taşır; talih ondadır.",
+        "Alçakgönüllülüğü her hareketine sindir: hiçbir yönde kazançsız kalmaz.",
+        "Zenginliğe yaslanmadan komşusunu yanına alır; gerekirse kararlı harekât da alçakgönüllülüğe sığar.",
+        "Alçakgönüllülük sese vurmuşken ordu yürütülür — ama yalnız kendi şehrini düzeltmek için."
+      ]
     },
     {
       "number": 16,
@@ -304,7 +572,23 @@
       "judgment_tr": "Coşku insanları harekete geçirir. Doğru zamanda, müzikle ve ritmle önderlik et; ataleti şevkle kır.",
       "image_tr": "Yerden gök gürültüsü çıkar; eski krallar müzik yaparak erdemi onurlandırdı.",
       "judgment_en": "Enthusiasm sets people in motion. Lead at the right moment, with music and rhythm; break inertia with zeal.",
-      "image_en": "Thunder comes out of the earth; the ancient kings honoured virtue by making music."
+      "image_en": "Thunder comes out of the earth; the ancient kings honoured virtue by making music.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject proclaiming his pleasure and satisfaction. There will be evil.",
+        "The second SIX, divided, shows one who is firm as a rock. (He sees a thing) without waiting till it has come to pass; with his firm correctness there will be good fortune.",
+        "The third SIX, divided, shows one looking up (for favours), while he indulges the feeling of pleasure and satisfaction. If he would understand!--If he be late in doing so, there will indeed be occasion for repentance.",
+        "The fourth NINE, undivided, shows him from whom the harmony and satisfaction come. Great is the success which he obtains. Let him not allow suspicions to enter his mind, and thus friends will gather around him.",
+        "The fifth six, divided, shows one with a chronic complaint, but who lives on without dying.",
+        "The topmost six, divided, shows its subject with darkened mind devoted to the pleasure and satisfaction (of the time); but if he change his course even when (it may be considered as) completed, there will be no error."
+      ],
+      "lines_tr": [
+        "Coşkusunu ilan eden tükenir: gösterişli sevinç felaket çağırır.",
+        "Kaya gibi sağlam duran, günü dolmadan işareti okur; doğruluğu talih getirir.",
+        "Yukarı bakıp coşku bekleyen pişman olur; gecikmiş dönüş de pişmanlıktır.",
+        "Coşkunun kaynağı olan büyük işler başarır; kuşkulanma — dostlar saç tokasının topladığı saç gibi çevrene toplanır.",
+        "Süreğen bir dert: sıkıntı taşır ama öldürmez — coşku çağında hasta olan ayakta kalır.",
+        "Karanlığa dönmüş coşku: tamamlanmışsa bile tavrını değiştirene kusur yazılmaz."
+      ]
     },
     {
       "number": 17,
@@ -317,7 +601,23 @@
       "judgment_tr": "Uyum sağlamayı bil: önderlik etmek için önce izlemeyi öğren. Zamana ve koşula direnme, esneklik kazanç getirir.",
       "image_tr": "Gölün ortasında gök gürültüsü; bilge kişi akşam olunca dinlenmeye çekilir.",
       "judgment_en": "Learn to adapt: to lead, first learn to follow. Do not resist the time and the circumstance — flexibility brings gain.",
-      "image_en": "Thunder in the middle of the lake; the wise withdraw to rest when evening comes."
+      "image_en": "Thunder in the middle of the lake; the wise withdraw to rest when evening comes.",
+      "lines_en": [
+        "The first NINE, undivided, shows us one changing the object of his pursuit; but if he be firm and correct, there will he good fortune. Going beyond (his own) gate to find associates, he will achieve merit.",
+        "The second SIX, divided, shows us one who cleaves to the little boy, and lets go the man of age and experience.",
+        "The third SIX, divided, shows us one who cleaves to the man of age and experience, and lets go. the little boy. Such following will get what it seeks; but it will be advantageous to adhere to what is firm and correct.",
+        "The fourth NINE, undivided, shows us one followed and obtaining (adherents). Though he be firm and correct, there will be evil. If he be sincere (however) in his course, and make that evident, into what error will he fall?",
+        "The fifth NINE, undivided, shows us (the ruler) sincere in (fostering all) that is excellent. There will be good fortune.",
+        "The topmost SIX, divided, shows us (that sincerity) firmly held and clung to, yea, and bound fast. (We see) the king with it presenting his offerings on the western mountain."
+      ],
+      "lines_tr": [
+        "Görev değişir: kapından çık, karışık toplulukta bile ilkeli kal — çaba boşa gitmez.",
+        "Küçük çocuğa bağlanan güçlü adamı kaybeder; iki bağ birden tutulmaz.",
+        "Güçlü adama bağlanan çocuğu bırakır; aradığını bulur — doğrulukta kalmak yine de şarttır.",
+        "İzleyenler artar, kazanç büyür; ama doğruluktan saparsan talih bile uğursuzlaşır. İçtenlik yolu aydın tutar.",
+        "İyiye içtenlikle bağlılık: talih ondadır.",
+        "Bağlılık zorla mühürlenir, iple sarılır; kral Batı Dağı'nda kurban sunar — bağın doruğu adanmışlıktır."
+      ]
     },
     {
       "number": 18,
@@ -330,7 +630,23 @@
       "judgment_tr": "İhmal edilmiş şeyler çürümüş; onarım zamanı. Cesaretle üstüne git: bozulmayı düzeltmek yüce başarı getirir.",
       "image_tr": "Dağın eteğinde rüzgar; bilge kişi halkı canlandırır ve ruhlarını besler.",
       "judgment_en": "What was neglected has decayed; it is time to repair. Take it on with courage: mending what has spoiled brings supreme success.",
-      "image_en": "Wind at the foot of the mountain; the wise revive the people and nourish their spirit."
+      "image_en": "Wind at the foot of the mountain; the wise revive the people and nourish their spirit.",
+      "lines_en": [
+        "The first SIX, divided, shows (a son) dealing with the troubles caused by his father. If he be an (able) son, the father will escape the blame of having erred. The position is perilous, but there will be good fortune in the end.",
+        "The second NINE, undivided, shows (a son) dealing with the troubles caused by his mother. He should not (carry) his firm correctness (to the utmost).",
+        "The third NINE, undivided, shows (a son) dealing with the troubles caused by his father. There may be some small occasion for repentance, but there will not be any great error.",
+        "The fourth SIX, divided, shows (a son) viewing indulgently the troubles caused by his father. If he go forward, he will find cause to regret it.",
+        "The fifth SIX, divided, shows (a son) dealing with the troubles caused by his father. He obtains the praise of using (the fit instrument for his work).",
+        "The sixth NINE, undivided, shows us one who does not serve either king or feudal lord, but in a lofty spirit prefers (to attend to) his own affairs."
+      ],
+      "lines_tr": [
+        "Babanın bozduğunu evlat onarır: ehil oğul varsa geçmişin kusuru silinir; tehlike sonunda talihe döner.",
+        "Ananın bozduğunu onarırken katı olma; ölçülü doğruluk yeter.",
+        "Babanın bozduğunu onarırken küçük pişmanlıklar olur ama büyük kusur doğmaz.",
+        "Bozulmayı hoş görüp uzatan, ilerledikçe utanç bulur.",
+        "Babanın bozduğunu onarmak övgüyle taçlanır: geçmişi düzelten ad kazanır.",
+        "Krala da prense de hizmet etmez; kendi işini yüceltir — onarımın en yüksek hali kendi düzenini kurmaktır."
+      ]
     },
     {
       "number": 19,
@@ -343,7 +659,23 @@
       "judgment_tr": "Büyüme ve yükseliş yaklaşıyor; fırsat penceresi açık ama sonsuz değil. Şimdi cömertçe ilerle, sekizinci ayı unutma.",
       "image_tr": "Gölün üstünde yer; bilge kişi öğretme arzusunda tükenmez, halkı taşımada sınırsızdır.",
       "judgment_en": "Growth and rise are approaching; the window is open but not endless. Advance generously now, and do not forget the eighth month.",
-      "image_en": "Earth above the lake; the wise are inexhaustible in the will to teach, boundless in supporting people."
+      "image_en": "Earth above the lake; the wise are inexhaustible in the will to teach, boundless in supporting people.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject advancing in company (with the subject of the second line). Through his firm correctness there will be good fortune.",
+        "The second NINE, undivided, shows its subject advancing in company (with the subject of the first line). There will be good fortune; (advancing) will be in every way advantageous.",
+        "The third SIX, divided, shows one well pleased (indeed) to advance, (but whose action) will be in no way advantageous. If he become anxious about it (however), there will be no error.",
+        "The fourth SIX, divided, shows one advancing in the highest mode. There will be no error.",
+        "The fifth SIX, divided, shows the advance of wisdom, such as befits the great ruler. There will be good fortune.",
+        "The sixth SIX, divided, shows the advance of honesty and generosity. There will be good fortune, and no error."
+      ],
+      "lines_tr": [
+        "Ortak yaklaşım: doğrulukla yaklaşan talihlidir.",
+        "Ortak yaklaşım talih getirir; hiçbir yönde kazançsız kalmaz.",
+        "Tatlı dille yaklaşmak kazanç getirmez; ama yanlışı dert edinen kusurdan kurtulur.",
+        "Tam yerinde, kusursuz bir yaklaşım: konum ehline denk düşer.",
+        "Bilgece yaklaşım: büyük hükümdara yakışan, işi ehline bırakmaktır — talih ondadır.",
+        "Cömert ve içten yaklaşım: talih getirir, kusur bırakmaz."
+      ]
     },
     {
       "number": 20,
@@ -356,7 +688,23 @@
       "judgment_tr": "Gözlemleme ve görülme zamanı: kule üstünden bak, geniş gör. İçsel ciddiyetin, çevrene güven veren bir örnek olsun.",
       "image_tr": "Yeryüzünde rüzgar eser; eski krallar dünyayı dolaşıp halkı gözler, öğretiyi kurar.",
       "judgment_en": "A time of observing and of being seen: look out from the tower, see widely. Let your inner seriousness be an example that steadies others.",
-      "image_en": "Wind blows over the earth; the ancient kings travelled the land, watched the people, and set the teaching."
+      "image_en": "Wind blows over the earth; the ancient kings travelled the land, watched the people, and set the teaching.",
+      "lines_en": [
+        "The first SIX, divided, shows the looking of a lad;--not blamable in men of inferior rank, but matter for regret in superior men.",
+        "The second SIX, divided, shows one peeping out from a door. It would be advantageous if it were (merely) the firm correctness of a female.",
+        "The third SIX, divided, shows one looking at (the course of) his own life, to advance or recede (accordingly).",
+        "The fourth SIX, divided, shows one contemplating the glory of the kingdom. It will be advantageous for him, being such as he is, (to seek) to be a guest of the king.",
+        "The fifth NINE, undivided, shows its subject contemplating his own life(-course). A superior man, he will (thus) fall into no error.",
+        "The sixth NINE, undivided, shows its subject contemplating his character to see if it be indeed that of a superior man. He will not fall into error."
+      ],
+      "lines_tr": [
+        "Çocuğun bakışı: küçük insana yakışır, soylu insana utançtır — yüzeysel bakış dar kalır.",
+        "Kapı aralığından gözetleme: kadına yeterli sayılır ama geniş iş görmeye yetmez.",
+        "Kendi hayatına bakıp ilerlemeye ya da çekilmeye karar vermek: dönüm noktası öz-bakıştan geçer.",
+        "Ülkenin ışığına bakmak: hükümdara konuk olmak kazançlıdır — parlaklığı yerinde incele.",
+        "Kendi hayatına bak: soylu insanın öz-denetimi kusuru önler.",
+        "Başkaları onun hayatına bakar: örnek olana kusur yazılmaz — bakılan da sorumluluk taşır."
+      ]
     },
     {
       "number": 21,
@@ -369,7 +717,23 @@
       "judgment_tr": "Aradaki engel ancak kararlı bir ısırışla kalkar. Sorunu açıkça adlandır, adaletle ve netlikle kes.",
       "image_tr": "Gök gürültüsü ve şimşek; eski krallar cezaları netleştirip yasaları ilan etti.",
       "judgment_en": "The obstacle between is removed only by a decisive bite. Name the problem plainly, and cut through it with justice and clarity.",
-      "image_en": "Thunder and lightning; the ancient kings made penalties clear and proclaimed the laws."
+      "image_en": "Thunder and lightning; the ancient kings made penalties clear and proclaimed the laws.",
+      "lines_en": [
+        "The first NINE, undivided, shows one with his feet in the stocks and deprived of his toes. There will be no error.",
+        "The second SIX, divided, shows one biting through the soft flesh, and (going on to) bite off the nose. There will be no error.",
+        "The third SIX, divided, shows one gnawing dried flesh, and meeting with what is disagreeable. There will be occasion for some small regret, but no (great) error.",
+        "The fourth NINE, undivided, shows one gnawing the flesh dried on the bone, and getting the pledges of money and arrows. It will be advantageous to him to realise the difficulty of his task and be firm,--in which case there will be good fortune.",
+        "The fifth SIX, divided, shows one gnawing at dried flesh, and finding the yellow gold. Let him be firm and correct, realising the peril (of his position). There will be no error.",
+        "The sixth NINE, undivided, shows one wearing the cangue, and deprived of his cars. There will be evil."
+      ],
+      "lines_tr": [
+        "Ayakları tomruğa vurulur, parmakları kaybolur; küçük cezanın erken gelmesi büyük suçu önler.",
+        "Yumuşak eti ısırırken burnu batırır: ceza kolay hedefte aşırıya kaçar ama kusur büyük değildir.",
+        "Kurutulmuş et ısırırken zehre rastlar: eski hesap küçük utanç doğurur, kusur büyümez.",
+        "Kemikli kuru eti ısırır, altın ok bulur: zorlukta doğru kalmak ödülü çıkarır.",
+        "Kuru eti ısırır, sarı altın bulur: tehlikeyi bilerek doğru kalan kusursuz çıkar.",
+        "Boyunduruk kulakları örter: uyarıyı duymayan sonunda kendini kaybeder."
+      ]
     },
     {
       "number": 22,
@@ -382,7 +746,23 @@
       "judgment_tr": "Biçim ve güzellik önemlidir ama özü taşımalıdır. Küçük işlerde süsleme yeterli; büyük kararlar öz ister.",
       "image_tr": "Dağın eteğinde ateş; bilge kişi günlük işleri aydınlatır ama davaları süse boğmaz.",
       "judgment_en": "Form and beauty matter, but they must carry substance. Ornament is enough for small matters; great decisions demand essence.",
-      "image_en": "Fire at the foot of the mountain; the wise light up daily affairs but do not dress up disputes."
+      "image_en": "Fire at the foot of the mountain; the wise light up daily affairs but do not dress up disputes.",
+      "lines_en": [
+        "The first NINE, undivided, shows one adorning (the way of) his feet. He can discard a carriage and walk on foot.",
+        "The second SIX, divided, shows one adorning his beard.",
+        "The third NINE, undivided, shows its subject with the appearance of being adorned and bedewed (with rich favours). But let him ever maintain his firm correctness, and there will be good fortune.",
+        "The fourth SIX, divided, shows one looking as if adorned, but only in white. As if (mounted on) a white horse, and furnished with wings, (he seeks union with the subject of the first line), while (the intervening third pursues), not as a robber, but intent on a matrimonial alliance.",
+        "The fifth SIX, divided, shows its subject adorned by (the occupants of) the heights and gardens. He bears his roll of silk, small and slight. He may appear stingy; but there will be good fortune in the end.",
+        "The sixth NINE, undivided, shows one with white as his (only) ornament. There will be no error."
+      ],
+      "lines_tr": [
+        "Ayaklarını süsler, arabayı bırakıp yürür: gösterişten önce kendi adımı.",
+        "Sakalını süsler: süs ancak taşıyanla birlikte hareket ederse anlam kazanır.",
+        "Süslü ve parlak: sürekli doğruluk talihi korur — cila kalıcılık değildir.",
+        "Süs mü sadelik mi? Beyaz atlı gelen yağmacı değil dünürdür; kuşku yersizdir.",
+        "Tepedeki bahçede süs: hediyesi küçücük görünse de sonunda talih gelir — öz, kumaştan değerlidir.",
+        "Beyaz süs: süssüzlük en yüksek süstür, kusur bırakmaz."
+      ]
     },
     {
       "number": 23,
@@ -395,7 +775,23 @@
       "judgment_tr": "Çözülme dönemi: şimdi harekete geçme zamanı değil. Yapı soyuluyor; sağlam olanı koru, dalgayı bekle.",
       "image_tr": "Dağ yere yaslanır; üsttekiler ancak temeli cömertçe sağlamlaştırarak güvence bulur.",
       "judgment_en": "A season of coming apart: this is not the moment to act. The structure is being stripped; protect what is sound and wait out the wave.",
-      "image_en": "The mountain rests on the earth; those above find safety only by making the foundation generous."
+      "image_en": "The mountain rests on the earth; those above find safety only by making the foundation generous.",
+      "lines_en": [
+        "The first SIX, divided, shows one overturning the couch by injuring its legs. (The injury will go on to) the destruction of (all) firm correctness, and there will be evil.",
+        "The second SIX, divided, shows one overthrowing the couch by injuring its frame. (The injury will go on to) the destruction of (all) firm correctness, and there will be evil.",
+        "The third SIX, divided, shows its subject among the overthrowers; but there will be no error.",
+        "The fourth SIX, divided, shows its subject having overthrown the couch, and (going to injure) the skin (of him who lies on it). There will be evil.",
+        "The fifth SIX, divided, shows (its subject leading on the others like) a string of fishes, and (obtaining for them) the favour that lights on the inmates of the palace. There will be advantage in every way.",
+        "The topmost NINE, undivided, shows its subject (as) a great fruit which has not been eaten. The superior man finds (the people again) as a chariot carrying him. The small men (by their course) overthrow their own dwellings."
+      ],
+      "lines_tr": [
+        "Yatağın ayağı soyulur: çürüme alttan başlar — doğruyu görmezden gelmek felakettir.",
+        "Yatağın gövdesi soyulur: destek kalmadan ısrar, ayrım gözetmeyen kayıptır.",
+        "Soyulanların arasında tek başına bağ kurar: çevresine rağmen doğruya bağlanan kusurdan kurtulur.",
+        "Yatak deriye dayandı: zarar tene ulaştı — felaket artık yakındır.",
+        "Balık dizisi gibi sıraya girer, saray kadınlarıyla lütuf taşır: teslimiyet düzene dönüşürse her şey kazanca döner.",
+        "En büyük meyve yenmeden kalır: soylu insan arabayı alır, küçük insan kulübesini de soyar — çöküşte tohum saklıdır."
+      ]
     },
     {
       "number": 24,
@@ -408,7 +804,23 @@
       "judgment_tr": "Dönüm noktası: ışık geri dönüyor. Zorlanma olmadan doğal bir yeniden doğuş; yedinci günde dönüş gelir.",
       "image_tr": "Yerin içinde gök gürültüsü; eski krallar gündönümünde kapıları kapatıp dinlendi.",
       "judgment_en": "The turning point: the light is returning. A natural rebirth with no forcing; the return comes on the seventh day.",
-      "image_en": "Thunder within the earth; the ancient kings shut the gates at the solstice and rested."
+      "image_en": "Thunder within the earth; the ancient kings shut the gates at the solstice and rested.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject returning (from an error) of no great extent, which would not proceed to anything requiring repentance. There will be great good fortune.",
+        "The second SIX, divided, shows the admirable return (of its subject). There will be good fortune.",
+        "The third SIX, divided, shows one who has made repeated returns. The position is perilous, but there will be no error.",
+        "The fourth SIX, divided, shows its subject moving right in the centre (among those represented by the other divided lines), and yet returning alone (to his proper path).",
+        "The fifth SIX, divided, shows the noble return of its subject. There will be no ground for repentance.",
+        "The topmost SIX, divided, shows its subject all astray on the subject of returning. There will be evil. There will be calamities and errors. If with his views he put the hosts in motion, the end will be a great defeat, whose issues will extend to the ruler of the state. Even in ten years he will not be able to repair the disaster."
+      ],
+      "lines_tr": [
+        "Yoldan uzaklaşmadan dönüş: pişmanlığa varmadan dönen en yüksek talihi bulur.",
+        "Güzel bir dönüş: iyiye boyun eğerek dönmek talihlidir.",
+        "Tekrar tekrar dönüş: tehlikelidir ama kusur yazılmaz — bocalama da yolun parçasıdır.",
+        "Ortada yürürken tek başına dönüş: kalabalık ortasında yolunu bilen döner.",
+        "Soylu bir dönüş: kendini sınayarak dönen pişmanlık bırakmaz.",
+        "Şaşkın dönüş: yolu kaybetmiş dönüş felaket getirir; orduyla çıkılırsa hükümdar bile yenilir, on yıl toparlanamaz."
+      ]
     },
     {
       "number": 25,
@@ -421,7 +833,23 @@
       "judgment_tr": "Beklentisiz, hesapsız doğruluk en güçlü koruyucudur. İçgüdünle uyumlu davran; kurnazlık şanssızlık getirir.",
       "image_tr": "Göğün altında gök gürültüsü dolaşır; eski krallar mevsime uygun biçimde her şeyi besledi.",
       "judgment_en": "Uncalculating, unexpectant honesty is the strongest protection. Act in accord with your instinct; cleverness brings misfortune.",
-      "image_en": "Thunder rolls beneath heaven; the ancient kings nourished all things in keeping with the season."
+      "image_en": "Thunder rolls beneath heaven; the ancient kings nourished all things in keeping with the season.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject free from all insincerity. His advance will be accompanied with good fortune.",
+        "The second SIX, divided, shows one who reaps without having ploughed (that he might reap), and gathers the produce of his third year's fields without having cultivated them the first year for that end. To such a one there will be advantage in whatever direction he may move.",
+        "The third SIX, divided, shows calamity happening to one who is free from insincerity;--as in the case of an ox that has been tied up. A passer by finds it (and carries it off), while the people in the neighbourhood have the calamity (of being accused and. apprehended).",
+        "The fourth NINE, undivided, shows (a case) in which, if its subject can remain firm and correct, there will be no error.",
+        "The fifth NINE, undivided, shows one who is free from insincerity, and yet has fallen ill. Let him not use medicine, and he will have occasion for joy (in his recovery).",
+        "The topmost NINE, undivided, shows its subject free from insincerity, yet sure to fall into error, if he take action. (His action) will not be advantageous in any way."
+      ],
+      "lines_tr": [
+        "Yalın içtenlikle ilerle: hesapsız doğruluk talih getirir.",
+        "Tarlayı sürerken hasadı hesaplama, üçüncü yılın verimini bekleme; o zaman ilerlemek kazançlıdır.",
+        "Beklenmedik bela: bağlı inek yolcunun eline geçer, kasabalı suçlanır — kusursuz da kayba uğrayabilir.",
+        "Doğru kalabilen kusurdan uzak durur.",
+        "Beklenmedik hastalığa ilaç arama; kendi seyrinde geçer — müdahale bazen zehirdir.",
+        "İçtenlik bile vakitsizce harekete dönerse felaket getirir; ilerlemenin yararı yoktur."
+      ]
     },
     {
       "number": 26,
@@ -434,7 +862,23 @@
       "judgment_tr": "Büyük güç dizginleniyor: enerji birikiyor. Evde durma, alana çık; birikmiş bilgelik büyük işler başartır.",
       "image_tr": "Göğün ortasında dağ; bilge kişi geçmişin sözlerini ve işlerini öğrenerek karakterini biriktirir.",
       "judgment_en": "Great power is being reined in: energy is accumulating. Do not stay home, go out into the field; stored wisdom accomplishes great things.",
-      "image_en": "Mountain in the midst of heaven; the wise build character by learning the words and deeds of the past."
+      "image_en": "Mountain in the midst of heaven; the wise build character by learning the words and deeds of the past.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject in a position of peril. It will be advantageous for him to stop his advance.",
+        "The second NINE, undivided, shows a carriage with the strap under it removed.",
+        "The third NINE, undivided, shows its subject urging his way with good horses. It will be advantageous for him to realise the difficulty (of his course), and to be firm and correct, exercising himself daily in his charioteering and methods of defence; then there will be advantage in whatever direction he may advance.",
+        "The fourth six, divided, shows the young bull, (and yet) having the piece of wood over his horns. There will be great good fortune.",
+        "The fifth six, divided, shows the teeth of a castrated hog. There will be good fortune.",
+        "The sixth NINE, undivided, shows its subject (as) in command of the firmament of heaven. There will be progress."
+      ],
+      "lines_tr": [
+        "Tehlike var: durmasını bil — zapt edilen güç erken harcanmaz.",
+        "Arabanın dingil bağları çözülür: ilerleyemezsin ama bu durak birikimdir.",
+        "İyi atlar kovalar: zorluğu bilerek günlük talimle savunmayı öğren; o zaman ilerlemek kazançlıdır.",
+        "Genç boğanın boynuzuna tahta vurulur: gücü zapt etmenin en erken hali en talihlisidir.",
+        "İğdiş edilmiş domuzun dişi: saldırganlığı kaynağında dönüştürmek talih getirir.",
+        "Göğün geniş yolu açılır: zapt edilen güç vakti gelince engelsiz akar."
+      ]
     },
     {
       "number": 27,
@@ -447,7 +891,23 @@
       "judgment_tr": "Neyi beslediğine bak: bedenini, zihnini ve çevreni ne ile doyuruyorsun? Ağzından çıkana ve içine aldığına dikkat et.",
       "image_tr": "Dağın eteğinde gök gürültüsü; bilge kişi sözlerinde dikkatli, yiyip içmesinde ölçülüdür.",
       "judgment_en": "Look at what you are feeding: with what do you fill your body, your mind, your surroundings? Watch what comes out of your mouth and what goes in.",
-      "image_en": "Thunder at the foot of the mountain; the wise are careful in speech and measured in eating and drinking."
+      "image_en": "Thunder at the foot of the mountain; the wise are careful in speech and measured in eating and drinking.",
+      "lines_en": [
+        "The first NINE, undivided, (seems to be thus addressed), 'You leave your efficacious tortoise, and look at me till your lower jaw hangs down.' There will be evil.",
+        "The second SIX, divided, shows one looking downwards for nourishment, which is contrary to what is proper; or seeking it from the height (above), advance towards which will lead to evil.",
+        "The third SIX, divided, shows one acting contrary to the method of nourishing. However firm he may be, there will be evil. For ten years let him not take any action, (for) it will not be in any way advantageous.",
+        "The fourth SIX, divided, shows one looking downwards for (the power to) nourish. There will be good fortune. Looking with a tiger's downward unwavering glare, and with his desire that impels him to spring after spring, he will fall into no error.",
+        "The fifth SIX, divided, shows one acting contrary to what is regular and proper; but if he abide in firmness, there will be good fortune. He should not, (however, try to) cross the great stream.",
+        "The sixth NINE, undivided, shows him from whom comes the nourishing. His position is perilous, but there will be good fortune. It will be advantageous to cross the great stream."
+      ],
+      "lines_tr": [
+        "Kendi kaplumbağanı bırakıp benim lokmama bakıyorsun: gıptayla beslenen aç kalır.",
+        "Tepeden beslenme bekleyip yoldan sapan, ilerledikçe felaket bulur.",
+        "Beslenme düzenine aykırı davranan on yıl kımıldayamaz; hiçbir yönde kazanç yoktur.",
+        "Tepeden beslenmek burada talihlidir: kaplan gibi sabit ve aç bakan, ehil desteği çekmekte kusursuzdur.",
+        "Düzenden sapmış olsa da doğrulukta sebat eden talihi bulur; ama büyük nehri geçmeye kalkmasın.",
+        "Beslenmenin kaynağı olmak: sorumluluğun bilincinde olana tehlike bile talihe döner; büyük nehir geçilir."
+      ]
     },
     {
       "number": 28,
@@ -460,7 +920,23 @@
       "judgment_tr": "Kiriş bükülüyor: yük taşıma sınırında. Olağanüstü zamanlar olağanüstü kararlar ister; korkusuzca ama tek başına dur.",
       "image_tr": "Göl ağaçları aşar; bilge kişi tek başına durur, korkmaz; dünyadan çekilir, üzülmez.",
       "judgment_en": "The ridgepole bends: you are at the limit of what you can carry. Extraordinary times demand extraordinary decisions; stand alone, without fear.",
-      "image_en": "The lake rises above the trees; the wise stand alone unafraid, withdraw from the world without sorrow."
+      "image_en": "The lake rises above the trees; the wise stand alone unafraid, withdraw from the world without sorrow.",
+      "lines_en": [
+        "The first SIX, divided, shows one placing mats of the white mâo grass under things set on the ground. There will be no error.",
+        "The second NINE, undivided, shows a decayed willow producing shoots, or an old husband in possession of his young wife. There will be advantage in every way.",
+        "The third NINE, undivided, shows a beam that is weak. There will be evil.",
+        "The fourth NINE, undivided, shows a beam curving upwards. There will be good fortune. If (the subject of it) looks for other (help but that of line one), there will be cause for regret.",
+        "The fifth NINE, undivided, shows a decayed willow producing flowers, or an old wife in possession of her young husband. There will be occasion neither for blame nor for praise.",
+        "The topmost SIX, divided, shows its subject with extraordinary (boldness) wading through a stream, till the water hides the crown of his head. There will be evil, but no ground for blame."
+      ],
+      "lines_tr": [
+        "Altına beyaz hasır sermek: aşırı yükte bile özenli temkin kusur bırakmaz.",
+        "Kuru söğüt filiz verir, yaşlı adam genç eş alır: tükenmiş görünende yenilenme saklıdır.",
+        "Kiriş ortasından çöker: taşınamayan yükte ısrar felakettir.",
+        "Kiriş yukarı kavis alır: destek gelince yük taşınır; ama desteğe hesap karışırsa utanç doğar.",
+        "Kuru söğüt çiçek açar, yaşlı kadın genç koca alır: ne suç ne övgü — meyvesiz gösteriş.",
+        "Suyu geçerken sular başını aşar: fedakârlık felakete varsa da adanmışlığa kusur yazılmaz."
+      ]
     },
     {
       "number": 29,
@@ -473,7 +949,23 @@
       "judgment_tr": "Tehlike üstüne tehlike: suyun yaptığını yap, akmaya devam et. Kalbin doğruysa, geçit her seferinde bulunur.",
       "image_tr": "Su kesintisiz akar; bilge kişi erdemde süreklilikle yürür ve öğretme işini tekrarlar.",
       "judgment_en": "Danger upon danger: do what water does, keep flowing. If the heart is true, the crossing is found every time.",
-      "image_en": "Water flows on without interruption; the wise walk in unbroken virtue and repeat the work of teaching."
+      "image_en": "Water flows on without interruption; the wise walk in unbroken virtue and repeat the work of teaching.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject in the double defile, and (yet) entering a cavern within it. There will be evil.",
+        "The second NINE, undivided, shows its subject in all the peril of the defile. He will, however, get a little (of the deliverance) that he seeks.",
+        "The third SIX, divided, shows its subject, whether he comes or goes ( =descends or ascends), confronted by a defile. All is peril to him and unrest. (His endeavours) will lead him into the cavern of the pit. There should be no action (in such a case).",
+        "The fourth SIX, divided, shows its subject (at a feast), with (simply) a bottle of spirits, and a subsidiary basket of rice, while (the cups and bowls) are (only) of earthenware. He introduces his important lessons (as his ruler's) intelligence admits. There will in the end be no error.",
+        "The fifth NINE, undivided, shows the water of the defile not yet full, (so that it might flow away); but order will (soon) be brought about. There will be no error.",
+        "The topmost SIX, divided, shows its subject bound with cords of three strands or two strands, and placed in the thicket of thorns. But in three years he does not learn the course for him to pursue. There will be evil."
+      ],
+      "lines_tr": [
+        "Çukurun içinde çukura düşmek: tehlikeye alışmak en derin kayıptır.",
+        "Çukurda tehlike içinde küçük kazanımla yetin; büyük çıkışı zorlama.",
+        "Her adım çukur: çıkış görünmüyorsa kımıldama — çırpınmak derinleştirir.",
+        "Bir testi şarap, iki kap yemek, pencereden uzatılan sade sunu: darlıkta içtenlik töreni aşar; sonunda kusur kalmaz.",
+        "Çukur ağzına kadar dolmaz, su düzlüğü bulunca durulur: taşmadan dolan kusursuz çıkar.",
+        "İple bağlanmış, dikenler arasına kapatılmış: üç yıl yolu bulamaz — tehlikede yön kaybının bedeli budur."
+      ]
     },
     {
       "number": 30,
@@ -486,7 +978,23 @@
       "judgment_tr": "Işık bir şeye tutunarak parlar: alevin gibi sen de doğru olana tutun. Berraklık ve bağlılık başarı getirir.",
       "image_tr": "Parlaklık iki kez yükselir; büyük insan aydınlığıyla dört yönü aydınlatır.",
       "judgment_en": "Light shines by clinging to something: like your flame, cling to what is true. Clarity and attachment bring success.",
-      "image_en": "Brightness rises twice; the great person lights the four directions with their clarity."
+      "image_en": "Brightness rises twice; the great person lights the four directions with their clarity.",
+      "lines_en": [
+        "The first NINE, undivided, shows one ready to move with confused steps. But he treads at the same time reverently, and there will be no mistake.",
+        "The second SIX, divided, shows its subject in his place in yellow. There will be great good fortune.",
+        "The third NINE, undivided, shows its subject in a position like that of the declining sun. Instead of playing on his instrument of earthenware, and singing to it, he utters the groans of an old man of eighty. There will be evil.",
+        "The fourth NINE, undivided, shows the manner of its subject's coming. How abrupt it is, as with fire, with death, to be rejected (by all)!",
+        "The fifth SIX, divided, shows its subject as one with tears flowing in torrents, and groaning in sorrow. There will be good fortune.",
+        "The topmost NINE, undivided, shows the king employing its subject in his punitive expeditions. Achieving admirable (merit), he breaks (only) the chiefs (of the rebels). Where his prisoners were not their associates, he does not punish. There will be no error."
+      ],
+      "lines_tr": [
+        "Adımlar karışık ama saygı yerinde: dikkatli başlangıç kusuru önler.",
+        "Sarı ışık: ölçülü parlaklık en yüksek talihtir.",
+        "Batan günün ışığında testi çalıp şarkı söylemeyen, yaşlılığına ağıt yakar: geçen vakte direnmek felakettir.",
+        "Ansızın parlayıp alev gibi sönen: yanışı da terk edilişi de ani olur.",
+        "Gözyaşı sel, keder derin — ama tam da bu yas dönüşü getirir: talih.",
+        "Kral sefere çıkar: elebaşılar alınır, sürüklenenler bağışlanır — ayrım gözeten sertlik kusursuzdur."
+      ]
     },
     {
       "number": 31,
@@ -499,7 +1007,23 @@
       "judgment_tr": "Karşılıklı çekim: kalpler açık, etki karşılıklı. Kur yapma, evlilik, ortaklık için uğurlu; içtenlik esastır.",
       "image_tr": "Dağın üstünde göl; bilge kişi insanları kabul edişindeki boşlukla (alçakgönüllülükle) etkiler.",
       "judgment_en": "Mutual attraction: hearts are open, influence runs both ways. Auspicious for courtship, marriage, partnership; sincerity is essential.",
-      "image_en": "Lake above the mountain; the wise influence people through the emptiness (the humility) of their acceptance."
+      "image_en": "Lake above the mountain; the wise influence people through the emptiness (the humility) of their acceptance.",
+      "lines_en": [
+        "The first six, divided, shows one moving his great toes.",
+        "The second SIX, divided, shows one moving the calves of his leg. There will be evil. If he abide (quiet in his place), there will be good fortune.",
+        "The third NINE, undivided, shows one moving his thighs, and keeping close hold of those whom he follows. Going forward (in this way) will cause regret.",
+        "The fourth NINE, undivided, shows that firm correctness whi.ch will lead to good fortune, and prevent all occasion for repentance. If its subject be unsettled in his movements, (only) his friends will follow his purpose.",
+        "The fifth NINE, undivided, shows one moving the flesh along the spine above the heart. There will be no occasion for repentance.",
+        "The sixth six, divided, shows one moving his jaws and tongue."
+      ],
+      "lines_tr": [
+        "Etki ayak başparmağında: niyet var, adım yok — henüz kimse kımıldamaz.",
+        "Etki baldırda: erken davranış felaket, yerinde bekleyiş talihtir.",
+        "Etki kalçada: peşinden gitmeye ayarlı olmak utanç getirir — ilerleyiş kendi kararın olmalı.",
+        "Kararlı doğruluk pişmanlığı siler; ama dur durak bilmeyen gel-gitli düşünceye yalnız yakın dostlar uyar.",
+        "Etki sırtta: iradenin dışında kalan yüzeysel etki pişmanlık bırakmaz.",
+        "Etki çenede ve dilde: yalnız söze dökülen etki en sığ olandır."
+      ]
     },
     {
       "number": 32,
@@ -512,7 +1036,23 @@
       "judgment_tr": "Kalıcılık başarı getirir: değişim içinde değişmeyen ilkelerin olsun. Yolunda sebat et, rotanı değiştirme.",
       "image_tr": "Gök gürültüsü ve rüzgar; bilge kişi sağlam durur ve yönünü değiştirmez.",
       "judgment_en": "Endurance brings success: hold principles that do not change within change. Persevere on your path, do not alter your course.",
-      "image_en": "Thunder and wind; the wise stand firm and do not change their direction."
+      "image_en": "Thunder and wind; the wise stand firm and do not change their direction.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject deeply (desirous) of long continuance. Even with firm correctness there will be evil; there will be no advantage in any way.",
+        "The second NINE, undivided, shows all occasion for repentance disappearing.",
+        "The third NINE, undivided, shows one who does not continuously maintain his virtue. There are those who will impute this to him as a disgrace. However firm he may be, there will be ground for regret.",
+        "The fourth NINE, undivided, shows a field where there is no game.",
+        "The fifth SIX, divided, shows its subject continuously maintaining the virtue indicated by it. In a wife this will be fortunate; in a husband, evil.",
+        "The topmost SIX, divided, shows its subject exciting himself to long continuance. There will be evil."
+      ],
+      "lines_tr": [
+        "Süreklilik en başta derinlik ister: hemen kök isteyen ısrar felakettir.",
+        "Pişmanlık kaybolur: gücü konumunu aşanın dengeyi ortada bulmasıyla.",
+        "Erdemine süreklilik veremeyen utanç taşır; nereye varsa aynı sonuç.",
+        "Avlanılacak av olmayan tarlada beklemek: yanlış yerde süreklilik kazandırmaz.",
+        "Erdemi sürekli kılmak: kadına talih olan uysallık, erkeğe kural olursa felakettir — süreklilik role göre değişir.",
+        "Sürekliliği sarsıntıda aramak: yerinde duramayan hep kaybeder."
+      ]
     },
     {
       "number": 33,
@@ -525,7 +1065,23 @@
       "judgment_tr": "Onurlu geri çekilme yenilgi değil stratejidir. Küçük olan güçleniyor; mesafeni koru, öfkeyle değil kararlılıkla uzaklaş.",
       "image_tr": "Göğün altında dağ; bilge kişi küçük insanı öfkeyle değil ciddiyetle uzak tutar.",
       "judgment_en": "An honourable retreat is strategy, not defeat. The small is growing stronger; keep your distance, withdraw with resolve rather than anger.",
-      "image_en": "Mountain beneath heaven; the wise keep the small person at bay with gravity, not with anger."
+      "image_en": "Mountain beneath heaven; the wise keep the small person at bay with gravity, not with anger.",
+      "lines_en": [
+        "The first SIX, divided, shows a retiring tail. The position is perilous. No movement in any direction should be made.",
+        "The second SIX, divided, shows its subject holding (his purpose) fast as if by a (thong made from the) hide of a yellow ox, which cannot be broken.",
+        "The third NINE, undivided, shows one retiring but bound,--to his distress and peril. (If he were to deal with his binders as in) nourishing a servant or concubine, it would be fortunate for him.",
+        "The fourth NINE, undivided, shows its subject retiring notwithstanding his likings. In a superior man this will lead to good fortune; a small man cannot attain to this.",
+        "The fifth NINE, undivided, shows its subject retiring in an admirable way. With firm correctness there will be good fortune.",
+        "The sixth NINE, undivided, shows its subject retiring in a noble way. It will be advantageous in every respect."
+      ],
+      "lines_tr": [
+        "Geri çekilişte kuyrukta kalmak tehlikelidir; hiçbir girişime kalkışma.",
+        "Sarı öküz derisinden kayışla bağlanır: kararlı bağlılığı kimse çözemez.",
+        "Bağlarla dolanmış çekiliş sıkıntılı ve tehlikelidir; hizmetkâr ve cariye beslemekte talih var — büyük iş bekleme.",
+        "Sevdiklerine rağmen çekilmesini bilen soylu insan talihi bulur; küçük insan bunu beceremez.",
+        "Takdire yaraşır bir çekiliş: yerinde ayrılış doğrulukla taçlanır.",
+        "Zenginleşmiş, ferah bir çekiliş: gönül rahatlığıyla ayrılan her yönden kazançlıdır."
+      ]
     },
     {
       "number": 34,
@@ -538,7 +1094,23 @@
       "judgment_tr": "Güç zirvede; ama gerçek güç, doğrulukla birleşendir. Gücünü kurallara uygun kullan, koça dönüşüp çite toslamaktan sakın.",
       "image_tr": "Göğün üstünde gök gürültüsü; bilge kişi görgüye uymayan yolda tek adım atmaz.",
       "judgment_en": "Power is at its peak; but true power is the kind joined to rightness. Use your force within the rules; avoid becoming the ram that butts the fence.",
-      "image_en": "Thunder above heaven; the wise take not one step on a path that does not accord with propriety."
+      "image_en": "Thunder above heaven; the wise take not one step on a path that does not accord with propriety.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject manifesting his strength in his toes. But advance will lead to evil,--most certainly.",
+        "The second NINE, undivided, shows that with firm correctness there will be good fortune.",
+        "The third NINE, undivided, shows, in the case of a small man, one using all his strength; and in the case of a superior man, one whose rule is not to do so. Even with firm correctness the position would be perilous. (The exercise of strength in it might be compared to the case of) a ram butting against a fence, and getting his horns entangled.",
+        "The fourth NINE, undivided, shows (a case in which) firm correctness leads to good fortune, and occasion for repentance disappears. (We see) the fence opened without the horns being entangled. The strength is like that in the wheel-spokes of a large waggon.",
+        "The fifth SIX, divided, shows one who loses his ram(-like strength) in the ease of his position. (But) there will be no occasion for repentance.",
+        "The sixth SIX, divided, shows (one who may be compared to) the ram butting against the fence, and unable either to retreat, or to advance as he would fain do. There will not be advantage in any respect; but if he realise the difficulty (of his position), there will be good fortune."
+      ],
+      "lines_tr": [
+        "Güç ayak parmaklarında: en alttan zorlayan ilerleyiş felaket getirir.",
+        "Doğrulukta kalan güç talih getirir.",
+        "Küçük insan gücünü kullanır, soylu insan kullanmaz; koç çite toslar, boynuzları takılır — gösterilen güç tuzağa dönüşür.",
+        "Doğru kalınca pişmanlık kaybolur: çit açılır, boynuz kurtulur; güç büyük arabanın dingiline vurur.",
+        "Koçunu kolaylıkla kaybeder: yumuşak alanda güce gerek kalmayınca pişmanlık da kalmaz.",
+        "Koç çite toslar: ne geri gider ne ilerler — zorluğu görüp durmasını bilen sonunda talihi bulur."
+      ]
     },
     {
       "number": 35,
@@ -551,7 +1123,23 @@
       "judgment_tr": "Güneş yeryüzünde yükseliyor: hızlı ve kolay ilerleme. Görünürlüğün artıyor; ışığını cömertçe kullan.",
       "image_tr": "Güneş yerin üstüne çıkar; bilge kişi kendi parlak erdemini kendisi aydınlatır.",
       "judgment_en": "The sun rises over the earth: quick and easy progress. Your visibility is growing; use your light generously.",
-      "image_en": "The sun comes out above the earth; the wise themselves brighten their own bright virtue."
+      "image_en": "The sun comes out above the earth; the wise themselves brighten their own bright virtue.",
+      "lines_en": [
+        "The first SIX, divided, shows one wishing to advance, and (at the same time) kept back. Let him be firm and correct, and there will be good fortune. If trust be not reposed in him, let him maintain a large and generous mind, and there will be no error.",
+        "The second SIX, divided, shows its subject with the appearance of advancing, and yet of being sorrowful. If he be firm and correct, there will be good fortune. He will receive this great blessing from his grandmother.",
+        "The third SIX, divided, shows its subject trusted by all (around him). All occasion for repentance will disappear.",
+        "The fourth NINE, undivided, shows its subject with the appearance of advancing, but like a marmot. However firm and correct he may be, the position is one of peril.",
+        "The fifth SIX, divided, shows how all occasion for repentance disappears (from its subject). (But) let him not concern himself about whether he shall fail or succeed. To advance will be fortunate, and in every way advantageous.",
+        "The topmost NINE, undivided, shows one advancing his horns. But he only uses them to punish the (rebellious people of his own) city. The position is perilous, but there will be good fortune. (Yet) however firm and correct he may be, there will be occasion for regret."
+      ],
+      "lines_tr": [
+        "İlerlerken geri itilir: doğru kal; güven gelmese de geniş yürekli sükûnet kusuru önler.",
+        "İlerleyiş hüzünlü ama doğruluk talih getirir; büyük ana-atadan gelen nimet kuşağı bulur.",
+        "Herkes onaylar: ortak güven pişmanlığı siler.",
+        "Sıçan gibi ilerlemek: gizli-saklı ilerleyiş tehlikelidir.",
+        "Pişmanlık kaybolur: kayıp-kazanç hesabını bırak — ilerleyiş kendisi kazançtır.",
+        "Boynuzlarla ilerlemek yalnız kendi şehrini düzeltmeye yarar: sertlik doğru olsa da dar alanda utanç payı taşır."
+      ]
     },
     {
       "number": 36,
@@ -564,7 +1152,23 @@
       "judgment_tr": "Işığını gizleme zamanı: parlaklığını içinde koru, dışarıda ihtiyatlı ol. Zor dönemde sebat, içsel aydınlıkla mümkün.",
       "image_tr": "Işık yerin içine girer; bilge kişi kalabalıkla yaşar, ışığını örter ama yine de parlar.",
       "judgment_en": "A time to hide your light: keep the brightness within, be cautious outside. In a dark season, perseverance is possible through inner clarity.",
-      "image_en": "The light enters the earth; the wise live among the crowd, veil their light, and still shine."
+      "image_en": "The light enters the earth; the wise live among the crowd, veil their light, and still shine.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject, (in the condition indicated by) Ming Î, flying, but with drooping wings. When the superior man (is revolving) his going away, he may be for three days without eating. Wherever he goes, the people there may speak (derisively of him).",
+        "The second SIX, divided, shows its subject, (in the condition indicated by) Ming Î, wounded in the left thigh. He saves himself by the strength of a (swift) horse; and is fortunate.",
+        "The third NINE, undivided, shows its subject, (in the condition indicated by) Ming Î, hunting in the south, and taking the great chief (of the darkness). He should not be eager to make (all) correct (at once).",
+        "The fourth six, divided, shows its subject (just) entered into the left side of the belly (of the dark land). (But) he is able to carry out the mind appropriate (in the condition indicated by) Ming Î, quitting the gate and courtyard (of the lord of darkness).",
+        "The fifth six, divided, shows how the count of K î fulfilled the condition indicated by Ming Î. It will be advantageous to be firm and correct.",
+        "The sixth six, divided, shows the case where there is no light, but (only) obscurity. (Its subject) had at first ascended to (the top of) the sky; his future shall be to go into the earth."
+      ],
+      "lines_tr": [
+        "Yaralı ışık uçarken kanadını indirir; soylu insan üç gün aç yürür — gidecek yeri vardır, ev sahibi söylenir.",
+        "Sol kalçadan yaralanır ama güçlü atla kurtulur: talih yardımcının gücündedir.",
+        "Güneyde avda elebaşını yakalar; hemen düzeltmeye kalkma — karanlık çağın hastalığı acele kaldırılmaz.",
+        "Sol karna girer, karanlık yönetimin kalbine ulaşır ve kapıdan avluya çıkar: içyüzünü gören terk eder.",
+        "Prens Çi'nin duruşu: karanlıkta aklını gizleyen, doğruluğunu kaybetmez.",
+        "Önce göğe yükselen, sonra yere gömülen karanlık: aydınlığı yutan sonunda kendi kuralını da yutar."
+      ]
     },
     {
       "number": 37,
@@ -577,7 +1181,23 @@
       "judgment_tr": "Temel, ocaktır: aile ve yakın çevre düzeni her şeyin başı. Herkes rolünü sadakatle üstlenirse dışarısı da düzelir.",
       "image_tr": "Ateşten çıkan rüzgar; bilge kişinin sözlerinde öz, davranışlarında süreklilik vardır.",
       "judgment_en": "The foundation is the hearth: the order of family and close circle comes first. If each keeps their role faithfully, the outside settles too.",
-      "image_en": "Wind comes out of fire; the wise have substance in their words and constancy in their conduct."
+      "image_en": "Wind comes out of fire; the wise have substance in their words and constancy in their conduct.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject establishing restrictive regulations in his household Occasion for repentance will disappear.",
+        "The second SIX, divided, shows its subject taking nothing on herself, but in her central place attending to the preparation of the food. Through her firm correctness there will be good fortune.",
+        "The third NINE, undivided, shows its subject (treating) the members of the household with stern severity. There will be occasion for repentance, there will be peril, (but) there will (also) be good fortune. If the wife and children were to be smirking and chattering, in the end there would be occasion for regret.",
+        "The fourth SIX, divided, shows its subject enriching the family. There will be great good fortune.",
+        "The fifth NINE, undivided, shows the influence of the king extending to his family. There need be no anxiety; there will be good fortune.",
+        "The topmost NINE, undivided, shows its subject possessed of sincerity and arrayed in majesty. In the end there will be good fortune."
+      ],
+      "lines_tr": [
+        "Evin içinde kurallı düzen: baştan konan sınır pişmanlığı siler.",
+        "Kendi başına iş kovalamaz, içeride yemeği düzenler: görünmez emek evin dengesidir — doğruluk talih getirir.",
+        "Ev halkı sertçe azarlanır: aşırılık pişmanlık doğursa da talih kalır; kadın ve çocuk kahkahaya boğulursa sonu utançtır.",
+        "Evi zenginleştiren: bereketin ölçüsü büyük talihtir.",
+        "Kral gibi evine yaklaşan: korku salmadan sevgiyle yönetmek talih getirir.",
+        "İçtenlik ve vakar: sonunda talih, ev düzeninin son sözüdür."
+      ]
     },
     {
       "number": 38,
@@ -590,7 +1210,23 @@
       "judgment_tr": "Zıtlıklar dönemi: büyük birlik şimdilik mümkün değil ama küçük işlerde uzlaşma olur. Farklılığı düşmanlığa çevirme.",
       "image_tr": "Üstte ateş, altta göl; bilge kişi ortaklık içinde bireyselliğini korur.",
       "judgment_en": "A season of opposites: great unity is not possible for now, but small matters can be reconciled. Do not turn difference into enmity.",
-      "image_en": "Fire above, lake below; the wise keep their individuality within fellowship."
+      "image_en": "Fire above, lake below; the wise keep their individuality within fellowship.",
+      "lines_en": [
+        "The first NINE, undivided, shows that (to its subject) occasion for repentance will disappear. He has lost his horses, but let him not seek for them;--they will return of themselves. Should he meet with bad men, he will not err (in communicating with them).",
+        "The second NINE, undivided, shows its subject happening to meet with his lord in a bye-passage. There will be no error.",
+        "In the third SIX, divided, we see one whose carriage is dragged back, while the oxen in it are pushed back, and he is himself subjected to the shaving of his head and the cutting off of his nose. There is no good beginning, but there will be a good end.",
+        "The fourth NINE, undivided, shows its subject solitary amidst the (prevailing) disunion. (But) he meets with the good man (represented by the first line), and they blend their sincere desires together. The position is one of peril, but there will be no mistake.",
+        "The fifth SIX, divided, shows that (to its subject) occasion for repentance will disappear. With his relative (and minister he unites closely and readily) as if he were biting through a piece of skin. When he goes forward (with this help), what error can there be?",
+        "The topmost NINE, undivided, shows its subject solitary amidst the (prevailing) disunion. (In the subject of the third line, he seems to) see a pig bearing on its back a load of mud, (or fancies) there is a carriage full of ghosts. He first bends his bow against him, and afterwards unbends it, (for he discovers) that he is not an assailant to injure, but a near relative. Going forward, he shall meet with (genial) rain, and there will be good fortune."
+      ],
+      "lines_tr": [
+        "Pişmanlık kaybolur: kaçan atı kovalama, kendi döner; kötü insanı görmek de kusur değildir — ayrılıkta soğukkanlılık.",
+        "Efendisiyle dar sokakta karşılaşır: ters düşmüş yollar yan geçitte buluşur, kusur doğmaz.",
+        "Arabası geri çekilir, öküzü durdurulur, saçı kesilir burnu yaralanır: kötü başlangıcın iyi sonu vardır.",
+        "Ayrılık içinde yalnız kalan, ilk hâliyle içten buluşur: tehlike içinde bile kusur kalmaz.",
+        "Pişmanlık kaybolur: akraba deriyi ısırır gibi içten kenetlenir; ilerleyişin nesi kusur olsun?",
+        "Yalnız gezgin domuzu çamurda, arabayı hayalet dolusu görür; önce yayını gerer, sonra indirir — yağmacı değil dünürdür. Yağmur yağar, talih gelir."
+      ]
     },
     {
       "number": 39,
@@ -603,7 +1239,23 @@
       "judgment_tr": "Yol tıkalı: inatla ittirme, güneybatıya (kolay yola, müttefiklere) dön. Engel, içe bakış ve yeniden yönlenme çağrısıdır.",
       "image_tr": "Dağın üstünde su; bilge kişi kendine döner ve karakterini biçimlendirir.",
       "judgment_en": "The road is blocked: do not push stubbornly, turn to the southwest (the easier way, to allies). Obstruction is a call to look inward and re-aim.",
-      "image_en": "Water above the mountain; the wise turn back to themselves and shape their character."
+      "image_en": "Water above the mountain; the wise turn back to themselves and shape their character.",
+      "lines_en": [
+        "From the first SIX, divided, we learn that advance (on the part of its subject) will lead to (greater) difficulties, while remaining stationary will afford ground for praise.",
+        "The second SIX, divided, shows the minister of the king struggling with difficulty on difficulty, and not with a view to his own advantage.",
+        "The third NINE, undivided, shows its subject advancing, (but only) to (greater) difficulties. He remains stationary, and returns (to his former associates).",
+        "The fourth SIX, divided, shows its subject advancing, (but only) to (greater) difficulties. He remains stationary, and unites (with the subject of the line above).",
+        "The fifth NINE, undivided, shows its subject struggling with the greatest difficulties, while friends are coming to help him.",
+        "The topmost SIX, divided, shows its subject going forward, (only to increase) the difficulties, while his remaining stationary will be (productive of) great (merit). There will be good fortune, and it will be advantageous to meet with the great man."
+      ],
+      "lines_tr": [
+        "İlerlemek zorluğa, durmak övgüye götürür: engel çağında bekleyiş erdemdir.",
+        "Kralın hizmetkârı zorluk üstüne zorlukla boğuşur; kendi çıkarı için değil — kusur yazılmaz.",
+        "İlerlemek zorluğa götürür; geri dönen sevinçle karşılanır.",
+        "İlerlemek zorluğa, durmak dayanışmaya götürür: bekle ve bağ kur.",
+        "En büyük zorlukta dostlar gelir: direnenin yardımı yolda olur.",
+        "İlerlemek zorluğa, dönmek büyümeye götürür: büyük insanı görmek kazançtır — engelin sonunda rehber vardır."
+      ]
     },
     {
       "number": 40,
@@ -616,7 +1268,23 @@
       "judgment_tr": "Düğüm çözülüyor, gerilim boşalıyor. Affet, bağışla ve hızla normale dön; kalan işleri sürüncemede bırakma.",
       "image_tr": "Gök gürültüsü ve yağmur; bilge kişi hataları bağışlar, suçları affeder.",
       "judgment_en": "The knot is loosening, the tension releasing. Forgive, let go, and return quickly to normal; do not leave the remaining matters hanging.",
-      "image_en": "Thunder and rain; the wise pardon mistakes and forgive offences."
+      "image_en": "Thunder and rain; the wise pardon mistakes and forgive offences.",
+      "lines_en": [
+        "The first SIX, divided, shows that its subject will commit no error.",
+        "The second NINE, undivided, shows its subject catch, in hunting, three foxes, and obtain the yellow (= golden) arrows. With firm correctness there will be good fortune.",
+        "The third SIX, divided, shows a porter with his burden, (yet) riding in a carriage. He will (only) tempt robbers to attack him. However firm and correct he may (try to) be, there will be cause for regret.",
+        "(To the subject of) the fourth NINE, undivided, (it is said), 'Remove your toes. Friends will (then) come, between you and whom there will be mutual confidence.'",
+        "The fifth SIX, divided, shows (its subject), the superior man (= the ruler), executing his function of removing (whatever is injurious to the idea of the hexagram), in which case there will he good fortune, and confidence in him will be shown even by the small men.",
+        "In the sixth SIX, divided, we see a feudal prince (with his bow) shooting at a falcon on the top of a high wall, and hitting it. (The effect of his action) will be in every way advantageous."
+      ],
+      "lines_tr": [
+        "Kurtuluşun başında söz gerekmez: kusursuz sükûnet yeter.",
+        "Avda üç tilki vurulur, sarı ok bulunur: gizli fesat temizlenince doğruluk talih getirir.",
+        "Yük taşıyan hamal arabaya kurulursa yağmacıyı davet eder: hak edilmemiş konum saldırı çeker; ısrar utançtır.",
+        "Ayak başparmağından kurtul: uygunsuz bağlar çözülünce güvenilir dost gelir.",
+        "Soylu insan bağını kendi çözer: kurtuluş içeriden gelirse küçük insanlar da çekilir.",
+        "Prens yüksek surun tepesindeki şahini vurur: olgunlaşmış hamle her engeli düşürür."
+      ]
     },
     {
       "number": 41,
@@ -629,7 +1297,23 @@
       "judgment_tr": "Azalma dönemi: sadelik samimiyetle birleşirse kutsanır. İki kap yemek bile sunuya yeter; aşağıyı azaltıp yukarıyı besle.",
       "image_tr": "Dağın eteğinde göl; bilge kişi öfkesini dizginler, arzularını sınırlar.",
       "judgment_en": "A season of decrease: simplicity joined to sincerity is blessed. Even two bowls suffice for an offering; decrease below and nourish above.",
-      "image_en": "Lake at the foot of the mountain; the wise restrain their anger and limit their desires."
+      "image_en": "Lake at the foot of the mountain; the wise restrain their anger and limit their desires.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject suspending his own affairs, and hurrying away (to help the subject of the fourth line). He will commit no error, but let him consider how far he should contribute of what is his (for the other).",
+        "2 . The second NINE, undivided, shows that it will be advantageous for its subject to maintain a firm correctness, and that action on his part will be evil. He can give increase (to his correlate) without taking from himself",
+        "The third SIX, divided, shows how of three men walking together, the number is diminished by one; and how one, walking, finds his friend.",
+        "The fourth SIX, divided, shows its subject diminishing the ailment under which he labours by making (the subject of the first line) hasten (to his help), and make him glad. There will be no error.",
+        "The fifth SIX, divided, shows parties adding to (the stores of) its subject ten pairs of tortoise shells, and accepting no refusal. There will be great good fortune.",
+        "The topmost NINE, undivided, shows its subject giving increase to others without taking from himself. There will be no error. With firm correctness there will be good fortune. There will be advantage in every movement that shall be made. He will find ministers more than can be counted by their clans."
+      ],
+      "lines_tr": [
+        "İşini bitirip hızla gitmek kusursuzdur; ama vereceğini de tartarak azalt.",
+        "Kendini eksiltmeden başkasını artır: doğruluk kazanır, vakitsiz hamle kaybettirir.",
+        "Üç kişi yürürse biri eksilir; bir kişi yürürse dostunu bulur — azalış sadeleşince bağ netleşir.",
+        "Hastalığını azaltan hızla sevince kavuşur; kusur doğmaz.",
+        "On çift kaplumbağa kabuğu bile onun talihini çeviremez: artışı gök onaylamıştır.",
+        "Eksiltmeden artırmak: kusursuz doğrulukla her ilerleyiş kazançlı olur; hizmetkâr değil, ev halkı kazanılır."
+      ]
     },
     {
       "number": 42,
@@ -642,7 +1326,23 @@
       "judgment_tr": "Bereket rüzgarı esiyor: büyük girişimler, hatta büyük su geçişleri için uğurlu an. Kazancı aşağıyla paylaşan çoğalır.",
       "image_tr": "Rüzgar ve gök gürültüsü; bilge kişi iyiyi görünce ona döner, hatasını görünce düzeltir.",
       "judgment_en": "A wind of abundance is blowing: an auspicious moment for great undertakings, even for crossing the great water. Whoever shares the gain below multiplies it.",
-      "image_en": "Wind and thunder; seeing good, the wise turn toward it; seeing their fault, they correct it."
+      "image_en": "Wind and thunder; seeing good, the wise turn toward it; seeing their fault, they correct it.",
+      "lines_en": [
+        "The first NINE, undivided, shows that it will be advantageous for its subject in his position to make a great movement. If it be greatly fortunate, no blame will be imputed to him.",
+        "The second SIX, divided, shows parties adding to the stores of its subject ten pairs of tortoise shells whose oracles cannot be opposed. Let him persevere in being firm and correct, and there will be good fortune. Let the king, (having the virtues thus distinguished), employ them in presenting his offerings to God, and there will be good fortune.",
+        "The third SIX, divided, shows increase given to its subject by means of what is evil, so that he shall (be led to good), and be without blame. Let him be sincere and pursue the path of the Mean, (so shall he secure the recognition of the ruler, like) an officer who announces himself to his prince by the symbol of his rank.",
+        "The fourth SIX, divided, shows its subject pursuing the due course. His advice to his prince is followed. He can with advantage be relied on in such a movement as that of removing the capital.",
+        "The fifth NINE, undivided, shows its subject with sincere heart seeking to benefit (all below). There need be no question about it; the result will be great good fortune. (All below) will with sincere heart acknowledge his goodness.",
+        "In the sixth NINE, undivided, we see one to whose increase none will contribute, while many will seek to assail him. He observes no regular rule in the ordering of his heart. There will be evil."
+      ],
+      "lines_tr": [
+        "Büyük işlere girişmenin tam vakti: artış çağında cömert hamle en yüksek talihtir.",
+        "On çift kaplumbağa kabuğu karşı koyamaz: artışa açık olana kalıcı doğruluk talih getirir; kral Tanrı'ya sunağında bile bunu sunar.",
+        "Artış felaket işlerinde bile işe koşulur: içtenlikle ortada yürüyene, mühürlü asayla prense çıkana kusur yazılmaz.",
+        "Ortada yürü, prense danış: başkentin taşınması gibi büyük işte bile sözün dinlenir.",
+        "İçten bir kalple herkese iyilik: sorgusuz talih — iyiliğin erdem sayıldığı yerde soru sorulmaz.",
+        "Kimseye artış vermeyen, üstelik vurulan: kalbini sabitleyememiş olana felaket dışarıdan gelmez."
+      ]
     },
     {
       "number": 43,
@@ -655,7 +1355,23 @@
       "judgment_tr": "Son direnç kırılmak üzere: gerçeği açıkça ilan et ama silaha sarılma. Kararlılık evet, sertlik hayır.",
       "image_tr": "Göl göğe yükselmiş; bilge kişi zenginliği aşağı dağıtır ve erdeminde konaklamaz.",
       "judgment_en": "The last resistance is about to break: declare the truth openly, but do not reach for a weapon. Resolve yes, harshness no.",
-      "image_en": "The lake has risen to heaven; the wise distribute wealth downward and do not rest on their virtue."
+      "image_en": "The lake has risen to heaven; the wise distribute wealth downward and do not rest on their virtue.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject in (the pride of) strength advancing with his toes. He goes forward, but will not succeed. There will be ground for blame.",
+        "The second NINE, undivided, shows its subject full of apprehension and appealing (for sympathy and help). Late at night hostile measures may be (taken against him), but he need not be anxious about them.",
+        "The third NINE, undivided, shows its subject (about to advance) with strong (and determined) looks. There will be evil. (But) the superior man, bent on cutting off (the criminal), will walk alone and encounter the rain, (till he be hated by his proper associates) as if he were contaminated (by the others). (In the end) there will be no blame against him.",
+        "The fourth NINE, undivided, shows one from whose buttocks the skin has been stripped, and who walks slowly and with difficulty. (If he could act) like. a sheep led (after its companions), occasion for repentance would disappear. But though he hear these words, he will not believe them.",
+        "The fifth NINE, undivided, shows (the small men like) a bed of purslain, which ought to be uprooted with the utmost determination. (The subject of the line having such determination), his action, in harmony with his central position, will lead to no error or blame.",
+        "The sixth SIX, divided, shows its subject without any (helpers) on whom to call. His end will be evil."
+      ],
+      "lines_tr": [
+        "Ayak parmaklarında güçle ilerlemek: yetmeyen güçle atılan adım kusur getirir.",
+        "Korku çığlığı gece yarısı da gelse hazırlıklı olan korkmaz.",
+        "Yüzdeki kararlılık: tek başına yürüyen yağmura tutulur, ıslanır, söylenilir — ama kusur yazılmaz.",
+        "Kalçada deri yok, yürüyüş güç: koyun gibi yedekte götürülse pişmanlık silinir; ama söz dinlenmez.",
+        "Semizotu gibi kolay kopan fesat: ortada yürüyen kararlılıkla temizler, kusur kalmaz.",
+        "Çığlık atacak kimse kalmaz: son direnç sessizce düşer — ama gevşeyen sonunda felaketi bulur."
+      ]
     },
     {
       "number": 44,
@@ -668,7 +1384,23 @@
       "judgment_tr": "Beklenmedik bir etki içeri sızıyor: cazip ama büyümesine izin verme. Küçükken sınır koy; kontrolsüz yakınlaşmadan sakın.",
       "image_tr": "Göğün altında rüzgar; hükümdar buyruklarını dört yöne dağıtır.",
       "judgment_en": "An unexpected influence is seeping in: it is attractive, but do not let it grow. Set the limit while it is small; beware uncontrolled closeness.",
-      "image_en": "Wind beneath heaven; the ruler spreads his commands to the four directions."
+      "image_en": "Wind beneath heaven; the ruler spreads his commands to the four directions.",
+      "lines_en": [
+        "The first SIX, divided, shows how its subject should be kept (like a carriage) tied and fastened to a metal drag, in which case with firm correctness there will be good fortune. (But) if he move in any direction, evil will appear. He will be (like) a lean pig, which is sure to keep jumping about.",
+        "The second NINE, undivided, shows its subject with a wallet of fish. There will be no error. But it will not be well to let (the subject of the first line) go forward to the guests.",
+        "The third NINE, undivided, shows one from whose buttocks the skin has been stripped so that he walks with difficulty. The position is perilous, but there will be no great error.",
+        "The fourth NINE, undivided, shows its subject with his wallet, but no fish in it. This will give rise to evil.",
+        "The fifth NINE, undivided, (shows its subject as) a medlar tree overspreading the gourd (beneath it). If he keep his brilliant qualities concealed, (a good issue) will descend (as) from Heaven.",
+        "The sixth NINE, undivided, shows its subject receiving others on his horns. There will be occasion for regret, but there will be no error."
+      ],
+      "lines_tr": [
+        "Madeni frene bağla: zayıf olan serbest kalırsa domuz bile huysuzlanır — ilk temasda dizginle.",
+        "Çantada balık var: konuklara sunulmaz — eldekini yaymamak kusuru önler.",
+        "Kalçada deri yok, yürüyüş güç: tehlikeyi bilen büyük hataya düşmez.",
+        "Çantada balık yok: halkından kopan, ayaklanmayı davet eder.",
+        "Kabak yaprağıyla örtülü güzellik: içte tutulan parlaklık gökten düşer gibi kendiliğinden ortaya çıkar.",
+        "Boynuzlarıyla karşılaşma: sona gelmiş temas sertleşir — utanç var, kusur yok."
+      ]
     },
     {
       "number": 45,
@@ -681,7 +1413,23 @@
       "judgment_tr": "İnsanlar göl gibi birikiyor: büyük toplanma zamanı. Merkezde sahici bir amaç olmalı; hazırlıklı ol, silahını bile bakımlı tut.",
       "image_tr": "Yerin üstünde göl; bilge kişi silahlarını yeniler ve beklenmedik olana hazırlanır.",
       "judgment_en": "People are gathering like water into a lake: a time of great assembly. There must be a genuine purpose at the centre; be prepared, keep even your weapons in order.",
-      "image_en": "Lake above the earth; the wise renew their weapons and make ready for the unforeseen."
+      "image_en": "Lake above the earth; the wise renew their weapons and make ready for the unforeseen.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject with a sincere desire (for union), but unable to carry it out, so that disorder is brought into the sphere of his union. If he cry out (for help to his proper correlate), all at once (his tears) will give place to smiles. He need not mind (the temporary difficulty); as he goes forward, there will be no error.",
+        "The second SIX, divided, shows its subject led forward (by his correlate). There will be good fortune, and freedom from error. There is entire sincerity, and in that case (even the small offerings of) the vernal sacrifice are acceptable.",
+        "The third SIX, divided, shows its subject striving after union and seeming to sigh, yet nowhere finding any advantage. If he go forward, he will not err, though there may be some small cause for regret.",
+        "The fourth NINE, undivided, shows its subject in such a state that, if he be greatly fortunate, he will receive no blame.",
+        "The fifth NINE, undivided, shows the union (of all) under its subject in the place of dignity. There will be no error. If any do not have confidence in him, let him see to it that (his virtue) be great, long-continued, and firmly correct, and all occasion for repentance will disappear.",
+        "The topmost SIX, divided, shows its subject sighing and weeping; but there will be no error."
+      ],
+      "lines_tr": [
+        "İçtenlik sonuna kadar taşınmazsa topluluk dağılır; bir çağrıyla el birliği döner — gülüşe aldırma, ilerle.",
+        "Kendiliğinden çekiliş talihlidir: içtenlik varsa küçük sunu bile kabul görür.",
+        "Toplanmak isteyip iç çeken: yol görünmüyorsa küçük utançla ilerle — kusur değildir.",
+        "Büyük toplanma: hükümdar adına toplayana kusur yazılmaz.",
+        "Toplanmışların başında konum var ama güven eksik: kalıcı doğrulukla pişmanlık silinir.",
+        "Ağıt ve gözyaşı: dışarıda kalanın yakınması — kusur değil, uyarıdır."
+      ]
     },
     {
       "number": 46,
@@ -694,7 +1442,23 @@
       "judgment_tr": "Ağaç toprağın içinden sessizce yükselir: gösterişsiz, birikimli büyüme. Büyüklerden çekinme, güneye (aydınlığa) ilerle.",
       "image_tr": "Yerin içinde ağaç büyür; bilge kişi küçüğü biriktirerek yükseğe ve büyüğe ulaşır.",
       "judgment_en": "The tree rises quietly through the soil: unshowy, cumulative growth. Do not shrink from those above you; advance toward the south (toward the light).",
-      "image_en": "The tree grows within the earth; the wise reach the high and the great by accumulating the small."
+      "image_en": "The tree grows within the earth; the wise reach the high and the great by accumulating the small.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject advancing upwards with the welcome (of those above him). There will be great good fortune.",
+        "The second NINE, undivided, shows its subject with that sincerity which will make even the (small) offerings of the vernal sacrifice acceptable. There will be no error.",
+        "The third NINE, undivided, shows its subject ascending upwards (as into) an empty city.",
+        "The fourth SIX, divided, shows its subject employed by the king to present his offerings on mount Kh î. There will be good fortune; there will be no mistake.",
+        "The fifth six, divided, shows its subject firmly correct, and therefore enjoying good fortune. He ascends the stairs (with all due ceremony).",
+        "The sixth six, divided, shows its subject advancing upwards blindly. Advantage will be found in a ceaseless maintenance of firm correctness."
+      ],
+      "lines_tr": [
+        "Güvenle yükseliş: yukarıdakiler kucak açar, büyük talih.",
+        "İçtenlik varsa küçük sunu bile yeter: yaz kurbanı sadeliğiyle makbuldür.",
+        "Boş şehre girer gibi yükselmek: dirençsiz ilerleyiş — ama boşluğun nedenini sor.",
+        "Kral Çi Dağı'nda sunar: yükseliş töreni ehliyle taçlanır, kusur doğmaz.",
+        "Adım adım yükseliş: doğrulukta basamakları tek tek çıkmak talihtir.",
+        "Karanlıkta yükseliş: durmayan tırmanış ancak aralıksız doğrulukla zarar vermez — yine de tüketir."
+      ]
     },
     {
       "number": 47,
@@ -707,7 +1471,23 @@
       "judgment_tr": "Kaynaklar tükenmiş, sözlerin inandırıcılığı az. Konuşarak değil duruşunla kanıtla; büyük insan sıkıntıda bile neşesini korur.",
       "image_tr": "Gölde su yok; bilge kişi amacı uğruna hayatını ortaya koyar.",
       "judgment_en": "Resources are exhausted and your words carry little weight. Prove yourself by your bearing, not by talking; the great person keeps their cheer even in hardship.",
-      "image_en": "There is no water in the lake; the wise stake their life on their purpose."
+      "image_en": "There is no water in the lake; the wise stake their life on their purpose.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject with bare buttocks straitened under the stump of a tree. He enters a dark valley, and for three years has no prospect (of deliverance).",
+        "The second NINE, undivided, shows its subject straitened amidst his wine and viands. There come to him anon the red knee-covers (of the ruler). It will be well for him (to maintain his sincerity as) in sacrificing. Active operations (on his part) will lead to evil, but he will be free from blame.",
+        "The third SIX, divided, shows its subject straitened before a (frowning) rock. He lays hold of thorns. He enters his palace, and does not see his wife. There will be evil.",
+        "The fourth NINE, undivided shows its subject proceeding very slowly (to help the subject of the first line), who is straitened by the carriage adorned with metal in front of him. There will be occasion for regret, but the end will be good.",
+        "The fifth NINE, undivided, shows its subject with his nose and feet cut off. He is straitened by (his ministers in their) scarlet aprons. He is leisurely in his movements, however, and is satisfied. It will be well for him to be (as sincere) as in sacrificing (to spiritual beings).",
+        "The sixth SIX, divided, shows its subject straitened, as if bound with creepers; or n a high and dangerous position, and saying (to himself), 'If I move, I shall repent it.' If he do repent of former errors, there will be good fortune in his going forward."
+      ],
+      "lines_tr": [
+        "Kütüğün altında sıkışan, karanlık vadiye çekilir; üç yıl görünmez — darlıkta çöküş derinleşir.",
+        "Şarap ve yemek içinde bile darlık: kızıl kuşaklı gelir — sunu yap, ilerleme; kusur yazılmaz.",
+        "Taşa takılıp dikene yaslanan, evine girer karısını bulamaz: yanlış dayanağın sonu yalnızlıktır.",
+        "Altın arabayla yavaş gelir: utanç var ama iş sonuna erer.",
+        "Burnu ve ayakları kesilmiş, kızıl kuşaklıların elinde darlık: sevinç yavaş gelir — sunu ve adakla bekle.",
+        "Sarmaşık içinde, sallanan kayada darlık: 'kımıldarsam pişman olurum' deyip pişmanlığı göze alan, ilerleyince talihi bulur."
+      ]
     },
     {
       "number": 48,
@@ -720,7 +1500,23 @@
       "judgment_tr": "Şehir değişir, kuyu değişmez: özündeki kaynak herkese açık. Kuyunu temiz tut, ipini uzun tut; kaynağına iyi bak.",
       "image_tr": "Ağacın üstünde su; bilge kişi halkı çalışmaya yüreklendirir ve dayanışmaya çağırır.",
       "judgment_en": "The town changes, the well does not: the source at your core is open to all. Keep your well clean, keep your rope long, tend to your source.",
-      "image_en": "Water above the wood; the wise encourage the people at their work and call them to help one another."
+      "image_en": "Water above the wood; the wise encourage the people at their work and call them to help one another.",
+      "lines_en": [
+        "The first SIX, divided, shows a well so muddy that men will not drink of it; or an old well to which neither birds (nor other creatures) resort.",
+        "The second NINE, undivided, shows a well from which by a hole the water escapes and flows away to the shrimps (and such small creatures among the grass), or one the water of which leaks away from a broken basket.",
+        "The third NINE, undivided, shows a well, which has been cleared out, but is not used. Our hearts are sorry for this, for the water might be drawn out and used. If the king were (only) intelligent, both he and we might receive the benefit of it.",
+        "The fourth SIX, divided, shows a well, the lining of which is well laid. There will be no error.",
+        "The fifth NINE, undivided, shows a clear, limpid well, (the waters from) whose cold spring are (freely) drunk.",
+        "The topmost SIX, divided, shows (the water from) the well brought to the top, which is not allowed to be covered. This suggests the idea of sincerity. There will be great good fortune."
+      ],
+      "lines_tr": [
+        "Çamurlu kuyudan kimse içmez; eski kuyuya kuş bile gelmez — bakımsız kaynak terk edilir.",
+        "Kuyu ağzından balığa ok atılır, testi delik: kaynağı oyuncağa çeviren hiç dolduramaz.",
+        "Kuyu temizlenmiş ama içen yok: yüreğimiz sızlar — ehil aranmıyor; kral aydın olsa herkes nimetlenirdi.",
+        "Kuyunun içi taşla örülür: bakım süresince veremez ama sonrası kusursuzdur.",
+        "Kuyuda berrak, soğuk pınar: kaynağın en saf hali içilmeyi bekler.",
+        "Kuyu örtüsüz, herkese açık: tükenmez kaynak içtenlikle sunulursa en yüksek talih budur."
+      ]
     },
     {
       "number": 49,
@@ -733,7 +1529,23 @@
       "judgment_tr": "Köklü değişim ancak zamanı gelince ve güven kazanınca yapılır. Kendi gününde yapılan devrim pişmanlığı siler.",
       "image_tr": "Gölün içinde ateş; bilge kişi takvimi düzenler ve zamanları aydınlatır.",
       "judgment_en": "Radical change is made only when its time has come and trust has been earned. A revolution made on its own day erases regret.",
-      "image_en": "Fire within the lake; the wise set the calendar in order and make the seasons clear."
+      "image_en": "Fire within the lake; the wise set the calendar in order and make the seasons clear.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject (as if he were) bound with the skin of a yellow ox.",
+        "The second SIX, divided, shows its subject making his changes after some time has passed. Action taken will be fortunate. There will be no error.",
+        "The third NINE, undivided, shows that action taken by its subject will be evil. Though he be firm and correct, his position is perilous. If the change (he contemplates) have been three times fully discussed, he will be believed in.",
+        "The fourth NINE, undivided, shows occasion for repentance disappearing (from its subject). Let him be believed in; and though he change (existing) ordinances, there will be good fortune.",
+        "The fifth NINE, undivided, shows the great man (producing his changes) as the tiger (does when he) changes (his stripes). Before he divines (and proceeds to action), faith has been reposed in him.",
+        "The sixth SIX, divided, shows the superior man producing his changes as the leopard (does when he) changes (his spots), while small men change their faces (and show their obedience). To go forward (now) would lead to evil, but there will be good fortune in abiding firm and correct."
+      ],
+      "lines_tr": [
+        "Sarı öküz derisiyle sarılıp sabitlenmek: değişimin ilk saatinde kıpırdamamak gerekir.",
+        "Kendi günü gelince değiştir: vakitli devrim ilerleyişe talih, harekete kusursuzluk getirir.",
+        "Aceleyle değiştirmek felaket, tehlikeli doğruluk şart: söz üç kez olgunlaşınca güven doğar.",
+        "Pişmanlık kaybolur: içtenlikle buyruk değişince halk da inanır — talih.",
+        "Büyük insan kaplan gibi değişir: falcıya sormadan bile deseni okunur — dönüşümün çizgileri parlar.",
+        "Soylu insan pars gibi değişir, küçük insan yüzünü döner: köklü değişim doruğa varınca ısrar felaket, durmak talihtir."
+      ]
     },
     {
       "number": 50,
@@ -746,7 +1558,23 @@
       "judgment_tr": "Dönüşümün kabı: ham olanı pişirip değerli kılma zamanı. Yüce başarı; besle, sun ve kültüre dönüştür.",
       "image_tr": "Ağacın üstünde ateş; bilge kişi konumunu doğrulukla sağlamlaştırır.",
       "judgment_en": "The vessel of transformation: it is time to cook the raw into something of worth. Supreme success; nourish, offer, and turn it into culture.",
-      "image_en": "Fire above the wood; the wise steady their position through rightness."
+      "image_en": "Fire above the wood; the wise steady their position through rightness.",
+      "lines_en": [
+        "The first SIX, divided, shows the caldron overthrown and its feet turned up. (But) there will be advantage in its getting rid of what was bad in it. (Or it shows us) the concubine (whose position is improved) by means of her son. There will be no error.",
+        "The second NINE, undivided, shows the caldron with the things (to be cooked) in it. (If its subject can say), 'My enemy dislikes me, but he cannot approach me,' there will be good fortune.",
+        "The third NINE, undivided, shows the caldron with (the places of) its ears changed. The progress (of its subject) is (thus) stopped. The fat flesh of the pheasant (which is in the caldron) will not be eaten. But the (genial) rain will come, and the grounds for repentance will disappear. There will be good fortune in the end.",
+        "The fourth NINE, undivided, shows the caldron with its feet broken; and its contents, designed for the ruler's use, overturned and spilt. Its Subject will be made to blush for shame. There will be evil.",
+        "The fifth six, divided, shows the caldron with yellow ears and rings of metal in them. There will be advantage through being firm and correct.",
+        "The sixth NINE, undivided, shows the caldron with rings of jade. There will be great good fortune, and all action taken will be in every way advantageous."
+      ],
+      "lines_tr": [
+        "Kazan ters çevrilir, tortusu dökülür: eski kiri boşaltmak için tersine dönüş bile hizmettir; cariye oğluyla el üstünde tutulur.",
+        "Kazan dolu; hasetli ortak yaklaşamaz: nasibi olan doluluk kem gözden korunur — talih.",
+        "Kazanın kulpları değişmiş, taşınamaz; sülün yağı yenmez: emek askıda kalır ama yağmur pişmanlığı yıkar, sonu talihtir.",
+        "Kazanın ayağı kırılır, prensin aşı dökülür: yetmeyen güce büyük yük — utanç ve felaket.",
+        "Kazanın sarı kulpları, altın halkaları: ölçülü kavrayış kalıcı doğrulukla taşır.",
+        "Yeşim kulplu kazan: en yüksek talih — arıtılmış sunu her yöne kazanç dağıtır."
+      ]
     },
     {
       "number": 51,
@@ -759,7 +1587,23 @@
       "judgment_tr": "Şok gelir, yüz kilometreyi sarsar; ama içi sağlam olan kadehinden bir damla dökmez. Sarsıntıyı uyanışa çevir.",
       "image_tr": "Ardışık gök gürültüsü; bilge kişi korku ve titremeyle kendini düzeltir ve sınar.",
       "judgment_en": "The shock comes and rattles a hundred miles; but whoever is sound within does not spill a drop from the cup. Turn the tremor into waking.",
-      "image_en": "Thunder upon thunder; in fear and trembling the wise correct and examine themselves."
+      "image_en": "Thunder upon thunder; in fear and trembling the wise correct and examine themselves.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject, when the movement approaches, looking out and around with apprehension, and afterwards smiling and talking cheerfully. There will be good fortune.",
+        "The second SIX, divided, shows its subject, when the movement approaches, in a position of peril. He judges it better to let go the articles (in his possession), and to ascend a very lofty height. There is no occasion for him to pursue after (the things he has let go); in seven days he will find them.",
+        "The third six, divided, shows its subject distraught amid the startling movements going on. If those movements excite him to (right) action, there will be no mistake.",
+        "The fourth NINE, undivided, shows its subject, amid the startling movements, supinely sinking (deeper) in the mud.",
+        "The fifth SIX, divided, shows its subject going and coming amidst the startling movements (of the time), and always in peril; but perhaps he will not incur loss, and find business (which he can accomplish).",
+        "The topmost SIX, divided, shows its subject, amidst the startling movements (of the time), in breathless dismay and looking round him with trembling apprehension. If he take action, there will be evil. If, while the startling movements have not reached his own person and his neighbourhood, (he were to take precautions), there would be no error, though his relatives might (still) speak against him."
+      ],
+      "lines_tr": [
+        "Gök gürler, önce korku sonra kahkaha: sarsıntıyla terbiye olan talihi bulur.",
+        "Sarsıntı tehlikeyle gelir, hazineler bırakılır, dokuz tepeye çıkılır: kovalamayı bırak — yedi günde geri gelir.",
+        "Sarsıntı sersemletir; ama sarsıntının kendisiyle harekete geçen beladan kurtulur.",
+        "Sarsıntı çamura saplanır: uyarı hareketsizlikte boğulur.",
+        "Sarsıntı üstüne sarsıntı: tehlikede bile ortadaki işini kaybetme — yapılacak iş korkuyu taşır.",
+        "Sarsıntı çözülme getirir, bakışlar kayar: kendine değmemiş sarsıntıda hareket kusursuzdur; söylenti evliliğe kadar uzanır."
+      ]
     },
     {
       "number": 52,
@@ -772,7 +1616,23 @@
       "judgment_tr": "Durma zamanında dur, yürüme zamanında yürü. Sırtın sakinleşince benlik kaybolur; huzur, hareketin doğru zamanını öğretir.",
       "image_tr": "Yan yana iki dağ; bilge kişi düşüncelerini bulunduğu anın dışına taşırmaz.",
       "judgment_en": "Stop when it is time to stop, move when it is time to move. When the back grows still the self disappears; stillness teaches the right moment for movement.",
-      "image_en": "Two mountains side by side; the wise do not let their thoughts stray beyond the present moment."
+      "image_en": "Two mountains side by side; the wise do not let their thoughts stray beyond the present moment.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject keeping his toes at rest. There will be no error; but it will be advantageous for him to be persistently firm and correct.",
+        "The second SIX, divided, shows its subject keeping the calves of his legs at rest. He cannot help (the subject of the line above) whom he follows, and is dissatisfied in his mind.",
+        "The third NINE, undivided, shows its subject keeping his loins at rest, and separating the ribs (from the body below). The situation is perilous, and the heart glows with suppressed excitement.",
+        "The fourth SIX, divided, shows its subject keeping his trunk at rest. There will be no error.",
+        "The fifth SIX, divided, shows its subject keeping his jawbones at rest, so that his words are (all) orderly. Occasion for repentance will disappear.",
+        "The sixth NINE, undivided, shows its subject devotedly maintaining his restfulness. There will be good fortune."
+      ],
+      "lines_tr": [
+        "Ayak parmaklarında durmak: en baştan durmasını bilen kusursuzdur; kalıcı doğruluk kazançlıdır.",
+        "Baldırlarda durmak: izlediğini kurtaramaz — kalbi sıkılır.",
+        "Belde durmak, omurgayı ayırmak: zorla durdurulan gövde tehlikede boğulur, yürek dumanla dolar.",
+        "Gövdede durmak: kendi merkezinde duran kusursuzdur.",
+        "Çenede durmak: sözü düzenli olanın pişmanlığı silinir.",
+        "Cömertçe durmak: durmanın en olgun hali — talih."
+      ]
     },
     {
       "number": 53,
@@ -785,7 +1645,23 @@
       "judgment_tr": "Kaz kıyıya ağır ağır sokulur: nişanlılık gibi adım adım ilerleyen süreçler kutlu. Sabırlı gelişim kalıcı sonuç verir.",
       "image_tr": "Dağın üstünde ağaç; bilge kişi asil karakterde konaklayıp geleneği iyileştirir.",
       "judgment_en": "The wild goose nears the shore slowly: processes that advance step by step, like a betrothal, are blessed. Patient development gives lasting results.",
-      "image_en": "A tree upon the mountain; the wise dwell in noble character and improve the customs."
+      "image_en": "A tree upon the mountain; the wise dwell in noble character and improve the customs.",
+      "lines_en": [
+        "The first SIX, divided, shows the wild geese gradually approaching the shore. A young officer (in similar circumstances) will be in a position of danger, and be spoken against; but there will be no error.",
+        "The second SIX, divided, shows the geese gradually approaching the large rocks, where they eat and drink joyfully and at ease. There will be good fortune.",
+        "The third NINE, undivided, shows them gradually advanced to the dry plains. (It suggests also the idea of) a husband who goes on an expedition from which he does not return, and of a wife who is pregnant, but will not nourish her child. There will be evil. (The case symbolised) might be advantageous in resisting plunderers.",
+        "The fourth SIX, divided, shows the geese gradually advanced to the trees. They may light on the flat branches. There will be no error.",
+        "The fifth NINE, undivided, shows the geese gradually advanced to the high mound. (It suggests the idea of) a wife who for three years does not become pregnant; but in the end the natural issue cannot be prevented. There will be good fortune.",
+        "The sixth NINE, undivided, shows the geese gradually advanced to the large heights (beyond). Their feathers can be used as ornaments. There will be good fortune."
+      ],
+      "lines_tr": [
+        "Yaban kazı kıyıya yaklaşır: gencin ilk adımı söz getirir ama kusur doğmaz.",
+        "Yaban kazı kayaya varır: yiyip içmek huzurludur — sağlam basamak paylaşmayı getirir, talih.",
+        "Yaban kazı kuru düzlüğe sapar: koca gider dönmez, kadın taşır doğurmaz — yerinden kopan adım felakettir; yağmacıya karşı koymak kazançtır.",
+        "Yaban kazı ağaca varır, düz dala tutunur: eğreti yerde bile uygun tutamak kusuru önler.",
+        "Yaban kazı tepeye varır: üç yıl çocuk olmaz ama sonunda kimse engel kalamaz — talih.",
+        "Yaban kazı bulut yoluna varır: tüyleri törene süs olur — tamamlanmış yükselişin talihi budur."
+      ]
     },
     {
       "number": 54,
@@ -798,7 +1674,23 @@
       "judgment_tr": "İkincil bir konumda başlayan ilişkiler dikkat ister. Sonunu düşünmeden atılan adım kısır kalır; konumunu bil, beklentini ayarla.",
       "image_tr": "Gölün üstünde gök gürültüsü; bilge kişi sonu düşünerek başlangıcın kusurunu bilir.",
       "judgment_en": "Relationships that begin from a secondary position ask for care. A step taken without thinking of the end stays barren; know your position, adjust your expectation.",
-      "image_en": "Thunder above the lake; by considering the end the wise understand the flaw in the beginning."
+      "image_en": "Thunder above the lake; by considering the end the wise understand the flaw in the beginning.",
+      "lines_en": [
+        "The first NINE, undivided, shows the younger sister married off in a position ancillary to the real wife. (It suggests the idea of) a person lame on one leg who yet manages to tramp along. Going forward will be fortunate.",
+        "The second NINE, undivided, shows her blind of one eye, and yet able to see. There will be advantage in her maintaining the firm correctness of a solitary widow.",
+        "The third SIX, divided, shows the younger sister who was to be married off in a mean position. She returns and accepts an ancillary position.",
+        "The fourth NINE, undivided, shows the younger sister who is to be married off protracting the time. She may be late in being married, but the time will come.",
+        "The fifth SIX, divided, reminds us of the marrying of the younger sister of (king) Tî-yî, when the sleeves of her the princess were not equal to those of the (still) younger sister who accompanied her in an inferior capacity. (The case suggests the thought of) the moon almost full. There will be good fortune.",
+        "The sixth SIX, divided, shows the young lady bearing the basket, but without anything in it, and the gentleman slaughtering the sheep, but without blood flowing from it. There will be no advantage in any way."
+      ],
+      "lines_tr": [
+        "Küçük kız kardeş yardımcı eş olarak gider: topal da yürür — mütevazı konumda ilerleyiş talihlidir.",
+        "Tek gözle görmek: kenarda kalmış olanın münzevi doğruluğu yine kazançlıdır.",
+        "Bekleyen kız kardeş hizmetçiliğe razı olur: uygunsuz bağa dönmektense bekle.",
+        "Vadeyi geçirir: geç evlilik vakitsiz evlilikten iyidir — bekleyişin de mevsimi vardır.",
+        "Prenses sade giyinir: gelinin kolları nedimesinden gösterişsizdir; ay dolunaya yakınken talih gelir.",
+        "Kadının sepeti boş, adamın koyunu kansız: kabuk kalmış törenin hiçbir yönü kazançlı değildir."
+      ]
     },
     {
       "number": 55,
@@ -811,7 +1703,23 @@
       "judgment_tr": "Zirve anı: güneş öğle noktasında. Hüzünlenme, ışığını dünyaya saç; bolluk anı kısa sürer, tadını doya doya çıkar.",
       "image_tr": "Gök gürültüsü ve şimşek birlikte gelir; bilge kişi davaları karara bağlar, cezayı uygular.",
       "judgment_en": "The moment of the peak: the sun stands at noon. Do not grieve, scatter your light over the world; abundance is brief, take it in fully.",
-      "image_en": "Thunder and lightning come together; the wise decide disputes and carry out punishments."
+      "image_en": "Thunder and lightning come together; the wise decide disputes and carry out punishments.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject meeting with his mate. Though they are both of the same character, there will be no error. Advance will call forth approval.",
+        "The second SIX, divided, shows its subject surrounded by screens so large and thick that at midday he can see from them the constellation of the Bushel. If he go (and try to enlighten his ruler who is thus emblemed), he will make himself to be viewed with suspicion and dislike. Let him cherish his feeling of sincere devotion that he may thereby move (his ruler's mind), and there will be good fortune.",
+        "The third NINE, undivided, shows its subject with an (additional) screen of a large and thick banner, through which at midday he can see (the small) Mei star. (In the darkness) he breaks his right arm; but there will be no error.",
+        "The fourth NINE, undivided, shows its subject in a tent so large and thick that at midday he can see from it the constellation of the Bushel. But he meets with the subject of the (first) line, undivided like himself. There will be good fortune.",
+        "The fifth SIX, divided, shows its subject bringing around him the men of brilliant ability. There will be occasion for congratulation and praise. There will be good fortune.",
+        "The topmost SIX, divided, shows its subject with his house made large, but only serving as a screen to his household. When he looks at his door, it is still, and there is nobody about it. For three years no one is to be seen. There will be evil."
+      ],
+      "lines_tr": [
+        "Dengi olan efendiyle buluşmak: on gün birlikte kalmak kusur değildir; ilerleyiş değer görür.",
+        "Perde öyle kalın ki öğlen Kepçe görünür: kuşkuyla gidilirse hastalık bulaşır — içtenlik uyandırılırsa talih gelir.",
+        "Perde sıklaşır, öğlen küçük yıldız görünür; sağ kol kırılır — ama kusur yazılmaz.",
+        "Perdenin içinde öğlen Kepçe'yi görür ama gizli efendisiyle buluşur: karanlıkta denk bulmak talihtir.",
+        "Parlak yetenekleri çağırır: kutlama ve övgü gelir — talih.",
+        "Evini büyütür, ailesini perdeler; kapısından bakan kimseyi göremez, üç yıl ses çıkmaz — bolluğun zirvesinde yalnızlık felakettir."
+      ]
     },
     {
       "number": 56,
@@ -824,7 +1732,23 @@
       "judgment_tr": "Yabancı topraklardasın: kibirli olma, yaltaklanma da. Gezginin gücü ölçülü tavrı ve iç bütünlüğüdür; küçük işlerde başarı.",
       "image_tr": "Dağın üstünde ateş; bilge kişi cezada açık ve hızlıdır, davaları uzatmaz.",
       "judgment_en": "You are in a foreign land: neither arrogant nor fawning. The wanderer's strength is measured bearing and inner wholeness; success in small matters.",
-      "image_en": "Fire upon the mountain; the wise are clear and swift in punishment and do not drag out disputes."
+      "image_en": "Fire upon the mountain; the wise are clear and swift in punishment and do not drag out disputes.",
+      "lines_en": [
+        "The first SIX, divided, shows the stranger mean and meanly occupied. It is thus that he brings on himself (further) calamity.",
+        "The second SIX, divided, shows the stranger, occupying his lodging-house, carrying with him his means of livelihood, and provided with good and trusty servants.",
+        "The third NINE, undivided, shows the stranger, burning his lodging-house, and having lost his servants. However firm and correct he (try to) be, he will be in peril.",
+        "The fourth NINE, undivided, shows the traveller in a resting-place, having (also) the means of livelihood and the axe, (but still saying), 'I am not at ease in my mind.'",
+        "The fifth SIX, divided, shows its subject shooting a pheasant. He will lose his arrow, but in the end he will obtain praise and a (high) charge.",
+        "The sixth NINE, undivided, suggests the idea of a bird burning its nest. The stranger, (thus represented), first laughs and then cries out. He has lost his ox(-like docility) too readily and easily. There will be evil."
+      ],
+      "lines_tr": [
+        "Gezgin ufak işlerle oyalanırsa felaketi kendi toplar.",
+        "Gezgin hana varır, parasını korur, sadık genç hizmetkâr bulur: yolda ölçülülük güven kazandırır.",
+        "Gezgin hanı yakar, hizmetkârını kaybeder: yolda kibir tehlikedir.",
+        "Gezgin barınak bulur, baltasını edinir; ama yüreği rahat değildir — eğreti güvenlik huzur vermez.",
+        "Sülüne tek okla vurur; ok kaybolur ama sonu övgü ve makamdır: yerinde küçük bedel büyük kabul getirir.",
+        "Kuş yuvasını yakar: gezgin önce güler sonra ağlar; sınırda öküzünü kaybeder — yabancı yerde taşkınlık felakettir."
+      ]
     },
     {
       "number": 57,
@@ -837,7 +1761,23 @@
       "judgment_tr": "Rüzgar gibi nüfuz et: sert darbeyle değil, sürekli nazik etkiyle. Hedefini netleştir ve büyük insana danış.",
       "image_tr": "Birbirini izleyen rüzgarlar; bilge kişi buyruklarını yayar ve işlerini yürütür.",
       "judgment_en": "Penetrate like the wind: not by a hard blow but by steady, gentle influence. Make your aim clear and consult the great person.",
-      "image_en": "Winds following one another; the wise spread their commands and carry out their affairs."
+      "image_en": "Winds following one another; the wise spread their commands and carry out their affairs.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject (now) advancing, (now) receding. It would be advantageous for him to have the firm correctness of a brave soldier.",
+        "The second NINE, undivided, shows the representative of Sun beneath a couch, and employing diviners and exorcists in a way bordering on confusion. There will be good fortune and no error.",
+        "The third NINE, undivided, shows its subject penetrating (only) by violent and repeated efforts. There will be occasion for regret.",
+        "The fourth SIX, divided, shows all occasion for repentance (in its subject) passed away. He takes game for its threefold use in his hunting.",
+        "The fifth NINE, undivided, shows that with firm correctness there will be good fortune (to its subject). All occasion for repentance will disappear, and all his movements will be advantageous. There may have been no (good) beginning, but there will be a (good) end. Three days before making any changes, (let him give notice of them); and three days after, (let him reconsider them). There will (thus) be good fortune.",
+        "The sixth NINE, undivided, shows the representative of penetration beneath a couch, and having lost the axe with which he executed his decisions. However firm and correct he may (try to) be, there will be evil."
+      ],
+      "lines_tr": [
+        "İlerleyip geri çekilen kararsızlık: savaşçı disiplini kararı getirir.",
+        "Yatağın altına sinmiş nüfuz: kâhinler ve büyücülerle didik didik aramak talihi getirir, kusur kalmaz.",
+        "Tekrarlana tekrarlana sızmak: bezdiren ısrar utançtır.",
+        "Pişmanlık kaybolur: avda üç tür av birden — yumuşak nüfuz yerini bulunca verim üçlenir.",
+        "Başlangıcı yok ama sonu var: değişimden üç gün önce, üç gün sonra tart — kalıcı doğrulukla talih gelir.",
+        "Yatağın altına sinmiş, baltasını da kaybetmiş: nüfuz silikleşip araç da gidince ısrar felakettir."
+      ]
     },
     {
       "number": 58,
@@ -850,7 +1790,23 @@
       "judgment_tr": "İçten gelen neşe bulaşıcıdır ve insanları en zor işlere bile gönüllü kılar. Yüzeysel eğlence değil, temelli sevinç ara.",
       "image_tr": "Birbirine bağlı iki göl; bilge kişi dostlarıyla çalışır ve birlikte öğrenir.",
       "judgment_en": "Joy that comes from within is contagious and makes people willing even for the hardest work. Seek grounded gladness, not surface amusement.",
-      "image_en": "Two lakes joined together; the wise work with friends and learn together."
+      "image_en": "Two lakes joined together; the wise work with friends and learn together.",
+      "lines_en": [
+        "The first NINE, undivided, shows the pleasure of (inward) harmony. There will be good fortune.",
+        "The second NINE, undivided, shows the pleasure arising from (inward) sincerity. There will be good fortune. Occasion for repentance will disappear.",
+        "The third SIX, divided, shows its subject bringing round himself whatever can give pleasure. There will be evil.",
+        "The fourth NINE, undivided, shows its subject deliberating about what to seek his pleasure in, and not at rest. He borders on what would be injurious, but there will be cause for joy.",
+        "The fifth NINE, undivided, shows its subject trusting in one who would injure him. The situation is perilous.",
+        "The topmost SIX, divided, shows the pleasure of its subject in leading and attracting others."
+      ],
+      "lines_tr": [
+        "Uyumlu sevinç: dışa muhtaç olmayan iç neşe talihlidir.",
+        "İçten sevinç: doğruluktan gelen neşe pişmanlık bırakmaz.",
+        "Gelmesi için çağrılan sevinç: dışarıdan devşirilen neşe felakettir.",
+        "Hesaplaşılan sevinç: sınır konursa hastalıklı olan bile sevince döner.",
+        "Soyucuya güvenmek tehlikedir: sevinç çağında sızan yabancıya dikkat.",
+        "Kendini sevince kaptırıp sürüklenmek: çekilen neşe yönetilmezse yönetir."
+      ]
     },
     {
       "number": 59,
@@ -863,7 +1819,23 @@
       "judgment_tr": "Katılık ve bencillik dağılıyor: rüzgar suyun üstünde köpüğü dağıtır. Katılaşmış grupları ortak bir kutsalda erit.",
       "image_tr": "Rüzgar suyun üstünde eser; eski krallar kurban sunup tapınaklar kurdu.",
       "judgment_en": "Rigidity and selfishness are dissolving: wind scatters the foam on the water. Melt hardened factions in a shared sacred purpose.",
-      "image_en": "Wind blows over the water; the ancient kings made offerings and founded temples."
+      "image_en": "Wind blows over the water; the ancient kings made offerings and founded temples.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject engaged in rescuing (from the impending evil) and having (the assistance of) a strong horse. There will be good fortune.",
+        "The second NINE, undivided, shows its subject, amid the dispersion, hurrying to his contrivance (for security). All occasion for repentance will disappear.",
+        "The third SIX, divided, shows its subject discarding any regard to his own person. There will be no occasion for repentance.",
+        "The fourth SIX, divided, shows its subject scattering the (different) parties (in the state); which leads to great good fortune. From the dispersion (he collects again good men standing out, a crowd) like a mound, which is what ordinary men would not have thought of.",
+        "The fifth NINE, undivided, shows its subject amidst the dispersion issuing his great announcements as the perspiration (flows from his body). [paragraph continues] He scatters abroad (also) the accumulations in the royal granaries. There will be no error.",
+        "The topmost NINE, undivided, shows its subject disposing of (what may be called) its bloody wounds, and going and separating himself from its anxious fears. There will be no error."
+      ],
+      "lines_tr": [
+        "Güçlü atla kurtarışa koşmak: dağılmanın ilk anında hızlı destek talihlidir.",
+        "Dağılma çağında dayanağına koş: pişmanlık silinir.",
+        "Kendini dağıtan pişmanlık duymaz: benlik erirse yakınma da erir.",
+        "Hizbini dağıtan en yüksek talihi bulur: dağılıştan tepe yapmak sıradan akla gelmez.",
+        "Büyük buyruk ter gibi yayılır: kral kendi merkezinden dağıtırsa kusur olmaz.",
+        "Kanı dağıtır, uzağa çıkarır: tehlikeyi kaynağından uzak tutan kusursuzdur."
+      ]
     },
     {
       "number": 60,
@@ -876,7 +1848,23 @@
       "judgment_tr": "Sınırlar özgürleştirir: bambu boğumları sayesinde yükselir. Ama acı gelen aşırı sınırlamada ısrar etme; tatlı ölçüyü bul.",
       "image_tr": "Gölün üstünde su; bilge kişi sayı ve ölçü koyar, erdem ve doğru davranışı tartar.",
       "judgment_en": "Limits set you free: the bamboo rises because of its joints. But do not insist on a limitation that turns bitter; find the sweet measure.",
-      "image_en": "Water above the lake; the wise set number and measure, and weigh virtue and right conduct."
+      "image_en": "Water above the lake; the wise set number and measure, and weigh virtue and right conduct.",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject not quitting the courtyard outside his door. There will be no error.",
+        "The second NINE, undivided, shows its subject not quitting the courtyard inside his gate. There will be evil.",
+        ". The third SIX, divided, shows its subject with no appearance of observing the (proper) regulations, in which case we shall see him lamenting. But there will be no one to blame (but himself).",
+        "The fourth SIX, divided, shows its subject quietly and naturally (attentive to all) regulations. There will be progress and success.",
+        "The fifth NINE, undivided, shows its subject sweetly and acceptably enacting his regulations. There will be good fortune. The onward progress with them will afford ground for admiration.",
+        "The topmost SIX, divided, shows its subject enacting regulations severe and difficult. Even with firmness and correctness there will be evil. But though there will be cause for repentance, it will (by and by) disappear."
+      ],
+      "lines_tr": [
+        "Kapıdan avluya çıkmamak: vakti değilken eşikte durmak kusursuzdur.",
+        "Kapıdan avluya hiç çıkmamak: vakti gelmişken eşikte kalmak felakettir.",
+        "Sınır tanımayan sonra ağıt yakar; ama suçu kendindedir — kusur başkasına yazılmaz.",
+        "Sınırı huzurla kabullenmek: doğal ölçüye yerleşen başarıya akar.",
+        "Tatlı sınır: ölçüyü sevdiren önder talihi bulur, ilerleyişi değer görür.",
+        "Acı sınır: dayatılan ölçüde ısrar felakettir; ama pişmanlık sonunda silinir."
+      ]
     },
     {
       "number": 61,
@@ -889,7 +1877,23 @@
       "judgment_tr": "İçtenlik domuzlara ve balıklara bile ulaşır: kalpten kurulan bağ her engeli aşar. Önyargısız anla, güven inşa et.",
       "image_tr": "Gölün üstünde rüzgar; bilge kişi davaları görüşürken infazı geciktirir (merhamet gösterir).",
       "judgment_en": "Sincerity reaches even pigs and fishes: a bond made from the heart crosses every barrier. Understand without prejudice, build trust.",
-      "image_en": "Wind over the lake; the wise deliberate disputes and delay the execution (they show mercy)."
+      "image_en": "Wind over the lake; the wise deliberate disputes and delay the execution (they show mercy).",
+      "lines_en": [
+        "The first NINE, undivided, shows its subject resting (in himself). There will be good fortune. If he sought to any other, he would not find rest.",
+        "The second NINE, undivided, shows its subject (like) the crane crying out in her hidden retirement, and her young ones responding to her. (It is as if it were said), 'I have a cup of good spirits,' (and the response were), 'I will partake of it with you.'",
+        "The third SIX, divided, shows its subject having met with his mate. Now he beats his drum, and now he leaves off. Now he weeps, and now he sings.",
+        "The fourth SIX, divided, shows its subject (like) the moon nearly full, and (like) a horse (in a chariot) whose fellow disappears. There will be no error.",
+        "The fifth NINE, undivided, shows its subject perfectly sincere, and linking (others) to him in closest union. There will be no error.",
+        "The topmost NINE, undivided, shows its subject in chanticleer (trying to) mount to heaven. Even with firm correctness there will be evil."
+      ],
+      "lines_tr": [
+        "İçte hazır olan huzurludur; başka hesap gizlenirse huzur kaçar.",
+        "Gölgedeki turna öter, yavrusu karşılık verir: 'kadehim dolu, paylaşalım' — içten ses en uzaktan duyulur.",
+        "Düşmanını bulur: kâh davul kâh susuş, kâh gözyaşı kâh şarkı — dışa bağlanan iç dengesini kaybeder.",
+        "Ay dolunaya yakın: at eşini bırakıp yukarı koşar — kusur yazılmaz.",
+        "İçtenlik bağı: tam güven kusursuz bağlar.",
+        "Horoz sesi göğe tırmanır: sesin çıkabileceği yerin ötesine iddia taşımak, ısrarla felakettir."
+      ]
     },
     {
       "number": 62,
@@ -902,7 +1906,23 @@
       "judgment_tr": "Küçük işlerde biraz fazlası olur, büyüklerde olmaz. Uçan kuş yükseğe değil aşağıya süzülmeli: alçakta kal, ölçülü aş.",
       "image_tr": "Dağın üstünde gök gürültüsü; bilge kişi davranışta saygıyı, yasta hüznü, harcamada tutumu biraz aşırıya götürür.",
       "judgment_en": "A little excess is right in small matters, not in great ones. The flying bird should glide down, not up: stay low, exceed with measure.",
-      "image_en": "Thunder upon the mountain; the wise go slightly too far in respect of conduct, in grief of mourning, in thrift of spending."
+      "image_en": "Thunder upon the mountain; the wise go slightly too far in respect of conduct, in grief of mourning, in thrift of spending.",
+      "lines_en": [
+        "The first SIX, divided, suggests (the idea of) a bird flying, (and ascending) till the issue is evil.",
+        "The second SIX, divided, shows its subject passing by his grandfather, and meeting with his grandmother; not attempting anything against his ruler, but meeting him as his minister. There will be no error.",
+        "The third NINE, undivided, shows its subject taking no extraordinary precautions against danger; and some in consequence finding opportunity to assail and injure him. There will be evil.",
+        "The fourth NINE, undivided, shows its subject falling into no error, but meeting (the exigency of his situation), without exceeding (in his natural. course). If he go forward, there will be peril, and he must be cautious. There is no occasion to be using firmness perpetually.",
+        "The fifth SIX, divided, (suggests the idea) of dense clouds, but no rain, coming from our borders in the west. It also (shows) the prince shooting his arrow, and taking the bird in a cave.",
+        "The sixth SIX, divided, shows. its subject not meeting (the exigency of his situation), and exceeding (his proper course). (It suggests the idea of) a bird flying far aloft. There will be evil. The case is what is called one of calamity and self-produced injury."
+      ],
+      "lines_tr": [
+        "Uçmaya kalkan kuş yavrusu: küçüğün çağında yükseğe atılmak felakettir.",
+        "Atasını geçip ceddiyle buluşamaz, hanımıyla buluşur; hükümdara varamaz, hizmetkârıyla görüşür: ölçülü hedef kusursuzdur.",
+        "Aşırı korunmasız geçiş: arkadan vurulabilir — dikkat şart, gevşeklik felakettir.",
+        "Kusursuz ama tetikte: buluşmaya git, geçmeye kalkma; kalıcı doğruluk için uyanık kal.",
+        "Yoğun bulut, yağmur yok: prens kuytudaki adamı okla alır — küçüklük çağında ehli gizliden bulunur.",
+        "Buluşmayı aşıp uçup giden kuş: haddi aşışın adı felakettir — buna 'taşkınlık' denir."
+      ]
     },
     {
       "number": 63,
@@ -915,7 +1935,23 @@
       "judgment_tr": "Her şey yerli yerinde: ama denge en kırılgan anındadır. Küçük işlerde ilerleme sürer; başlangıç kutlu, sona dikkat.",
       "image_tr": "Ateşin üstünde su; bilge kişi felaketi düşünür ve önceden önlem alır.",
       "judgment_en": "Everything is in its place: but balance is at its most fragile just here. Progress continues in small matters; the beginning is blessed, mind the end.",
-      "image_en": "Water above fire; the wise think of misfortune and take precautions in advance."
+      "image_en": "Water above fire; the wise think of misfortune and take precautions in advance.",
+      "lines_en": [
+        "The first NINE, undivided, (shows its subject as a driver) who drags back his wheel, (or as a fox) which has wet his tail. There will be no error.",
+        "The second SIX, divided, (shows its subject as) a wife who has lost her (carriage-)screen. There is no occasion to go in pursuit of it. In seven days she will find it.",
+        "The third NINE, undivided, (suggests the case of) Kâo Žung, who attacked the Demon region, but was three years in subduing it. Small men should not be employed (in such enterprises).",
+        "The fourth SIX, divided, shows its subject with rags provided against any leak (in his boat), and on his guard all day long.",
+        "The fifth NINE, undivided, shows its subject (as) the neighbour in the east who slaughters an ox (for his sacrifice); but this is not equal to the (small) spring sacrifice of the neighbour in the west, whose sincerity receives the blessing.",
+        "The topmost SIX, divided, shows its subject with (even) his head immersed. The position is perilous."
+      ],
+      "lines_tr": [
+        "Tekerleğini geri çeker, kuyruğunu ıslatır: tamamlanmışlığın başında yavaşlamak kusursuzdur.",
+        "Kadın arabasının perdesini kaybeder: arama — yedi günde kendiliğinden gelir.",
+        "Yüce ata Gui ülkesini üç yılda bastırır: tamamlama savaşı uzundur; küçük insana iş verilmez.",
+        "En güzel giysinin altında paçavra hazır: tamamlanmış gün boyu tetikte olmak ister.",
+        "Komşunun kestiği öküz, öbürünün sade yaz sunusu kadar bereket getirmez: içtenlik gösterişi geçer.",
+        "Başı suya batırmak: tamamlanmışın sonunda geri dönüşsüz dalış tehlikedir."
+      ]
     },
     {
       "number": 64,
@@ -928,7 +1964,23 @@
       "judgment_tr": "Geçiş neredeyse tamam: ama tilki kuyruğunu son adımda ıslatır. Umut büyük; son adımları en büyük dikkatle at.",
       "image_tr": "Suyun üstünde ateş; bilge kişi nesneleri dikkatle ayırt eder ve her şeyi yerine koyar.",
       "judgment_en": "The crossing is nearly complete: but the fox wets its tail on the last step. The hope is great; take the final steps with the greatest care.",
-      "image_en": "Fire above the water; the wise carefully distinguish things and put everything in its place."
+      "image_en": "Fire above the water; the wise carefully distinguish things and put everything in its place.",
+      "lines_en": [
+        "The first SIX, divided, shows its subject (like a fox) whose tail gets immersed. There will be occasion for regret.",
+        "The second NINE, undivided, shows its subject dragging back his (carriage-) wheel. With firmness and correctness there will be good fortune.",
+        "The third SIX, divided, shows its subject, with (the state of things) not yet remedied, advancing on; which will lead to evil. But there will be advantage in (trying to) cross the great stream.",
+        "The fourth NINE, undivided, shows its subject by firm correctness obtaining good fortune, so that all occasion for repentance disappears. Let him stir himself up, as if he were invading the Demon region, where for three years rewards will come to him (and his troops) from the great kingdom.",
+        "The fifth SIX, divided, shows its subject by firm correctness obtaining good fortune, and having no occasion for repentance. (We see in him) the brightness of a superior man, and the possession of sincerity. There will be good fortune.",
+        "The topmost NINE, undivided, shows its subject full of confidence and therefore feasting (quietly). There will be no error. (If he) cherish this confidence, till he (is like the fox who) gets his head immersed, it will fail of what is right."
+      ],
+      "lines_tr": [
+        "Kuyruğunu ıslatır: geçişin arifesinde ölçüsüz atılmak utançtır.",
+        "Tekerleğini geri çeker: doğrulukta bekleyiş talihlidir.",
+        "Tamamlanmamışken saldırıya geçmek felakettir; ama büyük nehri geçmenin vakti de yaklaşmıştır.",
+        "Doğrulukla sarsıntıyı üç yıl taşır, Gui ülkesi düşer, ödül büyük ülkeden gelir: pişmanlık silinir.",
+        "Soylu insanın ışığı içtendir: doğruluk talih getirir, pişmanlık kalmaz.",
+        "Güven içinde kadeh kaldırılır: kusur yok — ama baş ıslanırsa güven ölçüyü kaybetmiştir."
+      ]
     }
   ]
 }

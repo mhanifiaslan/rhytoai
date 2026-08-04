@@ -109,6 +109,49 @@ class TestSozlukVeYerlestirme:
             get_hexagram(65)
 
 
+class TestYaoVerisi:
+    """İ1 tamlık kapısı: 384 çizgi pasajı iki dilde de eksiksiz olmalı.
+
+    Kısmi veri sessizce yayınlanamaz — çizgi metni olmayan bir heksagram
+    raporda o çizgiyi anlatamaz ve kimse hata görmez. İ4 (rapor v2) bu
+    test yeşilken açılır.
+    """
+
+    def test_384_cizgi_iki_dilde_tam(self):
+        data = iching_service._load()
+        for h in data["hexagrams"]:
+            for alan in ("lines_en", "lines_tr"):
+                cizgiler = h.get(alan)
+                assert cizgiler and len(cizgiler) == 6, \
+                    f"#{h['number']} {alan} eksik"
+                assert all(len(c.strip()) > 15 for c in cizgiler), \
+                    f"#{h['number']} {alan} kısa/boş pasaj içeriyor"
+
+    def test_tum_cizgiler_pasaji_yalniz_1_ve_2(self):
+        # Yong jiu / yong liu klasik olarak yalnız Qian ve Kun'da vardır.
+        data = iching_service._load()
+        sahipler = sorted(h["number"] for h in data["hexagrams"]
+                          if h.get("all_lines_en") or h.get("all_lines_tr"))
+        assert sahipler == [1, 2]
+
+    def test_bilinen_cizgi_imgeleri(self):
+        # Nokta doğrulama (klasik imgeler): #2/1 kırağı, #63/1 tekerlek.
+        h2 = get_hexagram(2)
+        assert "hoarfrost" in h2["lines_en"][0]
+        assert "Kırağı" in h2["lines_tr"][0] or "kırağı" in h2["lines_tr"][0]
+        h63 = get_hexagram(63)
+        assert "wheel" in h63["lines_en"][0].lower()
+        assert "teker" in h63["lines_tr"][0].lower()
+
+    def test_trigram_atributlari_tam(self):
+        # Shuo Gua atributları (İ1): 8 trigramın aile rolleri benzersiz.
+        data = iching_service._load()
+        aileler = [t["family"] for t in data["trigrams"].values()]
+        assert len(set(aileler)) == 8
+        for t in data["trigrams"].values():
+            assert t["attribute"] and t["direction"]
+
+
 class TestOnbellekAnahtari:
     def test_yontem_anahtari_ayirir(self, tmp_path, monkeypatch):
         """İ0 kusur kapanışı: aynı soru + aynı heksagram + aynı çizgilerle

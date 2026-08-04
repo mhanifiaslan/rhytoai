@@ -520,6 +520,22 @@ BAZI_CLIMATE_FMT = " | Mevsim iklimi düzenleyici ister: {element}"
 #: İngilizce prompt'a sızıyordu; artık dil modülünden gelir.
 ICHING_DEFAULT_QUESTION = "Önümdeki yol"
 
+#: Trigram aile rolleri (İ1, Shuo Gua geleneği).
+TRIGRAM_FAMILY_NAMES = {
+    "father": "Baba", "mother": "Anne",
+    "eldest_son": "Büyük oğul", "middle_son": "Ortanca oğul",
+    "youngest_son": "Küçük oğul",
+    "eldest_daughter": "Büyük kız", "middle_daughter": "Ortanca kız",
+    "youngest_daughter": "Küçük kız",
+}
+
+#: Trigram doğa nitelikleri (İ1).
+TRIGRAM_ATTRIBUTE_NAMES = {
+    "creative": "yaratıcı", "receptive": "alıcı", "arousing": "uyandıran",
+    "abysmal": "uçurumsu", "stillness": "durağan",
+    "penetrating": "nüfuz eden", "clinging": "tutunan", "joyous": "sevinçli",
+}
+
 ICHING = """
 GÖREV: Kullanıcının sorusunu, çekilen I Ching heksagramının 3000 yıllık metnine
 bağlayan 150-200 kelimelik bir kehanet yorumu yaz.

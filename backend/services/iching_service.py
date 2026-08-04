@@ -79,6 +79,12 @@ def _hexagram_info(lines: list[int]) -> dict[str, Any]:
         "judgment_en": hexagram["judgment_en"],
         "image_tr": hexagram["image_tr"],
         "image_en": hexagram["image_en"],
+        # 384 yao pasajı (İ1): alttan üste 6 çizgi metni + Qian/Kun'da
+        # "tüm çizgiler" pasajı. Dile indirgeme localize katmanında.
+        "lines_tr": hexagram.get("lines_tr"),
+        "lines_en": hexagram.get("lines_en"),
+        "all_lines_tr": hexagram.get("all_lines_tr"),
+        "all_lines_en": hexagram.get("all_lines_en"),
         "lower_trigram": _trigram_info(lower),
         "upper_trigram": _trigram_info(upper),
         "unicode": chr(0x4DC0 + hexagram["number"] - 1),
@@ -86,12 +92,19 @@ def _hexagram_info(lines: list[int]) -> dict[str, Any]:
 
 
 def _trigram_info(trigram: dict[str, Any]) -> dict[str, Any]:
-    """Trigram: iki dilde ad + dilden bagimsiz element anahtari."""
+    """Trigram: iki dilde ad + dilden bagimsiz anahtarlar.
+
+    family/attribute/direction İ1'de eklendi (Shuo Gua); adlar prompts
+    katmanındaki TRIGRAM_*_NAMES tablolarından çözülür.
+    """
     return {
         "name_tr": trigram["name_tr"],
         "name_en": trigram["name_en"],
         "symbol": trigram["symbol"],
         "element": trigram["element"],
+        "family": trigram.get("family"),
+        "attribute": trigram.get("attribute"),
+        "direction": trigram.get("direction"),
     }
 
 

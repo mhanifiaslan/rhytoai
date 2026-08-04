@@ -537,6 +537,24 @@ BAZI_CLIMATE_FMT = " | The season's climate calls for a regulator: {element}"
 #: the schema used to leak into the English prompt; now language-bound.
 ICHING_DEFAULT_QUESTION = "The path ahead of me"
 
+#: Trigram family roles (İ1, Shuo Gua tradition).
+TRIGRAM_FAMILY_NAMES = {
+    "father": "Father", "mother": "Mother",
+    "eldest_son": "Eldest son", "middle_son": "Middle son",
+    "youngest_son": "Youngest son",
+    "eldest_daughter": "Eldest daughter",
+    "middle_daughter": "Middle daughter",
+    "youngest_daughter": "Youngest daughter",
+}
+
+#: Trigram nature attributes (İ1).
+TRIGRAM_ATTRIBUTE_NAMES = {
+    "creative": "the creative", "receptive": "the receptive",
+    "arousing": "the arousing", "abysmal": "the abysmal",
+    "stillness": "keeping still", "penetrating": "the penetrating",
+    "clinging": "the clinging", "joyous": "the joyous",
+}
+
 ICHING = """
 TASK: Write a 150-200 word reading that ties the questioner's question to the
 three-thousand-year-old text of the hexagram they cast.

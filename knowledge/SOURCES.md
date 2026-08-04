@@ -47,6 +47,18 @@ Güvenli zemin üçe iner:
 Bunlar kamu malı kaynaklardan ve genel alan bilgisinden yazılmış özet
 metinlerdir; hiçbir telifli eserden alıntı içermez. Telif RythoAI'ye aittir.
 
+### I Ching veri dosyası — `backend/data/hexagrams.json` ✅ (2026-08-04, Revize İ1)
+
+| Alan | Değer |
+|---|---|
+| `judgment_tr/en`, `image_tr/en`, adlar | **Rytho özgün metni** — birebir çeviri değil, klasik korpusa sadık aktarım (üretici betik: `backend/scripts/add_iching_en.py`; bu kayıtla geriye dönük tescil edildi) |
+| `lines_en` (384 yao + 2 "tüm çizgiler") | **James Legge, *The Yî King*** (Sacred Books of the East XVI, 1882/1899) — **kamu malı**. Dijital nüsha: Internet Sacred Text Archive `sacred-texts.com/ich/ic01..ic64.htm`; ham HTML `knowledge/raw/legge/` altında saklı. Project Gutenberg'de müstakil nüsha YOK (#25501 Çince orijinal çıktı). Aktaran betik: `backend/scripts/ingest_legge_yao.py` — OCR onarımları ("S."→5, "T he"→The, numarasız çizgi) betikte belgeli |
+| `lines_tr` (384 yao + 2) | **Rytho aktarımı** — kamu malı Legge metni okunarak, cümle aktarılmadan Rytho Türkçesiyle yazıldı (Tetrabiblos TR emsali). Betik: `backend/scripts/add_iching_lines_tr.py`. Telif RythoAI'ye aittir |
+| Trigram `family/attribute/direction` | Klasik Shuo Gua geleneğinin tartışmasız çekirdeği; betik: `backend/scripts/add_trigram_attrs.py` |
+
+> Wilhelm/Baynes, Özşahin çevirisi ve Alfred Huang **telifli** — hiçbirinden
+> cümle alınmadı, alınamaz (bkz. satır 20'deki tuzak tablosu).
+
 > **BaZi doktrin dosyaları hakkında (2026-08-04, Revize B7):** Sütun
 > sarayları, On Tanrı aileleri, gizli kökler, ay komutu/güç hükmü, yararlı
 > element, mevsim-iklim ayarı ve beş Shen Sha bölümleri; motorun (B0-B5)
