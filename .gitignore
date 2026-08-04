@@ -5,6 +5,7 @@
 **/serviceAccountKey.json
 # RevenueCat/API anahtarlari (dart-define dosyasi); ornegi commit'lenir
 dart_defines.local.json
+dart_defines.test.json
 
 # --- Python ---
 __pycache__/
