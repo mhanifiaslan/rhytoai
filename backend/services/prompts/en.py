@@ -353,6 +353,25 @@ BAZI_SEASON_STATES = {
     "qiu": "restrained", "si": "dormant",
 }
 
+#: Shen Sha star names (B4). Keys match bazi_stars.STAR_KEYS.
+SHEN_SHA_NAMES = {
+    "tian_yi": "Heavenly Noble (Tian Yi Gui Ren)",
+    "tao_hua": "Peach Blossom (Tao Hua)",
+    "yi_ma": "Travelling Horse (Yi Ma)",
+    "wen_chang": "Scholar's Star (Wen Chang)",
+    "kong_wang": "Void (Kong Wang)",
+}
+
+#: Shen Sha short meanings — the traditional core, unembellished.
+SHEN_SHA_MEANINGS = {
+    "tian_yi": "Protective help; people who open doors in hard times.",
+    "tao_hua": "Charm and social magnetism; movement in relationships.",
+    "yi_ma": "Relocation, travel, the energy of change.",
+    "wen_chang": "Learning, writing and examination luck.",
+    "kong_wang": "The affected pillar's influence thins; a space for "
+                 "turning inward.",
+}
+
 #: True Solar Time disclosure — the conversion is shown to the user.
 BAZI_TST_NOTE = ("The hour pillar was calculated with true solar time: "
                  "{local} → {solar} ({offset} min).")

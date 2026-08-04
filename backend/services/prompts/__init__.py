@@ -201,6 +201,14 @@ def localize_bazi(lang: str | None, chart: dict | None) -> dict:
         # Güç hükmü (B3): anahtarlar korunur, *_name alanları isteğin
         # dilinde eklenir — UI ve prompt cümleyi buradan okur.
         "strength": _strength_local(p, element, chart.get("strength")),
+        # Shen Sha (B4): ad ve kısa anlam isteğin dilinde.
+        "shen_sha": [
+            {**s,
+             "name": p.SHEN_SHA_NAMES.get(s.get("key") or "",
+                                          s.get("key") or ""),
+             "meaning": p.SHEN_SHA_MEANINGS.get(s.get("key") or "", "")}
+            for s in chart.get("shen_sha") or []
+        ],
         # Hesap varsayımlarının beyanı (Revize B0/B1): motor anahtar
         # döndürür, cümle burada kurulur. Boş liste = beyan gerektiren
         # varsayım yok. TST satırı ayrıca kurulur çünkü içine gerçek

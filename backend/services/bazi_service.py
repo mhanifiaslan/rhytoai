@@ -326,9 +326,12 @@ def get_bazi_chart(
     # --- Day Master gücü + yararlı element (B3) ---
     # İçe aktarma fonksiyon içinde: bazi_strength bu modülün tablolarını
     # kullanıyor, modül düzeyinde içe aktarmak döngü kurardı.
-    from services import bazi_strength
+    from services import bazi_stars, bazi_strength
     strength = bazi_strength.assess_strength(pillars, day_stem,
                                              element_count)
+
+    # --- Shen Sha (B4): 5 yıldız + Kong Wang ---
+    shen_sha = bazi_stars.find_shen_sha(pillars, day_cycle)
 
     # --- Şans Sütunları (Da Yun) ---
     yang_year = STEMS[year_stem]["polarity"] == "Yang"
@@ -389,6 +392,7 @@ def get_bazi_chart(
         "dominant_element": dominant,
         "missing_elements": missing,
         "strength": strength,
+        "shen_sha": shen_sha,
         "zodiac_animal": BRANCHES[year_branch]["animal"],
         "luck_pillars": luck_pillars,
         "luck_direction": "forward" if forward else "backward",

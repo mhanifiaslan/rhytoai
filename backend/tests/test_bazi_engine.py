@@ -399,6 +399,70 @@ class TestGucHukmu:
         assert chart["strength"]["scope_note_key"] == "combinations_ignored"
 
 
+class TestShenSha:
+    """B4: beş yıldız + Kong Wang — tablo ve formül doğrulaması."""
+
+    def test_kong_wang_alti_xun(self):
+        # Formül 6 xun'un tamamında elle doğrulanmış klasik çiftleri
+        # vermeli: JiaZi→Xu/Hai, JiaXu→Shen/You, JiaShen→Wu/Wei,
+        # JiaWu→Chen/Si, JiaChen→Yin/Mao, JiaYin→Zi/Chou.
+        from services.bazi_stars import void_branches
+        beklenen = {0: (10, 11), 15: (8, 9), 23: (6, 7),
+                    34: (4, 5), 45: (2, 3), 59: (0, 1)}
+        for cycle, cift in beklenen.items():
+            assert void_branches(cycle) == cift, f"xun {cycle}"
+
+    def test_kurgulanmis_haritada_uc_yildiz(self):
+        # JiaZi günü: Tian Yi hedefi Chou yıl dalında; su üçlüsünden (Zi)
+        # Tao Hua hedefi You saatte, Yi Ma hedefi Yin ayda.
+        from services.bazi_stars import find_shen_sha
+        pillars = {
+            "year": bazi_service._pillar(4, 1),   # Wu Chou
+            "month": bazi_service._pillar(2, 2),  # Bing Yin
+            "day": bazi_service._pillar(0, 0),    # Jia Zi
+            "hour": bazi_service._pillar(5, 9),   # Ji You
+        }
+        bulgular = find_shen_sha(pillars, day_cycle=0)
+        ozet = {(b["key"], b["pillar"]) for b in bulgular}
+        assert ozet == {("tian_yi", "year"), ("tao_hua", "hour"),
+                        ("yi_ma", "month")}
+
+    def test_ayni_yildiz_ayni_sutunda_tekillesir(self):
+        # Yukarıdaki haritada Chou'yu hem gün gövdesi (Jia) hem yıl
+        # gövdesi (Wu) işaret eder — kayıt TEK olmalı: liste okuma
+        # yüzeyi, kanıt defteri değil.
+        from services.bazi_stars import find_shen_sha
+        pillars = {
+            "year": bazi_service._pillar(4, 1),
+            "month": bazi_service._pillar(2, 2),
+            "day": bazi_service._pillar(0, 0),
+            "hour": bazi_service._pillar(5, 9),
+        }
+        bulgular = find_shen_sha(pillars, day_cycle=0)
+        tian_yi = [b for b in bulgular if b["key"] == "tian_yi"]
+        assert len(tian_yi) == 1
+
+    def test_bos_liste_mesru(self):
+        # Hiçbir yıldız düşmeyen harita: boş liste bir hata değil,
+        # dürüst bir sonuçtur (UI da öyle gösterir).
+        from services.bazi_stars import find_shen_sha
+        pillars = {
+            "year": bazi_service._pillar(2, 4),   # Bing Chen
+            "month": bazi_service._pillar(3, 6),  # Ding Wu
+            "day": bazi_service._pillar(6, 10),   # Geng Xu
+            "hour": bazi_service._pillar(4, 0),   # Wu Zi
+        }
+        assert find_shen_sha(pillars, day_cycle=46) == []
+
+    def test_motor_ciktisinda_yildizlar(self):
+        chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                               gender="female")
+        from services.bazi_stars import STAR_KEYS
+        for b in chart["shen_sha"]:
+            assert b["key"] in STAR_KEYS
+            assert {"key", "basis", "branch", "pillar"} <= set(b)
+
+
 class TestDegismezler:
     def test_element_dagilimi_sekiz_karakter(self):
         # B2'den beri ağırlıklı: gövdeler 1.0 + dal başına gizli kök 1.0.

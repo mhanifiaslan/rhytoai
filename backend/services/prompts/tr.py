@@ -339,6 +339,24 @@ BAZI_SEASON_STATES = {
     "qiu": "kısıtlı", "si": "sönük",
 }
 
+#: Shen Sha yıldız adları (B4). Anahtarlar bazi_stars.STAR_KEYS ile aynı.
+SHEN_SHA_NAMES = {
+    "tian_yi": "Göksel Soylu (Tian Yi Gui Ren)",
+    "tao_hua": "Şeftali Çiçeği (Tao Hua)",
+    "yi_ma": "Sefer Atı (Yi Ma)",
+    "wen_chang": "Kalem Yıldızı (Wen Chang)",
+    "kong_wang": "Boşluk (Kong Wang)",
+}
+
+#: Shen Sha kısa anlamları — geleneksel çekirdek, süslemesiz.
+SHEN_SHA_MEANINGS = {
+    "tian_yi": "Koruyucu yardım; zor anda kapı açan kişiler.",
+    "tao_hua": "Çekicilik ve sosyal parlaklık; ilişkilerde hareket.",
+    "yi_ma": "Yer değiştirme, yolculuk, değişim enerjisi.",
+    "wen_chang": "Öğrenme, yazı ve sınav şansı.",
+    "kong_wang": "İlgili sütunun etkisi inceliyor; içe dönüş alanı.",
+}
+
 #: Gerçek Güneş Zamanı beyanı — saat dönüşümü kullanıcıya gösterilir.
 BAZI_TST_NOTE = ("Saat sütunu gerçek güneş zamanıyla hesaplandı: "
                  "{local} → {solar} ({offset} dk).")

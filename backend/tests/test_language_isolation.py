@@ -25,7 +25,8 @@ import re
 import pytest
 
 from core import i18n
-from services import bazi_service, iching_service, prompts, sky_service
+from services import (bazi_service, bazi_stars, iching_service, prompts,
+                      sky_service)
 
 #: Yalnizca Turkcede bulunan harfler. "i", "o", "u" gibi ortak harfler yok;
 #: yanlis pozitif uretmemesi icin liste bilincli olarak dar.
@@ -37,6 +38,7 @@ TABLOLAR = [
     "TEN_GOD_MEANINGS", "POLARITY_NAMES", "GENDER_NAMES",
     "ELEMENT_NAMES", "MODALITY_NAMES", "BAZI_NOTES",
     "BAZI_STRENGTH_NAMES", "BAZI_SEASON_STATES",
+    "SHEN_SHA_NAMES", "SHEN_SHA_MEANINGS",
 ]
 
 
@@ -169,6 +171,8 @@ def test_motor_anahtarlari_tablolarda_karsiligi_var():
         "BAZI_ELEMENTS": set(bazi_service._ELEMENT_ORDER),
         "BAZI_ANIMALS": {b["animal"] for b in bazi_service.BRANCHES},
         "TEN_GOD_MEANINGS": {v[1] for v in bazi_service._TEN_GODS.values()},
+        "SHEN_SHA_NAMES": set(bazi_stars.STAR_KEYS),
+        "SHEN_SHA_MEANINGS": set(bazi_stars.STAR_KEYS),
     }
     for kod in i18n.SUPPORTED:
         modul = prompts.get(kod)
