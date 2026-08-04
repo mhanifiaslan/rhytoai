@@ -1,0 +1,213 @@
+"""BaZi motoru altın harita vektörleri (Revize B0).
+
+Bu dosyadan önce motorun ARİTMETİĞİNİ hiçbir test doğrulamıyordu — yalnız
+dil izolasyonu test ediliyordu. Beş Kaplan tablosunda tek bir indeks kayması
+hiçbir istisna üretmez; yalnızca herkesin ay sütunu sessizce yanlış olur.
+
+ALTIN DEĞER KURALI: her vektör iki bağımsız kaynakla doğrulanmadan
+dondurulmaz; kaynak, vektörün yanına yorum olarak yazılır. "Test var ama
+yanlış değeri kilitliyor" durumunun tek panzehiri bu.
+
+Şehirler gazetteer'den seçilir (geo_service._GAZETTEER) — GeoNames ağına
+düşülmez, testler çevrimdışı koşar.
+
+NOT (B1): saat/gün-devri şu an YEREL SAATLE karar veriyor. B1 Gerçek Güneş
+Zamanı'nı getirince buradaki `TestSaatVeGunDevri` sınıfının beklenenleri
+TST'ye göre güncellenecek — o sınıf bilinçli olarak ayrı tutuldu.
+"""
+from __future__ import annotations
+
+import pytest
+
+from services import bazi_service
+from services.bazi_service import get_bazi_chart
+
+
+def _sutun(chart, ad):
+    p = chart["pillars"][ad]
+    return (p["stem"]["pinyin"], p["branch"]["pinyin"])
+
+
+# --------------------------------------------------------------------------
+# Gün çapası — 60'lık döngü
+# --------------------------------------------------------------------------
+
+class TestGunCapasi:
+    def test_prc_kurulus_gunu_jiazi(self):
+        # 1949-10-01: motorun kendi docstring iddiası VE tarihsel olarak
+        # bilinen 甲子 günü (ÇHC kuruluş günü — yaygın almanak kaydı).
+        # İkinci kaynak: 1900-01-01=JiaXu çapasından el hesabı
+        # (18170 gün + 10) % 60 = 0 → JiaZi.
+        chart = get_bazi_chart(1949, 10, 1, 12, 0, city="Beijing",
+                               gender="male")
+        assert _sutun(chart, "day") == ("Jia", "Zi")
+
+    def test_milenyum_gunu_wuwu(self):
+        # 2000-01-01: yayımlanmış daimi takvimlerde 戊午 (WuWu) günü.
+        # İkinci kaynak: çapadan el hesabı (36524 + 10) % 60 = 54.
+        chart = get_bazi_chart(2000, 1, 1, 12, 0, city="Istanbul",
+                               gender="female")
+        assert _sutun(chart, "day") == ("Wu", "Wu")
+
+    def test_milenyum_yili_hala_1999(self):
+        # 1 Ocak Li Chun'dan ÖNCE: yıl sütunu 1999 = JiMao (己卯, tavşan).
+        # Kaynak: (1999-4)%10=5 Ji, %12=3 Mao; 1999 yaygın olarak Tavşan yılı.
+        chart = get_bazi_chart(2000, 1, 1, 12, 0, city="Istanbul",
+                               gender="female")
+        assert _sutun(chart, "year") == ("Ji", "Mao")
+        assert chart["zodiac_animal"] == "rabbit"
+
+
+# --------------------------------------------------------------------------
+# Li Chun yıl sınırı
+# --------------------------------------------------------------------------
+
+class TestLiChunSiniri:
+    # Li Chun 1984 ≈ 4 Şubat akşam geç saat (Pekin, ~23:19) — Güneş 315°.
+    # Vektörler sınırın iki yanına 10+ saat payla konur ki "anın dakikası"
+    # kaynaklar arasında oynasa da test kararlı kalsın.
+
+    def test_li_chun_oncesi_onceki_yil(self):
+        # 4 Şubat 1984 sabahı: hâlâ 1983 = GuiHai (癸亥, domuz) yılı.
+        chart = get_bazi_chart(1984, 2, 4, 10, 0, city="Beijing",
+                               gender="male")
+        assert _sutun(chart, "year") == ("Gui", "Hai")
+        assert chart["zodiac_animal"] == "pig"
+
+    def test_li_chun_sonrasi_yeni_yil(self):
+        # 5 Şubat 1984: 60'lık döngünün başı JiaZi (甲子, sıçan) yılı.
+        chart = get_bazi_chart(1984, 2, 5, 10, 0, city="Beijing",
+                               gender="male")
+        assert _sutun(chart, "year") == ("Jia", "Zi")
+        assert chart["zodiac_animal"] == "rat"
+
+    def test_aralik_ayinda_yil_geri_alinmaz(self):
+        # Boylam Aralık sonunda da [270,315) aralığındadır; koddaki
+        # `month <= 2` koruması olmasa yıl yanlışlıkla geri alınırdı.
+        # 25 Aralık 1983 → yıl yine 1983 GuiHai.
+        chart = get_bazi_chart(1983, 12, 25, 12, 0, city="Istanbul",
+                               gender="female")
+        assert _sutun(chart, "year") == ("Gui", "Hai")
+
+
+# --------------------------------------------------------------------------
+# Ay sütunu — Beş Kaplan ve Jie sınırı
+# --------------------------------------------------------------------------
+
+class TestAySutunu:
+    def test_jia_yilinin_ilk_ayi_bingyin(self):
+        # Beş Kaplan: Jia/Ji yılı → ilk ay Bing Yin (丙寅). Klasik tablo;
+        # ikinci kaynak: five_tigers[0]=2 → Bing, ay 1 dalı Yin.
+        chart = get_bazi_chart(1984, 2, 5, 10, 0, city="Beijing",
+                               gender="male")
+        assert _sutun(chart, "month") == ("Bing", "Yin")
+
+    def test_jing_zhe_oncesi_yin_ayi(self):
+        # Jing Zhe (345°) ≈ 5-6 Mart; 3 Mart güvenli payla ÖNCE → hâlâ Yin ayı.
+        chart = get_bazi_chart(1984, 3, 3, 12, 0, city="Beijing",
+                               gender="male")
+        assert _sutun(chart, "month") == ("Bing", "Yin")
+
+    def test_jing_zhe_sonrasi_mao_ayi(self):
+        # 8 Mart güvenli payla SONRA → ikinci ay DingMao (丁卯).
+        chart = get_bazi_chart(1984, 3, 8, 12, 0, city="Beijing",
+                               gender="male")
+        assert _sutun(chart, "month") == ("Ding", "Mao")
+
+
+# --------------------------------------------------------------------------
+# Saat sütunu + 23:00 gün devri — B1'de TST'ye göre güncellenecek sınıf
+# --------------------------------------------------------------------------
+
+class TestSaatVeGunDevri:
+    def test_ogleden_sonra_besrat_dogru(self):
+        # 1990-06-15 = XinHai günü (çapadan el hesabı: döngü 47; iç tutarlılık:
+        # 2000-01-01'e 3487 gün → 47+3487≡54 ✓). 14:00 → Wei saati.
+        # Beş Sıçan: Bing/Xin günü → saatler WuZi'den başlar → Wei = YiWei.
+        chart = get_bazi_chart(1990, 6, 15, 14, 0, city="Istanbul",
+                               gender="male")
+        assert _sutun(chart, "day") == ("Xin", "Hai")
+        assert _sutun(chart, "hour") == ("Yi", "Wei")
+
+    def test_2300_sonrasi_ertesi_gunun_sutunu(self):
+        # Geç Zi ekolü: 23:30 doğum ertesi günün gövdesini alır.
+        # 16 Haziran = RenZi (döngü 48); Ding/Ren günü → saatler GengZi'den
+        # başlar → Zi saati GengZi.
+        chart = get_bazi_chart(1990, 6, 15, 23, 30, city="Istanbul",
+                               gender="male")
+        assert _sutun(chart, "day") == ("Ren", "Zi")
+        assert _sutun(chart, "hour") == ("Geng", "Zi")
+
+
+# --------------------------------------------------------------------------
+# Şans sütunları — yön ve yapı
+# --------------------------------------------------------------------------
+
+class TestSansSutunlari:
+    # Klasik kural: yang yıl + erkek → ileri, yang + kadın → geri;
+    # yin yıl + erkek → geri, yin + kadın → ileri.
+
+    @pytest.mark.parametrize("yil,cinsiyet,beklenen", [
+        (1984, "male", "forward"),    # Jia (yang) + erkek
+        (1984, "female", "backward"),
+        (1985, "male", "backward"),   # Yi (yin) + erkek
+        (1985, "female", "forward"),
+    ])
+    def test_yon_dort_kombinasyon(self, yil, cinsiyet, beklenen):
+        chart = get_bazi_chart(yil, 6, 1, 12, 0, city="Istanbul",
+                               gender=cinsiyet)
+        assert chart["luck_direction"] == beklenen
+
+    def test_sekiz_donem_ve_ardisik_yaslar(self):
+        chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                               gender="female")
+        lp = chart["luck_pillars"]
+        assert len(lp) == 8
+        for onceki, sonraki in zip(lp, lp[1:]):
+            assert sonraki["from_age"] == onceki["to_age"] + 1
+
+
+# --------------------------------------------------------------------------
+# On Tanrı ilişki tablosu
+# --------------------------------------------------------------------------
+
+class TestOnTanri:
+    def test_klasik_ornekler(self):
+        # Zi Ping sınıflandırması — klasik ders kitabı örnekleri:
+        # Jia (Yang ahşap) için Xin (Yin metal) = Zheng Guan (doğru yönetici),
+        # Ren (Yang su) = Pian Yin (dolaylı kaynak),
+        # Yi (Yin ahşap) = Jie Cai (omuzdaş/rakip).
+        assert bazi_service._ten_god(0, 7)["name"] == "Zheng Guan"
+        assert bazi_service._ten_god(0, 8)["name"] == "Pian Yin"
+        assert bazi_service._ten_god(0, 1)["name"] == "Jie Cai"
+
+
+# --------------------------------------------------------------------------
+# Değişmezler ve beyanlar
+# --------------------------------------------------------------------------
+
+class TestDegismezler:
+    def test_element_dagilimi_sekiz_karakter(self):
+        chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                               gender="female")
+        assert sum(chart["element_distribution"].values()) == 8
+
+    def test_calc_version_var(self):
+        chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                               gender="female")
+        assert chart["calc_version"] == "2"
+
+    def test_ikili_cinsiyette_beyan_yok(self):
+        for cinsiyet in ("male", "female"):
+            chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                                   gender=cinsiyet)
+            assert chart["gender_note_key"] is None
+
+    def test_other_cinsiyet_beyanla_gelir(self):
+        # Sessiz varsayım yasak: ikili olmayan cinsiyette yön yin kuralıyla
+        # hesaplanır ve bu ANAHTAR olarak beyan edilir (cümle localize'da).
+        chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                               gender="other")
+        assert chart["gender_note_key"] == "luck_direction_yin"
+        # 1990 = Geng (yang) yılı; yin kuralı → yön GERİ.
+        assert chart["luck_direction"] == "backward"

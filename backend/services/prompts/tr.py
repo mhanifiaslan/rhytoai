@@ -310,6 +310,15 @@ POLARITY_NAMES = {"Yang": "Yang", "Yin": "Yin"}
 
 GENDER_NAMES = {"male": "Erkek", "female": "Kadın"}
 
+#: Hesap varsayımı beyanları (Revize B0). Anahtarlar bazi_service'in
+#: döndürdüğü *_note_key değerleriyle aynı olmalı. Sessiz varsayım yok:
+#: motor bir temel seçmek zorunda kaldıysa kullanıcı bunu okur.
+BAZI_NOTES = {
+    "luck_direction_yin": (
+        "Şans dönemlerinin yönü, cinsiyet ikili seçilmediği için "
+        "yin (kadın) kuralıyla hesaplandı."),
+}
+
 #: Day Master cümlesi. bazi_service artık bu cümleyi kurmuyor.
 DAY_MASTER_DESCRIPTION = "Günün Efendisi: {polarity} {element} ({cn} {pinyin})"
 

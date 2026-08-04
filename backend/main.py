@@ -14,7 +14,6 @@ from fastapi.responses import JSONResponse
 
 from api.account import router as account_router
 from api.astrology import router as astrology_router
-from api.bazi import router as bazi_router
 from api.billing import router as billing_router
 from api.chat import router as chat_router
 from api.contacts import router as contacts_router
@@ -105,7 +104,9 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 app.include_router(astrology_router, prefix="/api/v1/astrology", tags=["Astrology"])
-app.include_router(bazi_router, prefix="/api/v1/bazi", tags=["BaZi"])
+# /api/v1/bazi/chart SILINDI (Revize B0): require_plus'siz, cuzdansiz, mobil
+# istemcinin hic kullanmadigi bir uctu ve ucretli hesabin hesap kismini
+# bedava sizdiriyordu. Chart + rapor tek yerden: /api/v1/reports/bazi.
 app.include_router(iching_router, prefix="/api/v1/iching", tags=["I Ching"])
 # Firaset (yüz okuma). Uç GÖRÜNTÜ ALMAZ, oran alır: tespit kullanıcının
 # cihazında yapılır ve sunucuya yalnızca türetilmiş sayılar gelir. Eski

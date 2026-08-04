@@ -419,7 +419,18 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
     """BaZi haritasından kader analizi raporu."""
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
-    cache_key = f"bazi-report-{user_id}-{bazi['pillars']['day']['label']}-{lang}"
+    # Anahtar HARİTANIN TAMAMINDAN (Revize B0). Eski anahtar yalnızca gün
+    # sütununu taşıyordu: kullanıcı cinsiyetini ya da doğum saatini/şehrini
+    # değiştirse de gün sütunu aynı kaldığı sürece 30 gün boyunca eski rapor
+    # dönüyordu — üstelik ekranda taze hesaplanan sütunların yanında.
+    # calc_version da girer: hesap davranışı değişince eski metinler düşer.
+    ozet = "|".join([
+        *(bazi["pillars"][k]["label"] for k in ("year", "month", "day", "hour")),
+        bazi.get("gender", ""),
+        str(bazi.get("calc_version", "1")),
+    ])
+    cache_key = (f"bazi-report-v2-{user_id}-"
+                 f"{hashlib.sha256(ozet.encode()).hexdigest()[:16]}-{lang}")
 
     # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
     cached = cache.get(cache_key)

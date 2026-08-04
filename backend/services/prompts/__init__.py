@@ -181,6 +181,11 @@ def localize_bazi(lang: str | None, chart: dict | None) -> dict:
                                             chart.get("zodiac_animal") or ""),
         "luck_pillars": [{**sutun(lp), "ten_god": tanri(lp.get("ten_god"))}
                          for lp in (chart.get("luck_pillars") or [])],
+        # Hesap varsayımlarının beyanı (Revize B0): motor anahtar döndürür,
+        # cümle burada kurulur. Boş liste = beyan gerektiren varsayım yok.
+        "notes": [p.BAZI_NOTES[k]
+                  for k in [chart.get("gender_note_key")]
+                  if k and k in p.BAZI_NOTES],
     }
 
 

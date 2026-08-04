@@ -200,6 +200,12 @@ def get_bazi_chart(
     # --- Şans Sütunları (Da Yun) ---
     yang_year = STEMS[year_stem]["polarity"] == "Yang"
     is_male = gender.lower() in ("male", "erkek", "m", "man")
+    is_female = gender.lower() in ("female", "kadin", "kadın", "f", "woman")
+    # Cinsiyet "other" (ya da tanınmayan bir değer) ise yön YİN kuralıyla
+    # hesaplanır — ama artık SESSİZCE değil. Klasik yöntem yön için ikili
+    # bir temel ister; temeli biz seçiyorsak bunu söylemek zorundayız.
+    # Anahtar localize_bazi'de cümleye çevrilir, rapor ve ekranda görünür.
+    gender_note_key = None if (is_male or is_female) else "luck_direction_yin"
     forward = yang_year == is_male  # yang+erkek veya yin+kadın -> ileri
     boundary = _find_jie_boundary(utc, forward=forward)
     days_to_boundary = abs((boundary - utc).total_seconds()) / 86400
@@ -219,6 +225,11 @@ def get_bazi_chart(
     return {
         "name": name,
         "gender": "male" if is_male else "female",
+        # Hesap sürümü: hesap davranışı değişen her fazda artar ve rapor
+        # önbellek anahtarına girer — eski metinler kendiliğinden düşer,
+        # "yeni harita + 30 günlük eski rapor" çelişkisi hiç yaşanmaz.
+        "calc_version": "2",
+        "gender_note_key": gender_note_key,
         "birth_local": local.isoformat(),
         "timezone": loc.tz_str,
         "pillars": pillars,

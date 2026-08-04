@@ -322,6 +322,15 @@ POLARITY_NAMES = {"Yang": "Yang", "Yin": "Yin"}
 
 GENDER_NAMES = {"male": "Male", "female": "Female"}
 
+#: Calculation-assumption disclosures (Revision B0). Keys must match the
+#: *_note_key values returned by bazi_service. No silent assumptions: if
+#: the engine had to pick a basis, the user gets to read it.
+BAZI_NOTES = {
+    "luck_direction_yin": (
+        "The direction of the luck periods was calculated using the yin "
+        "(female) convention, since no binary gender was selected."),
+}
+
 #: Day Master sentence. bazi_service no longer composes this.
 DAY_MASTER_DESCRIPTION = "Day Master: {polarity} {element} ({cn} {pinyin})"
 
