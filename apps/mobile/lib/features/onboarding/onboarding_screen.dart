@@ -25,6 +25,14 @@ class OnboardingScreen extends ConsumerStatefulWidget {
 class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   DateTime _birthDate = DateTime(2000, 1, 1);
   TimeOfDay _birthTime = const TimeOfDay(hour: 12, minute: 0);
+
+  /// Doğum saati gerçekten biliniyor mu (Revize B1).
+  ///
+  /// Eskiden bilinmeyen saat sessizce 12:00 yazılıyordu ve BaZi öğle
+  /// doğumu gibi saat sütunu üretiyordu. Artık bilinmiyorsa hiç
+  /// gönderilmiyor; sunucu saat sütununu kurmuyor ve bunu beyan ediyor.
+  bool _timeKnown = true;
+
   final _cityController = TextEditingController(text: 'Istanbul');
   String _gender = 'female';
   bool _busy = false;
@@ -41,7 +49,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   Future<void> _pickTime() async {
     final picked = await showTimePicker(context: context, initialTime: _birthTime);
-    if (picked != null) setState(() => _birthTime = picked);
+    if (picked != null) {
+      setState(() {
+        _birthTime = picked;
+        // Saat seçmek "biliyorum" demek — anahtar kendiliğinden düzelir.
+        _timeKnown = true;
+      });
+    }
   }
 
   Future<void> _save() async {
@@ -62,8 +76,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       await saveBirthRecord(
         BirthRecord(
           date: _birthDate,
-          time: '${_birthTime.hour.toString().padLeft(2, '0')}:'
-              '${_birthTime.minute.toString().padLeft(2, '0')}',
+          time: !_timeKnown
+              ? null
+              : '${_birthTime.hour.toString().padLeft(2, '0')}:'
+                  '${_birthTime.minute.toString().padLeft(2, '0')}',
           city: _cityController.text,
           gender: _gender,
         ),
@@ -85,8 +101,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     final dateText = DateFormat('d MMMM yyyy',
             Localizations.localeOf(context).toLanguageTag())
         .format(_birthDate);
-    final timeText =
-        '${_birthTime.hour.toString().padLeft(2, '0')}:${_birthTime.minute.toString().padLeft(2, '0')}';
+    final timeText = !_timeKnown
+        ? '—'
+        : '${_birthTime.hour.toString().padLeft(2, '0')}:${_birthTime.minute.toString().padLeft(2, '0')}';
 
     var stagger = 0;
     Duration next() => Duration(milliseconds: 70 * stagger++);
@@ -121,6 +138,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 .animate(delay: next())
                 .fadeIn(duration: 360.ms)
                 .slideY(begin: 0.08, curve: Curves.easeOutCubic),
+            // "Bilmiyorum" bir eksiklik değil, geçerli bir cevap: BaZi bu
+            // durumda saat sütununu HİÇ kurmaz ve bunu okumada söyler.
+            CheckboxListTile(
+              value: !_timeKnown,
+              onChanged: (v) => setState(() => _timeKnown = !(v ?? false)),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Text(l10n.birthTimeUnknown,
+                  style: RythoText.body(13, color: RythoColors.parchmentDim)),
+            ).animate(delay: next()).fadeIn(duration: 360.ms),
             const SizedBox(height: 12),
             TextField(
               controller: _cityController,

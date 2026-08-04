@@ -166,7 +166,9 @@ def localize_bazi(lang: str | None, chart: dict | None) -> dict:
         **chart,
         "gender": p.GENDER_NAMES.get(chart.get("gender") or "",
                                      chart.get("gender") or ""),
-        "pillars": {ad: sutun(v)
+        # Saat sütunu bilinmeyen doğumda None'dır ve None KALIR: boş sözlük
+        # "veri var ama boş" okunur, None "ölçülmedi" der (Revize B1).
+        "pillars": {ad: (sutun(v) if v else None)
                     for ad, v in (chart.get("pillars") or {}).items()},
         "day_master": çevrilmiş_dm,
         "ten_gods": {ad: tanri(v)
@@ -181,12 +183,28 @@ def localize_bazi(lang: str | None, chart: dict | None) -> dict:
                                             chart.get("zodiac_animal") or ""),
         "luck_pillars": [{**sutun(lp), "ten_god": tanri(lp.get("ten_god"))}
                          for lp in (chart.get("luck_pillars") or [])],
-        # Hesap varsayımlarının beyanı (Revize B0): motor anahtar döndürür,
-        # cümle burada kurulur. Boş liste = beyan gerektiren varsayım yok.
-        "notes": [p.BAZI_NOTES[k]
-                  for k in [chart.get("gender_note_key")]
-                  if k and k in p.BAZI_NOTES],
+        # Hesap varsayımlarının beyanı (Revize B0/B1): motor anahtar
+        # döndürür, cümle burada kurulur. Boş liste = beyan gerektiren
+        # varsayım yok. TST satırı ayrıca kurulur çünkü içine gerçek
+        # saatler giriyor — düz tablodan çıkmaz.
+        "notes": _bazi_notes(p, chart),
     }
+
+
+def _bazi_notes(p, chart: dict) -> list[str]:
+    notes = [p.BAZI_NOTES[k]
+             for k in (chart.get("note_keys") or [])
+             if k in p.BAZI_NOTES]
+    # Gerçek Güneş Zamanı beyanı: sapma saat DALINI değiştirebilecek
+    # büyüklükte olduğu için kullanıcı dönüşümü görmeli.
+    solar = chart.get("solar_time")
+    sapma = chart.get("tst_offset_minutes")
+    yerel = chart.get("birth_local")
+    if solar and yerel and sapma is not None:
+        notes.append(p.BAZI_TST_NOTE.format(
+            local=yerel[11:16], solar=solar[11:16],
+            offset=f"{sapma:+d}"))
+    return notes
 
 
 def localize_iching(lang: str | None, cast: dict | None) -> dict:

@@ -173,9 +173,12 @@ String friendlyError(Object error, [AppLocalizations? l10n]) {
 /// Kullanıcının doğum verisini backend'in beklediği gövdeye çevirir.
 Map<String, dynamic> birthPayload(Map<String, dynamic> profile) {
   final birthDate = (profile['birthDate'] as String?) ?? '2000-01-01';
-  final birthTime = (profile['birthTime'] as String?) ?? '12:00';
+  // birthTime alanı YOKSA saat bilinmiyor demektir (Revize B1): 12:00
+  // yalnızca saat gerektiren uçlar (natal) için teknik dolgu, hour_known
+  // bayrağı gerçeği taşır — BaZi bu bayrağa bakıp saat sütununu kurmaz.
+  final birthTime = profile['birthTime'] as String?;
   final dateParts = birthDate.split('-').map(int.parse).toList();
-  final timeParts = birthTime.split(':').map(int.parse).toList();
+  final timeParts = (birthTime ?? '12:00').split(':').map(int.parse).toList();
   return {
     'name': profile['displayName'] ?? 'Gezgin',
     'year': dateParts[0],
@@ -183,6 +186,7 @@ Map<String, dynamic> birthPayload(Map<String, dynamic> profile) {
     'day': dateParts[2],
     'hour': timeParts[0],
     'minute': timeParts[1],
+    'hour_known': birthTime != null,
     'city': profile['birthCity'] ?? 'Istanbul',
     'nation': profile['birthNation'],
     'gender': profile['gender'] ?? 'female',

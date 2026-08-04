@@ -95,9 +95,12 @@ void main() {
       expect(k.gender, 'male');
     });
 
-    test('profil bossa makul varsayilan', () {
+    test('profil bossa saat BILINMIYOR sayilir', () {
+      // Revize B1: eski davranis 12:00 varsayip ogle dogumu uyduruyordu.
+      // Artik null = "saat bilinmiyor"; sunucu BaZi'de saat sutununu hic
+      // kurmaz ve bunu okumada beyan eder.
       final k = BirthRecord.fromProfile(null);
-      expect(k.time, '12:00');
+      expect(k.time, isNull);
       expect(k.city, 'Istanbul');
     });
   });

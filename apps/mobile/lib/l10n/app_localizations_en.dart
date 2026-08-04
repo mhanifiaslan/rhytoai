@@ -461,6 +461,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get birthTime => 'Time';
 
   @override
+  String get birthTimeUnknown => 'I don\'t know my birth time';
+
+  @override
   String get birthCity => 'City';
 
   @override
@@ -981,7 +984,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get faceConsentBody =>
-      'Face reading processes the camera frame ON YOUR DEVICE. The photo is never sent to a server, never stored anywhere, and is discarded from memory as soon as the reading is made. Only ratios derived from your features (e.g. forehead-to-chin height) are sent; those numbers cannot identify a person.';
+      'Face reading processes the camera frame or a photo you pick from your gallery ON YOUR DEVICE. The image is never sent to a server, never stored anywhere, and is discarded as soon as the reading is made (on the gallery path the copy handed to the app is deleted; your original photo is untouched). Only ratios derived from your features (e.g. forehead-to-chin height) are sent; those numbers cannot identify a person.';
 
   @override
   String get faceConsentCheckbox =>

@@ -66,9 +66,14 @@ class BaziTab extends ConsumerWidget {
                 ('year', l10n.baziPillarYear),
               ].indexed)
                 Expanded(
+                  // Saat sütunu bilinmeyen doğumda null gelir (Revize B1):
+                  // "—" gösterilir, uydurma bir öğle sütunu değil. Sebep
+                  // beyan satırında (aşağıda `notes`).
                   child: _PillarColumn(
                     label: key.$2,
-                    pillar: Map<String, dynamic>.from(pillars[key.$1]),
+                    pillar: pillars[key.$1] == null
+                        ? null
+                        : Map<String, dynamic>.from(pillars[key.$1]),
                     highlight: key.$1 == 'day',
                   )
                       .animate(delay: (i * 130).ms)
@@ -77,6 +82,24 @@ class BaziTab extends ConsumerWidget {
                 ),
             ]),
           ),
+          // Hesap beyanları: TST dönüşümü, saatsiz mod, cinsiyet kuralı.
+          // Sunucudan İSTEĞİN DİLİNDE hazır cümleler gelir (localize_bazi).
+          if ((chart['notes'] as List?)?.isNotEmpty ?? false)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (final not in chart['notes'] as List)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text('• $not',
+                          style: RythoText.body(11,
+                              color: RythoColors.parchmentDim)),
+                    ),
+                ],
+              ),
+            ),
           Plaque(
             label: l10n.baziElementBalance,
             child: Column(children: [
@@ -177,13 +200,36 @@ class _PillarColumn extends StatelessWidget {
   const _PillarColumn(
       {required this.label, required this.pillar, this.highlight = false});
   final String label;
-  final Map<String, dynamic> pillar;
+
+  /// null = sütun HESAPLANMADI (doğum saati bilinmiyor). "—" gösterilir;
+  /// boş harita kutusu "veri gelmedi" okunurdu, "—" ise "ölçülmedi" diyor.
+  final Map<String, dynamic>? pillar;
   final bool highlight;
 
   @override
   Widget build(BuildContext context) {
-    final stem = Map<String, dynamic>.from(pillar['stem']);
-    final branch = Map<String, dynamic>.from(pillar['branch']);
+    final p = pillar;
+    if (p == null) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 3),
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          border: Border.all(color: RythoColors.line),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Column(children: [
+          Text(label,
+              style: RythoText.mono(9, color: RythoColors.parchmentDim)),
+          const SizedBox(height: 8),
+          Text('—',
+              style:
+                  RythoText.display(24, color: RythoColors.parchmentDim)),
+          const SizedBox(height: 26),
+        ]),
+      );
+    }
+    final stem = Map<String, dynamic>.from(p['stem']);
+    final branch = Map<String, dynamic>.from(p['branch']);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 3),
       padding: const EdgeInsets.symmetric(vertical: 10),

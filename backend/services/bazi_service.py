@@ -134,14 +134,57 @@ def _find_jie_boundary(start_utc: dt.datetime, forward: bool) -> dt.datetime:
     return t
 
 
+def _true_solar_time(local: dt.datetime, lng: float) -> tuple[dt.datetime, int]:
+    """Duvar saatini Gerçek Güneş Zamanı'na çevirir (Revize B1).
+
+    Kullanıcının girdiği "kol saati" BaZi için geçersizdir: saat dilimi bir
+    19. yüzyıl idari icadı, saat dalı ise Güneş'in gökteki GERÇEK konumu.
+    İki düzeltme uygulanır:
+
+    * **Boylam:** İstanbul (28.98°D) UTC+3 diliminin 45° meridyenine göre
+      Güneş'ten ~64 dakika geridedir — dilim içindeki konum fark eder.
+    * **Zaman Denklemi:** Dünya'nın yörüngesi eliptik; Güneş duvara göre
+      −14…+16 dakika "hızlı/yavaş" gider. `swe.time_equ` GÜN cinsinden düz
+      float döndürür, işareti görünür−ortalama (Kasım başı +16.4 dk, Şubat
+      ortası −14.2 dk — test_bazi_engine bunu kilitler).
+
+    Dönen: (güneş duvar saati [naive], duvar saatine göre sapma dakikası).
+    Toplam sapma İstanbul'da ~−60…−80 dk: saat dilimi 120 dk olduğu için
+    doğumların kabaca üçte birinde saat DALINI değiştirir — bu düzeltme
+    süs değil, saat sütununun ta kendisi.
+    """
+    utc = local.astimezone(dt.timezone.utc)
+    jd = swe.julday(utc.year, utc.month, utc.day,
+                    utc.hour + utc.minute / 60 + utc.second / 3600)
+    eot_gun = swe.time_equ(jd)
+    solar = (utc.replace(tzinfo=None)
+             + dt.timedelta(hours=lng / 15.0, days=eot_gun))
+    sapma = round((solar - local.replace(tzinfo=None)).total_seconds() / 60)
+    return solar, sapma
+
+
 def get_bazi_chart(
-    year: int, month: int, day: int, hour: int, minute: int,
+    year: int, month: int, day: int, hour: int | None, minute: int,
     city: str = "Istanbul", nation: str | None = None,
     gender: str = "female", name: str = "Gezgin",
 ) -> dict[str, Any]:
+    # Saat bilinmiyorsa (hour=None) SAHTE bir saat üretilmez: saat sütunu
+    # hiç kurulmaz, gün/yıl/ay üç sütunla devam edilir. 12:00 varsaymak
+    # öğlen doğmuş gibi Wu saati üretiyordu — ölçmediğini ölçmüş gibi
+    # göstermek. İç hesaplar (boylam, Jie mesafesi) gün ortasını kullanır;
+    # gün ortası TST'yle de gece yarısını aşamaz, gün sütunu güvendedir.
+    hour_known = hour is not None
+    ic_saat, ic_dakika = (hour, minute) if hour_known else (12, 0)
+
     loc = resolve_city(city, nation)
-    local = dt.datetime(year, month, day, hour, minute, tzinfo=ZoneInfo(loc.tz_str))
+    local = dt.datetime(year, month, day, ic_saat, ic_dakika,
+                        tzinfo=ZoneInfo(loc.tz_str))
     utc = local.astimezone(dt.timezone.utc)
+
+    # Gerçek Güneş Zamanı: saat dalı ve 23:00 gün-devri kararı BUNUNLA.
+    # Yıl/ay sütunu güneş boylamından (zaten gerçek), Da Yun mesafesi
+    # UTC'den hesaplanır — ikisine dokunulmaz.
+    solar, tst_sapma = _true_solar_time(local, loc.lng)
 
     sun_lon = _sun_longitude(utc)
 
@@ -158,24 +201,29 @@ def get_bazi_chart(
     five_tigers = {0: 2, 5: 2, 1: 4, 6: 4, 2: 6, 7: 6, 3: 8, 8: 8, 4: 0, 9: 0}
     month_stem = (five_tigers[year_stem] + (month_no - 1)) % 10
 
-    # --- Gün sütunu (60'lık döngü; 23:00 sonrası ertesi güne sayılır) ---
-    day_date = local.date()
-    if local.hour >= 23:
+    # --- Gün sütunu (60'lık döngü; GÜNEŞ saatiyle 23:00 sonrası ertesi
+    # güne sayılır — geç Zi ekolü, sabit ve belgeli) ---
+    day_date = solar.date()
+    if solar.hour >= 23:
         day_date = day_date + dt.timedelta(days=1)
     days_since_anchor = (day_date - dt.date(1900, 1, 1)).days
     day_cycle = (days_since_anchor + 10) % 60  # 1900-01-01 = JiaXu (10)
     day_stem, day_branch = day_cycle % 10, day_cycle % 12
 
-    # --- Saat sütunu ---
-    hour_branch = ((local.hour + 1) // 2) % 12
-    five_rats = {0: 0, 5: 0, 1: 2, 6: 2, 2: 4, 7: 4, 3: 6, 8: 6, 4: 8, 9: 8}
-    hour_stem = (five_rats[day_stem] + hour_branch) % 10
+    # --- Saat sütunu (Güneş saatiyle; saat bilinmiyorsa HİÇ kurulmaz) ---
+    hour_pillar = None
+    if hour_known:
+        hour_branch = ((solar.hour + 1) // 2) % 12
+        five_rats = {0: 0, 5: 0, 1: 2, 6: 2, 2: 4,
+                     7: 4, 3: 6, 8: 6, 4: 8, 9: 8}
+        hour_stem = (five_rats[day_stem] + hour_branch) % 10
+        hour_pillar = _pillar(hour_stem, hour_branch)
 
     pillars = {
         "year": _pillar(year_stem, year_branch),
         "month": _pillar(month_stem, month_branch),
         "day": _pillar(day_stem, day_branch),
-        "hour": _pillar(hour_stem, hour_branch),
+        "hour": hour_pillar,
     }
 
     # --- Day Master ve On Tanrı ---
@@ -186,12 +234,15 @@ def get_bazi_chart(
     ten_gods = {
         "year": _ten_god(day_stem, year_stem),
         "month": _ten_god(day_stem, month_stem),
-        "hour": _ten_god(day_stem, hour_stem),
     }
+    if hour_pillar is not None:
+        ten_gods["hour"] = _ten_god(day_stem, hour_pillar["stem"]["index"])
 
-    # --- Element dağılımı ---
+    # --- Element dağılımı (saat bilinmiyorsa 6 karakter üzerinden) ---
     element_count: dict[str, int] = {e: 0 for e in _ELEMENT_ORDER}
     for p in pillars.values():
+        if p is None:
+            continue
         element_count[p["stem"]["element"]] += 1
         element_count[p["branch"]["element"]] += 1
     dominant = max(element_count, key=element_count.get)
@@ -201,12 +252,22 @@ def get_bazi_chart(
     yang_year = STEMS[year_stem]["polarity"] == "Yang"
     is_male = gender.lower() in ("male", "erkek", "m", "man")
     is_female = gender.lower() in ("female", "kadin", "kadın", "f", "woman")
-    # Cinsiyet "other" (ya da tanınmayan bir değer) ise yön YİN kuralıyla
-    # hesaplanır — ama artık SESSİZCE değil. Klasik yöntem yön için ikili
-    # bir temel ister; temeli biz seçiyorsak bunu söylemek zorundayız.
-    # Anahtar localize_bazi'de cümleye çevrilir, rapor ve ekranda görünür.
-    gender_note_key = None if (is_male or is_female) else "luck_direction_yin"
     forward = yang_year == is_male  # yang+erkek veya yin+kadın -> ileri
+
+    # --- Hesap varsayımı beyanları ---
+    # Motor bir temel SEÇMEK zorunda kaldıysa bunu anahtar olarak söyler;
+    # cümle localize_bazi'de isteğin dilinde kurulur, rapor ve ekranda
+    # görünür. Sessiz varsayım bu motorda yasak.
+    note_keys: list[str] = []
+    if not (is_male or is_female):
+        # İkili olmayan cinsiyette yön yin (kadın) kuralıyla hesaplanır.
+        note_keys.append("luck_direction_yin")
+    if not hour_known:
+        note_keys.append("hour_unknown")
+    if loc.fallback:
+        # Şehir çözülemedi, İstanbul boylamıyla hesaplandı: TST düzeltmesi
+        # yanlış boylamla hatayı büyütebilir — kullanıcı bilmeli.
+        note_keys.append("tst_fallback_city")
     boundary = _find_jie_boundary(utc, forward=forward)
     days_to_boundary = abs((boundary - utc).total_seconds()) / 86400
     start_age = max(1, round(days_to_boundary / 3))
@@ -228,8 +289,14 @@ def get_bazi_chart(
         # Hesap sürümü: hesap davranışı değişen her fazda artar ve rapor
         # önbellek anahtarına girer — eski metinler kendiliğinden düşer,
         # "yeni harita + 30 günlük eski rapor" çelişkisi hiç yaşanmaz.
-        "calc_version": "2",
-        "gender_note_key": gender_note_key,
+        # v3: Gerçek Güneş Zamanı (B1).
+        "calc_version": "3",
+        "note_keys": note_keys,
+        "hour_known": hour_known,
+        # Güneş duvar saati ve duvar saatine göre sapma — beyan bundan
+        # kurulur ("13:30 → 12:22, −68 dk"). Saat bilinmiyorsa anlamsız.
+        "solar_time": solar.isoformat() if hour_known else None,
+        "tst_offset_minutes": tst_sapma if hour_known else None,
         "birth_local": local.isoformat(),
         "timezone": loc.tz_str,
         "pillars": pillars,
@@ -241,4 +308,7 @@ def get_bazi_chart(
         "zodiac_animal": BRANCHES[year_branch]["animal"],
         "luck_pillars": luck_pillars,
         "luck_direction": "forward" if forward else "backward",
+        # Saat bilinmeden Jie mesafesi gün ortasından hesaplanır; gün içi
+        # ±12 saat, klasik dönüşümle (1 gün = 4 ay) ±4 ay eder.
+        "luck_start_uncertainty_months": 0 if hour_known else 4,
     }

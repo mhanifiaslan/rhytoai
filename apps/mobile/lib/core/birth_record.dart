@@ -40,8 +40,12 @@ class BirthRecord {
   /// Yalnızca gün/ay/yıl anlamlı.
   final DateTime date;
 
-  /// `HH:mm`.
-  final String time;
+  /// `HH:mm` — ya da **null**: doğum saati bilinmiyor (Revize B1).
+  ///
+  /// Null, "12:00 varsayalım" değildir: sunucu BaZi'de saat sütununu hiç
+  /// kurmaz ve okumada bunu beyan eder. Bilinmeyeni bilinen gibi yazmak
+  /// öğle doğumu uydurmaktı.
+  final String? time;
 
   final String city;
 
@@ -65,7 +69,8 @@ class BirthRecord {
     }
     return BirthRecord(
       date: tarih,
-      time: (profile?['birthTime'] as String?) ?? '12:00',
+      // Varsayılan YOK: alan hiç yazılmamışsa saat bilinmiyor demektir.
+      time: profile?['birthTime'] as String?,
       city: (profile?['birthCity'] as String?) ?? 'Istanbul',
       gender: (profile?['gender'] as String?) ?? 'female',
     );
@@ -102,7 +107,9 @@ Map<String, dynamic> birthWriteData(
   return <String, dynamic>{
     'uid': uid,
     'birthDate': record.dateText,
-    'birthTime': record.time,
+    // Saat bilinmiyorsa alan SİLİNİR — "yok" ile "12:00" ayrımı Firestore'da
+    // da korunur; birthPayload hour_known bayrağını buradan türetiyor.
+    'birthTime': record.time ?? FieldValue.delete(),
     'birthCity': record.city.trim(),
     'gender': record.gender,
     'onboardingCompleted': true,

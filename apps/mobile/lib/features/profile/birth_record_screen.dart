@@ -36,6 +36,11 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
   BirthRecord? _baslangic;
   late DateTime _tarih;
   late TimeOfDay _saat;
+
+  /// Doğum saati biliniyor mu (Revize B1) — bilinmiyorsa null gönderilir
+  /// ve BaZi saat sütununu hiç kurmaz.
+  late bool _saatBiliniyor;
+
   final _sehir = TextEditingController();
   late String _cinsiyet;
   bool _mesgul = false;
@@ -47,7 +52,8 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
     final kayit = BirthRecord.fromProfile(profil);
     _baslangic = kayit;
     _tarih = kayit.date;
-    final parcalar = kayit.time.split(':');
+    _saatBiliniyor = kayit.time != null;
+    final parcalar = (kayit.time ?? '12:00').split(':');
     _saat = TimeOfDay(
       hour: int.tryParse(parcalar.first) ?? 12,
       minute: int.tryParse(parcalar.last) ?? 0,
@@ -58,8 +64,10 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
 
   BirthRecord get _guncel => BirthRecord(
         date: _tarih,
-        time: '${_saat.hour.toString().padLeft(2, '0')}:'
-            '${_saat.minute.toString().padLeft(2, '0')}',
+        time: !_saatBiliniyor
+            ? null
+            : '${_saat.hour.toString().padLeft(2, '0')}:'
+                '${_saat.minute.toString().padLeft(2, '0')}',
         city: _sehir.text,
         gender: _cinsiyet,
       );
@@ -84,7 +92,13 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
 
   Future<void> _saatSec() async {
     final secilen = await showTimePicker(context: context, initialTime: _saat);
-    if (secilen != null) setState(() => _saat = secilen);
+    if (secilen != null) {
+      setState(() {
+        _saat = secilen;
+        // Saat seçmek "biliyorum" demek.
+        _saatBiliniyor = true;
+      });
+    }
   }
 
   Future<void> _kaydet() async {
@@ -139,9 +153,21 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
             const SizedBox(height: RythoSpace.md),
             _AlanSatiri(
               label: l10n.birthTime,
-              value: '${_saat.hour.toString().padLeft(2, '0')}:'
-                  '${_saat.minute.toString().padLeft(2, '0')}',
+              value: !_saatBiliniyor
+                  ? '—'
+                  : '${_saat.hour.toString().padLeft(2, '0')}:'
+                      '${_saat.minute.toString().padLeft(2, '0')}',
               onTap: _saatSec,
+            ),
+            CheckboxListTile(
+              value: !_saatBiliniyor,
+              onChanged: (v) =>
+                  setState(() => _saatBiliniyor = !(v ?? false)),
+              controlAffinity: ListTileControlAffinity.leading,
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+              title: Text(l10n.birthTimeUnknown,
+                  style: RythoText.body(13, color: RythoColors.parchmentDim)),
             ),
             const SizedBox(height: RythoSpace.md),
             TextField(

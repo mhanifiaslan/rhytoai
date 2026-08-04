@@ -425,7 +425,10 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
     # dönüyordu — üstelik ekranda taze hesaplanan sütunların yanında.
     # calc_version da girer: hesap davranışı değişince eski metinler düşer.
     ozet = "|".join([
-        *(bazi["pillars"][k]["label"] for k in ("year", "month", "day", "hour")),
+        # Saat sütunu bilinmeyen doğumda None'dır (B1) — "-" temsil eder ve
+        # saatli/saatsiz haritalar ayrı önbellek kayıtları alır.
+        *((bazi["pillars"][k] or {}).get("label", "-")
+          for k in ("year", "month", "day", "hour")),
         bazi.get("gender", ""),
         str(bazi.get("calc_version", "1")),
     ])
@@ -441,7 +444,8 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
     # duruyor; prompt'a girmeden once istegin diline cevrilir.
     bazi = prompts.localize_bazi(lang, bazi)
 
-    pillars = " | ".join(f"{k}: {v['label']}" for k, v in bazi["pillars"].items())
+    pillars = " | ".join(f"{k}: {v['label']}"
+                         for k, v in bazi["pillars"].items() if v)
     luck = "; ".join(
         f"{lp['from_age']}-{lp['to_age']}: {lp['label']} ({lp['ten_god']['name']})"
         for lp in bazi.get("luck_pillars", [])[:4]
@@ -466,7 +470,10 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
         missing=bazi.get("missing_elements") or p.NONE_LABEL,
         ten_year=bazi["ten_gods"]["year"]["name"],
         ten_month=bazi["ten_gods"]["month"]["name"],
-        ten_hour=bazi["ten_gods"]["hour"]["name"],
+        # Saat bilinmeyen doğumda saat Tanrısı yok (B1) — "-" ve prompt'a
+        # giren beyan, modelin saat sütunu hakkında konuşmasını engeller.
+        ten_hour=(bazi["ten_gods"].get("hour") or {}).get("name", "-"),
+        notes="\n".join(f"- {n}" for n in bazi.get("notes") or []) or "-",
         luck=luck, rag=rag,
     )
     fallback = p.BAZI_FALLBACK.format(

@@ -194,6 +194,7 @@
   "birthRecord": "Birth Record",
   "birthDate": "Date",
   "birthTime": "Time",
+  "birthTimeUnknown": "I don't know my birth time",
   "birthCity": "City",
   "retry": "Try again",
   "errorGeneric": "Something unexpected happened. Please try again shortly.",

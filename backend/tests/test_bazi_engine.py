@@ -11,11 +11,13 @@ yanlış değeri kilitliyor" durumunun tek panzehiri bu.
 Şehirler gazetteer'den seçilir (geo_service._GAZETTEER) — GeoNames ağına
 düşülmez, testler çevrimdışı koşar.
 
-NOT (B1): saat/gün-devri şu an YEREL SAATLE karar veriyor. B1 Gerçek Güneş
-Zamanı'nı getirince buradaki `TestSaatVeGunDevri` sınıfının beklenenleri
-TST'ye göre güncellenecek — o sınıf bilinçli olarak ayrı tutuldu.
+B1'den itibaren saat dalı ve 23:00 gün-devri kararı GERÇEK GÜNEŞ ZAMANI ile
+verilir (boylam + Zaman Denklemi). `TestSaatVeGunDevri` beklenenleri TST'ye
+göredir; el hesabı her vektörün yanındadır.
 """
 from __future__ import annotations
+
+import datetime as dt
 
 import pytest
 
@@ -120,23 +122,91 @@ class TestAySutunu:
 # --------------------------------------------------------------------------
 
 class TestSaatVeGunDevri:
-    def test_ogleden_sonra_besrat_dogru(self):
-        # 1990-06-15 = XinHai günü (çapadan el hesabı: döngü 47; iç tutarlılık:
-        # 2000-01-01'e 3487 gün → 47+3487≡54 ✓). 14:00 → Wei saati.
-        # Beş Sıçan: Bing/Xin günü → saatler WuZi'den başlar → Wei = YiWei.
+    # TST el hesabı (İstanbul, Haziran 1990, duvar = UTC+3 yaz saati):
+    # boylam 28.9784° → Güneş'ten +115.9 dk (UTC'ye göre); duvara göre
+    # 115.9 − 180 = −64.1 dk; EoT ~15 Haziran ≈ −0.3 dk → toplam ≈ −64 dk.
+
+    def test_tst_saat_dalini_degistirir(self):
+        # Duvar 14:00 → güneş ≈ 12:56: dal Wei DEĞİL Wu. Beş Sıçan:
+        # Bing/Xin günü saatler WuZi'den başlar → Wu saati = JiaWu.
+        # (TST'siz eski davranış YiWei üretiyordu — düzeltmenin kanıtı.)
         chart = get_bazi_chart(1990, 6, 15, 14, 0, city="Istanbul",
                                gender="male")
         assert _sutun(chart, "day") == ("Xin", "Hai")
-        assert _sutun(chart, "hour") == ("Yi", "Wei")
+        assert _sutun(chart, "hour") == ("Jia", "Wu")
+        assert -75 <= chart["tst_offset_minutes"] <= -55
 
-    def test_2300_sonrasi_ertesi_gunun_sutunu(self):
-        # Geç Zi ekolü: 23:30 doğum ertesi günün gövdesini alır.
-        # 16 Haziran = RenZi (döngü 48); Ding/Ren günü → saatler GengZi'den
-        # başlar → Zi saati GengZi.
+    def test_tst_gun_devrini_iptal_eder(self):
+        # Duvar 23:30 → güneş ≈ 22:26: gün DEVRİLMEZ (XinHai kalır),
+        # saat Hai. Beş Sıçan: Xin günü → Hai saati JiHai.
+        # Duvar saatiyle karar verilseydi ertesi günün RenZi'si çıkardı.
         chart = get_bazi_chart(1990, 6, 15, 23, 30, city="Istanbul",
                                gender="male")
-        assert _sutun(chart, "day") == ("Ren", "Zi")
-        assert _sutun(chart, "hour") == ("Geng", "Zi")
+        assert _sutun(chart, "day") == ("Xin", "Hai")
+        assert _sutun(chart, "hour") == ("Ji", "Hai")
+
+    def test_meridyene_yakin_sehirde_devir_yasanir(self):
+        # Pekin boylamı (116.4°) dilim meridyenine (120°) yakın: sapma
+        # ≈ −14 dk. 23:30 → güneş ≈ 23:16 → gün YİNE devrilir (geç Zi).
+        # YIL SEÇİMİ BİLİNÇLİ: Çin 1986-1991 arası yaz saati uyguladı
+        # (duvar UTC+9 → sapma −75 olurdu); 1995'te DST yok — tzdata'nın
+        # tarihsel doğruluğu ilk taslakta tam bu vektörü düzeltti.
+        # 16 Haziran 1995 = WuYin (çapadan: 34864 gün + 10 ≡ 14).
+        # Wu günü → Zi saati RenZi (Beş Sıçan: Wu/Gui → RenZi başlar).
+        chart = get_bazi_chart(1995, 6, 15, 23, 30, city="Beijing",
+                               gender="male")
+        assert _sutun(chart, "day") == ("Wu", "Yin")
+        assert _sutun(chart, "hour") == ("Ren", "Zi")
+
+    def test_amsterdam_kis_devir_iptali(self):
+        # Amsterdam (4.90°D, CET +1, Ocak'ta DST yok): boylam 19.6 − 60 =
+        # −40.4 dk; EoT 10 Ocak ≈ −7.3 dk → toplam ≈ −48 dk.
+        # 23:30 duvar → güneş ≈ 22:42 → devir YOK: 10 Ocak 1995 = XinChou
+        # (çapadan: 34707 gün + 10 ≡ 37). Xin günü → Hai saati JiHai.
+        chart = get_bazi_chart(1995, 1, 10, 23, 30, city="Amsterdam",
+                               gender="female")
+        assert _sutun(chart, "day") == ("Xin", "Chou")
+        assert _sutun(chart, "hour") == ("Ji", "Hai")
+
+
+class TestZamanDenklemi:
+    # `swe.time_equ` işaret/birim kilidi: gün cinsinden, görünür − ortalama.
+    # Kaynak: standart EoT tablosu (Kasım başı +16.4 dk, Şubat ortası −14.2).
+    # İşaret ters okunursa tüm saat sütunları sessizce 30 dk'ya kadar kayar.
+
+    def test_kasim_gunes_ileri(self):
+        _, sapma = bazi_service._true_solar_time(
+            dt.datetime(2000, 11, 3, 12, 0, tzinfo=dt.timezone.utc), lng=0.0)
+        assert 15 <= sapma <= 18
+
+    def test_subat_gunes_geri(self):
+        _, sapma = bazi_service._true_solar_time(
+            dt.datetime(2000, 2, 11, 12, 0, tzinfo=dt.timezone.utc), lng=0.0)
+        assert -16 <= sapma <= -12
+
+
+class TestSaatBilinmiyor:
+    def test_uc_sutun_modu(self):
+        # hour=None: saat sütunu HİÇ kurulmaz — 12:00 uydurup Wu saati
+        # üretmek, ölçmediğini ölçmüş gibi göstermekti (Revize B1).
+        chart = get_bazi_chart(1990, 5, 12, None, 0, city="Istanbul",
+                               gender="female")
+        assert chart["pillars"]["hour"] is None
+        assert "hour" not in chart["ten_gods"]
+        assert chart["hour_known"] is False
+        assert sum(chart["element_distribution"].values()) == 6
+        assert "hour_unknown" in chart["note_keys"]
+        assert chart["luck_start_uncertainty_months"] == 4
+        assert chart["solar_time"] is None
+
+    def test_gun_ve_yil_sutunlari_yine_dogru(self):
+        # Saatsiz modda diğer üç sütun aynı kalmalı (iç hesap gün ortası).
+        saatli = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                                gender="female")
+        saatsiz = get_bazi_chart(1990, 5, 12, None, 0, city="Istanbul",
+                                 gender="female")
+        for ad in ("year", "month", "day"):
+            assert _sutun(saatli, ad) == _sutun(saatsiz, ad)
 
 
 # --------------------------------------------------------------------------
@@ -195,19 +265,26 @@ class TestDegismezler:
     def test_calc_version_var(self):
         chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
                                gender="female")
-        assert chart["calc_version"] == "2"
+        assert chart["calc_version"] == "3"
 
-    def test_ikili_cinsiyette_beyan_yok(self):
+    def test_ikili_cinsiyette_cinsiyet_beyani_yok(self):
         for cinsiyet in ("male", "female"):
             chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
                                    gender=cinsiyet)
-            assert chart["gender_note_key"] is None
+            assert "luck_direction_yin" not in chart["note_keys"]
 
     def test_other_cinsiyet_beyanla_gelir(self):
         # Sessiz varsayım yasak: ikili olmayan cinsiyette yön yin kuralıyla
         # hesaplanır ve bu ANAHTAR olarak beyan edilir (cümle localize'da).
         chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
                                gender="other")
-        assert chart["gender_note_key"] == "luck_direction_yin"
+        assert "luck_direction_yin" in chart["note_keys"]
         # 1990 = Geng (yang) yılı; yin kuralı → yön GERİ.
         assert chart["luck_direction"] == "backward"
+
+    def test_taninmayan_sehir_beyanla_gelir(self):
+        # Gazetteer + GeoNames çözemezse İstanbul boylamına düşülür; TST
+        # yanlış boylamla hatayı BÜYÜTEBİLİR — düşüş beyansız kalamaz.
+        chart = get_bazi_chart(1990, 5, 12, 14, 30,
+                               city="Hicbiryerkoyu-XYZ", gender="female")
+        assert "tst_fallback_city" in chart["note_keys"]

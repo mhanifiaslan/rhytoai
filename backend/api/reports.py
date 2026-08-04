@@ -58,6 +58,12 @@ class BirthData(BaseModel):
     nation: Optional[str] = None
     gender: str = "female"
 
+    # Doğum saati gerçekten biliniyor mu (Revize B1). `hour`'ı Optional
+    # yapmak yerine ayrı bayrak: bu şema natal/sinastri uçlarıyla PAYLAŞIMLI
+    # ve Batı haritası saatsiz ev hesabı ayrı bir ürün kararı. BaZi bayrağı
+    # False görünce saat sütununu HİÇ kurmaz; diğer uçlar 12:00'la sürer.
+    hour_known: bool = True
+
 
 class IChingReportRequest(BaseModel):
     question: str = "Geleceğim"
@@ -172,7 +178,10 @@ def bazi(data: BirthData,
          lang: str = Depends(get_language)):
     try:
         chart = get_bazi_chart(
-            year=data.year, month=data.month, day=data.day, hour=data.hour,
+            year=data.year, month=data.month, day=data.day,
+            # Saat bilinmiyorsa None: motor saat sütununu HİÇ kurmaz
+            # (12:00 varsaymak öğle doğumu uydurmaktı — Revize B1).
+            hour=data.hour if data.hour_known else None,
             minute=data.minute, city=data.city, nation=data.nation,
             gender=data.gender, name=data.name,
         )

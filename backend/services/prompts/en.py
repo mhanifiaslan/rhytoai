@@ -329,7 +329,19 @@ BAZI_NOTES = {
     "luck_direction_yin": (
         "The direction of the luck periods was calculated using the yin "
         "(female) convention, since no binary gender was selected."),
+    "hour_unknown": (
+        "The birth hour is unknown, so no hour pillar was calculated; the "
+        "reading rests on three pillars and the luck-period start may "
+        "shift by up to 4 months."),
+    "tst_fallback_city": (
+        "The birth city could not be resolved; solar time was calculated "
+        "with Istanbul's longitude. Correct the city in your profile for "
+        "a precise chart."),
 }
+
+#: True Solar Time disclosure — the conversion is shown to the user.
+BAZI_TST_NOTE = ("The hour pillar was calculated with true solar time: "
+                 "{local} → {solar} ({offset} min).")
 
 #: Day Master sentence. bazi_service no longer composes this.
 DAY_MASTER_DESCRIPTION = "Day Master: {polarity} {element} ({cn} {pinyin})"
@@ -439,12 +451,15 @@ CALCULATED BAZI CHART (using true solar terms):
 - Element distribution: {elements} (dominant: {dominant}, missing: {missing})
 - Ten Gods: year={ten_year}, month={ten_month}, hour={ten_hour}
 - Luck Pillars: {luck}
+- Calculation disclosures: {notes}
 
 SOURCE PASSAGES:
 {rag}
 
 Sections: (1) Core element and nature, (2) Element balance and what needs
 cultivating, (3) The theme of the luck period ahead.
+If the disclosures state that the hour pillar was not calculated, do NOT
+comment on the hour pillar or the hour Ten God in any way.
 """
 
 BAZI_FALLBACK = (

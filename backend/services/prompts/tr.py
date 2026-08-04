@@ -317,7 +317,17 @@ BAZI_NOTES = {
     "luck_direction_yin": (
         "Şans dönemlerinin yönü, cinsiyet ikili seçilmediği için "
         "yin (kadın) kuralıyla hesaplandı."),
+    "hour_unknown": (
+        "Doğum saati bilinmediği için saat sütunu hesaplanmadı; okuma üç "
+        "sütuna dayanıyor ve şans dönemi başlangıcı ±4 ay oynayabilir."),
+    "tst_fallback_city": (
+        "Doğum şehri çözümlenemedi; güneş zamanı İstanbul boylamıyla "
+        "hesaplandı. Şehri profilden düzeltirsen hesap netleşir."),
 }
+
+#: Gerçek Güneş Zamanı beyanı — saat dönüşümü kullanıcıya gösterilir.
+BAZI_TST_NOTE = ("Saat sütunu gerçek güneş zamanıyla hesaplandı: "
+                 "{local} → {solar} ({offset} dk).")
 
 #: Day Master cümlesi. bazi_service artık bu cümleyi kurmuyor.
 DAY_MASTER_DESCRIPTION = "Günün Efendisi: {polarity} {element} ({cn} {pinyin})"
@@ -427,12 +437,15 @@ HESAPLANMIŞ BAZI HARİTASI (gerçek güneş terimleriyle):
 - Element dağılımı: {elements} (baskın: {dominant}, eksik: {missing})
 - On Tanrı: yıl={ten_year}, ay={ten_month}, saat={ten_hour}
 - Şans Sütunları: {luck}
+- Hesap beyanları: {notes}
 
 KAYNAK PASAJLARI:
 {rag}
 
 Bölümler: (1) Öz element ve doğa, (2) Element dengesi ve beslenmesi gereken alan,
 (3) Önümüzdeki şans dönemi teması.
+Hesap beyanlarında saat sütununun hesaplanmadığı yazıyorsa saat sütunu ve saat
+Tanrısı hakkında HİÇBİR yorum yapma.
 """
 
 BAZI_FALLBACK = (

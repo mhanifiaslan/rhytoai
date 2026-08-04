@@ -194,6 +194,7 @@
   "birthRecord": "Doğum Kaydı",
   "birthDate": "Tarih",
   "birthTime": "Saat",
+  "birthTimeUnknown": "Doğum saatimi bilmiyorum",
   "birthCity": "Şehir",
   "retry": "Tekrar dene",
   "errorGeneric": "Beklenmeyen bir sorun oluştu. Lütfen biraz sonra tekrar dene.",

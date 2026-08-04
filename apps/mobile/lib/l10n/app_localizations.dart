@@ -932,6 +932,12 @@ abstract class AppLocalizations {
   /// **'Saat'**
   String get birthTime;
 
+  /// No description provided for @birthTimeUnknown.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum saatimi bilmiyorum'**
+  String get birthTimeUnknown;
+
   /// No description provided for @birthCity.
   ///
   /// In tr, this message translates to:
@@ -1889,7 +1895,7 @@ abstract class AppLocalizations {
   /// No description provided for @faceConsentBody.
   ///
   /// In tr, this message translates to:
-  /// **'Yüz okuma, kameradan aldığı kareyi CİHAZINDA işler. Fotoğraf sunucuya gönderilmez, hiçbir yerde saklanmaz ve işlem biter bitmez bellekten silinir. Sunucuya yalnızca yüz hatlarından türetilen oranlar (ör. alın/çene yükseklik oranı) gider; bu sayılar kişiyi tanımaya yaramaz.'**
+  /// **'Yüz okuma, kameradan aldığı kareyi ya da galeriden seçtiğin fotoğrafı CİHAZINDA işler. Görüntü sunucuya gönderilmez, hiçbir yerde saklanmaz ve işlem biter bitmez silinir (galeri yolunda uygulamaya verilen kopya silinir; asıl fotoğrafına dokunulmaz). Sunucuya yalnızca yüz hatlarından türetilen oranlar (ör. alın/çene yükseklik oranı) gider; bu sayılar kişiyi tanımaya yaramaz.'**
   String get faceConsentBody;
 
   /// No description provided for @faceConsentCheckbox.

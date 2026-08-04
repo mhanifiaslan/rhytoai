@@ -25,6 +25,12 @@ class GeoLocation:
     lng: float
     tz_str: str
 
+    # Şehir çözülemeyip İstanbul varsayılanına düşüldü mü (Revize B1).
+    # BaZi Gerçek Güneş Zamanı boylamdan hesaplanır; yanlış boylamla TST
+    # düzeltmesi hatayı BÜYÜTEBİLİR. Düşüş sessiz kalamaz — motor bu bayrağı
+    # görüp beyan üretir.
+    fallback: bool = False
+
 
 def _normalize(s: str) -> str:
     s = s.strip().lower().replace("ı", "i")
@@ -156,4 +162,5 @@ def resolve_city(city: str, nation: str | None = None) -> GeoLocation:
 
     logger.warning("Şehir çözümlenemedi, İstanbul varsayılanı kullanılıyor: %s", city)
     return GeoLocation(city=city, nation=nation or "TR",
-                       lat=41.0082, lng=28.9784, tz_str="Europe/Istanbul")
+                       lat=41.0082, lng=28.9784, tz_str="Europe/Istanbul",
+                       fallback=True)

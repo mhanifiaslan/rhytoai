@@ -460,6 +460,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get birthTime => 'Saat';
 
   @override
+  String get birthTimeUnknown => 'Doğum saatimi bilmiyorum';
+
+  @override
   String get birthCity => 'Şehir';
 
   @override
@@ -978,7 +981,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get faceConsentBody =>
-      'Yüz okuma, kameradan aldığı kareyi CİHAZINDA işler. Fotoğraf sunucuya gönderilmez, hiçbir yerde saklanmaz ve işlem biter bitmez bellekten silinir. Sunucuya yalnızca yüz hatlarından türetilen oranlar (ör. alın/çene yükseklik oranı) gider; bu sayılar kişiyi tanımaya yaramaz.';
+      'Yüz okuma, kameradan aldığı kareyi ya da galeriden seçtiğin fotoğrafı CİHAZINDA işler. Görüntü sunucuya gönderilmez, hiçbir yerde saklanmaz ve işlem biter bitmez silinir (galeri yolunda uygulamaya verilen kopya silinir; asıl fotoğrafına dokunulmaz). Sunucuya yalnızca yüz hatlarından türetilen oranlar (ör. alın/çene yükseklik oranı) gider; bu sayılar kişiyi tanımaya yaramaz.';
 
   @override
   String get faceConsentCheckbox =>
