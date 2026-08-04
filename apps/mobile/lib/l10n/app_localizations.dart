@@ -1520,6 +1520,90 @@ abstract class AppLocalizations {
   /// **'Şans Sütunları (Da Yun)'**
   String get baziLuckPillars;
 
+  /// No description provided for @baziStrengthTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güç Hükmü'**
+  String get baziStrengthTitle;
+
+  /// No description provided for @baziRatioLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'destek oranı'**
+  String get baziRatioLabel;
+
+  /// No description provided for @baziFavorable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yararlı elementler'**
+  String get baziFavorable;
+
+  /// No description provided for @baziUnfavorable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yüke dönüşenler'**
+  String get baziUnfavorable;
+
+  /// No description provided for @baziClimateNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mevsim iklimi düzenleyici ister: {element}'**
+  String baziClimateNote(String element);
+
+  /// No description provided for @baziBasisTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hükmün dayanağı'**
+  String get baziBasisTitle;
+
+  /// No description provided for @baziSrcMonthCommand.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay komutu'**
+  String get baziSrcMonthCommand;
+
+  /// No description provided for @baziSrcRoot.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pillar} dalındaki {stem} kökü'**
+  String baziSrcRoot(String pillar, String stem);
+
+  /// No description provided for @baziSrcStem.
+  ///
+  /// In tr, this message translates to:
+  /// **'{pillar} gövdesi {stem}'**
+  String baziSrcStem(String pillar, String stem);
+
+  /// No description provided for @baziStarsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıldızlar (Shen Sha)'**
+  String get baziStarsTitle;
+
+  /// No description provided for @baziNoStars.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu haritada işaretli yıldız yok — yapının kendisi konuşuyor.'**
+  String get baziNoStars;
+
+  /// No description provided for @baziLuckStartLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'İlk dönem: {years} yaş {months} ay ({date})'**
+  String baziLuckStartLabel(int years, int months, String date);
+
+  /// No description provided for @baziThisYear.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu yılın sütunu: {label} ({tenGod})'**
+  String baziThisYear(String label, String tenGod);
+
+  /// No description provided for @baziCurrentTag.
+  ///
+  /// In tr, this message translates to:
+  /// **'şimdi'**
+  String get baziCurrentTag;
+
   /// No description provided for @baziAgeRange.
   ///
   /// In tr, this message translates to:

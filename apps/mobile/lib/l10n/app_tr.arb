@@ -333,6 +333,70 @@
     }
   },
   "baziLuckPillars": "Şans Sütunları (Da Yun)",
+  "baziStrengthTitle": "Güç Hükmü",
+  "baziRatioLabel": "destek oranı",
+  "baziFavorable": "Yararlı elementler",
+  "baziUnfavorable": "Yüke dönüşenler",
+  "baziClimateNote": "Mevsim iklimi düzenleyici ister: {element}",
+  "@baziClimateNote": {
+    "placeholders": {
+      "element": {
+        "type": "String"
+      }
+    }
+  },
+  "baziBasisTitle": "Hükmün dayanağı",
+  "baziSrcMonthCommand": "Ay komutu",
+  "baziSrcRoot": "{pillar} dalındaki {stem} kökü",
+  "@baziSrcRoot": {
+    "placeholders": {
+      "pillar": {
+        "type": "String"
+      },
+      "stem": {
+        "type": "String"
+      }
+    }
+  },
+  "baziSrcStem": "{pillar} gövdesi {stem}",
+  "@baziSrcStem": {
+    "placeholders": {
+      "pillar": {
+        "type": "String"
+      },
+      "stem": {
+        "type": "String"
+      }
+    }
+  },
+  "baziStarsTitle": "Yıldızlar (Shen Sha)",
+  "baziNoStars": "Bu haritada işaretli yıldız yok — yapının kendisi konuşuyor.",
+  "baziLuckStartLabel": "İlk dönem: {years} yaş {months} ay ({date})",
+  "@baziLuckStartLabel": {
+    "placeholders": {
+      "years": {
+        "type": "int"
+      },
+      "months": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "baziThisYear": "Bu yılın sütunu: {label} ({tenGod})",
+  "@baziThisYear": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "tenGod": {
+        "type": "String"
+      }
+    }
+  },
+  "baziCurrentTag": "şimdi",
   "baziAgeRange": "{from}–{to} YAŞ",
   "@baziAgeRange": {
     "placeholders": {

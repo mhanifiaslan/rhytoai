@@ -774,6 +774,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get baziLuckPillars => 'Luck Pillars (Da Yun)';
 
   @override
+  String get baziStrengthTitle => 'Strength Verdict';
+
+  @override
+  String get baziRatioLabel => 'support ratio';
+
+  @override
+  String get baziFavorable => 'Favorable elements';
+
+  @override
+  String get baziUnfavorable => 'Turning into burden';
+
+  @override
+  String baziClimateNote(String element) {
+    return 'The season\'s climate calls for a regulator: $element';
+  }
+
+  @override
+  String get baziBasisTitle => 'Basis of the verdict';
+
+  @override
+  String get baziSrcMonthCommand => 'Month command';
+
+  @override
+  String baziSrcRoot(String pillar, String stem) {
+    return '$stem root in the $pillar branch';
+  }
+
+  @override
+  String baziSrcStem(String pillar, String stem) {
+    return '$stem stem in the $pillar';
+  }
+
+  @override
+  String get baziStarsTitle => 'Stars (Shen Sha)';
+
+  @override
+  String get baziNoStars =>
+      'No marked stars in this chart — the structure itself speaks.';
+
+  @override
+  String baziLuckStartLabel(int years, int months, String date) {
+    return 'First period: age ${years}y ${months}m ($date)';
+  }
+
+  @override
+  String baziThisYear(String label, String tenGod) {
+    return 'This year\'s pillar: $label ($tenGod)';
+  }
+
+  @override
+  String get baziCurrentTag => 'now';
+
+  @override
   String baziAgeRange(Object from, Object to) {
     return 'AGE $from–$to';
   }

@@ -333,6 +333,70 @@
     }
   },
   "baziLuckPillars": "Luck Pillars (Da Yun)",
+  "baziStrengthTitle": "Strength Verdict",
+  "baziRatioLabel": "support ratio",
+  "baziFavorable": "Favorable elements",
+  "baziUnfavorable": "Turning into burden",
+  "baziClimateNote": "The season's climate calls for a regulator: {element}",
+  "@baziClimateNote": {
+    "placeholders": {
+      "element": {
+        "type": "String"
+      }
+    }
+  },
+  "baziBasisTitle": "Basis of the verdict",
+  "baziSrcMonthCommand": "Month command",
+  "baziSrcRoot": "{stem} root in the {pillar} branch",
+  "@baziSrcRoot": {
+    "placeholders": {
+      "pillar": {
+        "type": "String"
+      },
+      "stem": {
+        "type": "String"
+      }
+    }
+  },
+  "baziSrcStem": "{stem} stem in the {pillar}",
+  "@baziSrcStem": {
+    "placeholders": {
+      "pillar": {
+        "type": "String"
+      },
+      "stem": {
+        "type": "String"
+      }
+    }
+  },
+  "baziStarsTitle": "Stars (Shen Sha)",
+  "baziNoStars": "No marked stars in this chart — the structure itself speaks.",
+  "baziLuckStartLabel": "First period: age {years}y {months}m ({date})",
+  "@baziLuckStartLabel": {
+    "placeholders": {
+      "years": {
+        "type": "int"
+      },
+      "months": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "baziThisYear": "This year's pillar: {label} ({tenGod})",
+  "@baziThisYear": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      },
+      "tenGod": {
+        "type": "String"
+      }
+    }
+  },
+  "baziCurrentTag": "now",
   "baziAgeRange": "AGE {from}–{to}",
   "@baziAgeRange": {
     "placeholders": {

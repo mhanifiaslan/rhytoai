@@ -773,6 +773,59 @@ class AppLocalizationsTr extends AppLocalizations {
   String get baziLuckPillars => 'Şans Sütunları (Da Yun)';
 
   @override
+  String get baziStrengthTitle => 'Güç Hükmü';
+
+  @override
+  String get baziRatioLabel => 'destek oranı';
+
+  @override
+  String get baziFavorable => 'Yararlı elementler';
+
+  @override
+  String get baziUnfavorable => 'Yüke dönüşenler';
+
+  @override
+  String baziClimateNote(String element) {
+    return 'Mevsim iklimi düzenleyici ister: $element';
+  }
+
+  @override
+  String get baziBasisTitle => 'Hükmün dayanağı';
+
+  @override
+  String get baziSrcMonthCommand => 'Ay komutu';
+
+  @override
+  String baziSrcRoot(String pillar, String stem) {
+    return '$pillar dalındaki $stem kökü';
+  }
+
+  @override
+  String baziSrcStem(String pillar, String stem) {
+    return '$pillar gövdesi $stem';
+  }
+
+  @override
+  String get baziStarsTitle => 'Yıldızlar (Shen Sha)';
+
+  @override
+  String get baziNoStars =>
+      'Bu haritada işaretli yıldız yok — yapının kendisi konuşuyor.';
+
+  @override
+  String baziLuckStartLabel(int years, int months, String date) {
+    return 'İlk dönem: $years yaş $months ay ($date)';
+  }
+
+  @override
+  String baziThisYear(String label, String tenGod) {
+    return 'Bu yılın sütunu: $label ($tenGod)';
+  }
+
+  @override
+  String get baziCurrentTag => 'şimdi';
+
+  @override
   String baziAgeRange(Object from, Object to) {
     return '$from–$to YAŞ';
   }
