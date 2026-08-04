@@ -111,6 +111,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get birthHexagramNote => 'Rytho\'nun kapı okuması';
 
   @override
+  String get birthHexagramGatePassage => 'Kapının Dokusu';
+
+  @override
   String get faceReadingTileSubtitle => 'Firaset sanatı';
 
   @override

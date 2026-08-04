@@ -23,12 +23,28 @@ adaylı "sınır beyanı" taşır — ölçemediğimizi ölçmüş gibi gösterm
 from __future__ import annotations
 
 import datetime as dt
+import json
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 from services.bazi_service import _sun_longitude
 from services.geo_service import resolve_city
 from services.iching_service import get_hexagram
+
+GATES_FILE = (Path(__file__).resolve().parent.parent
+              / "data" / "birth_gates.json")
+
+
+@lru_cache(maxsize=1)
+def _gates() -> dict[str, Any]:
+    return json.loads(GATES_FILE.read_text(encoding="utf-8"))["gates"]
+
+
+def gate_passage(gate: int) -> dict[str, str]:
+    """Kapının Rytho karakter pasajı (İ8) — iki dil, seçim çağıranda."""
+    return _gates().get(str(gate), {"gate_tr": "", "gate_en": ""})
 
 #: Çark sürümü — dizilim/başlangıç değişirse artar, önbellek anahtarına girer.
 WHEEL_VERSION = "1"
@@ -91,6 +107,7 @@ def birth_hexagram(
 
     hexagram = get_hexagram(sonuc["gate"])
     return {
+        "gate_passage": gate_passage(sonuc["gate"]),
         "gate": sonuc["gate"],
         "line": sonuc["line"],
         "longitude": round(lon, 2),

@@ -278,6 +278,12 @@ abstract class AppLocalizations {
   /// **'Rytho\'nun kapı okuması'**
   String get birthHexagramNote;
 
+  /// No description provided for @birthHexagramGatePassage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapının Dokusu'**
+  String get birthHexagramGatePassage;
+
   /// No description provided for @faceReadingTileSubtitle.
   ///
   /// In tr, this message translates to:

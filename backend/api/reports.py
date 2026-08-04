@@ -294,6 +294,9 @@ def birth_hexagram(data: BirthData,
             "alternate_hexagram": prompts.localize_hexagram(
                 lang, konum["alternate_hexagram"])
             if konum.get("alternate_hexagram") else None,
+            # Kapı pasajı (İ8): ekran "Kapının Dokusu" kartını buradan kurar.
+            "gate_text": (konum.get("gate_passage") or {}).get(
+                "gate_en" if lang == "en" else "gate_tr"),
             "report": report["text"],
         }}
     except HTTPException:

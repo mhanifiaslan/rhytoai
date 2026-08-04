@@ -341,6 +341,14 @@ class TestDogumHeksagrami:
         assert sonuc["alternate_gate"] is None or True  # yapı var
         assert sonuc["hexagram"]["number"] == sonuc["gate"]
 
+    def test_64_kapi_pasaji_iki_dilde_tam(self):
+        # İ8 tamlık kapısı: kısmi kapı içeriği sessizce yayınlanamaz.
+        from services.birth_hexagram_service import gate_passage
+        for n in range(1, 65):
+            pasaj = gate_passage(n)
+            assert len(pasaj.get("gate_tr", "")) > 80, f"kapı {n} TR"
+            assert len(pasaj.get("gate_en", "")) > 80, f"kapı {n} EN"
+
     def test_saatsiz_sinirda_iki_aday(self):
         from services.birth_hexagram_service import birth_hexagram
         # Gün içinde Güneş ~1° ilerler: kapı sınırının aşıldığı bir gün

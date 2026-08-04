@@ -61,6 +61,15 @@ metinlerdir; hiçbir telifli eserden alıntı içermez. Telif RythoAI'ye aittir.
 > Wilhelm/Baynes, Özşahin çevirisi ve Alfred Huang **telifli** — hiçbirinden
 > cümle alınmadı, alınamaz (bkz. satır 20'deki tuzak tablosu).
 
+### Doğum kapıları — `backend/data/birth_gates.json` ✅ (2026-08-04, Revize İ8)
+
+64 kapının doğum-karakteri pasajları (TR+EN) — **Rytho özgün metni**;
+heksagram doktrininden (yao verisi + iching doktrin dosyaları) yazıldı.
+Çark DİZİLİMİ olgu-veridir (`birth_hexagram_service.GATE_ORDER`); **Gene
+Keys ve Human Design literatüründen tek cümle yoktur** — ikisi de telifli.
+Üretici betik: `backend/scripts/add_birth_gates.py` (tamlık kapılı).
+Telif RythoAI'ye aittir.
+
 > **BaZi doktrin dosyaları hakkında (2026-08-04, Revize B7):** Sütun
 > sarayları, On Tanrı aileleri, gizli kökler, ay komutu/güç hükmü, yararlı
 > element, mevsim-iklim ayarı ve beş Shen Sha bölümleri; motorun (B0-B5)

@@ -104,6 +104,15 @@ class BirthHexagramScreen extends ConsumerWidget {
                         style: RythoText.body(11.5,
                             color: RythoColors.copper)),
                   )),
+                // Kapının Dokusu (İ8): Rytho'nun kapıya özgü karakter
+                // aktarımı — gölgesiyle birlikte.
+                if ((data['gate_text'] as String?)?.isNotEmpty ?? false)
+                  blok(Plaque(
+                    label: l10n.birthHexagramGatePassage,
+                    child: Text(data['gate_text'] as String,
+                        style: RythoText.body(14,
+                            color: RythoColors.parchment)),
+                  )),
                 blok(Plaque(
                   label: l10n.iChingJudgmentTitle,
                   child: Text(hexagram['judgment'] ?? '',

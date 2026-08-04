@@ -111,6 +111,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get birthHexagramNote => 'Rytho\'s gate reading';
 
   @override
+  String get birthHexagramGatePassage => 'The Gate\'s Weave';
+
+  @override
   String get faceReadingTileSubtitle => 'The art of firasa';
 
   @override

@@ -643,6 +643,7 @@ CALCULATED POSITION:
 - Judgment: {judgment}
 - Image: {image}
 - TEXT OF THE BIRTH LINE: {line_text}
+- The gate's weave (Rytho rendering): {gate_text}
 - Trigrams: {lower} below, {upper} above
 - Disclosures: {notes}
 

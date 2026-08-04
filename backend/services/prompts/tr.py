@@ -621,6 +621,7 @@ HESAPLANAN KONUM:
 - Hüküm: {judgment}
 - İmge: {image}
 - DOĞUM ÇİZGİSİNİN METNİ: {line_text}
+- Kapının dokusu (Rytho aktarımı): {gate_text}
 - Trigramlar: {lower} altında, {upper} üstte
 - Beyanlar: {notes}
 

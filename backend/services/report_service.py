@@ -737,6 +737,10 @@ def birth_hexagram_report(user_id: str, konum: dict[str, Any],
         p.BIRTH_HEXAGRAM_RAG_QUERY.format(name=hexagram["name_local"]),
         lang=lang)
 
+    # Kapı pasajı (İ8): Rytho'nun kapıya özgü karakter aktarımı.
+    pasaj = konum.get("gate_passage") or {}
+    gate_text = pasaj.get("gate_en" if lang == "en" else "gate_tr") or "-"
+
     prompt = p.BIRTH_HEXAGRAM.format(
         longitude=konum.get("longitude", "?"),
         gate=konum["gate"],
@@ -745,6 +749,7 @@ def birth_hexagram_report(user_id: str, konum: dict[str, Any],
         name_cn=hexagram["name_cn"], unicode=hexagram["unicode"],
         judgment=hexagram["judgment"], image=hexagram["image"],
         line_text=line_text,
+        gate_text=gate_text,
         lower=hexagram["lower_trigram"]["name"],
         upper=hexagram["upper_trigram"]["name"],
         notes="\n".join(f"- {n}" for n in notlar) or "-",
