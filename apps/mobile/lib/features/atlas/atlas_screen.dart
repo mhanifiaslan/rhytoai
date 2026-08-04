@@ -14,6 +14,7 @@ import '../../widgets/reading_card.dart';
 import '../face/face_reading_flow.dart';
 import '../oracle/oracle_screen.dart';
 import '../paywall/paywall_screen.dart';
+import 'birth_hexagram_screen.dart';
 import '../paywall/plus_locked_card.dart';
 import 'atlas_detail_screens.dart';
 import '../../core/subscription.dart' show subscriptionProvider;
@@ -386,6 +387,21 @@ class _DivinationRow extends ConsumerWidget {
             title: l10n.baZi,
             subtitle: l10n.baZiSubtitle,
             onTap: () => oracle(1),
+          ),
+        ),
+        const SizedBox(width: 10),
+        // Doğum Kapısı (İ5): çekim değil kimlik katmanı — abone değilken
+        // kilit rozeti, dokununca paywall (Yüz Okuma karosuyla aynı kural).
+        Expanded(
+          child: _DivinationTile(
+            emoji: '☯',
+            title: l10n.birthHexagram,
+            subtitle: l10n.birthHexagramSubtitle,
+            locked: !faceAcik,
+            onTap: () => faceAcik
+                ? Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const BirthHexagramScreen()))
+                : paywall(),
           ),
         ),
       ]),

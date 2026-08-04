@@ -75,6 +75,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get iChingSubtitle => 'Book of Changes';
 
   @override
+  String get birthHexagram => 'Birth Gate';
+
+  @override
+  String get birthHexagramSubtitle => '64 gates';
+
+  @override
+  String get birthHexagramTitle => 'Birth Hexagram';
+
+  @override
+  String birthHexagramGateLine(int gate, int line) {
+    return 'Gate $gate · line $line';
+  }
+
+  @override
+  String birthHexagramGateOnly(int gate) {
+    return 'Gate $gate';
+  }
+
+  @override
+  String birthHexagramSunAt(String deg) {
+    return 'Sun at birth: $deg°';
+  }
+
+  @override
+  String birthHexagramBoundary(int a, int b) {
+    return 'The birth hour is unknown, so your gate may be $a or $b.';
+  }
+
+  @override
+  String get birthHexagramLockedBody =>
+      'Where the Sun stood on the 64-gate wheel at your birth — your lasting character gate. Unlocks with Rytho+.';
+
+  @override
+  String get birthHexagramNote => 'Rytho\'s gate reading';
+
+  @override
   String get faceReadingTileSubtitle => 'The art of firasa';
 
   @override

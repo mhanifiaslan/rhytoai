@@ -62,6 +62,10 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "Yüz okuma Rytho+ aboneliğine dahildir.",
         "en": "Face reading is part of Rytho+.",
     },
+    "paywall.birth_hexagram": {
+        "tr": "Doğum Heksagramı Rytho+ aboneliğine dahildir.",
+        "en": "The Birth Hexagram is part of Rytho+.",
+    },
     "paywall.default": {
         "tr": "Bu özellik Rytho+ aboneliğine dahildir.",
         "en": "This feature is part of Rytho+.",

@@ -28,6 +28,49 @@
   "skyNow": "In the Sky Right Now",
   "iChing": "I Ching",
   "iChingSubtitle": "Book of Changes",
+  "birthHexagram": "Birth Gate",
+  "birthHexagramSubtitle": "64 gates",
+  "birthHexagramTitle": "Birth Hexagram",
+  "birthHexagramGateLine": "Gate {gate} · line {line}",
+  "@birthHexagramGateLine": {
+    "placeholders": {
+      "gate": {
+        "type": "int"
+      },
+      "line": {
+        "type": "int"
+      }
+    }
+  },
+  "birthHexagramGateOnly": "Gate {gate}",
+  "@birthHexagramGateOnly": {
+    "placeholders": {
+      "gate": {
+        "type": "int"
+      }
+    }
+  },
+  "birthHexagramSunAt": "Sun at birth: {deg}°",
+  "@birthHexagramSunAt": {
+    "placeholders": {
+      "deg": {
+        "type": "String"
+      }
+    }
+  },
+  "birthHexagramBoundary": "The birth hour is unknown, so your gate may be {a} or {b}.",
+  "@birthHexagramBoundary": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      }
+    }
+  },
+  "birthHexagramLockedBody": "Where the Sun stood on the 64-gate wheel at your birth — your lasting character gate. Unlocks with Rytho+.",
+  "birthHexagramNote": "Rytho's gate reading",
   "faceReadingTileSubtitle": "The art of firasa",
   "baZi": "BaZi",
   "baZiSubtitle": "Four Pillars",

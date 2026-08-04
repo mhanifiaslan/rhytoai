@@ -224,6 +224,60 @@ abstract class AppLocalizations {
   /// **'Değişimler Kitabı'**
   String get iChingSubtitle;
 
+  /// No description provided for @birthHexagram.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum Kapısı'**
+  String get birthHexagram;
+
+  /// No description provided for @birthHexagramSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'64 kapı'**
+  String get birthHexagramSubtitle;
+
+  /// No description provided for @birthHexagramTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum Heksagramı'**
+  String get birthHexagramTitle;
+
+  /// No description provided for @birthHexagramGateLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapı {gate} · {line}. çizgi'**
+  String birthHexagramGateLine(int gate, int line);
+
+  /// No description provided for @birthHexagramGateOnly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapı {gate}'**
+  String birthHexagramGateOnly(int gate);
+
+  /// No description provided for @birthHexagramSunAt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğumda Güneş: {deg}°'**
+  String birthHexagramSunAt(String deg);
+
+  /// No description provided for @birthHexagramBoundary.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum saati bilinmediği için kapın {a} ya da {b} olabilir.'**
+  String birthHexagramBoundary(int a, int b);
+
+  /// No description provided for @birthHexagramLockedBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum anındaki Güneş\'in 64 kapı çarkındaki yeri — kalıcı karakter kapın. Rytho+ ile açılır.'**
+  String get birthHexagramLockedBody;
+
+  /// No description provided for @birthHexagramNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun kapı okuması'**
+  String get birthHexagramNote;
+
   /// No description provided for @faceReadingTileSubtitle.
   ///
   /// In tr, this message translates to:

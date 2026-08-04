@@ -687,6 +687,77 @@ def iching_reading(user_id: str, cast: dict[str, Any],
                             spend=spend, refund=refund)
 
 
+def birth_hexagram_report(user_id: str, konum: dict[str, Any],
+                          lang: str | None = None,
+                          spend: Callable[[], None] | None = None,
+                          refund: Callable[[], None] | None = None,
+                          ) -> dict[str, Any]:
+    """Doğum heksagramından karakter okuması (İ5).
+
+    Çekim değil kimlik katmanı: natal raporla aynı sınıf (30 gün önbellek,
+    isabette embedding turu atlanır). Saatsiz doğumun sınır beyanı prompt'a
+    girer — model iki adaydan birini kesinmiş gibi sunamaz.
+    """
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
+
+    ozet = "|".join([
+        str(konum["gate"]),
+        str(konum.get("line") if konum.get("hour_known") else "-"),
+        str(konum.get("alternate_gate") or "-"),
+        konum.get("wheel_version", "1"),
+    ])
+    cache_key = (f"birthhex-{user_id}-"
+                 f"{hashlib.sha256(ozet.encode()).hexdigest()[:16]}-{lang}")
+
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
+
+    hexagram = prompts.localize_hexagram(lang, konum["hexagram"])
+    metinler = hexagram.get("line_texts") or []
+    saatli = konum.get("hour_known", True)
+    cizgi = konum.get("line") or 0
+
+    notlar: list[str] = []
+    if konum.get("alternate_gate"):
+        alt = prompts.localize_hexagram(lang, konum["alternate_hexagram"])
+        notlar.append(p.BIRTH_HEXAGRAM_BOUNDARY_NOTE.format(
+            gate=f"#{konum['gate']} {hexagram['name_local']}",
+            alternate=f"#{konum['alternate_gate']} {alt['name_local']}"))
+    if not saatli:
+        notlar.append(p.BIRTH_HEXAGRAM_LINE_UNKNOWN)
+
+    # Çizgi metni yalnız saat biliniyorsa iddia edilir (sınır dürüstlüğü).
+    line_text = "-"
+    if saatli and 0 < cizgi <= len(metinler):
+        line_text = metinler[cizgi - 1]
+
+    rag = retrieve_context(
+        p.BIRTH_HEXAGRAM_RAG_QUERY.format(name=hexagram["name_local"]),
+        lang=lang)
+
+    prompt = p.BIRTH_HEXAGRAM.format(
+        longitude=konum.get("longitude", "?"),
+        gate=konum["gate"],
+        line=cizgi if saatli else "-",
+        name_tr=hexagram["name_local"], name=hexagram["name"],
+        name_cn=hexagram["name_cn"], unicode=hexagram["unicode"],
+        judgment=hexagram["judgment"], image=hexagram["image"],
+        line_text=line_text,
+        lower=hexagram["lower_trigram"]["name"],
+        upper=hexagram["upper_trigram"]["name"],
+        notes="\n".join(f"- {n}" for n in notlar) or "-",
+        rag=rag,
+    )
+    fallback = p.BIRTH_HEXAGRAM_FALLBACK.format(
+        gate=konum["gate"], name_tr=hexagram["name_local"],
+        unicode=hexagram["unicode"], judgment=hexagram["judgment"])
+    return _cached_generate(cache_key, prompt, fallback,
+                            ttl_seconds=30 * 24 * 3600, lang=lang,
+                            owner_uid=user_id, spend=spend, refund=refund)
+
+
 def synastry_report(user_id: str, synastry: dict[str, Any],
                     lang: str | None = None,
                     spend: Callable[[], None] | None = None,

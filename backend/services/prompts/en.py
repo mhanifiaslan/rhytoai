@@ -631,6 +631,49 @@ ICHING_METHOD_NAMES = {"coins": "three coins", "yarrow": "yarrow stalks"}
 ICHING_RAG_QUERY = ("Book of Changes, hexagram {name}, moving lines, "
                     "reading judgment and image, timing")
 
+# --- Birth Hexagram (İ5) ---
+BIRTH_HEXAGRAM = """
+TASK: Write a 250-350 word character/theme reading from this person's BIRTH
+hexagram. This is NOT a cast (no divination) but a lasting layer of identity —
+"what will happen today" language is forbidden; "this is your weave" is right.
+
+CALCULATED POSITION:
+- Sun at birth: {longitude}° → Gate {gate}, line {line}
+- Hexagram #{gate}: {name_tr} ({name} {name_cn}) {unicode}
+- Judgment: {judgment}
+- Image: {image}
+- TEXT OF THE BIRTH LINE: {line_text}
+- Trigrams: {lower} below, {upper} above
+- Disclosures: {notes}
+
+SOURCE PASSAGES:
+{rag}
+
+Sections: (1) The essence of the gate — this hexagram's theme carried as a
+CHARACTER; (2) The birth line — the personal tone within the same gate (the
+line text is the spine); (3) Shadow and ripeness — the raw and the worked
+form of the theme.
+RULES: If the disclosures mention a second candidate gate, briefly introduce
+both themes, present neither as certain, and do not interpret the line. No
+flattery — name the shadow too. No health or fate prophecy.
+"""
+
+BIRTH_HEXAGRAM_FALLBACK = (
+    "Your birth gate is #{gate} {name_tr} {unicode}: {judgment} "
+    "Check back shortly for the full reading."
+)
+
+#: Boundary disclosure for hour-unknown births.
+BIRTH_HEXAGRAM_BOUNDARY_NOTE = (
+    "The birth hour is unknown and the Sun crosses a gate boundary within "
+    "the day: your gate may be {gate} or {alternate}; no line is claimed.")
+BIRTH_HEXAGRAM_LINE_UNKNOWN = (
+    "The birth hour is unknown, so no line position is claimed; the reading "
+    "stays at gate level.")
+
+BIRTH_HEXAGRAM_RAG_QUERY = ("Book of Changes, hexagram {name}, character "
+                            "and nature, trigram families")
+
 SYNASTRY = """
 TASK: Write a 200-250 word synastry (astrological compatibility) reading from
 the data below.

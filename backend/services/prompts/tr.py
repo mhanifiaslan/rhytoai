@@ -609,6 +609,48 @@ ICHING_METHOD_NAMES = {"coins": "üç para", "yarrow": "civanperçemi"}
 ICHING_RAG_QUERY = ("Değişimler Kitabı, heksagram {name}, hareketli çizgi, "
                     "hüküm ve imge okuma, zamanlama")
 
+# --- Doğum Heksagramı (İ5) ---
+BIRTH_HEXAGRAM = """
+GÖREV: Kişinin DOĞUM heksagramından 250-350 kelimelik bir karakter/tema
+okuması yaz. Bu bir çekim (kehanet) DEĞİL, kalıcı bir kimlik katmanıdır —
+"bugün ne olacak" dili yasak; "senin dokun bu" dili doğru.
+
+HESAPLANAN KONUM:
+- Doğum anında Güneş: {longitude}° → Kapı {gate}, {line}. çizgi
+- Heksagram #{gate}: {name_tr} ({name} {name_cn}) {unicode}
+- Hüküm: {judgment}
+- İmge: {image}
+- DOĞUM ÇİZGİSİNİN METNİ: {line_text}
+- Trigramlar: {lower} altında, {upper} üstte
+- Beyanlar: {notes}
+
+KAYNAK PASAJLARI:
+{rag}
+
+Bölümler: (1) Kapının özü — bu heksagramın temasının bir KARAKTER olarak
+taşınması; (2) Doğum çizgisi — aynı kapının içindeki kişisel ton (çizgi
+metni omurgadır); (3) Gölge ve olgunluk — temanın ham ve işlenmiş hâli.
+KURALLAR: Beyanlarda ikinci bir kapı adayı geçiyorsa iki temayı da kısaca
+tanıt, birini kesinmiş gibi sunma ve çizgi yorumuna girme. Pohpohlama yok;
+gölgeyi de söyle. Sağlık/kader kehaneti yok.
+"""
+
+BIRTH_HEXAGRAM_FALLBACK = (
+    "Doğum kapın #{gate} {name_tr} {unicode}: {judgment} "
+    "Detaylı okuma için tekrar dene."
+)
+
+#: Saatsiz doğumda iki adaylı sınır beyanı.
+BIRTH_HEXAGRAM_BOUNDARY_NOTE = (
+    "Doğum saati bilinmediği için Güneş gün içinde kapı sınırını aşıyor: "
+    "kapın {gate} ya da {alternate} olabilir; çizgi bildirilmez.")
+BIRTH_HEXAGRAM_LINE_UNKNOWN = (
+    "Doğum saati bilinmediği için çizgi konumu bildirilmez; okuma kapı "
+    "düzeyindedir.")
+
+BIRTH_HEXAGRAM_RAG_QUERY = ("Değişimler Kitabı, heksagram {name}, karakter "
+                            "ve doğa, trigram aileleri")
+
 SYNASTRY = """
 GÖREV: İki kişi arasındaki sinastri (astrolojik uyum) verilerinden 200-250
 kelimelik bir kozmik uyum raporu yaz.

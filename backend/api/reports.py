@@ -14,9 +14,9 @@ from core.entitlements import (
     require_plus,
 )
 from core import device, entitlements, wallet
-from services import (astro_service, bazi_service, chart_context,
-                      notification_service, profile_service, prompts,
-                      report_service)
+from services import (astro_service, bazi_service, birth_hexagram_service,
+                      chart_context, notification_service, profile_service,
+                      prompts, report_service)
 from services.bazi_service import get_bazi_chart
 from services.iching_service import cast_iching, enrich_cast
 from services.sky_service import get_sky_now
@@ -261,6 +261,45 @@ def iching(req: IChingReportRequest,
         raise
     except Exception as e:
         raise _internal(e, "iching", lang)
+
+
+@router.post("/birth-hexagram")
+def birth_hexagram(data: BirthData,
+                   user: AuthUser = Depends(require_plus("birth_hexagram")),
+                   lang: str = Depends(get_language)):
+    """Doğum Heksagramı — kalıcı kimlik katmanı (Revize İ5).
+
+    Çekim değil: doğum anındaki Güneş boylamının 64 kapı çarkındaki yeri.
+    Natal raporla aynı sınıf — Rytho+ + 5 token, 30 gün önbellek.
+    """
+    try:
+        konum = birth_hexagram_service.birth_hexagram(
+            year=data.year, month=data.month, day=data.day,
+            hour=data.hour if data.hour_known else None,
+            minute=data.minute, city=data.city, nation=data.nation,
+        )
+        report = report_service.birth_hexagram_report(
+            user.uid, konum, lang=lang,
+            spend=wallet.spender(user.uid, "birth_hexagram", lang=lang),
+            refund=lambda: wallet.refund_spend(user.uid, "birth_hexagram"))
+        return {"status": "success", "data": {
+            "position": {
+                "gate": konum["gate"],
+                "line": konum["line"] if konum["hour_known"] else None,
+                "longitude": konum["longitude"],
+                "hour_known": konum["hour_known"],
+                "alternate_gate": konum.get("alternate_gate"),
+            },
+            "hexagram": prompts.localize_hexagram(lang, konum["hexagram"]),
+            "alternate_hexagram": prompts.localize_hexagram(
+                lang, konum["alternate_hexagram"])
+            if konum.get("alternate_hexagram") else None,
+            "report": report["text"],
+        }}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise _internal(e, "birth_hexagram", lang)
 
 
 @router.get("/iching/status")

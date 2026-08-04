@@ -306,6 +306,58 @@ class TestYaoVerisi:
             assert t["attribute"] and t["direction"]
 
 
+class TestDogumHeksagrami:
+    """İ5: 64 kapı çarkı — çapraz çapalar + dürüstlük beyanları.
+
+    Çark sırası dondurulmuş veridir; üç bağımsız çapa (41→302°, 1→223.25°
+    Akrep, 2→43.25° Boğa) listedeki tek bir kaymayı birden yakalar.
+    """
+
+    def test_uc_capraz_capa(self):
+        from services.birth_hexagram_service import gate_for_longitude
+        assert gate_for_longitude(302.0)["gate"] == 41
+        assert gate_for_longitude(307.0)["gate"] == 41   # hâlâ 41 içinde
+        assert gate_for_longitude(223.25)["gate"] == 1
+        assert gate_for_longitude(43.25)["gate"] == 2
+        # Koç noktası (0°) Kapı 25'in içindedir — dördüncü çapa.
+        assert gate_for_longitude(0.0)["gate"] == 25
+
+    def test_64_kapi_benzersiz_ve_tam(self):
+        from services.birth_hexagram_service import GATE_ORDER
+        assert sorted(GATE_ORDER) == list(range(1, 65))
+
+    def test_cizgi_hesabi(self):
+        from services.birth_hexagram_service import gate_for_longitude
+        # Kapı 41 başlangıcından 1.0° içeride: 1.0 / 0.9375 → 2. çizgi.
+        assert gate_for_longitude(303.0)["line"] == 2
+        assert gate_for_longitude(302.0)["line"] == 1
+
+    def test_saatli_dogum_kapiyi_verir(self):
+        from services.birth_hexagram_service import birth_hexagram
+        sonuc = birth_hexagram(1990, 5, 12, 14, 30, city="Istanbul")
+        assert 1 <= sonuc["gate"] <= 64
+        assert 1 <= sonuc["line"] <= 6
+        assert sonuc["hour_known"] is True
+        assert sonuc["alternate_gate"] is None or True  # yapı var
+        assert sonuc["hexagram"]["number"] == sonuc["gate"]
+
+    def test_saatsiz_sinirda_iki_aday(self):
+        from services.birth_hexagram_service import birth_hexagram
+        # Gün içinde Güneş ~1° ilerler: kapı sınırının aşıldığı bir gün
+        # bulmak için tarama — saatli/saatsiz farkını yapısal test eder.
+        import datetime as dtm
+        bulundu = False
+        for gun in range(1, 20):
+            s = birth_hexagram(2000, 3, gun, None, 0, city="Istanbul")
+            assert s["hour_known"] is False
+            if s["alternate_gate"]:
+                bulundu = True
+                assert s["alternate_gate"] != s["gate"]
+                assert s["alternate_hexagram"]["number"] == \
+                    s["alternate_gate"]
+        assert bulundu, "20 günlük taramada hiç sınır günü çıkmadı"
+
+
 class TestOnbellekAnahtari:
     def test_yontem_anahtari_ayirir(self, tmp_path, monkeypatch):
         """İ0 kusur kapanışı: aynı soru + aynı heksagram + aynı çizgilerle

@@ -131,3 +131,17 @@ final baziReportProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   Analytics.reportGenerated('bazi');
   return Map<String, dynamic>.from(response.data['data']);
 });
+
+/// Doğum Heksagramı — Rytho+ (Revize İ5). Kalıcı kimlik katmanı: doğum
+/// anındaki Güneş boylamının 64 kapı çarkındaki yeri + Rytho okuması.
+final birthHexagramProvider =
+    FutureProvider<Map<String, dynamic>?>((ref) async {
+  if (!_hasPlus(ref)) return null;
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) return null;
+  final dio = ref.watch(apiProvider);
+  final response = await dio.post('/api/v1/reports/birth-hexagram',
+      data: birthPayload(profile));
+  Analytics.reportGenerated('birth_hexagram');
+  return Map<String, dynamic>.from(response.data['data']);
+});

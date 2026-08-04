@@ -28,6 +28,49 @@
   "skyNow": "Şu An Gökyüzünde",
   "iChing": "I Ching",
   "iChingSubtitle": "Değişimler Kitabı",
+  "birthHexagram": "Doğum Kapısı",
+  "birthHexagramSubtitle": "64 kapı",
+  "birthHexagramTitle": "Doğum Heksagramı",
+  "birthHexagramGateLine": "Kapı {gate} · {line}. çizgi",
+  "@birthHexagramGateLine": {
+    "placeholders": {
+      "gate": {
+        "type": "int"
+      },
+      "line": {
+        "type": "int"
+      }
+    }
+  },
+  "birthHexagramGateOnly": "Kapı {gate}",
+  "@birthHexagramGateOnly": {
+    "placeholders": {
+      "gate": {
+        "type": "int"
+      }
+    }
+  },
+  "birthHexagramSunAt": "Doğumda Güneş: {deg}°",
+  "@birthHexagramSunAt": {
+    "placeholders": {
+      "deg": {
+        "type": "String"
+      }
+    }
+  },
+  "birthHexagramBoundary": "Doğum saati bilinmediği için kapın {a} ya da {b} olabilir.",
+  "@birthHexagramBoundary": {
+    "placeholders": {
+      "a": {
+        "type": "int"
+      },
+      "b": {
+        "type": "int"
+      }
+    }
+  },
+  "birthHexagramLockedBody": "Doğum anındaki Güneş'in 64 kapı çarkındaki yeri — kalıcı karakter kapın. Rytho+ ile açılır.",
+  "birthHexagramNote": "Rytho'nun kapı okuması",
   "faceReadingTileSubtitle": "Firaset sanatı",
   "baZi": "BaZi",
   "baZiSubtitle": "Dört Sütun",

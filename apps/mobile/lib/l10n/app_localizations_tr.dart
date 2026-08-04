@@ -75,6 +75,42 @@ class AppLocalizationsTr extends AppLocalizations {
   String get iChingSubtitle => 'Değişimler Kitabı';
 
   @override
+  String get birthHexagram => 'Doğum Kapısı';
+
+  @override
+  String get birthHexagramSubtitle => '64 kapı';
+
+  @override
+  String get birthHexagramTitle => 'Doğum Heksagramı';
+
+  @override
+  String birthHexagramGateLine(int gate, int line) {
+    return 'Kapı $gate · $line. çizgi';
+  }
+
+  @override
+  String birthHexagramGateOnly(int gate) {
+    return 'Kapı $gate';
+  }
+
+  @override
+  String birthHexagramSunAt(String deg) {
+    return 'Doğumda Güneş: $deg°';
+  }
+
+  @override
+  String birthHexagramBoundary(int a, int b) {
+    return 'Doğum saati bilinmediği için kapın $a ya da $b olabilir.';
+  }
+
+  @override
+  String get birthHexagramLockedBody =>
+      'Doğum anındaki Güneş\'in 64 kapı çarkındaki yeri — kalıcı karakter kapın. Rytho+ ile açılır.';
+
+  @override
+  String get birthHexagramNote => 'Rytho\'nun kapı okuması';
+
+  @override
   String get faceReadingTileSubtitle => 'Firaset sanatı';
 
   @override
