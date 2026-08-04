@@ -733,6 +733,63 @@ class AppLocalizationsTr extends AppLocalizations {
   String get iChingOracleNote => 'Rytho\'nun kehanet notu';
 
   @override
+  String iChingQuotaFree(int left, int limit) {
+    return 'Bugünkü hak: $left/$limit';
+  }
+
+  @override
+  String iChingQuotaTokens(int n) {
+    return 'Çekim bedeli: $n token';
+  }
+
+  @override
+  String get iChingJudgmentTitle => 'Hüküm';
+
+  @override
+  String get iChingImageTitle => 'İmge';
+
+  @override
+  String get iChingMovingTitle => 'Hareketli Çizgiler';
+
+  @override
+  String get iChingLiuYaoTitle => 'Liu Yao';
+
+  @override
+  String iChingNuclearLabel(String name, int n) {
+    return 'çekirdek: $name (#$n)';
+  }
+
+  @override
+  String get iChingLegend =>
+      '○ eski yang (9) · × eski yin (6) — dönen çizgiler';
+
+  @override
+  String iChingLineLabel(int n) {
+    return '$n. çizgi';
+  }
+
+  @override
+  String iChingPalaceLabel(String name, int shi, int ying) {
+    return 'Saray: $name · özne (shi) $shi. çizgi · karşılık (ying) $ying. çizgi';
+  }
+
+  @override
+  String get iChingVoidTag => 'boşluk';
+
+  @override
+  String get iChingClashTag => 'çarpışma';
+
+  @override
+  String iChingDayLabel(String day) {
+    return 'Çekim günü: $day';
+  }
+
+  @override
+  String iChingTrigramsLabel(String lower, String upper) {
+    return '$lower altında, $upper üstte';
+  }
+
+  @override
   String get baziHeadline => 'Kaderin Dört Sütunu';
 
   @override

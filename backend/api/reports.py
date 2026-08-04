@@ -13,7 +13,7 @@ from core.entitlements import (
     FREE_ICHING_PER_DAY,
     require_plus,
 )
-from core import device, wallet
+from core import device, entitlements, wallet
 from services import (astro_service, bazi_service, chart_context,
                       notification_service, profile_service, prompts,
                       report_service)
@@ -261,6 +261,24 @@ def iching(req: IChingReportRequest,
         raise
     except Exception as e:
         raise _internal(e, "iching", lang)
+
+
+@router.get("/iching/status")
+def iching_status(user: AuthUser = Depends(get_current_user)):
+    """Çekim hakkı durumu — SALT OKUR, hak düşmez (Revize İ6).
+
+    UI "bugünkü hak: 1/1" rozetini buradan kurar; eskiden kota yalnız
+    402'de, yani hak BİTİNCE görünür oluyordu. Abone bilgisi de döner:
+    abonede rozet günlük hak yerine token bedelini gösterir.
+    """
+    _, kalan = entitlements.quota_state(user.uid, "iching",
+                                        FREE_ICHING_PER_DAY)
+    return {"status": "success", "data": {
+        "free_limit": FREE_ICHING_PER_DAY,
+        "free_remaining": kalan,
+        "token_cost": wallet.TOKEN_COSTS["iching"],
+        "subscriber": entitlements.is_subscriber(user.uid),
+    }}
 
 
 @router.post("/dyad")

@@ -304,6 +304,84 @@
     }
   },
   "iChingOracleNote": "Rytho'nun kehanet notu",
+  "iChingQuotaFree": "Bugünkü hak: {left}/{limit}",
+  "@iChingQuotaFree": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingQuotaTokens": "Çekim bedeli: {n} token",
+  "@iChingQuotaTokens": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingJudgmentTitle": "Hüküm",
+  "iChingImageTitle": "İmge",
+  "iChingMovingTitle": "Hareketli Çizgiler",
+  "iChingLiuYaoTitle": "Liu Yao",
+  "iChingNuclearLabel": "çekirdek: {name} (#{n})",
+  "@iChingNuclearLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingLegend": "○ eski yang (9) · × eski yin (6) — dönen çizgiler",
+  "iChingLineLabel": "{n}. çizgi",
+  "@iChingLineLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingPalaceLabel": "Saray: {name} · özne (shi) {shi}. çizgi · karşılık (ying) {ying}. çizgi",
+  "@iChingPalaceLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "shi": {
+        "type": "int"
+      },
+      "ying": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingVoidTag": "boşluk",
+  "iChingClashTag": "çarpışma",
+  "iChingDayLabel": "Çekim günü: {day}",
+  "@iChingDayLabel": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "iChingTrigramsLabel": "{lower} altında, {upper} üstte",
+  "@iChingTrigramsLabel": {
+    "placeholders": {
+      "lower": {
+        "type": "String"
+      },
+      "upper": {
+        "type": "String"
+      }
+    }
+  },
   "baziHeadline": "Kaderin Dört Sütunu",
   "baziChineseSign": "Çin burcun: {animal} · {dayMaster}",
   "@baziChineseSign": {

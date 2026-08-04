@@ -1448,6 +1448,90 @@ abstract class AppLocalizations {
   /// **'Rytho\'nun kehanet notu'**
   String get iChingOracleNote;
 
+  /// No description provided for @iChingQuotaFree.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugünkü hak: {left}/{limit}'**
+  String iChingQuotaFree(int left, int limit);
+
+  /// No description provided for @iChingQuotaTokens.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çekim bedeli: {n} token'**
+  String iChingQuotaTokens(int n);
+
+  /// No description provided for @iChingJudgmentTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hüküm'**
+  String get iChingJudgmentTitle;
+
+  /// No description provided for @iChingImageTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'İmge'**
+  String get iChingImageTitle;
+
+  /// No description provided for @iChingMovingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hareketli Çizgiler'**
+  String get iChingMovingTitle;
+
+  /// No description provided for @iChingLiuYaoTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Liu Yao'**
+  String get iChingLiuYaoTitle;
+
+  /// No description provided for @iChingNuclearLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'çekirdek: {name} (#{n})'**
+  String iChingNuclearLabel(String name, int n);
+
+  /// No description provided for @iChingLegend.
+  ///
+  /// In tr, this message translates to:
+  /// **'○ eski yang (9) · × eski yin (6) — dönen çizgiler'**
+  String get iChingLegend;
+
+  /// No description provided for @iChingLineLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n}. çizgi'**
+  String iChingLineLabel(int n);
+
+  /// No description provided for @iChingPalaceLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saray: {name} · özne (shi) {shi}. çizgi · karşılık (ying) {ying}. çizgi'**
+  String iChingPalaceLabel(String name, int shi, int ying);
+
+  /// No description provided for @iChingVoidTag.
+  ///
+  /// In tr, this message translates to:
+  /// **'boşluk'**
+  String get iChingVoidTag;
+
+  /// No description provided for @iChingClashTag.
+  ///
+  /// In tr, this message translates to:
+  /// **'çarpışma'**
+  String get iChingClashTag;
+
+  /// No description provided for @iChingDayLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çekim günü: {day}'**
+  String iChingDayLabel(String day);
+
+  /// No description provided for @iChingTrigramsLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'{lower} altında, {upper} üstte'**
+  String iChingTrigramsLabel(String lower, String upper);
+
   /// No description provided for @baziHeadline.
   ///
   /// In tr, this message translates to:

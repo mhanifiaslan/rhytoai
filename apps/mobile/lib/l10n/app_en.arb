@@ -304,6 +304,84 @@
     }
   },
   "iChingOracleNote": "Rytho's note on the cast",
+  "iChingQuotaFree": "Today's cast: {left}/{limit}",
+  "@iChingQuotaFree": {
+    "placeholders": {
+      "left": {
+        "type": "int"
+      },
+      "limit": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingQuotaTokens": "Cast cost: {n} tokens",
+  "@iChingQuotaTokens": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingJudgmentTitle": "Judgment",
+  "iChingImageTitle": "Image",
+  "iChingMovingTitle": "Moving Lines",
+  "iChingLiuYaoTitle": "Liu Yao",
+  "iChingNuclearLabel": "core: {name} (#{n})",
+  "@iChingNuclearLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingLegend": "○ old yang (9) · × old yin (6) — the turning lines",
+  "iChingLineLabel": "line {n}",
+  "@iChingLineLabel": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingPalaceLabel": "Palace: {name} · subject (shi) line {shi} · response (ying) line {ying}",
+  "@iChingPalaceLabel": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "shi": {
+        "type": "int"
+      },
+      "ying": {
+        "type": "int"
+      }
+    }
+  },
+  "iChingVoidTag": "void",
+  "iChingClashTag": "clash",
+  "iChingDayLabel": "Day of the cast: {day}",
+  "@iChingDayLabel": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      }
+    }
+  },
+  "iChingTrigramsLabel": "{lower} below, {upper} above",
+  "@iChingTrigramsLabel": {
+    "placeholders": {
+      "lower": {
+        "type": "String"
+      },
+      "upper": {
+        "type": "String"
+      }
+    }
+  },
   "baziHeadline": "The Four Pillars of Destiny",
   "baziChineseSign": "Your Chinese sign: {animal} · {dayMaster}",
   "@baziChineseSign": {

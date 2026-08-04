@@ -734,6 +734,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get iChingOracleNote => 'Rytho\'s note on the cast';
 
   @override
+  String iChingQuotaFree(int left, int limit) {
+    return 'Today\'s cast: $left/$limit';
+  }
+
+  @override
+  String iChingQuotaTokens(int n) {
+    return 'Cast cost: $n tokens';
+  }
+
+  @override
+  String get iChingJudgmentTitle => 'Judgment';
+
+  @override
+  String get iChingImageTitle => 'Image';
+
+  @override
+  String get iChingMovingTitle => 'Moving Lines';
+
+  @override
+  String get iChingLiuYaoTitle => 'Liu Yao';
+
+  @override
+  String iChingNuclearLabel(String name, int n) {
+    return 'core: $name (#$n)';
+  }
+
+  @override
+  String get iChingLegend =>
+      '○ old yang (9) · × old yin (6) — the turning lines';
+
+  @override
+  String iChingLineLabel(int n) {
+    return 'line $n';
+  }
+
+  @override
+  String iChingPalaceLabel(String name, int shi, int ying) {
+    return 'Palace: $name · subject (shi) line $shi · response (ying) line $ying';
+  }
+
+  @override
+  String get iChingVoidTag => 'void';
+
+  @override
+  String get iChingClashTag => 'clash';
+
+  @override
+  String iChingDayLabel(String day) {
+    return 'Day of the cast: $day';
+  }
+
+  @override
+  String iChingTrigramsLabel(String lower, String upper) {
+    return '$lower below, $upper above';
+  }
+
+  @override
   String get baziHeadline => 'The Four Pillars of Destiny';
 
   @override
