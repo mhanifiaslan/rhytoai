@@ -337,6 +337,20 @@ BAZI_NOTES = {
         "The birth city could not be resolved; solar time was calculated "
         "with Istanbul's longitude. Correct the city in your profile for "
         "a precise chart."),
+    "combinations_ignored": (
+        "Combinations and clashes between pillars (he/chong) were not "
+        "included in this strength assessment."),
+}
+
+#: Day Master strength verdict names (B3).
+BAZI_STRENGTH_NAMES = {
+    "strong": "Strong", "weak": "Weak", "balanced": "Balanced",
+}
+
+#: Seasonal state names (旺相休囚死).
+BAZI_SEASON_STATES = {
+    "wang": "commanding", "xiang": "supported", "xiu": "resting",
+    "qiu": "restrained", "si": "dormant",
 }
 
 #: True Solar Time disclosure — the conversion is shown to the user.

@@ -297,6 +297,108 @@ class TestGizliKokler:
         assert dagilim["water"] >= bazi_service.MISSING_THRESHOLD
 
 
+class TestGucHukmu:
+    """B3: mevsimsel durum matrisi + Day Master gücü + yong shen.
+
+    Altın haritalar KURGULANMIŞTIR (saf fonksiyon üzerinden): klasik
+    hükmün tartışmasız olduğu uç örnekler. Tarihten harita avlamak yerine
+    sütunlar doğrudan kurulur — test neyi ölçtüğünü tam bilir.
+    """
+
+    @staticmethod
+    def _degerlendir(pillars):
+        from services import bazi_strength
+        bazi_service.attach_hidden_stems(pillars, day_stem=pillars["day"]
+                                         ["stem"]["index"])
+        dagilim = bazi_service.element_distribution_for(pillars)
+        return bazi_strength.assess_strength(
+            pillars, pillars["day"]["stem"]["index"], dagilim)
+
+    def test_mevsim_matrisi_kuraldan_turetilir(self):
+        # Matris tek kuraldan çıkar: mevsim=hükümran, ürettiği=destekli,
+        # üreten=dinlenen, kontrol eden=kısıtlı, kontrol ettiği=sönük.
+        from services.bazi_strength import season_state
+        assert season_state("wood", "wood") == "wang"
+        assert season_state("wood", "fire") == "xiang"   # ağaç ateşi üretir
+        assert season_state("wood", "water") == "xiu"    # su ağacı üretir
+        assert season_state("wood", "metal") == "qiu"    # metal ağacı keser
+        assert season_state("wood", "earth") == "si"     # ağaç toprağı yarar
+
+    def test_bariz_guclu_harita(self):
+        # Jia (ağaç) DM, Mao (ilkbahar) ayında, kökler ağaç/su dolu:
+        # klasik hüküm tartışmasız GÜÇLÜ.
+        pillars = {
+            "year": bazi_service._pillar(8, 0),   # Ren Zi (su/su)
+            "month": bazi_service._pillar(1, 3),  # Yi Mao (ağaç/ağaç)
+            "day": bazi_service._pillar(0, 2),    # Jia Yin (ağaç kökü)
+            "hour": bazi_service._pillar(9, 11),  # Gui Hai (su/su)
+        }
+        sonuc = self._degerlendir(pillars)
+        assert sonuc["verdict"] == "strong"
+        assert sonuc["season_state"] == "wang"
+
+    def test_bariz_zayif_harita(self):
+        # Jia (ağaç) DM, You (sonbahar/metal) ayında, çevre metal/toprak:
+        # klasik hüküm tartışmasız ZAYIF.
+        pillars = {
+            "year": bazi_service._pillar(6, 8),   # Geng Shen (metal/metal)
+            "month": bazi_service._pillar(7, 9),  # Xin You (metal/metal)
+            "day": bazi_service._pillar(0, 10),   # Jia Xu (toprak dalı)
+            "hour": bazi_service._pillar(4, 1),   # Wu Chou (toprak/toprak)
+        }
+        sonuc = self._degerlendir(pillars)
+        assert sonuc["verdict"] == "weak"
+        assert sonuc["season_state"] == "si"
+
+    def test_dokum_toplami_skora_esit(self):
+        # Bileşen dökümü hükmün TAM açıklaması olmalı: parçaların toplamı
+        # destek+yük toplamına eşit — döküm eksik kalırsa "neden" sorusu
+        # cevapsız kalır.
+        chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                               gender="female")
+        s = chart["strength"]
+        toplam = sum(c["points"] for c in s["components"])
+        assert toplam == pytest.approx(s["support"] + s["burden"], abs=0.5)
+
+    def test_guclu_bosaltan_zayif_destekleyen_ister(self):
+        # Yong shen denge kuralı: güçlüye boşaltan/servet, zayıfa kaynak.
+        chart_g = self._degerlendir({
+            "year": bazi_service._pillar(8, 0),
+            "month": bazi_service._pillar(1, 3),
+            "day": bazi_service._pillar(0, 2),
+            "hour": bazi_service._pillar(9, 11),
+        })
+        assert "wood" not in chart_g["favorable_elements"]
+        assert "wood" in chart_g["unfavorable_elements"]
+
+        chart_z = self._degerlendir({
+            "year": bazi_service._pillar(6, 8),
+            "month": bazi_service._pillar(7, 9),
+            "day": bazi_service._pillar(0, 10),
+            "hour": bazi_service._pillar(4, 1),
+        })
+        assert chart_z["favorable_elements"] == ["water", "wood"]
+
+    def test_kis_haritasi_ates_ister(self):
+        # İklim ekseni (Qiong Tong Bao Jian'ın tartışmasız çekirdeği):
+        # Zi (kış) ayı → soğuk → düzenleyici ateş.
+        pillars = {
+            "year": bazi_service._pillar(8, 0),
+            "month": bazi_service._pillar(9, 0),   # Gui Zi — kış
+            "day": bazi_service._pillar(0, 2),
+            "hour": bazi_service._pillar(9, 11),
+        }
+        sonuc = self._degerlendir(pillars)
+        assert sonuc["climate"] == "cold"
+        assert sonuc["climate_element"] == "fire"
+
+    def test_kapsam_beyani_var(self):
+        # Kombinasyonlar v1'de hesapta yok — bu SÖYLENMEK zorunda.
+        chart = get_bazi_chart(1990, 5, 12, 14, 30, city="Istanbul",
+                               gender="female")
+        assert chart["strength"]["scope_note_key"] == "combinations_ignored"
+
+
 class TestDegismezler:
     def test_element_dagilimi_sekiz_karakter(self):
         # B2'den beri ağırlıklı: gövdeler 1.0 + dal başına gizli kök 1.0.

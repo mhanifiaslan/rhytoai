@@ -198,11 +198,33 @@ def localize_bazi(lang: str | None, chart: dict | None) -> dict:
                                             chart.get("zodiac_animal") or ""),
         "luck_pillars": [{**sutun(lp), "ten_god": tanri(lp.get("ten_god"))}
                          for lp in (chart.get("luck_pillars") or [])],
+        # Güç hükmü (B3): anahtarlar korunur, *_name alanları isteğin
+        # dilinde eklenir — UI ve prompt cümleyi buradan okur.
+        "strength": _strength_local(p, element, chart.get("strength")),
         # Hesap varsayımlarının beyanı (Revize B0/B1): motor anahtar
         # döndürür, cümle burada kurulur. Boş liste = beyan gerektiren
         # varsayım yok. TST satırı ayrıca kurulur çünkü içine gerçek
         # saatler giriyor — düz tablodan çıkmaz.
         "notes": _bazi_notes(p, chart),
+    }
+
+
+def _strength_local(p, element, strength: dict | None) -> dict | None:
+    if not strength:
+        return None
+    return {
+        **strength,
+        "verdict_name": p.BAZI_STRENGTH_NAMES.get(
+            strength.get("verdict") or "", strength.get("verdict") or ""),
+        "season_state_name": p.BAZI_SEASON_STATES.get(
+            strength.get("season_state") or "",
+            strength.get("season_state") or ""),
+        "favorable_names": [element(e)
+                            for e in strength.get("favorable_elements") or []],
+        "unfavorable_names": [
+            element(e) for e in strength.get("unfavorable_elements") or []],
+        "climate_element_name": element(strength.get("climate_element"))
+        if strength.get("climate_element") else None,
     }
 
 

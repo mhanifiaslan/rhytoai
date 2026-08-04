@@ -323,6 +323,13 @@ def get_bazi_chart(
     missing = [e for e, c in element_count.items()
                if c < MISSING_THRESHOLD]
 
+    # --- Day Master gücü + yararlı element (B3) ---
+    # İçe aktarma fonksiyon içinde: bazi_strength bu modülün tablolarını
+    # kullanıyor, modül düzeyinde içe aktarmak döngü kurardı.
+    from services import bazi_strength
+    strength = bazi_strength.assess_strength(pillars, day_stem,
+                                             element_count)
+
     # --- Şans Sütunları (Da Yun) ---
     yang_year = STEMS[year_stem]["polarity"] == "Yang"
     is_male = gender.lower() in ("male", "erkek", "m", "man")
@@ -381,6 +388,7 @@ def get_bazi_chart(
         "element_distribution": element_count,
         "dominant_element": dominant,
         "missing_elements": missing,
+        "strength": strength,
         "zodiac_animal": BRANCHES[year_branch]["animal"],
         "luck_pillars": luck_pillars,
         "luck_direction": "forward" if forward else "backward",

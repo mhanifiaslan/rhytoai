@@ -323,6 +323,20 @@ BAZI_NOTES = {
     "tst_fallback_city": (
         "Doğum şehri çözümlenemedi; güneş zamanı İstanbul boylamıyla "
         "hesaplandı. Şehri profilden düzeltirsen hesap netleşir."),
+    "combinations_ignored": (
+        "Sütunlar arası birleşme ve çatışmalar (he/chong) bu güç "
+        "değerlendirmesine katılmadı."),
+}
+
+#: Day Master güç hükmü adları (B3).
+BAZI_STRENGTH_NAMES = {
+    "strong": "Güçlü", "weak": "Zayıf", "balanced": "Dengeli",
+}
+
+#: Mevsimsel durum adları (旺相休囚死).
+BAZI_SEASON_STATES = {
+    "wang": "hükümran", "xiang": "destekli", "xiu": "dinlenen",
+    "qiu": "kısıtlı", "si": "sönük",
 }
 
 #: Gerçek Güneş Zamanı beyanı — saat dönüşümü kullanıcıya gösterilir.
