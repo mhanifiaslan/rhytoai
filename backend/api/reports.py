@@ -1,4 +1,5 @@
 """Yorum/rapor uçları: hesaplama + RAG + Gemini + önbellek tek çağrıda."""
+import datetime as dt
 import logging
 from typing import Literal, Optional
 
@@ -13,9 +14,11 @@ from core.entitlements import (
     require_plus,
 )
 from core import device, wallet
-from services import astro_service, profile_service, prompts, report_service
+from services import (astro_service, bazi_service, chart_context,
+                      notification_service, profile_service, prompts,
+                      report_service)
 from services.bazi_service import get_bazi_chart
-from services.iching_service import cast_iching
+from services.iching_service import cast_iching, enrich_cast
 from services.sky_service import get_sky_now
 
 logger = logging.getLogger(__name__)
@@ -226,6 +229,26 @@ def iching(req: IChingReportRequest,
         # Soru verilmediyse varsayılan metin İSTEĞİN DİLİNDE (Revize İ0).
         soru = req.question or prompts.get(lang).ICHING_DEFAULT_QUESTION
         cast = cast_iching(soru, method=req.method)
+
+        # Çekim günü bağlamı (İ2): günün/ayın sütunları + kullanıcının Day
+        # Master'ı. Klasik danışma çekimi, çekildiği günün İÇİNDE okunur.
+        # Gün, kullanıcının senkronlanan saat diliminden alınır (bildirim
+        # altyapısının alanı); yoksa UTC — temel beyanla taşınır.
+        profile = profile_service.get_profile(user.uid)
+        tz = notification_service.user_timezone(profile or {})
+        bugun = dt.datetime.now(dt.timezone.utc).astimezone(tz).date()
+        basis = "profile_tz" if (profile or {}).get("timezone") else "utc"
+        dm_element = None
+        if profile and chart_context.has_birth_data(profile):
+            bazi_ozet = chart_context.bazi_facts(user.uid, profile)
+            dm_element = ((bazi_ozet or {}).get("day_master")
+                          or {}).get("element")
+        cast = enrich_cast(
+            cast,
+            day_pillar=bazi_service.day_pillar_for_date(bugun),
+            month_pillar=bazi_service.month_pillar_for_date(bugun),
+            day_master_element=dm_element,
+            basis=basis)
         report = report_service.iching_reading(user.uid, cast, lang=lang,
                                                spend=spend_cb,
                                                refund=refund_cb)

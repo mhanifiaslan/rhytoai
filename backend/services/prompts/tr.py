@@ -536,6 +536,16 @@ TRIGRAM_ATTRIBUTE_NAMES = {
     "penetrating": "nüfuz eden", "clinging": "tutunan", "joyous": "sevinçli",
 }
 
+#: Element ilişkisi adları (İ2) — Day Master ↔ trigram elementi.
+#: Anahtarlar bazi_service._element_relation çıktısıyla aynı.
+ELEMENT_RELATION_NAMES = {
+    "same": "kendi elementin",
+    "i_produce": "senin beslediğin",
+    "produces_me": "seni besleyen",
+    "i_control": "senin yönettiğin",
+    "controls_me": "seni sınayan",
+}
+
 ICHING = """
 GÖREV: Kullanıcının sorusunu, çekilen I Ching heksagramının 3000 yıllık metnine
 bağlayan 150-200 kelimelik bir kehanet yorumu yaz.

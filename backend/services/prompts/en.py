@@ -555,6 +555,16 @@ TRIGRAM_ATTRIBUTE_NAMES = {
     "clinging": "the clinging", "joyous": "the joyous",
 }
 
+#: Element relation names (İ2) — Day Master ↔ trigram element.
+#: Keys match bazi_service._element_relation output.
+ELEMENT_RELATION_NAMES = {
+    "same": "your own element",
+    "i_produce": "what you feed",
+    "produces_me": "what feeds you",
+    "i_control": "what you govern",
+    "controls_me": "what tests you",
+}
+
 ICHING = """
 TASK: Write a 150-200 word reading that ties the questioner's question to the
 three-thousand-year-old text of the hexagram they cast.

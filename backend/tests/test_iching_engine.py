@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import pytest
 
+from services import bazi_service as bazi_service_mod
 from services import iching_service, prompts
 from services.iching_service import cast_iching, get_hexagram
 
@@ -92,6 +93,77 @@ class TestDonusum:
         cekim = self._sabit_cekim(monkeypatch, [7, 8, 7, 8, 7, 8])
         assert cekim["moving_lines"] == []
         assert "transformed" not in cekim
+
+
+class TestNukleerHeksagram:
+    """İ2: hu gua — 2-3-4. çizgiler alt, 3-4-5. çizgiler üst trigram.
+
+    Altın vektörler klasik nükleer tablosundan; çift kaynak: çizgi
+    aritmetiğinin elle turu + yayınlanmış hu gua eşlemeleri.
+    """
+
+    def _nukleer(self, monkeypatch, degerler):
+        beslenen = iter(degerler)
+        monkeypatch.setattr(iching_service, "_cast_line_coins",
+                            lambda: next(beslenen))
+        return cast_iching("test", method="coins")["nuclear"]["number"]
+
+    def test_qian_kun_sabit_noktalar(self, monkeypatch):
+        assert self._nukleer(monkeypatch, [7] * 6) == 1
+        assert self._nukleer(monkeypatch, [8] * 6) == 2
+
+    def test_tai_nukleeri_gui_mei(self, monkeypatch):
+        # #11 Tai (1,1,1,0,0,0) → çekirdek (1,1,0 | 1,0,0) = dui altta
+        # zhen üstte = #54 Gui Mei.
+        assert self._nukleer(monkeypatch, [7, 7, 7, 8, 8, 8]) == 54
+
+    def test_ji_ji_nukleeri_wei_ji(self, monkeypatch):
+        # #63 Ji Ji (1,0,1,0,1,0) → çekirdek (0,1,0 | 1,0,1) = kan altta
+        # li üstte = #64 Wei Ji — tamamlanmışın çekirdeği tamamlanmamıştır.
+        assert self._nukleer(monkeypatch, [7, 8, 7, 8, 7, 8]) == 64
+
+
+class TestGunBaglami:
+    """İ2: tarih yardımcıları + enrich_cast."""
+
+    def test_gun_sutunu_capalari(self):
+        # test_bazi_engine çapalarının aynısı: 1949-10-01 JiaZi (döngü 0),
+        # 2000-01-01 WuWu (döngü 54).
+        import datetime as dtm
+        p1 = bazi_service_mod.day_pillar_for_date(dtm.date(1949, 10, 1))
+        assert (p1["stem"]["pinyin"], p1["branch"]["pinyin"],
+                p1["cycle"]) == ("Jia", "Zi", 0)
+        p2 = bazi_service_mod.day_pillar_for_date(dtm.date(2000, 1, 1))
+        assert p2["cycle"] == 54
+
+    def test_ay_sutunu_bes_kaplan(self):
+        # 1984-02-05 (Li Chun sonrası, Jia yılı) → ilk ay BingYin.
+        import datetime as dtm
+        p = bazi_service_mod.month_pillar_for_date(dtm.date(1984, 2, 5))
+        assert (p["stem"]["pinyin"], p["branch"]["pinyin"]) == \
+            ("Bing", "Yin")
+
+    def test_enrich_baglamsiz_dokunmaz(self, monkeypatch):
+        beslenen = iter([7] * 6)
+        monkeypatch.setattr(iching_service, "_cast_line_coins",
+                            lambda: next(beslenen))
+        cekim = cast_iching("test")
+        assert iching_service.enrich_cast(cekim) is cekim
+
+    def test_enrich_iliskileri_kurar(self, monkeypatch):
+        # #11 Tai: alt qian (metal), üst kun (toprak). DM ağaç için:
+        # metal ağacı kontrol eder → controls_me; ağaç toprağı kontrol
+        # eder → i_control.
+        beslenen = iter([7, 7, 7, 8, 8, 8])
+        monkeypatch.setattr(iching_service, "_cast_line_coins",
+                            lambda: next(beslenen))
+        cekim = iching_service.enrich_cast(
+            cast_iching("test"),
+            day_pillar={"label": "x", "cycle": 0},
+            day_master_element="wood", basis="utc")
+        iliskiler = cekim["context"]["trigram_relations"]
+        assert iliskiler == {"lower": "controls_me", "upper": "i_control"}
+        assert cekim["context"]["basis"] == "utc"
 
 
 class TestSozlukVeYerlestirme:

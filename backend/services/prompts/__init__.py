@@ -284,6 +284,9 @@ def localize_hexagram(lang: str | None, h: dict | None) -> dict:
         "name_local": h.get(f"name_{son_ek}") or h.get("name_tr") or "",
         "judgment": h.get(f"judgment_{son_ek}") or h.get("judgment_tr") or "",
         "image": h.get(f"image_{son_ek}") or h.get("image_tr") or "",
+        # 384 yao pasajı (İ1): isteğin diline indirgenmiş çizgi metinleri.
+        "line_texts": h.get(f"lines_{son_ek}") or h.get("lines_tr"),
+        "all_lines": h.get(f"all_lines_{son_ek}") or h.get("all_lines_tr"),
         "lower_trigram": trigram(h.get("lower_trigram")),
         "upper_trigram": trigram(h.get("upper_trigram")),
     }
@@ -293,10 +296,24 @@ def localize_iching(lang: str | None, cast: dict | None) -> dict:
     """I Ching çekilişindeki heksagram metinlerini isteğin diline indirger."""
     if not cast:
         return {}
+    p = get(lang)
     sonuç = {**cast,
              "primary": localize_hexagram(lang, cast.get("primary"))}
     if cast.get("transformed"):
         sonuç["transformed"] = localize_hexagram(lang, cast["transformed"])
+    if cast.get("nuclear"):
+        sonuç["nuclear"] = localize_hexagram(lang, cast["nuclear"])
+    # Gün bağlamı (İ2): sütun etiketleri dilden bağımsız; yalnız Day
+    # Master ilişki adları çevrilir.
+    baglam = cast.get("context")
+    if baglam:
+        sonuç["context"] = {
+            **baglam,
+            "trigram_relation_names": {
+                konum: p.ELEMENT_RELATION_NAMES.get(rel, rel)
+                for konum, rel in
+                (baglam.get("trigram_relations") or {}).items()},
+        }
     return sonuç
 
 

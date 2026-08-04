@@ -241,6 +241,39 @@ def _true_solar_time(local: dt.datetime, lng: float) -> tuple[dt.datetime, int]:
     return solar, sapma
 
 
+#: Beş Kaplan (yıl gövdesi → ilk ayın gövdesi) ve Beş Sıçan (gün gövdesi
+#: → Zi saatinin gövdesi) tabloları — İ2'de modül sabitine çıkarıldı:
+#: get_bazi_chart ile tarih yardımcıları aynı tabloyu paylaşır.
+FIVE_TIGERS = {0: 2, 5: 2, 1: 4, 6: 4, 2: 6, 7: 6, 3: 8, 8: 8, 4: 0, 9: 0}
+FIVE_RATS = {0: 0, 5: 0, 1: 2, 6: 2, 2: 4, 7: 4, 3: 6, 8: 6, 4: 8, 9: 8}
+
+
+def day_pillar_for_date(date: dt.date) -> dict[str, Any]:
+    """Verilen (güneş-günü) tarihin gün sütunu — 60'lık döngü (İ2).
+
+    `get_bazi_chart` içine gömülü aritmetiğin dışarı çıkarılmış hâli;
+    harita da bunu çağırır (tek doğruluk kaynağı). Çapa 1900-01-01 =
+    JiaXu — test_bazi_engine altın vektörleriyle kilitli. `cycle` da
+    döner: Kong Wang (bazi_stars.void_branches) ve Liu Yao gün bağlamı
+    ona ihtiyaç duyar.
+    """
+    days_since_anchor = (date - dt.date(1900, 1, 1)).days
+    cycle = (days_since_anchor + 10) % 60
+    return {**_pillar(cycle % 10, cycle % 12), "cycle": cycle}
+
+
+def month_pillar_for_date(date: dt.date) -> dict[str, Any]:
+    """Verilen tarihin ay sütunu — güneş boylamı + Beş Kaplan (İ2)."""
+    ogle = dt.datetime(date.year, date.month, date.day, 12,
+                       tzinfo=dt.timezone.utc)
+    lon = _sun_longitude(ogle)
+    yil = year_pillar_for_date(date)
+    month_no = int(((lon - 315) % 360) // 30) + 1
+    month_branch = (month_no + 1) % 12
+    month_stem = (FIVE_TIGERS[yil["stem"]["index"]] + (month_no - 1)) % 10
+    return _pillar(month_stem, month_branch)
+
+
 def year_pillar_for_date(date: dt.date) -> dict[str, Any]:
     """Verilen tarihin yıl sütunu — Liu Nian (yıllık sütun) için (B5).
 
@@ -291,25 +324,23 @@ def get_bazi_chart(
     # --- Ay sütunu (güneş boylamından; ay 1 = Kaplan/Yin, Li Chun'da başlar) ---
     month_no = int(((sun_lon - 315) % 360) // 30) + 1  # 1..12
     month_branch = (month_no + 1) % 12  # ay 1 -> Yin (index 2)
-    five_tigers = {0: 2, 5: 2, 1: 4, 6: 4, 2: 6, 7: 6, 3: 8, 8: 8, 4: 0, 9: 0}
-    month_stem = (five_tigers[year_stem] + (month_no - 1)) % 10
+    month_stem = (FIVE_TIGERS[year_stem] + (month_no - 1)) % 10
 
-    # --- Gün sütunu (60'lık döngü; GÜNEŞ saatiyle 23:00 sonrası ertesi
-    # güne sayılır — geç Zi ekolü, sabit ve belgeli) ---
+    # --- Gün sütunu (GÜNEŞ saatiyle 23:00 sonrası ertesi güne sayılır —
+    # geç Zi ekolü, sabit ve belgeli; aritmetik day_pillar_for_date'te) ---
     day_date = solar.date()
     if solar.hour >= 23:
         day_date = day_date + dt.timedelta(days=1)
-    days_since_anchor = (day_date - dt.date(1900, 1, 1)).days
-    day_cycle = (days_since_anchor + 10) % 60  # 1900-01-01 = JiaXu (10)
-    day_stem, day_branch = day_cycle % 10, day_cycle % 12
+    gun = day_pillar_for_date(day_date)
+    day_cycle = gun["cycle"]
+    day_stem = gun["stem"]["index"]
+    day_branch = gun["branch"]["index"]
 
     # --- Saat sütunu (Güneş saatiyle; saat bilinmiyorsa HİÇ kurulmaz) ---
     hour_pillar = None
     if hour_known:
         hour_branch = ((solar.hour + 1) // 2) % 12
-        five_rats = {0: 0, 5: 0, 1: 2, 6: 2, 2: 4,
-                     7: 4, 3: 6, 8: 6, 4: 8, 9: 8}
-        hour_stem = (five_rats[day_stem] + hour_branch) % 10
+        hour_stem = (FIVE_RATS[day_stem] + hour_branch) % 10
         hour_pillar = _pillar(hour_stem, hour_branch)
 
     pillars = {

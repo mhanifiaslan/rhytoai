@@ -21,7 +21,8 @@ DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "hexagrams.json"
 #: Hesap sürümü (Revize İ0): çekimin ürettiği yapı değiştiğinde artar ve
 #: rapor önbellek anahtarına girer — BaZi'deki calc_version disiplininin
 #: birebir aynısı. Eski yorumlar kendiliğinden düşer, migrasyon gerekmez.
-ICHING_CALC_VERSION = "2"
+#: v3: nükleer heksagram + çekim günü bağlamı (İ2).
+ICHING_CALC_VERSION = "3"
 
 Method = Literal["coins", "yarrow"]
 
@@ -122,6 +123,11 @@ def cast_iching(question: str, method: Method = "coins") -> dict[str, Any]:
         "lines": primary_lines,
         "moving_lines": moving,
         "primary": _hexagram_info(primary_lines),
+        # Nükleer heksagram (hu gua, İ2): 2-3-4. çizgiler alt, 3-4-5.
+        # çizgiler üst trigramı kurar — durumun "çekirdeği". Qian ve Kun
+        # kendilerine döner; bu bir kusur değil, klasik sabit noktadır.
+        "nuclear": _hexagram_info(
+            primary_lines[1:4] + primary_lines[2:5]),
     }
 
     if moving:
@@ -132,6 +138,42 @@ def cast_iching(question: str, method: Method = "coins") -> dict[str, Any]:
         result["transformed"] = _hexagram_info(transformed)
 
     return result
+
+
+def enrich_cast(cast: dict[str, Any], *,
+                day_pillar: dict[str, Any] | None = None,
+                month_pillar: dict[str, Any] | None = None,
+                day_master_element: str | None = None,
+                basis: str = "utc") -> dict[str, Any]:
+    """Çekime GÜN BAĞLAMI iliştirir (İ2) — saf, girdisiz de çalışır.
+
+    Klasik danışma çekimi, çekildiği GÜNÜN içinde okunur (Wen Wang Gua
+    geleneğinin zemini): günün ve ayın sütunları ile trigram elementlerinin
+    danışanın Day Master'ına ilişkisi yorumu kişiselleştirir. Bağlamsız
+    çağrı (test, profilsiz kullanıcı) çekimi olduğu gibi döndürür —
+    kişiselleştirme İDDİASI da prompt kurallarıyla o durumda yasak.
+
+    ``basis``: günün hangi saat diliminden alındığının beyanı
+    ("profile_tz" | "utc") — gün sınırında dürüstlük.
+    """
+    if not (day_pillar or month_pillar or day_master_element):
+        return cast
+
+    context: dict[str, Any] = {"basis": basis}
+    if day_pillar:
+        context["day_pillar"] = day_pillar
+    if month_pillar:
+        context["month_pillar"] = month_pillar
+    if day_master_element:
+        from services.bazi_service import _element_relation
+        context["day_master_element"] = day_master_element
+        context["trigram_relations"] = {
+            konum: _element_relation(
+                day_master_element,
+                cast["primary"][f"{konum}_trigram"]["element"])
+            for konum in ("lower", "upper")
+        }
+    return {**cast, "context": context}
 
 
 def get_hexagram(number: int) -> dict[str, Any]:
