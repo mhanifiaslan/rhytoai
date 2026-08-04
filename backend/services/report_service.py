@@ -430,6 +430,9 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
         *((bazi["pillars"][k] or {}).get("label", "-")
           for k in ("year", "month", "day", "hour")),
         bazi.get("gender", ""),
+        # Liu Nian rapora giriyor (B6): yıl sütunu değişince (Li Chun)
+        # eski yılın "içinde bulunulan dönem" bölümü servis edilmesin.
+        (bazi.get("current_year_pillar") or {}).get("label", "-"),
         str(bazi.get("calc_version", "1")),
     ])
     cache_key = (f"bazi-report-v2-{user_id}-"
@@ -446,25 +449,71 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
 
     pillars = " | ".join(f"{k}: {v['label']}"
                          for k, v in bazi["pillars"].items() if v)
+    # Gizli kökler kompakt: "day: Hai→Ren,Jia" (B6).
+    hidden = " | ".join(
+        f"{k}: {v['branch']['pinyin']}→"
+        + ",".join(h["pinyin"] for h in v["branch"].get("hidden", []))
+        for k, v in bazi["pillars"].items() if v)
+    branch_gods = ", ".join(
+        f"{k}={v['branch']['ten_god']['name']}"
+        for k, v in bazi["pillars"].items()
+        if v and v["branch"].get("ten_god"))
+    # Takvim yıllı şans satırı (B5): "1993-2003 (3-12): JiaShen (Pian Cai)".
     luck = "; ".join(
-        f"{lp['from_age']}-{lp['to_age']}: {lp['label']} ({lp['ten_god']['name']})"
+        f"{lp['from_year']}-{lp['to_year']} ({lp['from_age']}-{lp['to_age']}): "
+        f"{lp['label']} ({lp['ten_god']['name']})"
         for lp in bazi.get("luck_pillars", [])[:4]
     )
-    # Mizaç tohumu + yerelleştirilmiş element adları (Revize R8). Korpus
-    # BaZi metni taşımıyor; en yakın gerçek karşılık dört element/mizaç
-    # bölümleri, sorgu da oraya yönelir. "Day Master" gibi İngilizce
-    # terimler TR korpusta hiçbir şeye benzemiyordu.
+
+    # Güç hükmü satırları (B3→B6). Dayanak dökümü kompakt kodlarla:
+    # "month_command:40p(+)" — model listeden gerekçelendirir, dışına
+    # çıkması şablon kuralıyla yasak.
+    s = bazi.get("strength") or {}
+    strength_basis = "; ".join(
+        f"{c.get('source', '?')}:{c['points']}p"
+        f"({'+' if c.get('side') == 'support' else '−'})"
+        for c in (s.get("components") or [])[:5])
+    climate = ""
+    if s.get("climate_element_name"):
+        climate = p.BAZI_CLIMATE_FMT.format(
+            element=s["climate_element_name"])
+    shen_sha = "; ".join(
+        f"{y['name']} [{y['pillar']}] — {y['meaning']}"
+        for y in bazi.get("shen_sha") or []) or p.NONE_LABEL
+
+    ls = bazi.get("luck_start") or {}
+    luck_start = p.BAZI_LUCK_START_FMT.format(
+        years=ls.get("years", "?"), months=ls.get("months", "?"),
+        date=ls.get("date", "?"))
+    idx = bazi.get("current_luck_index")
+    aktif = (bazi.get("luck_pillars") or [None])[idx] if idx is not None else None
+    current_luck = (f"{aktif['label']} ({aktif['from_year']}-{aktif['to_year']}, "
+                    f"{aktif['ten_god']['name']})") if aktif else p.NONE_LABEL
+    cy = bazi.get("current_year_pillar") or {}
+    current_year = (f"{cy.get('year', '')} {cy.get('label', '')} "
+                    f"({(cy.get('ten_god') or {}).get('name', '')})").strip()
+
+    # Beyanlar: harita notları + güç hesabının kapsam beyanı.
+    notlar = list(bazi.get("notes") or [])
+    kapsam = s.get("scope_note_key")
+    if kapsam and kapsam in p.BAZI_NOTES:
+        notlar.append(p.BAZI_NOTES[kapsam])
+    # Sorgu bazi + mizaç tohumlarından (B6): B7 doktrin bölümleri gelince
+    # doğrudan onlara, gelmeden en yakın gerçek karşılığa (element/mizaç)
+    # yönelir. Hüküm adı da girer — "güçlü/zayıf" bölümleri ayrışsın.
     rag = retrieve_context(
         " ".join(filter(None, [
+            chart_query.topic_seed("bazi", lang),
             chart_query.topic_seed("temperament", lang),
             str(bazi["day_master"].get("element") or ""),
-            str(bazi.get("dominant_element") or ""),
+            str(s.get("verdict_name") or ""),
         ])),
         lang=lang,
     )
 
     prompt = p.BAZI.format(
-        pillars=pillars, day_master=bazi["day_master"]["description"],
+        pillars=pillars, hidden=hidden,
+        day_master=bazi["day_master"]["description"],
         zodiac_animal=bazi["zodiac_animal"],
         elements=bazi["element_distribution"], dominant=bazi["dominant_element"],
         missing=bazi.get("missing_elements") or p.NONE_LABEL,
@@ -473,13 +522,26 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
         # Saat bilinmeyen doğumda saat Tanrısı yok (B1) — "-" ve prompt'a
         # giren beyan, modelin saat sütunu hakkında konuşmasını engeller.
         ten_hour=(bazi["ten_gods"].get("hour") or {}).get("name", "-"),
-        notes="\n".join(f"- {n}" for n in bazi.get("notes") or []) or "-",
-        luck=luck, rag=rag,
+        branch_gods=branch_gods or "-",
+        verdict=s.get("verdict_name", "-"),
+        ratio=s.get("ratio", "-"),
+        season_state=s.get("season_state_name", "-"),
+        strength_basis=strength_basis or "-",
+        favorable=", ".join(s.get("favorable_names") or []) or p.NONE_LABEL,
+        unfavorable=", ".join(s.get("unfavorable_names") or [])
+        or p.NONE_LABEL,
+        climate=climate,
+        shen_sha=shen_sha,
+        luck=luck, luck_start=luck_start,
+        current_luck=current_luck, current_year=current_year or "-",
+        notes="\n".join(f"- {n}" for n in notlar) or "-",
+        rag=rag,
     )
     fallback = p.BAZI_FALLBACK.format(
         element=bazi["day_master"]["element"],
         polarity=bazi["day_master"]["polarity"],
         dominant=bazi["dominant_element"],
+        verdict=s.get("verdict_name", "-"),
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang,

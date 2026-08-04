@@ -459,31 +459,57 @@ NATAL_FALLBACK = (
 )
 
 BAZI = """
-GÖREV: Aşağıdaki BaZi (Dört Sütun) verilerinden 250-300 kelimelik kader haritası
-analizi yaz.
+GÖREV: Aşağıdaki BaZi (Dört Sütun) verilerinden 400-500 kelimelik bir kader
+haritası analizi yaz.
 
-HESAPLANMIŞ BAZI HARİTASI (gerçek güneş terimleriyle):
+HESAPLANMIŞ BAZI HARİTASI (gerçek güneş zamanı + gerçek güneş terimleriyle):
 - Dört Sütun: {pillars}
+- Dalların gizli kökleri: {hidden}
 - Günün Efendisi (Day Master): {day_master}
 - Çin burcu: {zodiac_animal}
-- Element dağılımı: {elements} (baskın: {dominant}, eksik: {missing})
-- On Tanrı: yıl={ten_year}, ay={ten_month}, saat={ten_hour}
-- Şans Sütunları: {luck}
+- Element dağılımı (gizli kök ağırlıklı): {elements} (baskın: {dominant}, zayıf: {missing})
+- On Tanrı — gövdeler: yıl={ten_year}, ay={ten_month}, saat={ten_hour}
+- On Tanrı — dallar (ana qi): {branch_gods}
+- GÜÇ HÜKMÜ: {verdict} (destek oranı {ratio}; ay komutunda {season_state})
+- Hükmün dayanağı (puan dökümü, + destek / − yük): {strength_basis}
+- Yararlı elementler: {favorable} | Yüke dönüşenler: {unfavorable}{climate}
+- Yıldızlar (Shen Sha): {shen_sha}
+- Şans Sütunları (Da Yun): {luck}
+- İlk dönemin başlangıcı: {luck_start}
+- İÇİNDE BULUNULAN DÖNEM: Da Yun {current_luck} · bu yılın sütunu {current_year}
 - Hesap beyanları: {notes}
 
 KAYNAK PASAJLARI:
 {rag}
 
-Bölümler: (1) Öz element ve doğa, (2) Element dengesi ve beslenmesi gereken alan,
-(3) Önümüzdeki şans dönemi teması.
-Hesap beyanlarında saat sütununun hesaplanmadığı yazıyorsa saat sütunu ve saat
-Tanrısı hakkında HİÇBİR yorum yapma.
+Bölümler:
+(1) Öz ve mevsimi: Günün Efendisi'ni mevsim içindeki durumuyla anlat; güç
+    hükmünü DAYANAK LİSTESİNDEN gerekçelendir, listenin dışına çıkma.
+(2) Element dengesi ve yararlı element: pratik karşılığıyla (hangi alan
+    beslenmeli, hangi eğilim dizginlenmeli).
+(3) Yıldızların dokunuşu — yalnız listede VARSA; liste boşsa bu bölümü atla.
+(4) İçinde bulunulan dönem: aktif Da Yun'un teması + bu yılın sütunuyla
+    kesişimi.
+
+KURALLAR:
+- Pohpohlama yok: hüküm neyse onu söyle. Zayıf Day Master kusur değildir,
+  dengelenme yoludur — ama süsleme de yapma.
+- Hüküm "Dengeli" ise kesin konuşma; olasılık diliyle yaz.
+- Sağlık, ölüm, kesin tarih kehaneti YOK.
+- Listede verilmeyen yıldızdan veya kombinasyondan söz etme.
+- Hesap beyanlarında saat sütununun hesaplanmadığı yazıyorsa saat sütunu ve
+  saat Tanrısı hakkında HİÇBİR yorum yapma.
 """
 
 BAZI_FALLBACK = (
     "Günün Efendin {element} elementi: {polarity} doğanın özü bu. "
-    "Baskın elementin {dominant}. Detaylı yorum için tekrar dene."
+    "Baskın elementin {dominant}, güç hükmün: {verdict}. "
+    "Detaylı yorum için tekrar dene."
 )
+
+#: Rapor satırı biçimleri — dile bağlı küçük kalıplar (B6).
+BAZI_LUCK_START_FMT = "{years} yıl {months} ay ({date})"
+BAZI_CLIMATE_FMT = " | Mevsim iklimi düzenleyici ister: {element}"
 
 ICHING = """
 GÖREV: Kullanıcının sorusunu, çekilen I Ching heksagramının 3000 yıllık metnine

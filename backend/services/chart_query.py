@@ -53,6 +53,10 @@ _TOPIC_SEEDS = {
         "travel": "Yolculuk, yer değiştirme, kökten uzaklaşma",
         "timing": "Yaklaşma ve ayrılma, transit, açının kurulması",
         "self": "Yükselen derece, kişinin kendi doğası",
+        # BaZi raporunun tohumu (B6): B7 doktrin bölümlerine yönelir;
+        # bölümler gelmeden de en yakın gerçek karşılığı (mizaç/element)
+        # çeker — sıralama bağımsızlığı.
+        "bazi": "Dört Sütun, Günün Efendisi, On Tanrı, güç ve denge",
     },
     "en": {
         "vocation": "The quality of employment, work, rank, station",
@@ -64,6 +68,7 @@ _TOPIC_SEEDS = {
         "travel": "Travelling, journeys, leaving one's own ground",
         "timing": "Application and separation, transit, an aspect forming",
         "self": "The degree ascending, a person's own nature",
+        "bazi": "Four Pillars, Day Master, Ten Gods, strength and balance",
     },
 }
 

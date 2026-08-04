@@ -474,31 +474,59 @@ NATAL_FALLBACK = (
 )
 
 BAZI = """
-TASK: Write a 250-300 word destiny reading from the BaZi (Four Pillars) data
+TASK: Write a 400-500 word destiny reading from the BaZi (Four Pillars) data
 below.
 
-CALCULATED BAZI CHART (using true solar terms):
+CALCULATED BAZI CHART (true solar time + true solar terms):
 - Four Pillars: {pillars}
+- Hidden stems of the branches: {hidden}
 - Day Master: {day_master}
 - Chinese zodiac: {zodiac_animal}
-- Element distribution: {elements} (dominant: {dominant}, missing: {missing})
-- Ten Gods: year={ten_year}, month={ten_month}, hour={ten_hour}
-- Luck Pillars: {luck}
+- Element distribution (hidden-stem weighted): {elements} (dominant: {dominant}, weak: {missing})
+- Ten Gods — stems: year={ten_year}, month={ten_month}, hour={ten_hour}
+- Ten Gods — branches (main qi): {branch_gods}
+- STRENGTH VERDICT: {verdict} (support ratio {ratio}; {season_state} in the month command)
+- Basis of the verdict (point breakdown, + support / − burden): {strength_basis}
+- Favorable elements: {favorable} | Elements that become a burden: {unfavorable}{climate}
+- Stars (Shen Sha): {shen_sha}
+- Luck Pillars (Da Yun): {luck}
+- Start of the first period: {luck_start}
+- CURRENT PERIOD: Da Yun {current_luck} · this year's pillar {current_year}
 - Calculation disclosures: {notes}
 
 SOURCE PASSAGES:
 {rag}
 
-Sections: (1) Core element and nature, (2) Element balance and what needs
-cultivating, (3) The theme of the luck period ahead.
-If the disclosures state that the hour pillar was not calculated, do NOT
-comment on the hour pillar or the hour Ten God in any way.
+Sections:
+(1) Core and season: describe the Day Master through its seasonal state;
+    justify the strength verdict FROM THE BASIS LIST and do not go beyond it.
+(2) Element balance and the useful element, with its practical meaning
+    (what to cultivate, which tendency to rein in).
+(3) The touch of the stars — ONLY if the list has any; skip this section if
+    the list is empty.
+(4) The current period: the theme of the active Da Yun and how this year's
+    pillar intersects it.
+
+RULES:
+- No flattery: state the verdict as it is. A weak Day Master is not a flaw
+  but a path of balancing — yet do not embellish either.
+- If the verdict is "Balanced", avoid certainty; write in the language of
+  likelihood.
+- No health, death or exact-date prophecy.
+- Do not mention any star or combination not given in the list.
+- If the disclosures state that the hour pillar was not calculated, do NOT
+  comment on the hour pillar or the hour Ten God in any way.
 """
 
 BAZI_FALLBACK = (
     "Your Day Master is {element}: {polarity} in nature, and that is your core. "
-    "Your dominant element is {dominant}. Check back shortly for the full reading."
+    "Your dominant element is {dominant}; your strength verdict is {verdict}. "
+    "Check back shortly for the full reading."
 )
+
+#: Report line formats — small language-bound patterns (B6).
+BAZI_LUCK_START_FMT = "{years}y {months}m ({date})"
+BAZI_CLIMATE_FMT = " | The season's climate calls for a regulator: {element}"
 
 ICHING = """
 TASK: Write a 150-200 word reading that ties the questioner's question to the

@@ -136,3 +136,30 @@ def test_natal_sorgu_ingilizce_dolgu_icermez(monkeypatch, temiz_onbellek):
     assert "sun sign temperament" not in sorgu
     assert "character" not in sorgu
     assert "Mizaç" in sorgu
+
+
+def test_bazi_promptu_derin_veriyi_tasir(monkeypatch, temiz_onbellek):
+    """B6: rapor promptu motorun yeni ürettiklerini gerçekten görüyor.
+
+    Güç hükmü, dayanak dökümü, gizli kökler, Liu Nian ve kapsam beyanı —
+    bunlardan biri prompt kurulumundan düşerse hiçbir hata çıkmaz, model
+    yalnızca o konuda genelleme yapar. Bu test o sessiz gerilemeyi tutar.
+    """
+    from services import bazi_service, prompts as prompt_mod
+    kutu = _kur(monkeypatch)
+    chart = bazi_service.get_bazi_chart(
+        1990, 5, 12, 14, 30, city="Istanbul", gender="female")
+    report_service.bazi_report("u-b6", chart, lang="tr")
+
+    prompt = kutu["prompt"]
+    yerel = prompt_mod.localize_bazi("tr", chart)
+    assert "GÜÇ HÜKMÜ" in prompt
+    assert yerel["strength"]["verdict_name"] in prompt
+    assert "month_command" in prompt          # dayanak dökümü
+    assert "→" in prompt                       # gizli kök satırı
+    assert str(chart["current_year_pillar"]["year"]) in prompt
+    # Kapsam beyanı: kombinasyonlar hesapta yok — model bunu okumalı.
+    assert "he/chong" in prompt
+
+    # Sorgu bazi tohumunu taşıyor.
+    assert "Dört Sütun" in kutu["sorgu"]
