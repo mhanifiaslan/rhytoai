@@ -20,6 +20,19 @@
         "headers": [
           { "key": "Content-Type", "value": "application/json" }
         ]
+      },
+      {
+        "source": "/rytho-admin/**",
+        "headers": [
+          { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+          { "key": "Cache-Control", "value": "no-store" }
+        ]
+      },
+      {
+        "source": "/assets/**",
+        "headers": [
+          { "key": "Cache-Control", "value": "public, max-age=3600" }
+        ]
       }
     ]
   },
