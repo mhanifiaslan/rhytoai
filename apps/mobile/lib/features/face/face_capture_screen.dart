@@ -812,7 +812,10 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
           if (_asama == _Asama.onizleme) _kilavuz(),
           if (_asama == _Asama.tarama) _taramaKatmani(),
           if (_asama == _Asama.hazirlaniyor)
-            const Center(child: CircularProgressIndicator()),
+            // Marka spinner'ı (R12-A1); deklanşördeki dolum halkası
+            // (CircularProgressIndicator value'lu) kasıtlı olarak kalıyor —
+            // o bir ilerleme göstergesi, bekleme göstergesi değil.
+            const Center(child: AstrolabeSpinner()),
           if (_asama == _Asama.izinYok || _asama == _Asama.hata)
             _hataKatmani(l10n),
           if (_asama == _Asama.onizleme) _altBar(l10n),

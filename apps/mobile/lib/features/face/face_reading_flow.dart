@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
+import '../../widgets/atlas_widgets.dart' show AstrolabeSpinner;
 import '../../widgets/glass.dart';
 import '../../widgets/motion.dart';
 import '../profile/legal_page.dart' show LegalPage, privacyPolicySections;
@@ -130,7 +131,9 @@ class _FaceConsentGateState extends ConsumerState<FaceConsentGate> {
     return Scaffold(
       appBar:
           AppBar(title: Text(AppLocalizations.of(context).faceReadingTitle)),
-      body: const Center(child: CircularProgressIndicator()),
+      // Marka spinner'ı (R12-A1): düz Material çemberi uygulamadaki tek
+      // yabancı yükleme göstergesiydi.
+      body: const Center(child: AstrolabeSpinner()),
     );
   }
 }
@@ -227,10 +230,7 @@ class _ConsentFormState extends ConsumerState<_ConsentForm> {
             FilledButton(
               onPressed: (_onaylandi && !_kaydediliyor) ? _onayla : null,
               child: _kaydediliyor
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2))
+                  ? const AstrolabeSpinner(size: 18)
                   : Text(l10n.faceConsentContinue),
             ),
           ],

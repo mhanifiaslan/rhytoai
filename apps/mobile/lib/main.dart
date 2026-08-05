@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -17,8 +18,10 @@ import 'features/onboarding/onboarding_screen.dart';
 import 'features/shell/app_shell.dart';
 import 'l10n/app_localizations.dart';
 import 'theme/rytho_theme.dart';
+import 'theme/rytho_tokens.dart';
 import 'widgets/atlas_widgets.dart';
 import 'widgets/cosmic_scaffold.dart';
+import 'widgets/motion.dart';
 
 /// Web client id (google-services.json / client_type 3) — Google Sign-In için.
 const kServerClientId =
@@ -93,7 +96,7 @@ class _Gate extends ConsumerWidget {
     ref.watch(deepLinkProvider);
 
     final auth = ref.watch(authStateProvider);
-    return auth.when(
+    final ekran = auth.when(
       loading: () => const _Splash(),
       error: (e, _) => _Splash(message: '$e'),
       data: (user) {
@@ -122,23 +125,57 @@ class _Gate extends ConsumerWidget {
         );
       },
     );
+    // Sert kesme yerine çapraz geçiş (R12-A1): splash → login/kabuk geçişi
+    // eskiden tek karede oluyordu. Key EKRAN SINIFINA bağlı — _Gate her
+    // yeniden build'inde yeni instance döner, key olmasa AnimatedSwitcher
+    // aynı ekran için bile boşuna geçiş oynatırdı.
+    return AnimatedSwitcher(
+      duration: reduceMotion(context) ? Duration.zero : RythoMotion.slow,
+      switchInCurve: RythoMotion.enter,
+      child: KeyedSubtree(
+        key: ValueKey(ekran.runtimeType),
+        child: ekran,
+      ),
+    );
   }
 }
 
+/// Açılış sahnesi (R12-A1). Eski hâli çıplak spinner + statik "RYTHO"ydu —
+/// uygulamanın ilk saniyesi markasızdı, logo yalnız giriş ekranındaydı.
+/// Koreografi: logo belirir (600ms) → yazı, harf aralığı açılarak gelir
+/// (mühür açılması) → usturlap süzülür. Splash zaten oturum çözülürken
+/// görünüyor; sahne süre EKLEMEZ, var olan beklemeyi giydirir.
 class _Splash extends StatelessWidget {
   const _Splash({this.message});
   final String? message;
 
   @override
   Widget build(BuildContext context) {
+    final sabit = reduceMotion(context);
+
+    Widget logo = Image.asset('assets/brand/rytho_logo_512.png',
+        width: 72, height: 72, filterQuality: FilterQuality.medium);
+    Widget spinner = const AstrolabeSpinner(size: 36);
+    if (!sabit) {
+      logo = logo.animate().fadeIn(duration: RythoMotion.slower).scale(
+          begin: const Offset(0.92, 0.92),
+          end: const Offset(1, 1),
+          duration: RythoMotion.slower,
+          curve: RythoMotion.enter);
+      spinner =
+          spinner.animate(delay: 500.ms).fadeIn(duration: RythoMotion.slow);
+    }
+
     return CosmicScaffold(
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const AstrolabeSpinner(size: 56),
-            const SizedBox(height: 24),
-            Text('RYTHO', style: RythoText.label(16, color: RythoColors.gold)),
+            logo,
+            const SizedBox(height: 18),
+            _Wordmark(sabit: sabit),
+            const SizedBox(height: 28),
+            spinner,
             if (message != null) ...[
               const SizedBox(height: 12),
               Padding(
@@ -150,6 +187,29 @@ class _Splash extends StatelessWidget {
             ],
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// "RYTHO" yazısı: harf aralığı 2→5 açılarak belirir.
+class _Wordmark extends StatelessWidget {
+  const _Wordmark({required this.sabit});
+  final bool sabit;
+
+  @override
+  Widget build(BuildContext context) {
+    TextStyle stil(double aralik) => RythoText.label(16,
+        color: RythoColors.gold).copyWith(letterSpacing: aralik);
+    if (sabit) return Text('RYTHO', style: stil(5));
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 800),
+      // İlk çeyrek bekleme: logo önce gelir, yazı onu izler.
+      curve: const Interval(0.25, 1, curve: RythoMotion.enter),
+      builder: (_, t, _) => Opacity(
+        opacity: t,
+        child: Text('RYTHO', style: stil(2 + 3 * t)),
       ),
     );
   }
