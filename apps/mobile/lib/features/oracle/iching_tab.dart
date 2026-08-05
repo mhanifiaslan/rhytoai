@@ -14,6 +14,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart';
 
 /// Çekim hakkı durumu (İ6): "bugünkü hak 1/1" rozeti — kota yalnız 402'de,
@@ -180,22 +181,45 @@ class _IChingTabState extends ConsumerState<IChingTab> {
           ),
         );
       }),
-      if (_busy) ...[
-        const SizedBox(height: 36),
-        const Center(child: _CoinToss()),
-        const SizedBox(height: 12),
-        Center(
-          child: Text(l10n.iChingCoinsInAir,
-              style: RythoText.mono(12, color: RythoColors.parchmentDim)),
+      // Paralar → çizgiler nedenselliği (R12-C2): _CoinToss eskiden sonuç
+      // gelince tek karede sökülüyordu; iki sahne arasında bağ yoktu.
+      // Şimdi aynı switcher hücresi: paralar sönerek toplanır (çıkış
+      // scale 1→0.85 + fade), sonuç aynı hizadan büyüyerek gelir ve
+      // heksagramın çizgileri alttan yukarı reveal'ini oynatır.
+      AnimatedSwitcher(
+        duration: reduceMotion(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 400),
+        switchInCurve: RythoMotion.enter,
+        switchOutCurve: RythoMotion.settle,
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: ScaleTransition(
+            scale: Tween(begin: 0.85, end: 1.0).animate(anim),
+            child: child,
+          ),
         ),
-      ],
-      if (_result != null) ...[
-        const SectionDivider(),
-        _HexagramView(result: _result!)
-            .animate()
-            .fadeIn(duration: 500.ms)
-            .slideY(begin: 0.04, curve: Curves.easeOutCubic),
-      ],
+        child: _busy
+            ? Column(key: const ValueKey('firlat'), children: [
+                const SizedBox(height: 36),
+                const Center(child: _CoinToss()),
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(l10n.iChingCoinsInAir,
+                      style: RythoText.mono(12,
+                          color: RythoColors.parchmentDim)),
+                ),
+              ])
+            : _result != null
+                ? Column(key: const ValueKey('sonuc'), children: [
+                    const SectionDivider(),
+                    _HexagramView(result: _result!)
+                        .animate(delay: 150.ms)
+                        .fadeIn(duration: 500.ms)
+                        .slideY(begin: 0.04, curve: Curves.easeOutCubic),
+                  ])
+                : const SizedBox.shrink(key: ValueKey('bos')),
+      ),
       const SizedBox(height: 32),
     ]);
   }

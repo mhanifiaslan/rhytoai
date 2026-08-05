@@ -5,12 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../core/friends.dart';
+import '../../core/sound.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart' show Pressable;
+import '../../widgets/star_burst.dart';
 import 'friends_screen.dart' show showFriendSafetySheet;
 
 /// Arkadaş detayı: bugüne özgü ikili dinamik + hazır tepki gönderme.
@@ -59,6 +62,10 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
   }
 
   Future<void> _react(String key) async {
+    // Ses + kıvılcım iyimser: gönderim başarısız olursa seçim zaten geri
+    // alınıyor; tepki anı dokunuşta hissedilmeli, sunucu turundan sonra
+    // değil (R12-C2).
+    SoundFx.like();
     setState(() => _sentReaction = key);
     final dio = ref.read(apiProvider);
     try {
@@ -167,12 +174,37 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
             runSpacing: 8,
             children: [
               for (final entry in kReactions.entries)
-                _ReactionChip(
-                  emoji: entry.value,
-                  label: reactionLabel(l10n, entry.key),
-                  selected: _sentReaction == entry.key,
-                  onTap: _sentReaction == null ? () => _react(entry.key) : null,
-                ),
+                // Seçilen çipin üstünde 8 kıvılcımlık mini patlama
+                // (R12-C2): sosyal katmanın tek etkileşimi eskiden yalnız
+                // renk değişimi + SnackBar'dı.
+                if (_sentReaction == entry.key && !reduceMotion(context))
+                  Stack(
+                    clipBehavior: Clip.none,
+                    alignment: Alignment.center,
+                    children: [
+                      Positioned.fill(
+                        child: OverflowBox(
+                          maxWidth: 90,
+                          maxHeight: 90,
+                          child: const StarBurst(size: 90, particles: 8),
+                        ),
+                      ),
+                      _ReactionChip(
+                        emoji: entry.value,
+                        label: reactionLabel(l10n, entry.key),
+                        selected: true,
+                        onTap: null,
+                      ),
+                    ],
+                  )
+                else
+                  _ReactionChip(
+                    emoji: entry.value,
+                    label: reactionLabel(l10n, entry.key),
+                    selected: _sentReaction == entry.key,
+                    onTap:
+                        _sentReaction == null ? () => _react(entry.key) : null,
+                  ),
             ],
           ),
         ),

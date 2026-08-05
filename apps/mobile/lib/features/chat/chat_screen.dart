@@ -254,8 +254,18 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   padding: const EdgeInsets.all(16),
                   itemCount: _messages.length + (_busy ? 1 : 0),
                   itemBuilder: (_, i) {
+                    // Dots → balon morph'u (R12-C2): yanıt geldiğinde
+                    // "yazıyor" noktalarının durduğu indekse AI balonu
+                    // gelir (itemCount değişmez!) — hücre AnimatedSwitcher
+                    // içinde olduğundan noktalar sönerken balon AYNI
+                    // köşeden büyür. Sarmalayıcı HER hücrede sabit durur;
+                    // koşullu sarmak komşu hücrelerin giriş animasyonunu
+                    // yeniden oynatırdı.
+                    final Key anahtar;
+                    final Widget icerik;
                     if (i == _messages.length) {
-                      return const Align(
+                      anahtar = const ValueKey('dots');
+                      icerik = const Align(
                         alignment: Alignment.centerLeft,
                         child: Padding(
                           padding: EdgeInsets.only(bottom: 12),
@@ -265,20 +275,37 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                           .animate()
                           .fadeIn(duration: 220.ms)
                           .slideY(begin: 0.2, curve: Curves.easeOutBack);
+                    } else {
+                      final m = _messages[i];
+                      final mine = m.sender != 'AI';
+                      anahtar = ValueKey('m-$i');
+                      icerik = Align(
+                        alignment: mine
+                            ? Alignment.centerRight
+                            : Alignment.centerLeft,
+                        child: _Bubble(text: m.text, mine: mine)
+                            .animate()
+                            .fadeIn(duration: 240.ms)
+                            .slideY(begin: 0.25, curve: Curves.easeOutBack)
+                            .scale(
+                                begin: const Offset(0.92, 0.92),
+                                curve: Curves.easeOutBack,
+                                duration: 300.ms),
+                      );
                     }
-                    final m = _messages[i];
-                    final mine = m.sender != 'AI';
-                    return Align(
-                      alignment:
-                          mine ? Alignment.centerRight : Alignment.centerLeft,
-                      child: _Bubble(text: m.text, mine: mine)
-                          .animate()
-                          .fadeIn(duration: 240.ms)
-                          .slideY(begin: 0.25, curve: Curves.easeOutBack)
-                          .scale(
-                              begin: const Offset(0.92, 0.92),
-                              curve: Curves.easeOutBack,
-                              duration: 300.ms),
+                    return AnimatedSwitcher(
+                      duration: RythoMotion.base,
+                      transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: ScaleTransition(
+                          scale: Tween(begin: 0.9, end: 1.0).animate(
+                              CurvedAnimation(
+                                  parent: anim, curve: RythoMotion.settle)),
+                          alignment: Alignment.bottomLeft,
+                          child: child,
+                        ),
+                      ),
+                      child: KeyedSubtree(key: anahtar, child: icerik),
                     );
                   },
                 ),
