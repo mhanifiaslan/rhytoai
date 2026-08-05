@@ -1,6 +1,6 @@
 # Rytho Kullanım Şartları
 
-Son güncelleme: 23 Temmuz 2026
+Son güncelleme: 5 Ağustos 2026
 
 Rytho'yu ("Uygulama") kullanarak aşağıdaki şartları kabul etmiş olursunuz.
 
@@ -18,50 +18,64 @@ danışın. Rytho, yorumlara dayanarak alınan kararlardan sorumlu tutulamaz.
 
 ## 2. Hesap ve yaş sınırı
 
-- Uygulamayı kullanmak için Google hesabıyla giriş yapmanız gerekir.
+- Uygulamayı kullanmak için e-posta, Google veya Apple hesabıyla giriş
+  yapmanız gerekir.
 - En az 13 yaşında olmalısınız.
 - Hesabınızın güvenliğinden siz sorumlusunuz.
 
-## 3. Topluluk kuralları (Meclis)
+## 3. Sosyal özellikler ve davranış kuralları
 
-Sosyal alanlarda şunlar yasaktır:
+Uygulamanın sosyal katmanı bilinçli olarak sınırlıdır: arkadaş listesi,
+günlük ikili okuma ve kapalı bir kümeden seçilen hazır tepkiler. Serbest
+metinli gönderi, yorum veya birebir mesajlaşma yoktur.
 
-- Hakaret, taciz, nefret söylemi, tehdit
-- Spam, yanıltıcı içerik, dolandırıcılık
-- Müstehcen veya yasa dışı içerik
-- Başkalarının kişisel verilerini izinsiz paylaşmak
+Yine de şunlar yasaktır:
 
-Gönderiler yayınlanmadan önce otomatik içerik denetiminden geçer. Kurallara
-aykırı içerik ve hesaplar; şikayet mekanizması, engelleme ve gerekirse hesabın
-kapatılması yoluyla yaptırıma tabidir.
+- Başka bir kişiyi taklit eden kullanıcı adı veya profil
+- Tepki bombardımanı yoluyla taciz
+- Başkalarının kişisel verilerini izinsiz kullanmak
 
-## 4. Fikri mülkiyet
+Kurallara aykırı hesaplar; şikayet mekanizması, engelleme ve gerekirse
+hesabın kapatılması yoluyla yaptırıma tabidir.
 
-Uygulamanın tasarımı, metinleri ve yazılımı Rytho'ya aittir. Paylaştığınız
-içerikler size aittir; ancak uygulamada gösterilmesi için bize sınırlı bir
-kullanım izni vermiş olursunuz. Efemeris hesaplamalarında Swiss Ephemeris
-(© Astrodienst AG) kullanılır.
+## 4. Abonelik ve satın almalar
 
-## 5. Veri ve gizlilik
+- **Rytho+** aylık bir aboneliktir; kişiye özel günlük okuma ve aylık jeton
+  hakkı içerir. Ücretlendirme ve tahsilat Google Play / App Store üzerinden
+  yapılır; iptal, mağaza hesabınızın abonelik ayarlarından her zaman
+  mümkündür. İptal, mevcut dönemin sonuna kadar erişimi kapatmaz.
+- **Jeton paketleri** tek seferlik satın almalardır ve süresiz geçerlidir.
+- Ücretsiz deneme sunulduğunda, deneme bitiminde ücretlendirme mağaza
+  tarafından otomatik başlar; denemeyi bitiş tarihinden önce iptal
+  edebilirsiniz.
+- Yürürlükteki zorunlu tüketici hakları (cayma dahil) saklıdır; mağazaların
+  iade politikaları geçerlidir.
 
-Kişisel verilerin işlenmesi Gizlilik Politikası'nda açıklanır. Özetle:
-yüz fotoğrafları analiz sonrası **anında silinir**; doğum verisi yalnızca
-hesaplama ve yorum üretimi için işlenir; verileriniz reklam amacıyla üçüncü
-taraflara satılmaz.
+## 5. Fikri mülkiyet
 
-## 6. Hizmet değişiklikleri ve sorumluluk sınırı
+Uygulamanın tasarımı, metinleri ve yazılımı Rytho'ya aittir. Efemeris
+hesaplamalarında Swiss Ephemeris (© Astrodienst AG) kullanılır.
+
+## 6. Veri ve gizlilik
+
+Kişisel verilerin işlenmesi Gizlilik Politikası'nda açıklanır. Özetle: yüz
+görüntünüz cihazınızdan **hiç çıkmaz** (ölçüm telefonda yapılır); doğum
+verisi yalnızca hesaplama ve yorum üretimi için işlenir; ham telefon
+numaraları saklanmaz; verileriniz reklam amacıyla üçüncü taraflara satılmaz.
+
+## 7. Hizmet değişiklikleri ve sorumluluk sınırı
 
 - Hizmet "olduğu gibi" sunulur; kesintisiz veya hatasız çalışacağı garanti
   edilmez.
 - Özellikler önceden duyurularak değiştirilebilir veya kaldırılabilir.
 - Yürürlükteki zorunlu tüketici hakları saklıdır.
 
-## 7. Fesih
+## 8. Fesih
 
 Bu şartları ihlal eden hesaplar önceden bildirimle veya ağır ihlallerde
-derhal kapatılabilir. Hesabınızı istediğiniz zaman silme talebiyle
-kapatabilirsiniz (aslan.mh@gmail.com).
+derhal kapatılabilir. Hesabınızı uygulama içinden (Profil → Hesap → Hesabı
+sil) istediğiniz zaman kapatabilirsiniz.
 
-## 8. İletişim
+## 9. İletişim
 
 Sorular ve talepler için: **aslan.mh@gmail.com**

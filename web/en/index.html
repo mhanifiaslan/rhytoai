@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RythoAI — Ancient wisdom, precise sky calculation</title>
+  <meta name="description" content="Western astrology, BaZi, I Ching and physiognomy — an AI guide fed by real astronomical data (Swiss Ephemeris + NASA JPL) that deepens as it gets to know you.">
+  <link rel="canonical" href="https://rhytoai.web.app/en/">
+  <link rel="alternate" hreflang="tr" href="https://rhytoai.web.app/">
+  <link rel="alternate" hreflang="en" href="https://rhytoai.web.app/en/">
+  <link rel="icon" href="/assets/rytho_logo.svg" type="image/svg+xml">
+  <meta property="og:title" content="RythoAI — The stars are the same for everyone. You are not.">
+  <meta property="og:description" content="Ancient wisdom, met with precise sky calculation. Your chart is drawn; your path lights up.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://rhytoai.web.app/en/">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Manrope:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/rytho.css">
+  <style>
+    .kahraman {
+      min-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 96px 24px 64px;
+    }
+    .kahraman img.logo { width: 84px; height: 84px; margin-bottom: 28px; }
+    .kahraman h1 {
+      font-size: clamp(32px, 6vw, 54px);
+      line-height: 1.15;
+      max-width: 720px;
+    }
+    .kahraman .slogan {
+      color: var(--parchment-dim);
+      margin: 18px auto 34px;
+      max-width: 520px;
+      font-size: 17px;
+    }
+    .magaza { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .magaza .yakinda {
+      font-size: 11px;
+      color: var(--parchment-dim);
+      display: block;
+      margin-top: 6px;
+    }
+    .veri-kutu {
+      font-size: 13px;
+      line-height: 1.9;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .gelenek { text-align: center; padding: 30px 18px; }
+    .gelenek .isaret { font-size: 34px; }
+    .gelenek h3 { margin: 12px 0 6px; font-size: 17px; }
+    .gelenek p { color: var(--parchment-dim); font-size: 13.5px; }
+    .fayda { display: flex; gap: 14px; align-items: flex-start; }
+    .fayda .nokta {
+      flex: none;
+      width: 10px; height: 10px;
+      margin-top: 7px;
+      border-radius: 50%;
+      background: var(--primary-gradient);
+    }
+    .fayda h3 { font-size: 16px; margin-bottom: 4px; }
+    .fayda p { color: var(--parchment-dim); font-size: 14px; }
+    .sss details {
+      border-bottom: 1px solid var(--line);
+      padding: 16px 0;
+    }
+    .sss summary {
+      cursor: pointer;
+      font-weight: 700;
+      font-family: 'Sora', sans-serif;
+      font-size: 15.5px;
+      list-style: none;
+    }
+    .sss summary::after { content: ' ✦'; color: var(--gold); font-size: 11px; }
+    .sss p { color: var(--parchment-dim); margin-top: 10px; font-size: 14px; }
+    .dil { font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="gokyuzu"><canvas id="yildizlar"></canvas></div>
+
+  <!-- HERO -->
+  <header class="kahraman">
+    <img class="logo acil" src="/assets/rytho_logo.svg" alt="RythoAI logo">
+    <h1 class="acil" style="--i:1">The stars are the same for everyone.<br>You are not.</h1>
+    <p class="slogan acil" style="--i:2">Ancient wisdom, met with precise sky calculation.<br>Your chart is drawn; your path lights up.</p>
+    <div class="magaza acil" style="--i:3">
+      <a class="buton" href="https://play.google.com/store/apps/details?id=ai.rytho">Get it on Google Play</a>
+      <span><a class="buton ikincil" href="#" aria-disabled="true">App Store</a>
+      <span class="yakinda">coming soon</span></span>
+    </div>
+  </header>
+
+  <main class="sarici">
+    <!-- REAL SKY -->
+    <section>
+      <h2 class="bolum-baslik acil">Computation, not invention</h2>
+      <p class="bolum-alt acil" style="--i:1">Every reading starts from the real sky of that moment. Planetary
+      positions are computed with the Swiss Ephemeris to millisecond
+      precision; BaZi month pillars are built from true Jie Qi solar terms,
+      not the calendar.</p>
+      <div class="panel acil" style="--i:2">
+        <div class="etiket">Example: what the engine sees</div>
+        <div class="mono veri-kutu">☉ Sun        Leo        132.4071°
+☽ Moon       Pisces     344.9182°  ↑ Ascendant  Libra
+BaZi day pillar   丁卯 DingMao   ·   Jie Qi  立秋 Liqiu
+I Ching cast      probabilities 1/16 · 5/16 · 7/16 · 3/16</div>
+      </div>
+    </section>
+
+    <!-- FOUR TRADITIONS -->
+    <section>
+      <h2 class="bolum-baslik acil">Four traditions, one chart</h2>
+      <p class="bolum-alt acil" style="--i:1">The same birth moment, seen through four different windows — they
+      complete each other rather than repeat.</p>
+      <div class="izgara dort">
+        <div class="panel gelenek acil" style="--i:1">
+          <div class="isaret">☉</div>
+          <h3>Western Astrology</h3>
+          <p>Natal chart, houses, aspects — and their collision with today's sky.</p>
+        </div>
+        <div class="panel gelenek acil" style="--i:2">
+          <div class="isaret">🀄</div>
+          <h3>BaZi</h3>
+          <p>Four Pillars, the Day Master and luck cycles — Chinese metaphysics.</p>
+        </div>
+        <div class="panel gelenek acil" style="--i:3">
+          <div class="isaret">☯</div>
+          <h3>I Ching</h3>
+          <p>One cast a day; 64 hexagrams, moving lines, true probabilities.</p>
+        </div>
+        <div class="panel gelenek acil" style="--i:4">
+          <div class="isaret">👁️</div>
+          <h3>Physiognomy</h3>
+          <p>The face reading tradition — measured on your device; your photo never uploads.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- BENEFITS -->
+    <section>
+      <h2 class="bolum-baslik acil">What Rytho+ adds</h2>
+      <p class="bolum-alt acil" style="--i:1">Your daily sign reading and the real sky data stay open on the free
+      tier, always. Rytho+ builds every reading from your own chart.</p>
+      <div class="izgara iki">
+        <div class="panel fayda acil" style="--i:1"><span class="nokta"></span><div>
+          <h3>A daily reading built for you</h3>
+          <p>Your natal chart collided with today's sky — not a generic sun-sign horoscope.</p></div></div>
+        <div class="panel fayda acil" style="--i:2"><span class="nokta"></span><div>
+          <h3>Full birth chart report</h3>
+          <p>Planets, houses and aspects — not a one-off surface summary.</p></div></div>
+        <div class="panel fayda acil" style="--i:3"><span class="nokta"></span><div>
+          <h3>Daily dynamic with your friends</h3>
+          <p>A shared reading that renews each day. No fixed compatibility score.</p></div></div>
+        <div class="panel fayda acil" style="--i:4"><span class="nokta"></span><div>
+          <h3>Unlimited chat</h3>
+          <p>The more Rytho knows you, the deeper it goes.</p></div></div>
+        <div class="panel fayda acil" style="--i:5"><span class="nokta"></span><div>
+          <h3>BaZi and synastry</h3>
+          <p>Four Pillars analysis and chart-to-chart comparison.</p></div></div>
+      </div>
+    </section>
+
+    <!-- PERSONA + MEMORY -->
+    <section>
+      <h2 class="bolum-baslik acil">A guide that doesn't flatter</h2>
+      <div class="izgara iki">
+        <div class="panel acil" style="--i:1">
+          <div class="etiket">Honesty</div>
+          <p>Rytho calls a hard period hard. It never presents the unmeasured
+          as measured; if your birth time is unknown it says so instead of
+          inventing one. It makes no dated prophecies.</p>
+        </div>
+        <div class="panel acil" style="--i:2">
+          <div class="etiket">Memory</div>
+          <p>Only distilled insights are kept from your conversations — never
+          raw transcripts. As Rytho gets to know you, readings become
+          personal; Turkish and English are two distinct voices, not a
+          translation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SOCIAL -->
+    <section>
+      <h2 class="bolum-baslik acil">A quiet social layer</h2>
+      <p class="bolum-alt acil" style="--i:1">No feed, no comment wars. You invite a friend, read your daily dyad
+      together, and leave a greeting from a small set of reactions. With no
+      free text, there is no harassment either.</p>
+    </section>
+
+    <!-- SCREENSHOTS (W10) -->
+    <section id="kareler" hidden>
+      <h2 class="bolum-baslik">From the app</h2>
+    </section>
+
+    <!-- FAQ -->
+    <section class="sss">
+      <h2 class="bolum-baslik acil">Frequently asked</h2>
+      <details class="acil" style="--i:1">
+        <summary>What's in the free tier?</summary>
+        <p>Daily/weekly/monthly sign readings, the live sky screen, 5 chat
+        messages a day, one I Ching cast a day, the friends list and streak
+        tracking — free forever.</p>
+      </details>
+      <details class="acil" style="--i:2">
+        <summary>How does Rytho+ work?</summary>
+        <p>A monthly subscription with the personal daily reading and a
+        monthly allowance of 300 tokens. Deep reports cost tokens (chat 1,
+        I Ching 2, natal/BaZi 5). Token packs can be bought separately and
+        never expire.</p>
+      </details>
+      <details class="acil" style="--i:3">
+        <summary>Where does my data live?</summary>
+        <p>Your birth data is stored encrypted on Google Cloud and used only
+        to produce your readings. Face reading is measured on your device —
+        your photo is never uploaded. Details in the
+        <a href="/en/legal/privacy.html">privacy policy</a>.</p>
+      </details>
+      <details class="acil" style="--i:4">
+        <summary>Is this a fortune-telling app?</summary>
+        <p>Rytho is an entertainment and insight app. It meets ancient
+        traditions with real astronomical computation; it gives no medical,
+        legal or financial advice and makes no claims of certain futures.</p>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    <div class="sarici satir">
+      <span>© 2026 RythoAI</span>
+      <span>
+        <a href="/en/legal/privacy.html">Privacy</a> ·
+        <a href="/en/legal/terms.html">Terms of Use</a> ·
+        <a href="mailto:aslan.mh@gmail.com">Contact</a> ·
+        <a class="dil" href="/">Türkçe</a>
+      </span>
+    </div>
+  </footer>
+
+  <script src="/assets/starfield.js" defer></script>
+  <script>
+    (function () {
+      'use strict';
+      var gozcu = new IntersectionObserver(function (girisler) {
+        girisler.forEach(function (g) {
+          if (g.isIntersecting) {
+            g.target.classList.add('gorunur');
+            gozcu.unobserve(g.target);
+          }
+        });
+      }, { threshold: 0.15 });
+      document.querySelectorAll('.acil').forEach(function (el) {
+        gozcu.observe(el);
+      });
+    })();
+  </script>
+</body>
+</html>
