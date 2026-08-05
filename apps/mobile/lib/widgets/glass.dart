@@ -2,9 +2,43 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../theme/rytho_theme.dart';
+import '../theme/rytho_tokens.dart';
 import 'motion.dart';
+
+/// Yükleme iskeleti (R12-B3): [GlassPanel] boyutlarında boş blok + yumuşak
+/// shimmer döngüsü. Profil gibi "boş iskeletle açılan" ekranlar, veri
+/// gelene kadar içeriğin HACMİNİ gösterir — beyaz boşluk değil.
+/// Reduce-motion'da shimmer hiç kurulmaz, blok sabit durur.
+class SkeletonPanel extends StatelessWidget {
+  const SkeletonPanel({
+    super.key,
+    this.height = 96,
+    this.margin = const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  });
+
+  final double height;
+  final EdgeInsets margin;
+
+  @override
+  Widget build(BuildContext context) {
+    final blok = Container(
+      height: height,
+      margin: margin,
+      decoration: BoxDecoration(
+        color: RythoColors.glassFill,
+        borderRadius: BorderRadius.circular(RythoRadius.card),
+        border: Border.all(color: RythoColors.glassStroke),
+      ),
+    );
+    if (reduceMotion(context)) return blok;
+    return blok.animate(onPlay: (c) => c.repeat()).shimmer(
+        duration: 1200.ms,
+        color: RythoColors.lilac.withValues(alpha: 0.08));
+  }
+}
 
 /// v3 kart: koyu mor dolgu, 20px köşe, %6 beyaz kontur, üst kenar ışığı.
 /// Adı tarihsel — artık blur zorunlu değil (blur: 0 varsayılan davranış

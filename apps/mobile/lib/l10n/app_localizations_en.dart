@@ -603,6 +603,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bigThreeStart => 'Begin the journey';
 
   @override
+  String get atlasWaitStage1 => 'Placing the planets';
+
+  @override
+  String get atlasWaitStage2 => 'Reading the aspects';
+
+  @override
+  String get atlasWaitStage3 => 'Writing your report';
+
+  @override
+  String get baziWaitStage1 => 'Raising the four pillars';
+
+  @override
+  String get baziWaitStage2 => 'Weighing the elements';
+
+  @override
+  String get baziWaitStage3 => 'Writing your fate note';
+
+  @override
   String get atlasTitle => 'Birth Chart Analysis';
 
   @override

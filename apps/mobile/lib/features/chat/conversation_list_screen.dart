@@ -48,7 +48,15 @@ class ConversationListScreen extends ConsumerWidget {
       ),
       body: SafeArea(
         child: konular.when(
-          loading: () => const Center(child: AstrolabeSpinner()),
+          // Satır iskeletleri (R12-B3): liste geleceği yerde liste hacmi.
+          loading: () => ListView(
+              padding: const EdgeInsets.only(top: 12),
+              children: const [
+                SkeletonPanel(height: 64),
+                SkeletonPanel(height: 64),
+                SkeletonPanel(height: 64),
+                SkeletonPanel(height: 64),
+              ]),
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(RythoSpace.xl),
             child: ErrorCard(message: friendlyError(e, l10n)),

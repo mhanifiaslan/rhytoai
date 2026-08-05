@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/common.dart';
+import '../../widgets/glass.dart' show SkeletonPanel;
 import 'account_screen.dart';
 import 'birth_record_screen.dart';
 import 'delete_account.dart';
@@ -46,9 +47,26 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(profileProvider).value ?? {};
+    final profilAsync = ref.watch(profileProvider);
+    final profile = profilAsync.value ?? {};
     final user = FirebaseAuth.instance.currentUser;
     final l10n = AppLocalizations.of(context);
+
+    // Profil henüz yüklenmediyse iskelet (R12-B3): eskiden bu ekran boş
+    // haritayla ("yok" gibi görünen alanlarla) açılıyordu.
+    if (profilAsync.isLoading && profile.isEmpty) {
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(title: Text(l10n.profileTitle)),
+        body: ListView(
+            padding: const EdgeInsets.only(top: 20, bottom: 110),
+            children: const [
+              SkeletonPanel(height: 140),
+              SkeletonPanel(height: 84),
+              SkeletonPanel(height: 220),
+            ]),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.transparent,

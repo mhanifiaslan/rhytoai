@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/motion.dart';
 import '../paywall/plus_locked_card.dart';
 import '../../core/api.dart' show friendlyError;
 import '../../l10n/app_localizations.dart';
@@ -19,7 +20,12 @@ class BaziTab extends ConsumerWidget {
     final bazi = ref.watch(baziReportProvider);
 
     return bazi.when(
-      loading: () => const Center(child: AstrolabeSpinner()),
+      // Rapor LLM üretimi — bekleyiş uzun; sahne dört sütun diliyle (R12-B3).
+      loading: () => StagedWaiting(stages: [
+        l10n.baziWaitStage1,
+        l10n.baziWaitStage2,
+        l10n.baziWaitStage3,
+      ]),
       error: (e, _) => Center(
         child: Text(friendlyError(e, l10n),
             style: RythoText.body(13, color: RythoColors.parchmentDim)),

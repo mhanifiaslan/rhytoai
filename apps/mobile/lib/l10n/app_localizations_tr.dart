@@ -603,6 +603,24 @@ class AppLocalizationsTr extends AppLocalizations {
   String get bigThreeStart => 'Yolculuğa başla';
 
   @override
+  String get atlasWaitStage1 => 'Gezegenler yerleşiyor';
+
+  @override
+  String get atlasWaitStage2 => 'Açılar okunuyor';
+
+  @override
+  String get atlasWaitStage3 => 'Raporun yazılıyor';
+
+  @override
+  String get baziWaitStage1 => 'Dört sütun kuruluyor';
+
+  @override
+  String get baziWaitStage2 => 'Elementler tartılıyor';
+
+  @override
+  String get baziWaitStage3 => 'Kader notun yazılıyor';
+
+  @override
   String get atlasTitle => 'Doğum Haritası Analizi';
 
   @override

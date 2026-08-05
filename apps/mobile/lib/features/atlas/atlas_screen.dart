@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
-import '../../widgets/atlas_widgets.dart';
 import '../../widgets/common.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/natal_wheel.dart';
@@ -17,6 +16,7 @@ import '../paywall/paywall_screen.dart';
 import 'birth_hexagram_screen.dart';
 import '../paywall/plus_locked_card.dart';
 import 'atlas_detail_screens.dart';
+import '../../widgets/motion.dart';
 import '../../core/subscription.dart' show subscriptionProvider;
 import '../../core/api.dart' show friendlyError;
 import '../../l10n/app_localizations.dart';
@@ -69,7 +69,13 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
         ),
         Expanded(
           child: natal.when(
-            loading: () => const Center(child: AstrolabeSpinner()),
+            // Rapor LLM üretimi — bekleyiş uzun. Çıplak kadran yerine sahne
+            // (R12-B3): aşamalar gerçek işi anlatıyor, yüzde çubuğu yok.
+            loading: () => StagedWaiting(stages: [
+              l10n.atlasWaitStage1,
+              l10n.atlasWaitStage2,
+              l10n.atlasWaitStage3,
+            ]),
             error: (e, _) => Center(
               child: Padding(
                 padding: const EdgeInsets.all(32),

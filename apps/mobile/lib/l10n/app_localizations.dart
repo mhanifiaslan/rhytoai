@@ -1190,6 +1190,42 @@ abstract class AppLocalizations {
   /// **'Yolculuğa başla'**
   String get bigThreeStart;
 
+  /// No description provided for @atlasWaitStage1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gezegenler yerleşiyor'**
+  String get atlasWaitStage1;
+
+  /// No description provided for @atlasWaitStage2.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açılar okunuyor'**
+  String get atlasWaitStage2;
+
+  /// No description provided for @atlasWaitStage3.
+  ///
+  /// In tr, this message translates to:
+  /// **'Raporun yazılıyor'**
+  String get atlasWaitStage3;
+
+  /// No description provided for @baziWaitStage1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dört sütun kuruluyor'**
+  String get baziWaitStage1;
+
+  /// No description provided for @baziWaitStage2.
+  ///
+  /// In tr, this message translates to:
+  /// **'Elementler tartılıyor'**
+  String get baziWaitStage2;
+
+  /// No description provided for @baziWaitStage3.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kader notun yazılıyor'**
+  String get baziWaitStage3;
+
   /// No description provided for @atlasTitle.
   ///
   /// In tr, this message translates to:
