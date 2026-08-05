@@ -53,6 +53,12 @@ class SolarReturnScreen extends ConsumerWidget {
           final asc = sr['sr_ascendant'] != null
               ? Map<String, dynamic>.from(sr['sr_ascendant'])
               : null;
+          // Sert cast değil hoşgörülü ayrıştırma: alan beklenmedik tipte
+          // gelirse satır GİZLENİR, ekran çökmez (üretimde yaşandı —
+          // sunucu bir ara kerykeion'un "Tenth_House" metnini geçiriyordu).
+          final evHam = sr['sr_sun_house'];
+          final gunesEvi =
+              evHam is int ? evHam : int.tryParse('${evHam ?? ''}');
 
           var sira = 0;
           Duration gecikme() => Duration(milliseconds: 130 * sira++);
@@ -98,9 +104,9 @@ class SolarReturnScreen extends ConsumerWidget {
                       if (asc != null)
                         _satir(l10n.solarReturnAsc,
                             '${asc['sign_local'] ?? asc['sign']} ${asc['position']}°'),
-                      if (sr['sr_sun_house'] != null)
+                      if (gunesEvi != null)
                         _satir(l10n.solarReturnSunHouse,
-                            l10n.solarReturnHouseN(sr['sr_sun_house'] as int)),
+                            l10n.solarReturnHouseN(gunesEvi)),
                       _satir(l10n.solarReturnMoon,
                           '${sr['sr_moon_local'] ?? sr['sr_moon_sign'] ?? '-'}'),
                     ]),

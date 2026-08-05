@@ -65,6 +65,17 @@ class TestSolarReturn:
             "t", 1990, 5, 12, 14, 30, "Istanbul", target_year=2020)
         assert sr["return_at_utc"].startswith("2020-05-1")
 
+    def test_sr_gunes_evi_sayi(self):
+        """Ev alanı SAYI döner — kerykeion'un "Tenth_House" metni değil.
+
+        Metin sızarsa mobil int cast'i çöker ve prompt'a İngilizce ev adı
+        girer; bu test o gerilemeyi tutar.
+        """
+        sr = predict_service.solar_return(
+            "t", 1990, 5, 12, 14, 30, "Istanbul", target_year=2025)
+        assert isinstance(sr["sr_sun_house"], int)
+        assert 1 <= sr["sr_sun_house"] <= 12
+
     def test_cozulmeyen_sehir_beyani(self):
         sr = predict_service.solar_return(
             "t", 1990, 5, 12, 14, 30, "BilinmeyenKoy", target_year=2025)

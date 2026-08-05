@@ -23,7 +23,7 @@ from services.geo_service import resolve_city
 
 #: Tahmin hesabı sürümü — davranış değişince artar, önbellekler tazelenir
 #: (BaZi calc_version disiplini).
-PREDICT_CALC_VERSION = "1"
+PREDICT_CALC_VERSION = "2"  # v2: sr_sun_house metin değil ev NUMARASI
 
 
 def _model_points(model) -> list[dict[str, Any]]:
@@ -98,7 +98,12 @@ def solar_return(
             "sign": sr_asc.sign,
             "position": round(sr_asc.position, 2),
         }
-        sonuc["sr_sun_house"] = getattr(aktif.sun, "house", None)
+        # kerykeion ev alanı METİN döndürür ("Tenth_House"); sayıya
+        # çevrilmeden hem prompt'a İngilizce sızıyor hem mobil int cast'i
+        # çöküyordu (chart_context._HOUSE_NUMBER ile aynı ders).
+        ev = getattr(aktif.sun, "house", None)
+        sonuc["sr_sun_house"] = (ev if isinstance(ev, int)
+                                 else astro_service._HOUSE_NO.get(ev))
     # Saat bilinmiyorsa ASC/ev alanları HİÇ yok — "üretmediysen söyleme".
     return sonuc
 
