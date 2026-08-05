@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../core/device_claim.dart';
+import '../../core/providers.dart'
+    show justOnboardedProvider, profileProvider;
+import '../../widgets/big_three_reveal.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/glass.dart';
@@ -38,8 +41,26 @@ class _AppShellState extends ConsumerState<AppShell> {
     // BURADA sorulur — kullanıcı 409 duvarına çarpmadan önce, girişin hemen
     // ardından. Oturum başına bir kez; ücretsiz kullanıcı hiç görmez.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) maybeConfirmDeviceTakeover(context, ref);
+      if (!mounted) return;
+      maybeConfirmDeviceTakeover(context, ref);
+      _buyukUcluPerdesi();
     });
+  }
+
+  /// Onboarding'in finali (R12-B1): kullanıcı doğum verisini az önce verdiyse
+  /// Büyük Üçlü perdesi burada açılır — onboarding ekranında açılamaz, çünkü
+  /// `onboardingCompleted` yazımı iner inmez `_Gate` o ekranı söker.
+  void _buyukUcluPerdesi() {
+    if (!ref.read(justOnboardedProvider)) return;
+    ref.read(justOnboardedProvider.notifier).state = false;
+    final profil = ref.read(profileProvider).value ?? const {};
+    final gunes = profil['sunSign'] as String?;
+    final ay = profil['moonSign'] as String?;
+    final yukselen = profil['ascendant'] as String?;
+    // Harita hesaplanamadıysa (savedWithoutChart) perde HİÇ açılmaz —
+    // yalan rozet göstermeme kuralı (core/birth_record.dart).
+    if (gunes == null || ay == null || yukselen == null) return;
+    showBigThreeReveal(context, sun: gunes, moon: ay, ascendant: yukselen);
   }
 
   @override

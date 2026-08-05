@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import 'analytics.dart';
 import 'api.dart';
@@ -10,6 +11,15 @@ import 'subscription.dart';
 final authStateProvider = StreamProvider<User?>(
   (ref) => FirebaseAuth.instance.authStateChanges(),
 );
+
+/// Onboarding'i BU oturumda bitiren kullanıcı (R12-B1).
+///
+/// `saveBirthRecord` onboardingCompleted'ı tek yazımda yazar ve yazım iner
+/// inmez `_Gate` kabuğa geçer — Büyük Üçlü perdesi bu yüzden onboarding
+/// ekranında yaşayamaz. Bayrak yazım ÖNCESİ kalkar; AppShell ilk karede
+/// görür, perdeyi açar ve indirir. Kalıcı değil: uygulamanın sonraki
+/// açılışlarında sahne tekrarlanmaz.
+final justOnboardedProvider = StateProvider<bool>((_) => false);
 
 /// Engellenen kullanıcı kimlikleri (users/{uid}/blocked). Akış ve mesajlar
 /// bu kümeye göre istemci tarafında filtrelenir.

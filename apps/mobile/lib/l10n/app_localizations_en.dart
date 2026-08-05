@@ -579,6 +579,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingFailed => 'Couldn\'t save your details.';
 
   @override
+  String get onboardingStage1 => 'Positioning the sky';
+
+  @override
+  String get onboardingStage2 => 'Calculating the houses';
+
+  @override
+  String get onboardingStage3 => 'Drawing your chart';
+
+  @override
+  String get bigThreeTitle => 'The sky\'s three seals for you';
+
+  @override
+  String get bigThreeSun => 'SUN';
+
+  @override
+  String get bigThreeMoon => 'MOON';
+
+  @override
+  String get bigThreeAscendant => 'ASCENDANT';
+
+  @override
+  String get bigThreeStart => 'Begin the journey';
+
+  @override
   String get atlasTitle => 'Birth Chart Analysis';
 
   @override

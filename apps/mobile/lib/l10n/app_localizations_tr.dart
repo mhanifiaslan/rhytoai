@@ -579,6 +579,30 @@ class AppLocalizationsTr extends AppLocalizations {
   String get onboardingFailed => 'Kayıt başarısız.';
 
   @override
+  String get onboardingStage1 => 'Gökyüzü konumlanıyor';
+
+  @override
+  String get onboardingStage2 => 'Evler hesaplanıyor';
+
+  @override
+  String get onboardingStage3 => 'Haritan çiziliyor';
+
+  @override
+  String get bigThreeTitle => 'Göğün sana üç mührü';
+
+  @override
+  String get bigThreeSun => 'GÜNEŞ';
+
+  @override
+  String get bigThreeMoon => 'AY';
+
+  @override
+  String get bigThreeAscendant => 'YÜKSELEN';
+
+  @override
+  String get bigThreeStart => 'Yolculuğa başla';
+
+  @override
   String get atlasTitle => 'Doğum Haritası Analizi';
 
   @override

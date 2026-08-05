@@ -1,15 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/api.dart';
 import '../../core/birth_record.dart';
+import '../../core/providers.dart' show justOnboardedProvider;
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
+import '../../widgets/motion.dart';
 import '../../l10n/app_localizations.dart';
 
 /// Doğum verisi kaydı: tarih, saat, şehir, cinsiyet.
@@ -61,6 +62,10 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   Future<void> _save() async {
     final user = FirebaseAuth.instance.currentUser!;
     setState(() => _busy = true);
+    // Büyük Üçlü perdesinin bayrağı yazım ÖNCESİ kalkar (R12-B1):
+    // onboardingCompleted iner inmez _Gate bu ekranı söküp AppShell'i
+    // takıyor — bayrak o anda çoktan hazır olmalı. Hata olursa geri iner.
+    ref.read(justOnboardedProvider.notifier).state = true;
     try {
       // Kimlik alanları yalnızca ilk kurulumda yazılır; doğum verisi ve Büyük
       // Üçlü ortak yoldan gider (bkz. core/birth_record.dart) — sonradan
@@ -86,6 +91,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         dio: ref.read(apiProvider),
       );
     } catch (e) {
+      ref.read(justOnboardedProvider.notifier).state = false;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(AppLocalizations.of(context).onboardingFailed)));
@@ -105,8 +111,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         ? '—'
         : '${_birthTime.hour.toString().padLeft(2, '0')}:${_birthTime.minute.toString().padLeft(2, '0')}';
 
-    var stagger = 0;
-    Duration next() => Duration(milliseconds: 70 * stagger++);
+    // Kademeli giriş RythoReveal'e geçti (R12-B1) — elle yazılmış stagger
+    // sayacı bu ekrandan kalktı (göç kuralı: dokunulan ekran token'a bağlanır).
+    var sira = 0;
 
     return CosmicScaffold(
       body: SafeArea(
@@ -114,50 +121,72 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
           padding: const EdgeInsets.all(24),
           children: [
             const SizedBox(height: 16),
-            Text(l10n.recordLabel,
-                style: RythoText.label(12, color: RythoColors.lilac))
-                .animate(delay: next())
-                .fadeIn(duration: 360.ms),
+            RythoReveal(
+              index: sira++,
+              slide: 0,
+              child: Text(l10n.recordLabel,
+                  style: RythoText.label(12, color: RythoColors.lilac)),
+            ),
             const SizedBox(height: 8),
-            Text(l10n.onboardingTitle, style: RythoText.display(32))
-                .animate(delay: next())
-                .fadeIn(duration: 360.ms)
-                .slideY(begin: 0.1, curve: Curves.easeOutCubic),
+            RythoReveal(
+              index: sira++,
+              slide: 0.1,
+              child: Text(l10n.onboardingTitle, style: RythoText.display(32)),
+            ),
             const SizedBox(height: 8),
-            Text(
-              l10n.onboardingBody,
-              style: RythoText.body(14, color: RythoColors.parchmentDim),
-            ).animate(delay: next()).fadeIn(duration: 360.ms),
+            RythoReveal(
+              index: sira++,
+              slide: 0,
+              child: Text(
+                l10n.onboardingBody,
+                style: RythoText.body(14, color: RythoColors.parchmentDim),
+              ),
+            ),
             const SizedBox(height: 28),
-            _FieldRow(label: l10n.birthDate, value: dateText, onTap: _pickDate)
-                .animate(delay: next())
-                .fadeIn(duration: 360.ms)
-                .slideY(begin: 0.08, curve: Curves.easeOutCubic),
+            RythoReveal(
+              index: sira++,
+              slide: 0.08,
+              child: _FieldRow(
+                  label: l10n.birthDate, value: dateText, onTap: _pickDate),
+            ),
             const SizedBox(height: 12),
-            _FieldRow(label: l10n.birthTime, value: timeText, onTap: _pickTime)
-                .animate(delay: next())
-                .fadeIn(duration: 360.ms)
-                .slideY(begin: 0.08, curve: Curves.easeOutCubic),
+            RythoReveal(
+              index: sira++,
+              slide: 0.08,
+              child: _FieldRow(
+                  label: l10n.birthTime, value: timeText, onTap: _pickTime),
+            ),
             // "Bilmiyorum" bir eksiklik değil, geçerli bir cevap: BaZi bu
             // durumda saat sütununu HİÇ kurmaz ve bunu okumada söyler.
-            CheckboxListTile(
-              value: !_timeKnown,
-              onChanged: (v) => setState(() => _timeKnown = !(v ?? false)),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: EdgeInsets.zero,
-              dense: true,
-              title: Text(l10n.birthTimeUnknown,
-                  style: RythoText.body(13, color: RythoColors.parchmentDim)),
-            ).animate(delay: next()).fadeIn(duration: 360.ms),
+            RythoReveal(
+              index: sira++,
+              slide: 0,
+              child: CheckboxListTile(
+                value: !_timeKnown,
+                onChanged: (v) => setState(() => _timeKnown = !(v ?? false)),
+                controlAffinity: ListTileControlAffinity.leading,
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                title: Text(l10n.birthTimeUnknown,
+                    style:
+                        RythoText.body(13, color: RythoColors.parchmentDim)),
+              ),
+            ),
             const SizedBox(height: 12),
-            TextField(
-              controller: _cityController,
-              style: RythoText.body(15),
-              decoration: InputDecoration(labelText: l10n.onboardingCity),
-            ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
-                begin: 0.08, curve: Curves.easeOutCubic),
+            RythoReveal(
+              index: sira++,
+              slide: 0.08,
+              child: TextField(
+                controller: _cityController,
+                style: RythoText.body(15),
+                decoration: InputDecoration(labelText: l10n.onboardingCity),
+              ),
+            ),
             const SizedBox(height: 20),
-            Row(
+            RythoReveal(
+              index: sira++,
+              slide: 0.08,
+              child: Row(
               children: [
                 for (final g in [
                   ('female', l10n.genderFemale),
@@ -196,13 +225,28 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   if (g.$1 != 'other') const SizedBox(width: 8),
                 ],
               ],
-            ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
-                begin: 0.08, curve: Curves.easeOutCubic),
+              ),
+            ),
             const SizedBox(height: 36),
-            GoldButton(text: l10n.onboardingSubmit, busy: _busy, onPressed: _save)
-                .animate(delay: next())
-                .fadeIn(duration: 360.ms)
-                .slideY(begin: 0.08, curve: Curves.easeOutCubic),
+            // Kaydederken buton yerine sahne (R12-B1): harita bu esnada
+            // GERÇEKTEN hesaplanıyor (saveBirthRecord natal çağrısı) —
+            // aşamalar süs değil, işin kendisi. Aralık kısa çünkü kayıt
+            // tipik olarak birkaç saniye sürüyor.
+            _busy
+                ? StagedWaiting(
+                    stages: [
+                      l10n.onboardingStage1,
+                      l10n.onboardingStage2,
+                      l10n.onboardingStage3,
+                    ],
+                    interval: const Duration(milliseconds: 1600),
+                  )
+                : RythoReveal(
+                    index: sira++,
+                    slide: 0.08,
+                    child: GoldButton(
+                        text: l10n.onboardingSubmit, onPressed: _save),
+                  ),
           ],
         ),
       ),

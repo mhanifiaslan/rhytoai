@@ -1142,6 +1142,54 @@ abstract class AppLocalizations {
   /// **'Kayıt başarısız.'**
   String get onboardingFailed;
 
+  /// No description provided for @onboardingStage1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gökyüzü konumlanıyor'**
+  String get onboardingStage1;
+
+  /// No description provided for @onboardingStage2.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evler hesaplanıyor'**
+  String get onboardingStage2;
+
+  /// No description provided for @onboardingStage3.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritan çiziliyor'**
+  String get onboardingStage3;
+
+  /// No description provided for @bigThreeTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Göğün sana üç mührü'**
+  String get bigThreeTitle;
+
+  /// No description provided for @bigThreeSun.
+  ///
+  /// In tr, this message translates to:
+  /// **'GÜNEŞ'**
+  String get bigThreeSun;
+
+  /// No description provided for @bigThreeMoon.
+  ///
+  /// In tr, this message translates to:
+  /// **'AY'**
+  String get bigThreeMoon;
+
+  /// No description provided for @bigThreeAscendant.
+  ///
+  /// In tr, this message translates to:
+  /// **'YÜKSELEN'**
+  String get bigThreeAscendant;
+
+  /// No description provided for @bigThreeStart.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yolculuğa başla'**
+  String get bigThreeStart;
+
   /// No description provided for @atlasTitle.
   ///
   /// In tr, this message translates to:
