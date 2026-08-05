@@ -107,6 +107,31 @@ gcloud run services update rytho-backend --region us-central1 \
 Aynı kapanış listesinde: `RYTHO_TOKENS_ENFORCE` hâlâ 0 (jeton harcaması
 kuru çalışma modunda) — gözlem bitince 1 yapılacak.
 
+## 3c. Web sitesi + gizli admin paneli (W0–W9 ile kuruldu)
+
+- **Tanıtım sitesi:** https://rhytoai.web.app (TR) + /en/ (EN). Hukuki
+  metinler: /legal/gizlilik.html · /legal/kullanim.html (+ EN) — mağaza
+  formlarına bu URL'ler verilecek. **Yayın öncesi hukuk metinlerine insan
+  onayı gerekiyor** (mühendislik taslağı).
+- **Admin paneli:** https://rhytoai.web.app/rytho-admin — sitede link YOK,
+  arama motorlarına kapalı. Google ile girilir; yetki `admin:true` custom
+  claim'inden gelir (aslan.mh@gmail.com'a basıldı). Yeni admin eklemek:
+  `backend/.venv/Scripts/python tools/set_admin.py --email <eposta>`
+  (claim ≤1 saat / çıkış-giriş sonrası yansır).
+- **İstatistikler:** her gece 02:40 UTC `rytho-stats` işi `adminStats/`
+  dokümanını üretir; panel Genel Bakış'tan "Topla" ile elle de tetiklenir.
+- **Ortak kodları:** panel > Ortaklar: ortak ekle → kod üret (bonus jeton +
+  kullanım limiti). Kullanıcı kodu uygulamada Profil > "Kod kullan" ya da
+  paywall'daki linkten girer; her hesapta TEK kod. Kod girildikten SONRAKİ
+  satın almalar ortağa atfedilir; hakediş = atfedilen brüt × pay yüzdesi.
+  **Mağaza fiyat indirimi buradan yapılamaz** — gerekiyorsa RevenueCat
+  Offering / Play promo kodu konsoldan elle.
+- **Deploy komutları:** site `firebase deploy --only hosting` · indeksler
+  `firebase deploy --only firestore:indexes` · backend infra/deploy betiği.
+- Alan adı bağlanınca: Hosting'e özel alan adı + deep_links.dart
+  `kInviteHost` + AndroidManifest host + sitemap/canonical/OG URL'leri
+  (bkz. plan W10).
+
 ## 4. Mağaza veri güvenliği formları (R2/R3/R4/R5 sonrası güncelleme)
 
 Yapılmadan: form ile uygulamanın gerçek davranışı çelişir; iki mağaza da
