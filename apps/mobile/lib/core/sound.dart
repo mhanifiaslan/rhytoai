@@ -62,4 +62,13 @@ class SoundFx {
 
   /// Beğeni — çok kısa "tick".
   static Future<void> like() => _play('like.wav', 0.3);
+
+  /// Başarı anı (R12-C1) — C6-E6-G6 arpej.
+  static Future<void> success() => _play('success.wav', 0.4);
+
+  /// Seri artışı (R12-C1) — parlak tık + beşli.
+  static Future<void> streak() => _play('streak.wav', 0.35);
+
+  /// Satın alma kutlaması (R12-C1) — cast ailesinden dolu çift vuruş.
+  static Future<void> purchase() => _play('purchase.wav', 0.45);
 }

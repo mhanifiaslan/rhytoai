@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../core/motivation.dart';
 import '../../core/providers.dart';
+import '../../core/sound.dart';
 import '../../core/subscription.dart'
     show introPaywallShown, markIntroPaywallShown, subscriptionProvider;
 import '../../theme/rytho_theme.dart';
@@ -14,6 +15,7 @@ import '../../widgets/common.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../../widgets/reading_card.dart';
+import '../../widgets/star_burst.dart';
 import '../chat/conversation_list_screen.dart';
 import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
@@ -57,6 +59,10 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   bool _streakTouched = false;
   bool _introPaywallHandled = false;
 
+  /// Seri BU oturumda büyüdüyse yeni sayı (R12-C1) — rozet vurgusu bir kez
+  /// oynar. Null: kutlanacak bir şey yok.
+  int? _streakYeni;
+
   String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 12) return l10n.greetingMorning;
@@ -66,10 +72,19 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   }
 
   /// Günlük seri: profil geldiğinde bir kez işlenir.
+  ///
+  /// R12-C1: dönen sayı artık atılmıyor — seri BÜYÜDÜYSE rozet vurgusu +
+  /// mini yıldız patlaması + ses. Sıfırlanma (5→1) kutlanmaz; bugünkü
+  /// ikinci açılış aynı sayıyı döndürür ve sessiz kalır.
   void _touchStreak(Map<String, dynamic> profile) {
     if (_streakTouched) return;
     _streakTouched = true;
-    DailyStreak.touch(profile).catchError((_) => 0);
+    final onceki = (profile['streakCount'] as num?)?.toInt() ?? 0;
+    DailyStreak.touch(profile).then<void>((yeni) {
+      if (!mounted || yeni <= onceki) return;
+      SoundFx.streak();
+      setState(() => _streakYeni = yeni);
+    }).catchError((_) {});
   }
 
   /// Tanıtım paywall'ı: hesap ömründe **bir kez**, kullanıcı ilk değerini
@@ -167,6 +182,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                 name: profile['displayName'] ?? 'Gezgin',
                 photoUrl: profile['photoUrl'],
                 streak: streak,
+                celebrate: _streakYeni,
               ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
                   begin: 0.08, curve: Curves.easeOutCubic),
               const SizedBox(height: RythoSpace.lg),
@@ -336,18 +352,59 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
 }
 
 /// Üst şerit: degrade halkalı avatar + selamlama + seri rozeti + sohbet ikonu.
+///
+/// [_rozet]: seri kutlaması — rozet 1→1.25→1 şişer (pop), arkasında 12
+/// kıvılcımlık mini patlama. Profildeki sayı Firestore turundan henüz
+/// dönmediyse yeni sayı [_Header.celebrate]'ten gösterilir; kullanıcı
+/// artışı ANINDA görür.
 class _Header extends StatelessWidget {
   const _Header({
     required this.greeting,
     required this.name,
     required this.photoUrl,
     required this.streak,
+    this.celebrate,
   });
 
   final String greeting;
   final String name;
   final String? photoUrl;
   final int streak;
+
+  /// Seri bu oturumda büyüdüyse yeni sayı (R12-C1): rozet bir kez şişip
+  /// yerine oturur, arkasında mini yıldız patlaması. Null: vurgu yok.
+  final int? celebrate;
+
+  Widget _rozet(BuildContext context) {
+    final rozet = StreakBadge(count: celebrate ?? streak);
+    if (celebrate == null || reduceMotion(context)) return rozet;
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: OverflowBox(
+            maxWidth: 100,
+            maxHeight: 100,
+            child: const StarBurst(size: 100, particles: 12),
+          ),
+        ),
+        rozet
+            .animate(key: ValueKey('seri-$celebrate'))
+            .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.25, 1.25),
+                duration: const Duration(milliseconds: 250),
+                curve: RythoMotion.pop)
+            .then()
+            .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(0.8, 0.8),
+                duration: const Duration(milliseconds: 250),
+                curve: RythoMotion.settle),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -381,7 +438,7 @@ class _Header extends StatelessWidget {
                 style: RythoText.display(18, w: FontWeight.w600)),
           ]),
         ),
-        StreakBadge(count: streak),
+        _rozet(context),
         const SizedBox(width: 10),
         // Dock'taki merkez balonun MİNİSİ — aynı hedef (sohbet), aynı işaret.
         // Eski hâli `forum_outlined` lilac @ inkLight zemindi: düşük kontrast

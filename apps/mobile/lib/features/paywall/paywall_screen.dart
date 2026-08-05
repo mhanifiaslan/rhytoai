@@ -1,18 +1,23 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter/services.dart'
+    show HapticFeedback, PlatformException;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/analytics.dart';
+import '../../core/sound.dart';
 import '../../core/subscription.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
+import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/motion.dart';
+import '../../widgets/star_burst.dart';
 import '../profile/legal_page.dart';
 
 /// RYTHO+ paywall.
@@ -97,7 +102,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     try {
       final ok = await purchasePackage(ref, package);
       if (ok) Analytics.purchaseCompleted();
-      if (ok && mounted) Navigator.of(context).pop(true);
+      if (ok && mounted) {
+        await _kutla();
+        if (mounted) Navigator.of(context).pop(true);
+      }
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
       if (code != PurchasesErrorCode.purchaseCancelledError && mounted) {
@@ -111,6 +119,25 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     }
   }
 
+  /// Satın alma kutlaması (R12-C1): dönüşümün en pahalı anı eskiden sessiz
+  /// bir ekran kapanışıydı. 1.4 saniyelik perde — yıldız patlaması + Rytho+
+  /// mührü + ses + haptik; sonra ekran kapanır. Sabırsızlık çıkışına
+  /// dokunulmadı: kutlama yalnız BAŞARIDA oynar.
+  Future<void> _kutla() {
+    SoundFx.purchase();
+    HapticFeedback.mediumImpact();
+    return showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'plus-kutlama',
+      barrierColor: RythoColors.ink.withValues(alpha: 0.88),
+      transitionDuration: RythoMotion.base,
+      transitionBuilder: (_, anim, _, child) =>
+          FadeTransition(opacity: anim, child: child),
+      pageBuilder: (_, _, _) => const _PlusCelebration(),
+    );
+  }
+
   Future<void> _restore() async {
     _mesguliyet(true);
     try {
@@ -118,7 +145,8 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       Analytics.purchasesRestored(found: ok);
       if (!mounted) return;
       if (ok) {
-        Navigator.of(context).pop(true);
+        await _kutla();
+        if (mounted) Navigator.of(context).pop(true);
       } else {
         setState(() =>
             _error = AppLocalizations.of(context).noActiveSubscription);
@@ -394,6 +422,71 @@ class _PlanTile extends StatelessWidget {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+/// Kutlama perdesi: kendini 1.4 saniyede kapatır — kullanıcıdan etkileşim
+/// istemez, akışı yalnızca bir nefes geciktirir.
+class _PlusCelebration extends StatefulWidget {
+  const _PlusCelebration();
+
+  @override
+  State<_PlusCelebration> createState() => _PlusCelebrationState();
+}
+
+class _PlusCelebrationState extends State<_PlusCelebration> {
+  Timer? _kapanis;
+
+  @override
+  void initState() {
+    super.initState();
+    _kapanis = Timer(const Duration(milliseconds: 1400), () {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  @override
+  void dispose() {
+    _kapanis?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sabit = reduceMotion(context);
+    Widget muhur = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+      decoration: BoxDecoration(
+        gradient: RythoColors.primaryGradient,
+        borderRadius: BorderRadius.circular(RythoRadius.pill),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+        boxShadow: const [
+          BoxShadow(
+              color: RythoColors.goldGlow, blurRadius: 36, spreadRadius: 2),
+        ],
+      ),
+      child: Text('Rytho+',
+          style: RythoText.display(24, w: FontWeight.w700)),
+    );
+    if (!sabit) {
+      muhur = muhur
+          .animate()
+          .fadeIn(duration: RythoMotion.base)
+          .scale(
+              begin: const Offset(0.2, 0.2),
+              end: const Offset(1, 1),
+              duration: const Duration(milliseconds: 500),
+              curve: RythoMotion.pop);
+    }
+    return Material(
+      type: MaterialType.transparency,
+      child: Center(
+        child: Stack(alignment: Alignment.center, children: [
+          if (!sabit) const StarBurst(size: 300, particles: 56),
+          muhur,
+        ]),
+      ),
     );
   }
 }

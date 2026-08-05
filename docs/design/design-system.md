@@ -128,6 +128,9 @@ numpy ile sentezlenen WAV'lar (`apps/mobile/assets/sounds/`):
 | `message_receive` | ~200ms iki tonlu ding (E6→G6) | Yanıt/yeni DM gelmesi |
 | `cast` | ~350ms harmonikli chime | I Ching çekimi |
 | `like` | ~60ms tick | Beğeni |
+| `success` | ~280ms C6-E6-G6 arpej | Başarı anları (R12-C1) |
+| `streak` | ~180ms parlak tık + beşli | Günlük seri artışı (R12-C1) |
+| `purchase` | ~450ms dolu çift vuruş (cast ailesi) | Satın alma kutlaması (R12-C1) |
 
 Ses seviyesi 0.3–0.5; Profil > Ayarlar > "Sesler" anahtarıyla kapatılır
 (shared_preferences, varsayılan açık).

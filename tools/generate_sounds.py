@@ -8,6 +8,11 @@ Ciktilar apps/mobile/assets/sounds/ altina yazilir:
     message_receive.wav  iki tonlu nazik "ding" (~200ms)
     cast.wav             mistik kisa "chime" (~350ms, harmonikli)
     like.wav             cok kisa "tick"
+    success.wav          C6-E6-G6 arpej (~280ms) — onboarding/basari ani
+    streak.wav           parlak tik + besli (~180ms) — seri artisi
+    purchase.wav         dolu chime, cast ailesinden (~450ms) — satin alma
+
+Hepsi in-house sentez (R12-C1): dis kaynak/lisans kaydi gerekmez.
 """
 from __future__ import annotations
 
@@ -94,9 +99,64 @@ def like() -> None:
     _write("like.wav", sig, peak=0.4)
 
 
+def success() -> None:
+    """C6-E6-G6 arpej: majör üçlü, 60ms arayla — 'oldu' hissi."""
+    dur = 0.28
+    n = int(SAMPLE_RATE * dur)
+    sig = np.zeros(n)
+    for i, freq in enumerate([1046.5, 1318.5, 1568.0]):
+        delay = int(SAMPLE_RATE * 0.06 * i)
+        m = n - delay
+        t = np.linspace(0, m / SAMPLE_RATE, m, endpoint=False)
+        sig[delay:] += np.sin(2 * np.pi * freq * t) * _envelope(m, decay=9.0)
+    _write("success.wav", sig, peak=0.45)
+
+
+def streak() -> None:
+    """Parlak tik + besli (G6->D7): kisa, oyunlu 'seri buyudu' isareti."""
+    dur = 0.18
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0, dur, n, endpoint=False)
+    tik = np.sin(2 * np.pi * 1568.0 * t) * _envelope(n, attack=0.001, decay=14.0)
+    delay = int(SAMPLE_RATE * 0.05)
+    besli = np.zeros(n)
+    m = n - delay
+    t2 = np.linspace(0, m / SAMPLE_RATE, m, endpoint=False)
+    besli[delay:] = np.sin(2 * np.pi * 2349.3 * t2) * _envelope(m, decay=11.0)
+    _write("streak.wav", tik * 0.9 + besli * 0.7, peak=0.4)
+
+
+def purchase() -> None:
+    """Satin alma: cast ailesinden daha dolu, cift vurus 'chime'."""
+    dur = 0.45
+    n = int(SAMPLE_RATE * dur)
+    t = np.linspace(0, dur, n, endpoint=False)
+    base = 660.0
+    vurus1 = (
+        1.0 * np.sin(2 * np.pi * base * t)
+        + 0.55 * np.sin(2 * np.pi * base * 2.7 * t)
+        + 0.3 * np.sin(2 * np.pi * base * 4.2 * t)
+    ) * _envelope(n, decay=6.0)
+    # Ikinci vurus: besli yukaridan (E6 civari), 140ms gecikmeli
+    delay = int(SAMPLE_RATE * 0.14)
+    m = n - delay
+    t2 = np.linspace(0, m / SAMPLE_RATE, m, endpoint=False)
+    vurus2 = np.zeros(n)
+    vurus2[delay:] = (
+        1.0 * np.sin(2 * np.pi * base * 1.5 * t2)
+        + 0.4 * np.sin(2 * np.pi * base * 1.5 * 2.7 * t2)
+    ) * _envelope(m, decay=6.0)
+    sig = vurus1 + 0.8 * vurus2
+    sig *= 1.0 + 0.1 * np.sin(2 * np.pi * 8 * t)
+    _write("purchase.wav", sig, peak=0.5)
+
+
 if __name__ == "__main__":
     message_send()
     message_receive()
     cast()
     like()
+    success()
+    streak()
+    purchase()
     print("Tum sesler uretildi.")
