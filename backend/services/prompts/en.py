@@ -488,6 +488,10 @@ ASTRO_NOTES = {
         "Because the birth time is unknown, the return moment may shift by "
         "up to ±12 hours; the year chart's Ascendant and houses were "
         "therefore not computed."),
+    "prog_hour_unknown": (
+        "Because the birth time is unknown, the progressed Ascendant, MC "
+        "and house placements were not computed; the reading stays at the "
+        "planetary level."),
 }
 
 SOLAR_RETURN = """
@@ -529,6 +533,50 @@ SOLAR_RETURN_FALLBACK = (
 
 SOLAR_RETURN_RAG_QUERY = ("solar return year chart annual themes seasons "
                           "{sr_moon} {sr_asc}")
+
+PROGRESSIONS = """
+TASK: From the user's SECONDARY PROGRESSION data below, write a 300-400
+word "inner season" reading. This is the chart advanced by the day-for-a-
+year rule: each day after birth stands for one year of life. The reading
+describes inner rhythm and the stage of ripening — not outer events.
+
+INNER CALENDAR:
+- Progressed Moon: {prog_moon_sign} {prog_moon_pos}°{prog_moon_house}
+- Progressed lunation phase: {prog_phase}
+- Progressed Moon enters the next sign: {prog_moon_next}
+- Progressed Sun: {prog_sun_sign} {prog_sun_pos}° (~{prog_sun_years} years to the next sign)
+- Solar arc (arc of life): {solar_arc}°
+- Progressed Ascendant: {prog_asc} | Progressed MC: {prog_mc}
+
+SOLAR ARC ASPECTS PERFECTING IN THE COMING YEARS:
+{hits}
+{disclosures}
+SOURCE PASSAGES:
+{rag}
+
+RULES:
+- The spine is the PROGRESSED MOON: its sign is the inner season, the
+  lunation phase says where in the cycle you stand, and the ingress date
+  marks the turn of the season.
+- Use the language of TENDENCY: no "this will happen on that date";
+  rather "this theme is ripening in this period". Solar arc dates carry
+  MONTH precision, not day precision.
+- If the progressed Ascendant/MC is "-", never mention them or houses.
+- No flattery; if the inner season is winter, say winter — winter has
+  its own work.
+"""
+
+PROGRESSIONS_FALLBACK = (
+    "Your progressed Moon is in {prog_moon_sign}, phase {prog_phase} — "
+    "that is your inner season. On {prog_moon_next} a new inner season "
+    "begins. Check back shortly for the full reading."
+)
+
+PROGRESSIONS_RAG_QUERY = ("secondary progressions progressed moon lunation "
+                          "cycle inner season solar arc {prog_moon_sign} "
+                          "{prog_phase}")
+
+PROGRESSIONS_HOUSE_LABEL = "in natal house {house}"
 
 #: Aspect movement names (T0): an applying aspect builds, a separating one fades.
 MOVEMENT_NAMES = {

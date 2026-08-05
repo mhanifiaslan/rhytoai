@@ -470,6 +470,9 @@ ASTRO_NOTES = {
     "sr_hour_unknown": (
         "Doğum saati bilinmediği için dönüş anı ±12 saat oynayabilir; "
         "yıl haritasının Yükseleni ve evleri bu yüzden hesaplanmadı."),
+    "prog_hour_unknown": (
+        "Doğum saati bilinmediği için progres Yükselen, MC ve ev "
+        "yerleşimleri hesaplanmadı; okuma gezegen düzeyinde kalır."),
 }
 
 SOLAR_RETURN = """
@@ -510,6 +513,46 @@ SOLAR_RETURN_FALLBACK = (
 
 SOLAR_RETURN_RAG_QUERY = ("güneş dönüşü yıl haritası yıllık tema dönemler "
                           "{sr_moon} {sr_asc}")
+
+PROGRESSIONS = """
+GÖREV: Kullanıcının İKİNCİL PROGRESYON verilerinden 300-400 kelimelik bir
+"iç mevsim" okuması yaz. Gün-yıl kuralıyla ilerletilmiş haritadır: doğumdan
+sonraki her gün, yaşamın bir yılına karşılık gelir. Bu okuma dış olayları
+değil, iç ritmi ve olgunlaşma evresini anlatır.
+
+İÇ TAKVİM:
+- Progres Ay: {prog_moon_sign} {prog_moon_pos}°{prog_moon_house}
+- Progres Ay evresi (lunasyon): {prog_phase}
+- Progres Ay'ın bir sonraki burca geçişi: {prog_moon_next}
+- Progres Güneş: {prog_sun_sign} {prog_sun_pos}° (burç değişimine ~{prog_sun_years} yıl)
+- Solar arc (yaşam yayı): {solar_arc}°
+- Progres Yükselen: {prog_asc} | Progres MC: {prog_mc}
+
+ÖNÜMÜZDEKİ YILLARDA KESİNLEŞEN SOLAR ARC AÇILARI:
+{hits}
+{disclosures}
+KAYNAK PASAJLARI:
+{rag}
+
+KURALLAR:
+- Omurga PROGRES AY'dır: bulunduğu burç iç mevsimi, lunasyon evresi
+  döngünün neresinde olunduğunu, geçiş tarihi mevsim dönümünü verir.
+- EĞİLİM dili kullan: "şu tarihte şu olacak" yok; "bu dönemde şu tema
+  olgunlaşıyor" var. Solar arc tarihleri AY hassasiyetindedir, gün değil.
+- Progres Yükselen/MC "-" ise onlardan ve evlerden HİÇ söz etme.
+- Pohpohlama yok; iç mevsim kışsa kış de — kışın da işlevi vardır.
+"""
+
+PROGRESSIONS_FALLBACK = (
+    "Progres Ay'ın {prog_moon_sign} burcunda, evre {prog_phase} — iç "
+    "mevsimin bu frekansta. {prog_moon_next} tarihinde yeni bir iç mevsime "
+    "geçeceksin. Detaylı okuma için biraz sonra tekrar dene."
+)
+
+PROGRESSIONS_RAG_QUERY = ("ikincil progresyon progres ay lunasyon döngüsü "
+                          "iç mevsim solar arc {prog_moon_sign} {prog_phase}")
+
+PROGRESSIONS_HOUSE_LABEL = "natal {house}. evde"
 
 #: Açı hareketi adları (T0): yaklaşan açı güçlenir, ayrılan söner.
 MOVEMENT_NAMES = {

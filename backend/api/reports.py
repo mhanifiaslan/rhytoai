@@ -305,6 +305,35 @@ def solar_return(data: SolarReturnRequest,
         raise _internal(e, "solar-return", lang)
 
 
+@router.post("/progressions")
+def progressions(data: BirthData,
+                 user: AuthUser = Depends(require_plus("progressions")),
+                 lang: str = Depends(get_language)):
+    """İç Takvim (T2): ikincil progresyon + solar arc + LLM okuması."""
+    try:
+        from services import predict_service
+        prog = predict_service.secondary_progressions(
+            data.name, data.year, data.month, data.day,
+            data.hour, data.minute, data.city, data.nation,
+            hour_known=data.hour_known)
+        hits = predict_service.solar_arc_hits(
+            data.name, data.year, data.month, data.day,
+            data.hour, data.minute, data.city, data.nation,
+            hour_known=data.hour_known)
+        report = report_service.progressions_report(
+            user.uid, prog, hits, lang=lang,
+            spend=wallet.spender(user.uid, "progressions", lang=lang),
+            refund=lambda: wallet.refund_spend(user.uid, "progressions"))
+        return {"status": "success", "data": {
+            "progressions": prompts.localize_progressions(lang, prog, hits),
+            "report": report["text"],
+        }}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise _internal(e, "progressions", lang)
+
+
 @router.post("/birth-hexagram")
 def birth_hexagram(data: BirthData,
                    user: AuthUser = Depends(require_plus("birth_hexagram")),

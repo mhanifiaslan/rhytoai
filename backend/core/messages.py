@@ -70,6 +70,10 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "Yıl Haritası (güneş dönüşü) Rytho+ aboneliğine dahildir.",
         "en": "The Year Chart (solar return) is part of Rytho+.",
     },
+    "paywall.progressions": {
+        "tr": "İç Takvim (progresyon) okuması Rytho+ aboneliğine dahildir.",
+        "en": "The Inner Calendar (progressions) reading is part of Rytho+.",
+    },
     "paywall.default": {
         "tr": "Bu özellik Rytho+ aboneliğine dahildir.",
         "en": "This feature is part of Rytho+.",

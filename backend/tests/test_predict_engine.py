@@ -69,3 +69,99 @@ class TestSolarReturn:
         sr = predict_service.solar_return(
             "t", 1990, 5, 12, 14, 30, "BilinmeyenKoy", target_year=2025)
         assert "geo_fallback_city" in sr["disclosures"]
+
+
+class TestProgresyon:
+    """T2 — gün-yıl kuralı: iki bağımsız kaynak.
+
+    (1) Aritmetik EL HESABI: doğumdan tam N×365.2425 gün sonrası için
+    progres an, doğum + tam N gün olmalı — motorsuz doğrulanabilir.
+    (2) TANIM: progres harita, kaydırılmış tarihe DOĞRUDAN kurulan natal
+    haritayla aynı olmalı (efemeris T0'da dışarıdan çapalı).
+    """
+
+    _DOGUM_UTC = dt.datetime(1990, 5, 12, 11, 30, tzinfo=dt.timezone.utc)
+    # 1990 Mayıs'ında İstanbul yaz saatinde (UTC+3): 14:30 yerel = 11:30 UTC.
+
+    def test_gun_yil_aritmetigi_el_hesabi(self):
+        on = self._DOGUM_UTC + dt.timedelta(days=10 * 365.2425)
+        prog = predict_service._prog_ani(self._DOGUM_UTC, on)
+        beklenen = self._DOGUM_UTC + dt.timedelta(days=10)
+        assert abs((prog - beklenen).total_seconds()) < 1
+
+    def test_progres_ay_tanimi(self):
+        """Yaş tam 30 yıl → progres Ay = doğum+30 gün anının Ay'ı."""
+        from zoneinfo import ZoneInfo
+        on = self._DOGUM_UTC + dt.timedelta(days=30 * 365.2425)
+        p = predict_service.secondary_progressions(
+            "t", 1990, 5, 12, 14, 30, "Istanbul", on_date=on)
+
+        yerel = (self._DOGUM_UTC + dt.timedelta(days=30)).astimezone(
+            ZoneInfo("Europe/Istanbul"))
+        chart = astro_service.get_natal_chart(
+            "t", yerel.year, yerel.month, yerel.day,
+            yerel.hour, yerel.minute, "Istanbul")
+        ay = next(pt for pt in chart["points"] if pt["name"] == "Moon")
+        assert p["prog_moon"]["sign"] == ay["sign"]
+        assert abs(p["prog_moon"]["position"] - ay["position"]) < 0.05
+
+    def test_ay_burc_degisim_tarihi_sinira_dusuyor(self):
+        """Dönen tarihte progres Ay burç sınırının dibinde olmalı.
+
+        Tarih, o ANDAKİ Ay hızıyla tek adımda ileri atılıyor; hız yıl
+        (=1 prog-gün) içinde biraz değişir — tolerans ondan.
+        """
+        p1 = predict_service.secondary_progressions(
+            "t", 1990, 5, 12, 14, 30, "Istanbul")
+        sinir_gunu = dt.datetime.fromisoformat(
+            p1["prog_moon"]["next_sign_at"]).replace(tzinfo=dt.timezone.utc)
+        p2 = predict_service.secondary_progressions(
+            "t", 1990, 5, 12, 14, 30, "Istanbul", on_date=sinir_gunu)
+        poz = p2["prog_moon"]["position"]
+        assert poz < 1.5 or poz > 28.5
+
+    def test_saatsizlik_prog_asc_mc_uretmez(self):
+        p = predict_service.secondary_progressions(
+            "t", 1990, 5, 12, 12, 0, "Istanbul", hour_known=False)
+        assert "prog_asc" not in p
+        assert "prog_mc" not in p
+        assert p["prog_moon"]["natal_house"] is None
+        assert "prog_hour_unknown" in p["disclosures"]
+
+    def test_solar_arc_kesinlesmeleri(self):
+        """Kapalı form kendi tanımını tutmalı: verilen tarihte yay,
+        gereken açı ayrımını ±0.35° içinde vermeli (doğrusallaştırma payı).
+        """
+        aci_derecesi = {"conjunction": 0, "sextile": 60, "square": 90,
+                        "trine": 120, "opposition": 180}
+        hits = predict_service.solar_arc_hits(
+            "t", 1990, 5, 12, 14, 30, "Istanbul", years=3)
+        assert hits, "3 yılda hiç kesinleşme çıkmadı — şüpheli"
+        tarihler = [h["exact_on"] for h in hits]
+        assert tarihler == sorted(tarihler)
+        simdi = dt.datetime.now(dt.timezone.utc)
+        for h in tarihler:
+            fark_gun = (dt.datetime.fromisoformat(h).replace(
+                tzinfo=dt.timezone.utc) - simdi).days
+            assert -1 <= fark_gun <= int(3 * 366) + 1
+
+        natal, _ = astro_service._build_subject(
+            "t", 1990, 5, 12, 14, 30, "Istanbul", None)
+        ilk = hits[0]
+        an = dt.datetime.fromisoformat(ilk["exact_on"]).replace(
+            tzinfo=dt.timezone.utc)
+        p_o_gun = predict_service.secondary_progressions(
+            "t", 1990, 5, 12, 14, 30, "Istanbul", on_date=an)
+        arc = p_o_gun["solar_arc_deg"]
+
+        def boylam(ad: str) -> float:
+            if ad == "Ascendant":
+                return float(natal.first_house.abs_pos)
+            if ad == "Medium_Coeli":
+                return float(natal.tenth_house.abs_pos)
+            return float(getattr(natal, ad.lower()).abs_pos)
+
+        yonlu = (boylam(ilk["directed"]) + arc) % 360
+        ayrim = abs(yonlu - boylam(ilk["natal"])) % 360
+        ayrim = min(ayrim, 360 - ayrim)
+        assert abs(ayrim - aci_derecesi[ilk["aspect"]]) < 0.35

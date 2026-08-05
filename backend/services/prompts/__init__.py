@@ -379,6 +379,50 @@ def localize_chart(lang: str | None, chart: dict | None) -> dict:
     return sonuç
 
 
+def localize_progressions(lang: str | None, prog: dict | None,
+                          hits: list[dict] | None = None) -> dict:
+    """Progresyon çıktısını (T2) isteğin diline çevirir.
+
+    Motor anahtar üretir (kerykeion burç kodu, sky ile ortak lunasyon evre
+    anahtarı, PLANET_NAMES biçiminde nokta adları); ad ve beyan cümlesi
+    burada kurulur. Mobil İç Takvim ekranı da bu alanları basar.
+    """
+    if not prog:
+        return {}
+    p = get(lang)
+
+    def burçlu(alan: dict | None) -> dict | None:
+        if not alan:
+            return None
+        return {**alan,
+                "sign_local": sign_name_from_code(lang, alan.get("sign"))}
+
+    sonuç = {**prog,
+             "prog_moon": burçlu(prog.get("prog_moon")),
+             "prog_sun": burçlu(prog.get("prog_sun"))}
+    if sonuç["prog_moon"] and prog["prog_moon"].get("phase"):
+        sonuç["prog_moon"]["phase_local"] = moon_phase_name(
+            lang, prog["prog_moon"]["phase"])
+    for alan in ("prog_asc", "prog_mc"):
+        if prog.get(alan):
+            sonuç[alan] = burçlu(prog[alan])
+
+    beyanlar = prog.get("disclosures") or []
+    if beyanlar:
+        sonuç["disclosure_texts"] = [p.ASTRO_NOTES.get(k, k)
+                                     for k in beyanlar]
+
+    if hits is not None:
+        sonuç["solar_arc_hits"] = [
+            {**h,
+             "directed_local": planet_name(lang, h.get("directed")),
+             "natal_local": planet_name(lang, h.get("natal")),
+             "aspect_local": aspect_name(lang, h.get("aspect"))}
+            for h in hits
+        ]
+    return sonuç
+
+
 def localize_synastry(lang: str | None, synastry: dict | None) -> dict:
     """Sinastri çıktısındaki iki kişinin nokta adlarını ve açıları çevirir."""
     if not synastry:

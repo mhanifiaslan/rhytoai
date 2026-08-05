@@ -429,6 +429,76 @@ def solar_return_report(user_id: str, sr: dict[str, Any],
                             owner_uid=user_id, spend=spend, refund=refund)
 
 
+def progressions_report(user_id: str, prog: dict[str, Any],
+                        hits: list[dict[str, Any]],
+                        lang: str | None = None,
+                        spend: Callable[[], None] | None = None,
+                        refund: Callable[[], None] | None = None
+                        ) -> dict[str, Any]:
+    """İkincil progresyon "iç mevsim" okuması (T2). 30 gün önbellek.
+
+    Progres Ay ~2.5 ayda burç değiştirir; anahtar ay hassasiyetinde
+    (as_of'un yıl-ay kısmı) — aynı takvim ayında aynı yorum servis edilir,
+    TTL bayat kalıntıyı süpürür.
+    """
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
+    cache_key = (f"progressions-{user_id}"
+                 f"-{str(prog.get('as_of'))[:7]}"
+                 f"-{prog.get('calc_version')}-{lang}")
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
+
+    yerel = prompts.localize_progressions(lang, prog, hits)
+    ay = yerel.get("prog_moon") or {}
+    gunes = yerel.get("prog_sun") or {}
+    ev = ay.get("natal_house")
+    ay_evi = (f" ({p.PROGRESSIONS_HOUSE_LABEL.format(house=ev)})"
+              if ev else "")
+    asc = yerel.get("prog_asc")
+    mc = yerel.get("prog_mc")
+    asc_metin = (f"{asc['sign_local']} {asc['position']}°" if asc else "-")
+    mc_metin = (f"{mc['sign_local']} {mc['position']}°" if mc else "-")
+
+    vurgu_satirlari = "\n".join(
+        f"- {h['directed_local']} {h['aspect_local']} {h['natal_local']}"
+        f" — {h['exact_on'][:7]}"
+        for h in yerel.get("solar_arc_hits") or []) or "-"
+    beyanlar = yerel.get("disclosure_texts") or []
+    disclosures = ("\n" + p.DISCLOSURES_LABEL + "\n"
+                   + "\n".join(f"- {b}" for b in beyanlar) + "\n"
+                   ) if beyanlar else ""
+
+    rag = retrieve_context(
+        p.PROGRESSIONS_RAG_QUERY.format(
+            prog_moon_sign=ay.get("sign_local", ""),
+            prog_phase=ay.get("phase_local", "")),
+        lang=lang)
+
+    doldur = dict(
+        prog_moon_sign=ay.get("sign_local", "-"),
+        prog_moon_pos=ay.get("position", "-"),
+        prog_moon_house=ay_evi,
+        prog_phase=ay.get("phase_local", "-"),
+        prog_moon_next=ay.get("next_sign_at", "-"),
+        prog_sun_sign=gunes.get("sign_local", "-"),
+        prog_sun_pos=gunes.get("position", "-"),
+        prog_sun_years=gunes.get("next_sign_in_years", "-"),
+        solar_arc=prog.get("solar_arc_deg", "-"),
+        prog_asc=asc_metin, prog_mc=mc_metin,
+    )
+    prompt = p.PROGRESSIONS.format(
+        **doldur, hits=vurgu_satirlari, disclosures=disclosures, rag=rag)
+    fallback = p.PROGRESSIONS_FALLBACK.format(
+        prog_moon_sign=doldur["prog_moon_sign"],
+        prog_phase=doldur["prog_phase"],
+        prog_moon_next=doldur["prog_moon_next"])
+    return _cached_generate(cache_key, prompt, fallback,
+                            ttl_seconds=30 * 24 * 3600, lang=lang,
+                            owner_uid=user_id, spend=spend, refund=refund)
+
+
 def firasa_report(user_id: str, ratios: dict[str, Any],
                   chart: str = "", lang: str | None = None,
                   spend: Callable[[], None] | None = None,
