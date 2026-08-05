@@ -20,7 +20,9 @@ import 'package:flutter/material.dart';
 import '../theme/rytho_theme.dart';
 import '../theme/rytho_tokens.dart';
 import 'cosmic_scaffold.dart';
+import 'fade_through_route.dart';
 import 'glass.dart';
+import 'motion.dart';
 
 /// Uzun metnin akıştaki temsilcisi: başlık + üç satır + "devamı".
 class ReadingCard extends StatelessWidget {
@@ -86,7 +88,8 @@ class ReadingCard extends StatelessWidget {
   }
 
   void open(BuildContext context) {
-    Navigator.of(context).push(MaterialPageRoute(
+    // Fade-through (R12-B2): kart → sayfa geçişini içerik açılışı taşır.
+    Navigator.of(context).push(FadeThroughRoute(
       builder: (_) => ReadingScreen(
         title: title,
         body: body,
@@ -122,6 +125,11 @@ class ReadingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Paragraf canlanması (R12-B2): uygulamanın en uzun ve en değerli metni
+    // eskiden tek karede basılıyordu. İlk altı paragraf kademeli belirir;
+    // gerisi ANINDA görünür — ekran dışına stagger borcu bindirilmez,
+    // hızlı kaydıran okur bekletilmez.
+    final paragraflar = body.split('\n\n');
     return CosmicScaffold(
       appBar: AppBar(title: Text(title)),
       body: SafeArea(
@@ -130,10 +138,21 @@ class ReadingScreen extends StatelessWidget {
               RythoSpace.xl, RythoSpace.md, RythoSpace.xl, RythoSpace.xxl),
           children: [
             if (label != null) ...[
-              Text(label!, style: RythoType.label),
+              RythoReveal(
+                  slide: 0, child: Text(label!, style: RythoType.label)),
               const SizedBox(height: RythoSpace.md),
             ],
-            Text(body, style: RythoType.reading),
+            for (var i = 0; i < paragraflar.length; i++) ...[
+              if (i < 6)
+                RythoReveal(
+                  index: i + 1,
+                  child: Text(paragraflar[i], style: RythoType.reading),
+                )
+              else
+                Text(paragraflar[i], style: RythoType.reading),
+              if (i != paragraflar.length - 1)
+                const SizedBox(height: RythoSpace.lg),
+            ],
             if (trailing != null) ...[
               const SizedBox(height: RythoSpace.xl),
               trailing!,

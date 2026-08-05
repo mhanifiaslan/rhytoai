@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/rytho_theme.dart';
+import '../../widgets/fade_through_route.dart';
 import '../../widgets/glass.dart';
 import 'paywall_screen.dart';
 
@@ -29,10 +30,10 @@ class PlusLockedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final card = GlassPanel(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => const PaywallScreen(),
-        fullscreenDialog: true,
-      )),
+      // Fade-through (R12-B2): kilitten satış ekranına sert Material
+      // geçişi yerine içerik açılışı.
+      onTap: () => Navigator.of(context)
+          .push(FadeThroughRoute(builder: (_) => const PaywallScreen())),
       child: Row(children: [
         Text(emoji, style: const TextStyle(fontSize: 20)),
         const SizedBox(width: 12),

@@ -11,6 +11,7 @@ import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/common.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../../widgets/reading_card.dart';
 import '../chat/conversation_list_screen.dart';
@@ -208,37 +209,56 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               // Ücretsiz katman: kullanıcının kendi burcunun günlük yorumu.
               // Paylaşımlı önbellekten geldiği için her zaman doludur ve
               // kullanıcı sayısından bağımsız maliyettedir.
-              ref.watch(signHoroscopeProvider(kSignKeys[selected])).when(
-                    loading: () => const Padding(
-                      padding: EdgeInsets.all(RythoSpace.xl),
-                      child: Center(child: AstrolabeSpinner()),
-                    ),
-                    error: (e, _) => Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: RythoSpace.lg),
-                      child: ErrorCard(
-                        message: friendlyError(e, l10n),
-                        onRetry: () => ref.invalidate(
-                            signHoroscopeProvider(kSignKeys[selected])),
-                      ),
-                    ),
-                    data: (data) {
-                      // Kullanıcı ilk değerini gördü: tanıtım paywall'ı
-                      // buradan tetiklenir (hesap ömründe bir kez).
-                      _maybeShowIntroPaywall();
-                      return ReadingCard(
-                        label: l10n
-                            .signToday(signDisplayName(l10n, selected)),
-                        title: signDisplayName(l10n, selected),
-                        body: data['reading'] ?? '',
-                        // Kart yalnızca ÖNİZLEME. Tam metin hikâye
-                        // okuyucusunda; iki ayrı "tam metin" yeri olmamalı.
-                        onOpen: () => _openStory(
-                            signOrder, signOrder.indexOf(selected)),
-                      ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
-                          begin: 0.06, curve: Curves.easeOutCubic);
-                    },
-                  ),
+              //
+              // Spinner → kart geçişi AnimatedSwitcher'da (R12-B2): okumanın
+              // GELİŞİ artık bir an — kart üstünden tek atışlık altın parıltı
+              // geçer ("bugünün okuması yeni geldi" işareti, döngü yok).
+              AnimatedSwitcher(
+                duration:
+                    reduceMotion(context) ? Duration.zero : RythoMotion.slow,
+                switchInCurve: RythoMotion.enter,
+                child:
+                    ref.watch(signHoroscopeProvider(kSignKeys[selected])).when(
+                          loading: () => const Padding(
+                            padding: EdgeInsets.all(RythoSpace.xl),
+                            child: Center(child: AstrolabeSpinner()),
+                          ),
+                          error: (e, _) => Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: RythoSpace.lg),
+                            child: ErrorCard(
+                              message: friendlyError(e, l10n),
+                              onRetry: () => ref.invalidate(
+                                  signHoroscopeProvider(kSignKeys[selected])),
+                            ),
+                          ),
+                          data: (data) {
+                            // Kullanıcı ilk değerini gördü: tanıtım paywall'ı
+                            // buradan tetiklenir (hesap ömründe bir kez).
+                            _maybeShowIntroPaywall();
+                            return ReadingCard(
+                              label: l10n.signToday(
+                                  signDisplayName(l10n, selected)),
+                              title: signDisplayName(l10n, selected),
+                              body: data['reading'] ?? '',
+                              // Kart yalnızca ÖNİZLEME. Tam metin hikâye
+                              // okuyucusunda; iki ayrı "tam metin" yeri
+                              // olmamalı.
+                              onOpen: () => _openStory(
+                                  signOrder, signOrder.indexOf(selected)),
+                            )
+                                .animate(delay: next())
+                                .fadeIn(duration: 380.ms)
+                                .slideY(
+                                    begin: 0.06, curve: Curves.easeOutCubic)
+                                .then()
+                                .shimmer(
+                                    duration: 900.ms,
+                                    color: RythoColors.gold
+                                        .withValues(alpha: 0.12));
+                          },
+                        ),
+              ),
 
               // Rytho+: kişiye özel okuma. Abone değilse istek atılmaz;
               // kilitli kart gösterilir ve paywall ancak dokununca açılır.
