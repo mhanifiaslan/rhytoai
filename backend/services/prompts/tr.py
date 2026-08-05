@@ -457,12 +457,27 @@ GEZEGENLER:
 
 AÇILAR:
 {aspects}
+
+DENGE (geleneksel yedili + Yükselen):
+- Element: {elements}
+- Nitelik: {modalities}
+- Yığılma: {stelliums}
+
+DEKLİNASYON PARALELLERİ (boylamda görünmeyen gizli açılar):
+{declinations}
 {disclosures}
 KAYNAK PASAJLARI (kadim gelenekten harmanla):
 {rag}
 
-KURAL: BEYANLAR bölümü varsa içeriğini yorumda AÇIKÇA yansıt — beyan edilen
-belirsizliğe rağmen kesinlik iddia etme (özellikle Yükselen ve evler).
+KURALLAR:
+- BEYANLAR bölümü varsa içeriğini yorumda AÇIKÇA yansıt — beyan edilen
+  belirsizliğe rağmen kesinlik iddia etme (özellikle Yükselen ve evler).
+- Eksik element (0 sayımı) anlamlı bir ifadedir — görmezden gelme.
+- Yığılma varsa o yaşam alanını yorumun ağırlık merkezi yap.
+- Deklinasyon paralelini kavuşum gücünde ama "gizli" bir bağ olarak oku;
+  kontra-paraleli karşıt gerilimi gibi. Liste "-" ise hiç değinme.
+- Yaklaşan (applying) açı güçlenen, ayrılan (separating) sönen temadır —
+  açı satırındaki bu bilgiyi yorumuna yedir.
 """
 
 DISCLOSURES_LABEL = "BEYANLAR (hesabın sınırları — yorumda açıkça yansıt):"
@@ -488,6 +503,12 @@ TRANSIT_EVENT_NAMES = {
     "aspect_exact": "kesinleşme",
     "station_retrograde": "retroya dönüş",
     "station_direct": "ileri harekete dönüş",
+}
+
+#: Deklinasyon açıları (T4): boylamda görünmeyen, "gizli" kavuşum/karşıt.
+DECLINATION_ASPECT_NAMES = {
+    "parallel": "paralel",
+    "contraparallel": "kontra-paralel",
 }
 
 SOLAR_RETURN = """

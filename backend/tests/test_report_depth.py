@@ -207,3 +207,73 @@ def test_bazi_promptu_derin_veriyi_tasir(monkeypatch, temiz_onbellek):
 
     # Sorgu bazi tohumunu taşıyor.
     assert "Dört Sütun" in kutu["sorgu"]
+
+
+def test_natal_promptu_denge_bloklarini_tasir(monkeypatch, temiz_onbellek):
+    """T4: element/nitelik dengesi, yığılma ve deklinasyon blokları promptta.
+
+    Bu satırlar kurulumdan düşerse hata çıkmaz — model yalnızca o konularda
+    genelleme yapar (B6 ile aynı sessiz gerileme sınıfı).
+    """
+    kutu = _kur(monkeypatch)
+    report_service.natal_report("u-t4-natal", _natal(), lang="tr")
+
+    prompt = kutu["prompt"]
+    assert "DENGE" in prompt
+    assert "Ateş" in prompt and "Su" in prompt          # element sayımı
+    assert "Öncü" in prompt or "Sabit" in prompt        # nitelik sayımı
+    assert "DEKLİNASYON" in prompt
+    # Açı satırları hareket bilgisini taşıyor (T0'ın bedeli ödenmiş alanı).
+    assert ("yaklaşıyor" in prompt or "ayrılıyor" in prompt
+            or "durağan" in prompt)
+
+
+def test_solar_return_promptu_saatsizlik_beyanini_tasir(monkeypatch,
+                                                        temiz_onbellek):
+    """T1/T4: saatsiz SR promptunda ASC '-' ve beyan metni var."""
+    from services import predict_service
+    kutu = _kur(monkeypatch)
+    sr = predict_service.solar_return(
+        "Test", 1990, 5, 12, 12, 0, "Istanbul",
+        hour_known=False, target_year=2025)
+    report_service.solar_return_report("u-t4-sr", sr, lang="tr")
+
+    prompt = kutu["prompt"]
+    assert "Yıl haritası Yükseleni: -" in prompt
+    assert prompts.get("tr").ASTRO_NOTES["sr_hour_unknown"] in prompt
+    # Sorgu isteğin dilinde: yıl Ay'ının Türkçe adı geçiyor.
+    assert prompts.sign_name_from_code("tr", sr["sr_moon_sign"]) \
+        in kutu["sorgu"]
+
+
+def test_progressions_promptu_omurgayi_tasir(monkeypatch, temiz_onbellek):
+    """T2/T4: progres Ay burcu, lunasyon evresi ve solar arc satırları."""
+    from services import predict_service
+    kutu = _kur(monkeypatch)
+    prog = predict_service.secondary_progressions(
+        "Test", 1990, 5, 12, 14, 30, "Istanbul")
+    hits = predict_service.solar_arc_hits(
+        "Test", 1990, 5, 12, 14, 30, "Istanbul")
+    report_service.progressions_report("u-t4-prog", prog, hits, lang="tr")
+
+    prompt = kutu["prompt"]
+    yerel = prompts.localize_progressions("tr", prog, hits)
+    assert yerel["prog_moon"]["sign_local"] in prompt
+    assert yerel["prog_moon"]["phase_local"] in prompt
+    assert prog["prog_moon"]["next_sign_at"] in prompt
+    assert str(prog["solar_arc_deg"]) in prompt
+    if hits:
+        assert yerel["solar_arc_hits"][0]["directed_local"] in prompt
+
+
+def test_progressions_saatsiz_prompt_asc_gizler(monkeypatch,
+                                                temiz_onbellek):
+    from services import predict_service
+    kutu = _kur(monkeypatch)
+    prog = predict_service.secondary_progressions(
+        "Test", 1990, 5, 12, 12, 0, "Istanbul", hour_known=False)
+    report_service.progressions_report("u-t4-prog2", prog, [], lang="tr")
+
+    prompt = kutu["prompt"]
+    assert "Progres Yükselen: -" in prompt
+    assert prompts.get("tr").ASTRO_NOTES["prog_hour_unknown"] in prompt

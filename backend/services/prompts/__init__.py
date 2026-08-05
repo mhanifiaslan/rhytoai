@@ -358,6 +358,18 @@ def localize_chart(lang: str | None, chart: dict | None) -> dict:
              "points": [nokta(p) for p in (chart.get("points") or [])],
              "aspects": [açı(a) for a in (chart.get("aspects") or [])]}
 
+    # Deklinasyon paralelleri (T4): tür anahtarı burada ada çözülür.
+    dekl = chart.get("declination_aspects")
+    if dekl:
+        p = get(lang)
+        sonuç["declination_aspects"] = [
+            {**d,
+             "p1_local": planet_name(lang, d.get("p1")),
+             "p2_local": planet_name(lang, d.get("p2")),
+             "type_local": p.DECLINATION_ASPECT_NAMES.get(d.get("type"),
+                                                          d.get("type"))}
+            for d in dekl]
+
     # Beyanlar (T0): motor anahtar döner, metin burada çözülür — BaZi'nin
     # note_keys deseni. Mobil doğrudan bu metin listesini basar.
     beyanlar = chart.get("disclosures") or []

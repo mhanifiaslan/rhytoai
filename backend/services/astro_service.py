@@ -76,6 +76,66 @@ _PLANET_NAMES = [
     "true_north_lunar_node", "true_south_lunar_node",
 ]
 
+#: Burç kodu -> element/nitelik (T4). Sayım dile bağımsız anahtarlarla
+#: yapılır; adlandırma prompts katmanında (chart_context ile aynı kural).
+_ELEMENT_BY_SIGN = {
+    "Ari": "fire", "Leo": "fire", "Sag": "fire",
+    "Tau": "earth", "Vir": "earth", "Cap": "earth",
+    "Gem": "air", "Lib": "air", "Aqu": "air",
+    "Can": "water", "Sco": "water", "Pis": "water",
+}
+_MODALITY_BY_SIGN = {
+    "Ari": "cardinal", "Can": "cardinal", "Lib": "cardinal", "Cap": "cardinal",
+    "Tau": "fixed", "Leo": "fixed", "Sco": "fixed", "Aqu": "fixed",
+    "Gem": "mutable", "Vir": "mutable", "Sag": "mutable", "Pis": "mutable",
+}
+
+#: Denge sayımına giren geleneksel yedili (chart_context.TRADITIONAL ile
+#: aynı kanon; Yükselen ayrıca eklenir).
+_BALANCE_PLANETS = ("Sun", "Moon", "Mercury", "Venus", "Mars",
+                    "Jupiter", "Saturn")
+
+#: kerykeion ev adı -> numara (chart_context._HOUSE_NUMBER'ın motor kopyası;
+#: yığılma artık API'de de döndüğü için sayım burada yapılıyor).
+_HOUSE_NO = {ad: i + 1 for i, ad in enumerate((
+    "First_House", "Second_House", "Third_House", "Fourth_House",
+    "Fifth_House", "Sixth_House", "Seventh_House", "Eighth_House",
+    "Ninth_House", "Tenth_House", "Eleventh_House", "Twelfth_House"))}
+
+#: Deklinasyon paraleli eşiği (derece) — klasik ±0.5°.
+_DECLINATION_ORB = 0.5
+
+
+def _declination_aspects(points: list[dict[str, Any]],
+                         limit: int = 6) -> list[dict[str, Any]]:
+    """Paralel / kontra-paralel çiftleri (T4).
+
+    Aynı işaretli deklinasyonlar ±0.5° içindeyse PARALEL (kavuşum
+    gücünde), zıt işaretliler mutlak değerce ±0.5° içindeyse
+    KONTRA-PARALEL (karşıt gücünde) sayılır. Ay düğümleri hesaba girmez:
+    ikisi tanım gereği her zaman zıt deklinasyondadır — "açı" değil
+    geometri kaçınılmazlığıdır.
+    """
+    adaylar = [p for p in points
+               if p.get("declination") is not None
+               and not p["name"].endswith("Lunar_Node")]
+    çiftler: list[dict[str, Any]] = []
+    for i, p1 in enumerate(adaylar):
+        for p2 in adaylar[i + 1:]:
+            d1, d2 = p1["declination"], p2["declination"]
+            fark = abs(d1 - d2)
+            toplam = abs(d1 + d2)
+            if fark <= _DECLINATION_ORB and (d1 >= 0) == (d2 >= 0):
+                çiftler.append({"p1": p1["name"], "p2": p2["name"],
+                                "type": "parallel",
+                                "delta": round(fark, 2)})
+            elif toplam <= _DECLINATION_ORB and (d1 >= 0) != (d2 >= 0):
+                çiftler.append({"p1": p1["name"], "p2": p2["name"],
+                                "type": "contraparallel",
+                                "delta": round(toplam, 2)})
+    çiftler.sort(key=lambda c: c["delta"])
+    return çiftler[:limit]
+
 
 def _build_subject(
     name: str, year: int, month: int, day: int, hour: int, minute: int,
@@ -180,6 +240,30 @@ def get_natal_chart(
         })
 
     asc = subject.first_house
+
+    # Denge sayımı (T4): geleneksel yedili + Yükselen — chart_context'in
+    # sohbet fısıltısındaki kanonla aynı; artık API/rapor da görüyor.
+    puanlar = _subject_points(subject)
+    sayilacak = [p["sign"] for p in puanlar
+                 if p["name"] in _BALANCE_PLANETS] + [asc.sign]
+    elementler = {"fire": 0, "earth": 0, "air": 0, "water": 0}
+    nitelikler = {"cardinal": 0, "fixed": 0, "mutable": 0}
+    for kod in sayilacak:
+        elementler[_ELEMENT_BY_SIGN[kod]] += 1
+        nitelikler[_MODALITY_BY_SIGN[kod]] += 1
+
+    ev_sayimi: dict[int, int] = {}
+    for p in puanlar:
+        if p["name"] not in _BALANCE_PLANETS:
+            continue
+        ev = _HOUSE_NO.get(p.get("house"))
+        if ev:
+            ev_sayimi[ev] = ev_sayimi.get(ev, 0) + 1
+    yigilmalar = sorted(
+        ({"house": ev, "count": adet} for ev, adet in ev_sayimi.items()
+         if adet >= 3),
+        key=lambda y: (-y["count"], y["house"]))
+
     return {
         "zodiac_type": zodiac_type,
         # Eski istemci uyumluluğu icin duz alanlar:
@@ -189,9 +273,13 @@ def get_natal_chart(
         "sun": _point_dict(subject.sun),
         "moon": _point_dict(subject.moon),
         "asc": {"sign": asc.sign, "sign_tr": SIGN_TR.get(asc.sign), "position": round(asc.position, 2)},
-        "points": _subject_points(subject),
+        "points": puanlar,
         "houses": houses,
         "aspects": _aspects_list(aspects),
+        "element_distribution": elementler,
+        "modality_distribution": nitelikler,
+        "stelliums": yigilmalar,
+        "declination_aspects": _declination_aspects(puanlar),
         "disclosures": disclosures,
         "lunar_phase": {
             "emoji": getattr(subject.lunar_phase, "moon_emoji", None),

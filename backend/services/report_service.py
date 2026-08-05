@@ -320,7 +320,9 @@ def natal_report(user_id: str, natal: dict[str, Any],
     """Derinlemesine doğum haritası raporu (kullanıcı başına bir kez, 30 gün önbellek)."""
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
-    cache_key = (f"natal-report-{user_id}-{natal.get('sun_sign')}"
+    # v2 (T4): prompta denge/deklinasyon blokları girdi — sürümsüz anahtar
+    # 30 gün boyunca eski şekilli raporu servis ederdi.
+    cache_key = (f"natal-report-v2-{user_id}-{natal.get('sun_sign')}"
                  f"-{natal.get('ascendant')}-{lang}")
 
     # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
@@ -352,6 +354,25 @@ def natal_report(user_id: str, natal: dict[str, Any],
     disclosures = ("\n" + p.DISCLOSURES_LABEL + "\n"
                    + "\n".join(f"- {b}" for b in beyanlar) + "\n"
                    ) if beyanlar else ""
+
+    # Denge + deklinasyon (T4). Sıfır sayımlar da yazılır: eksik element
+    # astrolojik bir ifadedir (chart_context.render ile aynı kural).
+    el_dagilimi = natal.get("element_distribution") or {}
+    elements = ", ".join(
+        f"{p.ELEMENT_NAMES[e]} {el_dagilimi.get(e, 0)}"
+        for e in ("fire", "earth", "air", "water")) if el_dagilimi else "-"
+    nit_dagilimi = natal.get("modality_distribution") or {}
+    modalities = ", ".join(
+        f"{p.MODALITY_NAMES[m]} {nit_dagilimi.get(m, 0)}"
+        for m in ("cardinal", "fixed", "mutable")) if nit_dagilimi else "-"
+    stelliums = " · ".join(
+        p.CHART_STELLIUM_FMT.format(
+            house=p.HOUSE_FMT.format(house=y["house"]), count=y["count"])
+        for y in natal.get("stelliums") or []) or "-"
+    declinations = "\n".join(
+        f"- {d['p1_local']} {d['type_local']} {d['p2_local']} "
+        f"(Δ {d['delta']}°)"
+        for d in yerel.get("declination_aspects") or []) or "-"
     # Sorgu haritadan ve isteğin dilinde (Revize R8): burçlar + en sıkı açı.
     # Eski sabit şablon TR korpusta İngilizce dolgu kelimeleriyle arıyordu.
     en_siki = next(iter(yerel.get("aspects", [])), None)
@@ -369,7 +390,8 @@ def natal_report(user_id: str, natal: dict[str, Any],
     prompt = p.NATAL.format(
         sun_sign=sun_sign, moon_sign=moon_sign,
         ascendant=ascendant, points=points, aspects=aspects, rag=rag,
-        disclosures=disclosures,
+        elements=elements, modalities=modalities, stelliums=stelliums,
+        declinations=declinations, disclosures=disclosures,
     )
     fallback = p.NATAL_FALLBACK.format(
         sun_sign=sun_sign, moon_sign=moon_sign, ascendant=ascendant,

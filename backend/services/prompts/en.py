@@ -471,13 +471,30 @@ PLANETS:
 
 ASPECTS:
 {aspects}
+
+BALANCE (traditional seven + Ascendant):
+- Elements: {elements}
+- Modalities: {modalities}
+- Stelliums: {stelliums}
+
+DECLINATION PARALLELS (hidden aspects longitude never shows):
+{declinations}
 {disclosures}
 SOURCE PASSAGES (blend in from the tradition):
 {rag}
 
-RULE: If a DISCLOSURES section is present, reflect it OPENLY in the reading —
-do not claim certainty over what was disclosed as uncertain (especially the
-Ascendant and houses).
+RULES:
+- If a DISCLOSURES section is present, reflect it OPENLY in the reading —
+  do not claim certainty over what was disclosed as uncertain (especially
+  the Ascendant and houses).
+- A missing element (a count of 0) is a meaningful statement — don't
+  ignore it.
+- If there is a stellium, make that life area the centre of gravity.
+- Read a declination parallel as a bond with conjunction strength but a
+  "hidden" quality; a contra-parallel as an opposition-like tension. If
+  the list is "-", never mention declination.
+- An applying aspect is a building theme, a separating one is fading —
+  weave the movement noted on each aspect line into the reading.
 """
 
 DISCLOSURES_LABEL = "DISCLOSURES (limits of the calculation — reflect openly):"
@@ -507,6 +524,13 @@ TRANSIT_EVENT_NAMES = {
     "aspect_exact": "exact aspect",
     "station_retrograde": "stations retrograde",
     "station_direct": "stations direct",
+}
+
+#: Declination aspects (T4): the "hidden" conjunction/opposition that
+#: longitude alone never shows.
+DECLINATION_ASPECT_NAMES = {
+    "parallel": "parallel",
+    "contraparallel": "contra-parallel",
 }
 
 SOLAR_RETURN = """
