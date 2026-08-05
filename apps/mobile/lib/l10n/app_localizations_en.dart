@@ -603,6 +603,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bigThreeStart => 'Begin the journey';
 
   @override
+  String get redeemCodeTitle => 'Use a code';
+
+  @override
+  String get redeemCodeHint => 'PARTNER CODE';
+
+  @override
+  String get redeemCodeAction => 'Redeem';
+
+  @override
+  String redeemCodeSuccess(int tokens) {
+    return '$tokens tokens added ✨';
+  }
+
+  @override
+  String get paywallHaveCode => 'Have a partner code?';
+
+  @override
   String get atlasWaitStage1 => 'Placing the planets';
 
   @override

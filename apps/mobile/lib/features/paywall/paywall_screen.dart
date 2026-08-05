@@ -19,6 +19,7 @@ import '../../widgets/glass.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/star_burst.dart';
 import '../profile/legal_page.dart';
+import 'redeem_code_dialog.dart';
 
 /// RYTHO+ paywall.
 ///
@@ -266,6 +267,17 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             onPressed: _busy ? null : _restore,
             child: Text(l10n.restorePurchases,
                 style: RythoText.label(12, color: RythoColors.parchmentDim)),
+          ),
+        ),
+        // Ortak kodu (W9): dönüşüm anında yakalar — kod jeton bonusu verir,
+        // fiyatı DEĞİŞTİRMEZ (mağaza kuralı; dialog sunucu hükmünü gösterir).
+        Center(
+          child: TextButton(
+            onPressed: _busy
+                ? null
+                : () => showRedeemCodeDialog(context, ref),
+            child: Text(l10n.paywallHaveCode,
+                style: RythoText.label(12, color: RythoColors.lilac)),
           ),
         ),
         // Mağaza kuralı: iptal ve yenileme koşulları satın alma ekranında

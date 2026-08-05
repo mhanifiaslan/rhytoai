@@ -603,6 +603,23 @@ class AppLocalizationsTr extends AppLocalizations {
   String get bigThreeStart => 'Yolculuğa başla';
 
   @override
+  String get redeemCodeTitle => 'Kod kullan';
+
+  @override
+  String get redeemCodeHint => 'ORTAK KODU';
+
+  @override
+  String get redeemCodeAction => 'Kullan';
+
+  @override
+  String redeemCodeSuccess(int tokens) {
+    return '$tokens jeton yüklendi ✨';
+  }
+
+  @override
+  String get paywallHaveCode => 'Ortak kodun mu var?';
+
+  @override
   String get atlasWaitStage1 => 'Gezegenler yerleşiyor';
 
   @override

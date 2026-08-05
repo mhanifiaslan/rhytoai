@@ -10,6 +10,7 @@ import 'account_screen.dart';
 import 'birth_record_screen.dart';
 import 'delete_account.dart';
 import 'profile_sections.dart';
+import '../paywall/redeem_code_dialog.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
@@ -222,6 +223,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               icon: Icons.tune_rounded,
               title: l10n.languageAndSounds,
               onTap: () => _ac(const AppearanceSettingsScreen()),
+            ),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            // Ortak kodu (W9): jeton bonusu + gelir atfı. Kalıcı giriş
+            // noktası burası; paywall'da da küçük bir link var.
+            SettingsRow(
+              icon: Icons.redeem_rounded,
+              title: l10n.redeemCodeTitle,
+              onTap: () => showRedeemCodeDialog(context, ref),
             ),
             const Divider(height: 1, indent: RythoSpace.lg),
             SettingsRow(

@@ -1190,6 +1190,36 @@ abstract class AppLocalizations {
   /// **'Yolculuğa başla'**
   String get bigThreeStart;
 
+  /// No description provided for @redeemCodeTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kod kullan'**
+  String get redeemCodeTitle;
+
+  /// No description provided for @redeemCodeHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'ORTAK KODU'**
+  String get redeemCodeHint;
+
+  /// No description provided for @redeemCodeAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullan'**
+  String get redeemCodeAction;
+
+  /// No description provided for @redeemCodeSuccess.
+  ///
+  /// In tr, this message translates to:
+  /// **'{tokens} jeton yüklendi ✨'**
+  String redeemCodeSuccess(int tokens);
+
+  /// No description provided for @paywallHaveCode.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ortak kodun mu var?'**
+  String get paywallHaveCode;
+
   /// No description provided for @atlasWaitStage1.
   ///
   /// In tr, this message translates to:
