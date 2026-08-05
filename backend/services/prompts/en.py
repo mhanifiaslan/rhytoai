@@ -467,10 +467,31 @@ PLANETS:
 
 ASPECTS:
 {aspects}
-
+{disclosures}
 SOURCE PASSAGES (blend in from the tradition):
 {rag}
+
+RULE: If a DISCLOSURES section is present, reflect it OPENLY in the reading —
+do not claim certainty over what was disclosed as uncertain (especially the
+Ascendant and houses).
 """
+
+DISCLOSURES_LABEL = "DISCLOSURES (limits of the calculation — reflect openly):"
+
+#: Disclosure lines (T0) — the engine emits keys, text lives here.
+ASTRO_NOTES = {
+    "geo_fallback_city": (
+        "The birth city could not be resolved; the chart was computed with "
+        "Istanbul coordinates. The Ascendant and houses are therefore "
+        "approximate."),
+}
+
+#: Aspect movement names (T0): an applying aspect builds, a separating one fades.
+MOVEMENT_NAMES = {
+    "applying": "applying",
+    "separating": "separating",
+    "static": "static",
+}
 
 NATAL_FALLBACK = (
     "Your Sun is in {sun_sign}, your Moon in {moon_sign} and your Rising is "

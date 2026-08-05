@@ -234,6 +234,16 @@ gerekiyor, o da konum istiyor.
 
 ---
 
+### Efemeris veri dosyaları — `backend/ephe/*.se1` ✅ (2026-08-05, T0)
+
+| Alan | Değer |
+|---|---|
+| Dosyalar | `sepl_18.se1` (gezegenler 1800-2400), `semo_18.se1` (Ay) |
+| Kaynak | Astrodienst resmi dağıtımı — github.com/aloistr/swisseph, `ephe/` |
+| Neden | kerykeion paketi bu iki dosyayı taşımıyor; yokluklarında Swiss Ephemeris sessizce Moshier analitik hesabına düşüyor ve 1800 öncesi doğumlarda Chiron/Lilith kayboluyordu (bkz. `backend/core/ephemeris.py`) |
+| Lisans | Swiss Ephemeris veri dosyaları — lisans yönetimi ürün sahibinde (ticari lisans süreci ayrıca yürütülüyor) |
+| Doğrulama | `tests/test_astro_engine.py::TestEfemerisVerisi` + almanak altın vektörleri (USNO ekinoks/gündönümü, 2020 büyük kavuşumu, 2019 Ay tutulması, 2023 Merkür retrosu) |
+
 ## Korpus dosyası künye biçimi
 
 Kitap kaynaklı dosyalar başlarında künye taşır. `rag_service` bunu okur ve her

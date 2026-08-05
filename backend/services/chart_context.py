@@ -311,7 +311,10 @@ def chart_facts(uid: str, profile: dict[str, Any],
     ozet = _birth_digest(birth)
     gun = (today or dt.date.today()).isoformat()
 
-    natal = _cached(f"natal-facts-v1-{uid}-{ozet}", uid,
+    # v2 (T0): motora declination/speed/movement/disclosures alanları girdi;
+    # anahtar sürümlenmezse 180 günlük TTL boyunca eski şekilli kayıtlar
+    # servis edilirdi (sky-now-v3 dersi).
+    natal = _cached(f"natal-facts-v2-{uid}-{ozet}", uid,
                     NATAL_TTL_SECONDS, lambda: natal_facts(birth))
     if natal is None:
         return None

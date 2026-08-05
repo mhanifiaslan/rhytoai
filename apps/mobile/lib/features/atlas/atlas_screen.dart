@@ -97,6 +97,10 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
           final points = List<Map<String, dynamic>>.from(chart['points'] ?? []);
           final houses = List<Map<String, dynamic>>.from(chart['houses'] ?? []);
           final aspects = List<Map<String, dynamic>>.from(chart['aspects'] ?? []);
+          // Hesap beyanları (T0): ör. şehir çözülemedi → Yükselen yaklaşık.
+          // Sunucu metni isteğin dilinde üretir; burada yalnız gösterilir.
+          final beyanlar =
+              List<String>.from(chart['disclosure_texts'] ?? const []);
 
           var stagger = 0;
           Duration next() => Duration(milliseconds: 70 * stagger++);
@@ -109,6 +113,14 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                 const EdgeInsets.only(bottom: RythoSpace.dockClearance),
             children: [
               const SizedBox(height: RythoSpace.sm),
+              // Beyan notu — BirthHexagram sınır beyanıyla aynı dil (bakır).
+              if (beyanlar.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                  child: Text(beyanlar.join('\n'),
+                      style:
+                          RythoText.body(11.5, color: RythoColors.copper)),
+                ),
               // Natal çark
               GlassPanel(
                 padding: const EdgeInsets.all(8),

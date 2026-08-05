@@ -26,6 +26,11 @@ def _kerykeion():
     """Kerykeion modulunu ilk ihtiyac aninda ice aktarir."""
     global _ker
     if _ker is None:
+        # Efemeris veri dosyaları kerykeion'dan ÖNCE yerine konur (T0):
+        # sepl/semo yoksa Swiss Ephemeris sessizce Moshier'e düşüyordu.
+        from core import ephemeris
+
+        ephemeris.ensure()
         import kerykeion
 
         _ker = kerykeion
@@ -76,6 +81,13 @@ def _build_subject(
     name: str, year: int, month: int, day: int, hour: int, minute: int,
     city: str, nation: str | None, zodiac_type: ZodiacType = "Tropical",
 ):
+    """Özne + konum çözümü döner.
+
+    Konum da dönüyor (T0) çünkü `loc.fallback` bayrağı BEYAN üretmek için
+    gerekli: çözülemeyen şehir İstanbul'a düşüyor ve bu, Yükselen'i ve tüm
+    ev sistemini değiştiriyor. BaZi bunu baştan beri beyan ediyordu
+    (bazi_service tst_fallback_city); Batı tarafı sessizdi.
+    """
     loc = resolve_city(city, nation)
     kwargs: dict[str, Any] = dict(
         name=name, year=year, month=month, day=day, hour=hour, minute=minute,
@@ -85,10 +97,16 @@ def _build_subject(
     )
     if zodiac_type == "Sidereal":
         kwargs["sidereal_mode"] = "LAHIRI"
-    return _kerykeion().AstrologicalSubjectFactory.from_birth_data(**kwargs)
+    subject = _kerykeion().AstrologicalSubjectFactory.from_birth_data(**kwargs)
+    return subject, loc
 
 
 def _point_dict(point) -> dict[str, Any]:
+    # declination ve speed kerykeion tarafından ZATEN hesaplanıyor (T0):
+    # atmak, ödenmiş bedeli çöpe atmaktı. Deklinasyon paralel/kontra-paralel
+    # açıların, hız da yaklaşan/ayrılan ayrımının ham maddesi.
+    dec = getattr(point, "declination", None)
+    speed = getattr(point, "speed", None)
     return {
         "name": point.name,
         "name_tr": PLANET_TR.get(point.name, point.name),
@@ -100,6 +118,8 @@ def _point_dict(point) -> dict[str, Any]:
         "house": getattr(point, "house", None),
         "retrograde": bool(getattr(point, "retrograde", False)),
         "element": getattr(point, "element", None),
+        "declination": round(dec, 2) if dec is not None else None,
+        "speed": round(speed, 4) if speed is not None else None,
     }
 
 
@@ -115,12 +135,17 @@ def _subject_points(subject) -> list[dict[str, Any]]:
 def _aspects_list(aspects, limit: int | None = None) -> list[dict[str, Any]]:
     result = []
     for a in aspects:
+        # `movement` (T0): yaklaşan açı güçlenir, ayrılan söner — klasik
+        # yorum farkı. kerykeion `aspect_movement` alanını zaten üretiyor;
+        # anahtar olarak taşınır, ad prompts katmanında çözülür.
+        movement = getattr(a, "aspect_movement", None)
         result.append({
             "p1": a.p1_name, "p1_tr": PLANET_TR.get(a.p1_name, a.p1_name),
             "p2": a.p2_name, "p2_tr": PLANET_TR.get(a.p2_name, a.p2_name),
             "aspect": a.aspect,
             "aspect_tr": ASPECT_TR.get(a.aspect, a.aspect),
             "orbit": round(a.orbit, 2),
+            "movement": str(movement).lower() if movement else None,
         })
     if limit:
         result = result[:limit]
@@ -131,8 +156,15 @@ def get_natal_chart(
     name: str, year: int, month: int, day: int, hour: int, minute: int,
     city: str, nation: str | None = None, zodiac_type: ZodiacType = "Tropical",
 ) -> dict[str, Any]:
-    subject = _build_subject(name, year, month, day, hour, minute, city, nation, zodiac_type)
+    subject, loc = _build_subject(name, year, month, day, hour, minute,
+                                  city, nation, zodiac_type)
     aspects = _kerykeion().NatalAspects(subject).relevant_aspects
+
+    # Beyanlar (T0): şehir çözülemeyip İstanbul'a düşüldüyse bu SÖYLENİR.
+    # Yükselen ve tüm ev sistemi konuma bağlı — sessiz kalınamaz.
+    disclosures: list[str] = []
+    if loc.fallback:
+        disclosures.append("geo_fallback_city")
 
     houses = []
     for i, house_attr in enumerate([
@@ -160,6 +192,7 @@ def get_natal_chart(
         "points": _subject_points(subject),
         "houses": houses,
         "aspects": _aspects_list(aspects),
+        "disclosures": disclosures,
         "lunar_phase": {
             "emoji": getattr(subject.lunar_phase, "moon_emoji", None),
             "name": getattr(subject.lunar_phase, "moon_phase_name", None),
@@ -173,7 +206,8 @@ def get_natal_chart_svg(
     city: str, nation: str | None = None, zodiac_type: ZodiacType = "Tropical",
     theme: str = "dark",
 ) -> str:
-    subject = _build_subject(name, year, month, day, hour, minute, city, nation, zodiac_type)
+    subject, _ = _build_subject(name, year, month, day, hour, minute,
+                                city, nation, zodiac_type)
     chart = _kerykeion().KerykeionChartSVG(subject, chart_type="Natal", theme=theme)
     return chart.makeTemplate()
 
@@ -183,7 +217,7 @@ def get_transits(
     city: str, nation: str | None = None,
 ) -> dict[str, Any]:
     """Şu anki gökyüzünün natal haritaya açıları (transit)."""
-    natal = _build_subject(name, year, month, day, hour, minute, city, nation)
+    natal, _ = _build_subject(name, year, month, day, hour, minute, city, nation)
     now = dt.datetime.now(dt.timezone.utc)
     transit_subject = _kerykeion().AstrologicalSubjectFactory.from_iso_utc_time(
         name="Transit", iso_utc_time=now.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -199,8 +233,8 @@ def get_transits(
 
 def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, Any]:
     """İki kişi arasındaki sinastri (kozmik uyum) analizi."""
-    s1 = _build_subject(**person1)
-    s2 = _build_subject(**person2)
+    s1, _ = _build_subject(**person1)
+    s2, _ = _build_subject(**person2)
     aspects = _kerykeion().SynastryAspects(s1, s2).relevant_aspects
 
     score_data: dict[str, Any] = {}
@@ -223,7 +257,7 @@ def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, 
 
 
 def get_synastry_svg(person1: dict[str, Any], person2: dict[str, Any], theme: str = "dark") -> str:
-    s1 = _build_subject(**person1)
-    s2 = _build_subject(**person2)
+    s1, _ = _build_subject(**person1)
+    s2, _ = _build_subject(**person2)
     chart = _kerykeion().KerykeionChartSVG(s1, chart_type="Synastry", second_obj=s2, theme=theme)
     return chart.makeTemplate()

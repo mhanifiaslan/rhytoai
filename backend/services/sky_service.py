@@ -17,7 +17,12 @@ from typing import Any
 import httpx
 import swisseph as swe
 
-from core import cache
+from core import cache, ephemeris
+
+# Efemeris yolu İMPORT ANINDA kurulur (T0): bu modül swisseph'i doğrudan
+# kullanıyor ve daha önce hiç yol kurmuyordu — hangi veriyle çalıştığı,
+# kerykeion'un o süreçte çağrılıp çağrılmadığına bağlıydı.
+ephemeris.ensure()
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +50,11 @@ _SIGNS = [
 
 #: (açı, dilden bağımsız anahtar, orb). Ad değil ANAHTAR tutulur — gökyüzü
 #: paylaşımlı önbellekten servis ediliyor ve tüm diller aynı hesabı kullanıyor.
+#:
+#: NOT (T0): Bu orblar natal tarafındaki kerykeion varsayılanlarından
+#: BİLEREK farklı. Burası "bugün gökyüzünde ne oluyor" bağlamı — dar orb
+#: gürültüyü keser; natal haritada ise klasik geniş orblar geçerli. İki
+#: tablo iki ayrı soru cevaplar; birleştirme kapsam dışı bırakıldı.
 _MAJOR_ASPECTS = [
     (0, "conjunction", 6), (60, "sextile", 4), (90, "square", 6),
     (120, "trine", 6), (180, "opposition", 8),

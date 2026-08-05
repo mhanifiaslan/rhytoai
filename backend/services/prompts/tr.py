@@ -452,10 +452,29 @@ GEZEGENLER:
 
 AÇILAR:
 {aspects}
-
+{disclosures}
 KAYNAK PASAJLARI (kadim gelenekten harmanla):
 {rag}
+
+KURAL: BEYANLAR bölümü varsa içeriğini yorumda AÇIKÇA yansıt — beyan edilen
+belirsizliğe rağmen kesinlik iddia etme (özellikle Yükselen ve evler).
 """
+
+DISCLOSURES_LABEL = "BEYANLAR (hesabın sınırları — yorumda açıkça yansıt):"
+
+#: Beyan satırları (T0) — motor anahtar üretir, metin burada.
+ASTRO_NOTES = {
+    "geo_fallback_city": (
+        "Doğum şehri tanınamadı; harita İstanbul koordinatlarıyla "
+        "hesaplandı. Yükselen ve evler bu yüzden yaklaşıktır."),
+}
+
+#: Açı hareketi adları (T0): yaklaşan açı güçlenir, ayrılan söner.
+MOVEMENT_NAMES = {
+    "applying": "yaklaşıyor",
+    "separating": "ayrılıyor",
+    "static": "durağan",
+}
 
 NATAL_FALLBACK = (
     "Güneşin {sun_sign}, Ayın {moon_sign} ve yükselenin {ascendant}. Bu üçlü; "

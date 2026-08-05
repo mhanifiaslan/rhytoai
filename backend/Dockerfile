@@ -15,6 +15,8 @@ WORKDIR /app
 COPY backend/requirements.txt .
 RUN pip install -r requirements.txt
 
+# backend/ephe/*.se1 bu kopyaya dahil (T0): gezegen+Ay efemeris verisi.
+# Yoksa Swiss Ephemeris sessizce Moshier'e düşer (bkz. core/ephemeris.py).
 COPY backend/ /app/
 # knowledge/embeddings/ bu kopyaya dahil ve DAHIL OLMASI GEREKIYOR.
 # Vektörler çalışma zamanında üretilseydi (eski davranış) her soğuk başlatma

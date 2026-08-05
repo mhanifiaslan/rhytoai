@@ -337,9 +337,16 @@ def natal_report(user_id: str, natal: dict[str, Any],
         for pt in yerel.get("points", [])[:12]
     )
     aspects = "\n".join(
-        f"- {a['p1_local']} {a['aspect_local']} {a['p2_local']} (orb {a['orbit']}°)"
+        f"- {a['p1_local']} {a['aspect_local']} {a['p2_local']} (orb {a['orbit']}°"
+        f"{', ' + a['movement_local'] if a.get('movement_local') else ''})"
         for a in yerel.get("aspects", [])[:10]
     )
+    # Beyanlar (T0): varsa prompt'a ayrı blok — model belirsizliği bilerek
+    # konuşur (ör. şehir çözülemedi → Yükselen yaklaşık).
+    beyanlar = yerel.get("disclosure_texts") or []
+    disclosures = ("\n" + p.DISCLOSURES_LABEL + "\n"
+                   + "\n".join(f"- {b}" for b in beyanlar) + "\n"
+                   ) if beyanlar else ""
     # Sorgu haritadan ve isteğin dilinde (Revize R8): burçlar + en sıkı açı.
     # Eski sabit şablon TR korpusta İngilizce dolgu kelimeleriyle arıyordu.
     en_siki = next(iter(yerel.get("aspects", [])), None)
@@ -357,6 +364,7 @@ def natal_report(user_id: str, natal: dict[str, Any],
     prompt = p.NATAL.format(
         sun_sign=sun_sign, moon_sign=moon_sign,
         ascendant=ascendant, points=points, aspects=aspects, rag=rag,
+        disclosures=disclosures,
     )
     fallback = p.NATAL_FALLBACK.format(
         sun_sign=sun_sign, moon_sign=moon_sign, ascendant=ascendant,

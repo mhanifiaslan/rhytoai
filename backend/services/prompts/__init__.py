@@ -345,14 +345,26 @@ def localize_chart(lang: str | None, chart: dict | None) -> dict:
                 "sign_local": sign_name_from_code(lang, pt.get("sign"))}
 
     def açı(a: dict) -> dict:
+        p = get(lang)
+        hareket = a.get("movement")
         return {**a,
                 "p1_local": planet_name(lang, a.get("p1")),
                 "p2_local": planet_name(lang, a.get("p2")),
-                "aspect_local": aspect_name(lang, a.get("aspect"))}
+                "aspect_local": aspect_name(lang, a.get("aspect")),
+                "movement_local": (p.MOVEMENT_NAMES.get(hareket)
+                                   if hareket else None)}
 
     sonuç = {**chart,
              "points": [nokta(p) for p in (chart.get("points") or [])],
              "aspects": [açı(a) for a in (chart.get("aspects") or [])]}
+
+    # Beyanlar (T0): motor anahtar döner, metin burada çözülür — BaZi'nin
+    # note_keys deseni. Mobil doğrudan bu metin listesini basar.
+    beyanlar = chart.get("disclosures") or []
+    if beyanlar:
+        p = get(lang)
+        sonuç["disclosure_texts"] = [
+            p.ASTRO_NOTES.get(k, k) for k in beyanlar]
 
     # ``sun_sign`` / ``moon_sign`` / ``ascendant`` alanlarına DOKUNULMAZ:
     # onboarding bu değerleri Firestore profiline yazıyor ve mobil tarafta
