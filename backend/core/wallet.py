@@ -74,6 +74,8 @@ TOKEN_COSTS: dict[str, int] = {
     # Doğum Heksagramı (İ5): natal ile aynı sınıf — kişiye özel, 30 gün
     # önbellekli kalıcı üretim.
     "birth_hexagram": 5,
+    # Yıl haritası (T1): natal sınıfı — SR yılı boyunca önbellekten.
+    "solar_return": 5,
 }
 
 #: Abonelikle gelen aylık hak. En kötü durum maliyeti sınırlar: 300 token

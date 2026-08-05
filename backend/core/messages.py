@@ -66,6 +66,10 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "Doğum Heksagramı Rytho+ aboneliğine dahildir.",
         "en": "The Birth Hexagram is part of Rytho+.",
     },
+    "paywall.solar_return": {
+        "tr": "Yıl Haritası (güneş dönüşü) Rytho+ aboneliğine dahildir.",
+        "en": "The Year Chart (solar return) is part of Rytho+.",
+    },
     "paywall.default": {
         "tr": "Bu özellik Rytho+ aboneliğine dahildir.",
         "en": "This feature is part of Rytho+.",

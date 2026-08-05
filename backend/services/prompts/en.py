@@ -484,7 +484,51 @@ ASTRO_NOTES = {
         "The birth city could not be resolved; the chart was computed with "
         "Istanbul coordinates. The Ascendant and houses are therefore "
         "approximate."),
+    "sr_hour_unknown": (
+        "Because the birth time is unknown, the return moment may shift by "
+        "up to ±12 hours; the year chart's Ascendant and houses were "
+        "therefore not computed."),
 }
+
+SOLAR_RETURN = """
+TASK: From the user's SOLAR RETURN data below, write a 300-400 word "new
+solar year" reading. This chart is cast for the exact moment the Sun
+returns to its natal longitude near the birthday, and it sets the tone of
+the year until the NEXT birthday.
+
+YEAR CHART:
+- Return moment (local): {return_at}
+- Next return: {next_return_at}
+- Year chart Ascendant: {sr_asc}
+- Sun's house in the year chart: {sr_sun_house}
+- Year Moon: {sr_moon}
+
+PLANETS:
+{points}
+
+ASPECTS:
+{aspects}
+{disclosures}
+SOURCE PASSAGES:
+{rag}
+
+RULES:
+- This is a YEAR reading: themes, seasons, tendencies — no dated event
+  prophecies.
+- If the Ascendant is "-", never mention the Ascendant or houses.
+- No health/legal/financial advice; no flattery.
+- If the year carries a hard theme, say it's hard; not every year is "a
+  wonderful year".
+"""
+
+SOLAR_RETURN_FALLBACK = (
+    "Your new solar year began at {return_at}. The year's Moon is in "
+    "{sr_moon} — your emotional keynote will hum at that frequency all "
+    "year. Check back shortly for the full reading."
+)
+
+SOLAR_RETURN_RAG_QUERY = ("solar return year chart annual themes seasons "
+                          "{sr_moon} {sr_asc}")
 
 #: Aspect movement names (T0): an applying aspect builds, a separating one fades.
 MOVEMENT_NAMES = {

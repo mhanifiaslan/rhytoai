@@ -374,6 +374,61 @@ def natal_report(user_id: str, natal: dict[str, Any],
                             owner_uid=user_id, spend=spend, refund=refund)
 
 
+def solar_return_report(user_id: str, sr: dict[str, Any],
+                        lang: str | None = None,
+                        spend: Callable[[], None] | None = None,
+                        refund: Callable[[], None] | None = None
+                        ) -> dict[str, Any]:
+    """Solar return (yıl haritası) okuması (T1). 90 gün önbellek.
+
+    Anahtar dönüş anına ve hesap sürümüne bağlı: aynı SR yılı içinde aynı
+    yorum servis edilir; yeni dönüş geldiğinde anahtar kendiliğinden değişir.
+    """
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
+    cache_key = (f"solar-return-{user_id}"
+                 f"-{str(sr.get('return_at_utc'))[:10]}"
+                 f"-{sr.get('calc_version')}-{lang}")
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
+
+    yerel = prompts.localize_chart(lang, sr)
+    sr_ay = prompts.sign_name_from_code(lang, sr.get("sr_moon_sign"))
+    asc = sr.get("sr_ascendant")
+    sr_asc = (f"{prompts.sign_name_from_code(lang, asc['sign'])} "
+              f"{asc['position']}°") if asc else "-"
+    sr_ev = str(sr.get("sr_sun_house") or "-")
+
+    points = "\n".join(
+        f"- {pt['name_local']}: {pt['sign_local']} {pt['position']}°"
+        f"{', ' + p.RETROGRADE_LABEL if pt.get('retrograde') else ''}"
+        for pt in yerel.get("points", [])[:12])
+    aspects = "\n".join(
+        f"- {a['p1_local']} {a['aspect_local']} {a['p2_local']} "
+        f"(orb {a['orbit']}°)"
+        for a in yerel.get("aspects", [])[:10])
+    beyanlar = yerel.get("disclosure_texts") or []
+    disclosures = ("\n" + p.DISCLOSURES_LABEL + "\n"
+                   + "\n".join(f"- {b}" for b in beyanlar) + "\n"
+                   ) if beyanlar else ""
+
+    rag = retrieve_context(
+        p.SOLAR_RETURN_RAG_QUERY.format(sr_moon=sr_ay, sr_asc=sr_asc),
+        lang=lang)
+
+    prompt = p.SOLAR_RETURN.format(
+        return_at=sr.get("return_at_local"),
+        next_return_at=sr.get("next_return_at_local"),
+        sr_asc=sr_asc, sr_sun_house=sr_ev, sr_moon=sr_ay,
+        points=points, aspects=aspects, disclosures=disclosures, rag=rag)
+    fallback = p.SOLAR_RETURN_FALLBACK.format(
+        return_at=sr.get("return_at_local"), sr_moon=sr_ay)
+    return _cached_generate(cache_key, prompt, fallback,
+                            ttl_seconds=90 * 24 * 3600, lang=lang,
+                            owner_uid=user_id, spend=spend, refund=refund)
+
+
 def firasa_report(user_id: str, ratios: dict[str, Any],
                   chart: str = "", lang: str | None = None,
                   spend: Callable[[], None] | None = None,

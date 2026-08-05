@@ -467,7 +467,49 @@ ASTRO_NOTES = {
     "geo_fallback_city": (
         "Doğum şehri tanınamadı; harita İstanbul koordinatlarıyla "
         "hesaplandı. Yükselen ve evler bu yüzden yaklaşıktır."),
+    "sr_hour_unknown": (
+        "Doğum saati bilinmediği için dönüş anı ±12 saat oynayabilir; "
+        "yıl haritasının Yükseleni ve evleri bu yüzden hesaplanmadı."),
 }
+
+SOLAR_RETURN = """
+GÖREV: Kullanıcının SOLAR RETURN (güneş dönüşü / yıl haritası) verilerinden
+300-400 kelimelik bir "yeni yaş yılı" okuması yaz. Bu, doğum günü civarında
+Güneş'in natal boylamına tam dönüş anına kurulan haritadır ve bir SONRAKİ
+doğum gününe kadar geçerli yılın tonunu anlatır.
+
+YIL HARİTASI:
+- Dönüş anı (yerel): {return_at}
+- Bir sonraki dönüş: {next_return_at}
+- Yıl haritası Yükseleni: {sr_asc}
+- Güneş'in yıl evindeki yeri: {sr_sun_house}
+- Yıl Ay'ı: {sr_moon}
+
+GEZEGENLER:
+{points}
+
+AÇILAR:
+{aspects}
+{disclosures}
+KAYNAK PASAJLARI:
+{rag}
+
+KURALLAR:
+- Bu bir YIL okuması: temalar, dönemler, eğilimler — kesin tarihli olay
+  kehaneti YOK.
+- Yükselen "-" ise Yükselen'den ve evlerden HİÇ söz etme.
+- Sağlık/hukuk/finans tavsiyesi yok; pohpohlama yok.
+- Yılın zor teması varsa zor de; her yıla "harika bir yıl" deme.
+"""
+
+SOLAR_RETURN_FALLBACK = (
+    "Bu yaş yılın {return_at} anında başladı. Yıl Ay'ın {sr_moon} "
+    "burcunda — duygusal tonun yıl boyunca bu frekansta akacak. Detaylı "
+    "yıl okuması için biraz sonra tekrar dene."
+)
+
+SOLAR_RETURN_RAG_QUERY = ("güneş dönüşü yıl haritası yıllık tema dönemler "
+                          "{sr_moon} {sr_asc}")
 
 #: Açı hareketi adları (T0): yaklaşan açı güçlenir, ayrılan söner.
 MOVEMENT_NAMES = {

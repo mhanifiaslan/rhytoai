@@ -275,6 +275,36 @@ def iching(req: IChingReportRequest,
         raise _internal(e, "iching", lang)
 
 
+class SolarReturnRequest(BirthData):
+    #: Belirli bir SR yılı istenirse (varsayılan: aktif yıl).
+    target_year: int | None = Field(default=None, ge=1900, le=2100)
+
+
+@router.post("/solar-return")
+def solar_return(data: SolarReturnRequest,
+                 user: AuthUser = Depends(require_plus("solar_return")),
+                 lang: str = Depends(get_language)):
+    """Yıl haritası (T1): aktif güneş dönüşü + LLM yıl okuması."""
+    try:
+        from services import predict_service
+        sr = predict_service.solar_return(
+            data.name, data.year, data.month, data.day,
+            data.hour, data.minute, data.city, data.nation,
+            hour_known=data.hour_known, target_year=data.target_year)
+        report = report_service.solar_return_report(
+            user.uid, sr, lang=lang,
+            spend=wallet.spender(user.uid, "solar_return", lang=lang),
+            refund=lambda: wallet.refund_spend(user.uid, "solar_return"))
+        return {"status": "success", "data": {
+            "solar_return": prompts.localize_chart(lang, sr),
+            "report": report["text"],
+        }}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise _internal(e, "solar-return", lang)
+
+
 @router.post("/birth-hexagram")
 def birth_hexagram(data: BirthData,
                    user: AuthUser = Depends(require_plus("birth_hexagram")),
