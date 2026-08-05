@@ -16,11 +16,13 @@ import secrets
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core import config, entitlements, wallet
 from core import firestore as firestore_client
 from core.auth import AuthUser, get_current_user
+from core.i18n import get_language
+from core.messages import text
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -118,6 +120,35 @@ def wallet_status(user: AuthUser = Depends(get_current_user)):
                              if hasattr(resets_at, "isoformat") else None),
         costs=cuzdan["costs"],
     )
+
+
+class RedeemCodeRequest(BaseModel):
+    code: str = Field(min_length=2, max_length=32)
+
+
+@router.post("/redeem-code")
+def redeem_code(req: RedeemCodeRequest,
+                user: AuthUser = Depends(get_current_user),
+                lang: str = Depends(get_language)):
+    """Ortak kodu kullanımı (W7): atıf + jeton bonusu.
+
+    Her hesapta TEK kod geçer (attribution tek sefer); kod satın almadan
+    ÖNCE girilmiş olmalı ki sonraki gelir ortağa atfedilsin.
+    """
+    from services import partner_service
+    try:
+        sonuc = partner_service.redeem(user.uid, req.code)
+    except partner_service.RedeemError as e:
+        anahtar = {"not_found": "promo.not_found",
+                   "inactive": "promo.expired",
+                   "expired": "promo.expired",
+                   "exhausted": "promo.exhausted",
+                   "already_redeemed": "promo.already_redeemed",
+                   }.get(e.reason, "promo.invalid")
+        raise HTTPException(status_code=e.status,
+                            detail=text(anahtar, lang,
+                                        fallback="promo.invalid"))
+    return {"status": "ok", "bonusTokens": sonuc["bonusTokens"]}
 
 
 def _verify_secret(authorization: str | None) -> None:

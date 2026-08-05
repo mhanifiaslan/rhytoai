@@ -14,11 +14,12 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.security import HTTPAuthorizationCredentials
+from pydantic import BaseModel, Field
 
 from core import config, firestore as firestore_client
 from core.auth import AuthUser, get_current_user, require_admin
 from core.i18n import get_language
-from services import stats_service
+from services import partner_service, stats_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -158,3 +159,104 @@ def revenue(days: int = Query(default=90, ge=1, le=365),
             "byDay": gunler, "byProduct": urun, "byStore": magaza,
             "byCurrency": para_birimi, "events": olaylar,
             "grossUsd": round(sum(gunler.values()), 2)}
+
+
+# ---------------------------------------------------------------------------
+# Ortaklar (W7) — panel CRUD'u; hepsi require_admin
+# ---------------------------------------------------------------------------
+
+class PartnerCreate(BaseModel):
+    name: str = Field(min_length=2, max_length=80)
+    contact: str = Field(default="", max_length=160)
+    sharePercent: float = Field(default=0, ge=0, le=90)
+    notes: str = Field(default="", max_length=500)
+
+
+class PartnerPatch(BaseModel):
+    name: str | None = Field(default=None, min_length=2, max_length=80)
+    contact: str | None = Field(default=None, max_length=160)
+    sharePercent: float | None = Field(default=None, ge=0, le=90)
+    active: bool | None = None
+    notes: str | None = Field(default=None, max_length=500)
+
+
+class CodeCreate(BaseModel):
+    #: Boş bırakılırsa okunaklı rastgele kod üretilir.
+    code: str | None = Field(default=None, max_length=24)
+    bonusTokens: int = Field(default=0, ge=0, le=5000)
+    maxRedemptions: int | None = Field(default=None, ge=1)
+    #: ISO tarih (YYYY-MM-DD) — gün sonu UTC kabul edilir.
+    expiresAt: str | None = Field(default=None,
+                                  pattern=r"^\d{4}-\d{2}-\d{2}$")
+
+
+class PayoutCreate(BaseModel):
+    amount: float = Field(gt=0)
+    currency: str = Field(default="USD", min_length=3, max_length=3)
+    note: str = Field(default="", max_length=300)
+
+
+def _servis_hatasi(e: partner_service.RedeemError) -> HTTPException:
+    return HTTPException(status_code=e.status, detail=e.reason)
+
+
+@router.get("/partners")
+def partners(user: AuthUser = Depends(require_admin)):
+    return {"status": "ok", "partners": partner_service.list_partners()}
+
+
+@router.post("/partners")
+def create_partner(req: PartnerCreate,
+                   user: AuthUser = Depends(require_admin)):
+    try:
+        ortak = partner_service.create_partner(
+            req.name, req.contact, req.sharePercent, req.notes)
+    except partner_service.RedeemError as e:
+        raise _servis_hatasi(e)
+    return {"status": "ok", "partner": ortak}
+
+
+@router.patch("/partners/{partner_id}")
+def patch_partner(partner_id: str, req: PartnerPatch,
+                  user: AuthUser = Depends(require_admin)):
+    try:
+        partner_service.update_partner(
+            partner_id, req.model_dump(exclude_none=True))
+    except partner_service.RedeemError as e:
+        raise _servis_hatasi(e)
+    return {"status": "ok"}
+
+
+@router.get("/partners/{partner_id}")
+def partner_detail(partner_id: str,
+                   user: AuthUser = Depends(require_admin)):
+    try:
+        return {"status": "ok", **partner_service.partner_detail(partner_id)}
+    except partner_service.RedeemError as e:
+        raise _servis_hatasi(e)
+
+
+@router.post("/partners/{partner_id}/codes")
+def create_code(partner_id: str, req: CodeCreate,
+                user: AuthUser = Depends(require_admin)):
+    son = None
+    if req.expiresAt:
+        son = dt.datetime.combine(dt.date.fromisoformat(req.expiresAt),
+                                  dt.time.max, tzinfo=dt.timezone.utc)
+    try:
+        kod = partner_service.create_code(
+            partner_id, req.code, req.bonusTokens, req.maxRedemptions, son)
+    except partner_service.RedeemError as e:
+        raise _servis_hatasi(e)
+    return {"status": "ok", "code": kod}
+
+
+@router.post("/partners/{partner_id}/payouts")
+def add_payout(partner_id: str, req: PayoutCreate,
+               user: AuthUser = Depends(require_admin)):
+    try:
+        odeme = partner_service.add_payout(
+            partner_id, req.amount, req.currency, req.note)
+    except partner_service.RedeemError as e:
+        raise _servis_hatasi(e)
+    return {"status": "ok", "payout": odeme}

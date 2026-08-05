@@ -132,6 +132,28 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "en": "The oracle found no question to read in this text — put your "
               "intention into a sentence about your own life.",
     },
+    # --- Ortak kodu (W7) ---
+    "promo.invalid": {
+        "tr": "Bu kod geçerli değil.",
+        "en": "That code isn't valid.",
+    },
+    "promo.not_found": {
+        "tr": "Böyle bir kod bulunamadı.",
+        "en": "No such code was found.",
+    },
+    "promo.expired": {
+        "tr": "Bu kodun süresi dolmuş.",
+        "en": "This code has expired.",
+    },
+    "promo.exhausted": {
+        "tr": "Bu kodun kullanım hakkı dolmuş.",
+        "en": "This code has reached its redemption limit.",
+    },
+    "promo.already_redeemed": {
+        "tr": "Zaten bir kod kullandın — her hesapta tek kod geçerlidir.",
+        "en": "You've already used a code — one code per account.",
+    },
+
     "iching.question_chat": {
         "tr": "Bu soru kâhine değil bana sorulmuş gibi. Konuşmak istersen "
               "Sohbet orada — İching'e ise kendi yolunla ilgili bir soru "

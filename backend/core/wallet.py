@@ -390,6 +390,45 @@ def credit_pack(uid: str, product_id: str, event_id: str) -> bool:
     return True
 
 
+def credit_promo(uid: str, code: str, amount: int) -> bool:
+    """Ortak kodu bonusunu cüzdana yükler (W7) — credit_pack'in varyantı.
+
+    Defter kimliği ``promo-{KOD}``: aynı kullanıcı aynı kodu iki kez
+    yükleyemez (uid başına idempotent; kod zaten attribution'la tek sefer
+    ama savunma iki katmanlı). ``False`` = zaten işlenmişti.
+    """
+    if amount <= 0:
+        return False
+    ref = _wallet_ref(uid)
+    if ref is None:
+        raise RuntimeError("Firestore erisilemiyor; promo ertelendi.")
+
+    ledger_ref = ref.collection("ledger").document(f"promo-{code}")
+
+    from google.cloud import firestore as gcf
+
+    client = firestore_client.get_client()
+    transaction = client.transaction()
+
+    @gcf.transactional
+    def _run(txn) -> bool:
+        if ledger_ref.get(transaction=txn).exists:
+            return False
+        snapshot = ref.get(transaction=txn)
+        data = (snapshot.to_dict() or {}) if snapshot.exists else {}
+        txn.set(ref, {**data,
+                      "purchased": int(data.get("purchased", 0)) + amount,
+                      "updatedAt": _now()})
+        txn.set(ledger_ref, {"type": "promo", "code": code,
+                             "amount": amount, "at": _now()})
+        return True
+
+    islendi = _run(transaction)
+    logger.info("Promo %s: uid=%s kod=%s +%d",
+                "yüklendi" if islendi else "zaten işlenmiş", uid, code, amount)
+    return islendi
+
+
 def debit_refund(uid: str, product_id: str, event_id: str) -> bool:
     """Paket iadesini bakiyeden düşer (0'da kelepçe), defterle idempotent."""
     amount = TOKEN_PACKS.get(product_id)
