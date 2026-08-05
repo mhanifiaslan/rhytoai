@@ -11,16 +11,14 @@
 /// paketlenmemiş** olmalı. O yüzden ayrı ekran ve ayrı onay kutusu var.
 library;
 
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
-import '../../widgets/atlas_widgets.dart' show AstrolabeSpinner;
 import '../../widgets/glass.dart';
+import '../../widgets/motion.dart';
 import '../profile/legal_page.dart' show LegalPage, privacyPolicySections;
 import 'face_api.dart';
 import 'face_capture_screen.dart';
@@ -316,77 +314,20 @@ class _FaceReadingScreenState extends ConsumerState<FaceReadingScreen> {
 /// Okuma beklerken görünen sahne — çıplak spinner değil (Revize R5,
 /// madde 8: "Firaset ile eşleştiriliyor" ekranı sıkıcıydı).
 ///
-/// Çekimdeki tarama sahnesinin görsel dilini sürdürüyor: usturlap
-/// döngüsü + sırayla değişen aşama metinleri. Metinler gerçek işi
-/// anlatıyor (oranlar karşılaştırılıyor → kaynaklar taranıyor → okuma
-/// yazılıyor); uydurma bir yüzde çubuğu YOK — sürecin süresi LLM'e bağlı
-/// ve bilinmiyor, bilmediğimiz şeyi biliyormuş gibi göstermiyoruz.
-class _FirasaWaiting extends StatefulWidget {
+/// R12-A0: buradaki çözüm (usturlap + sırayla değişen, SON aşamada duran
+/// aşama metinleri; uydurma yüzde çubuğu yok) `StagedWaiting`'e genelleşti
+/// ve tüm uzun bekleyişlerin ortak sahnesi oldu — bu sınıf yalnız yüz
+/// okumaya özgü metinleri bağlayan ince bir sarmalayıcı.
+class _FirasaWaiting extends StatelessWidget {
   const _FirasaWaiting();
-
-  @override
-  State<_FirasaWaiting> createState() => _FirasaWaitingState();
-}
-
-class _FirasaWaitingState extends State<_FirasaWaiting> {
-  int _asama = 0;
-  Timer? _sayac;
-
-  @override
-  void initState() {
-    super.initState();
-    // Son aşamada DURUYOR: dönüp başa saran metin "takıldı" hissi verir.
-    _sayac = Timer.periodic(const Duration(milliseconds: 2600), (t) {
-      if (!mounted) return;
-      if (_asama >= 2) {
-        t.cancel();
-        return;
-      }
-      setState(() => _asama++);
-    });
-  }
-
-  @override
-  void dispose() {
-    _sayac?.cancel();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final metin = switch (_asama) {
-      0 => l10n.faceWaitStage1,
-      1 => l10n.faceWaitStage2,
-      _ => l10n.faceWaitStage3,
-    };
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const AstrolabeSpinner(),
-          const SizedBox(height: 20),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 380),
-            transitionBuilder: (child, anim) => FadeTransition(
-              opacity: anim,
-              child: SlideTransition(
-                position: Tween(
-                        begin: const Offset(0, 0.3), end: Offset.zero)
-                    .animate(CurvedAnimation(
-                        parent: anim, curve: Curves.easeOutCubic)),
-                child: child,
-              ),
-            ),
-            child: Text(
-              metin,
-              key: ValueKey(_asama),
-              textAlign: TextAlign.center,
-              style: RythoText.body(14, color: RythoColors.parchmentDim),
-            ),
-          ),
-        ],
-      ),
-    );
+    return StagedWaiting(stages: [
+      l10n.faceWaitStage1,
+      l10n.faceWaitStage2,
+      l10n.faceWaitStage3,
+    ]);
   }
 }

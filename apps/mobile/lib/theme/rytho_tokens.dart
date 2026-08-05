@@ -79,8 +79,23 @@ abstract final class RythoMotion {
   /// Giriş animasyonu, sayfa açılışı.
   static const slow = Duration(milliseconds: 380);
 
+  /// Tören anları: reveal, kutlama — "özel bir şey oluyor" süresi.
+  static const slower = Duration(milliseconds: 600);
+
   /// Listede kademeli giriş için öğe başına gecikme.
   static const stagger = Duration(milliseconds: 70);
+
+  // Eğriler (R12-A0): yeni eğri icat edilmedi — kod tabanında fiilen
+  // kazanmış üç eğri adlandırıldı. Yeni kod eğriyi buradan alır.
+
+  /// Giriş/kayma: fadeIn + slide zincirlerinin eğrisi.
+  static const enter = Curves.easeOutCubic;
+
+  /// Rozet/balon/kutlama: hafif taşmalı canlılık.
+  static const pop = Curves.easeOutBack;
+
+  /// Dokunma tepkisi: basma/bırakma.
+  static const settle = Curves.easeOut;
 }
 
 /// Tip **rolleri** — boyut değil, iş.

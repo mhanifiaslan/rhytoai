@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/rytho_theme.dart';
+import 'motion.dart';
 
 /// Tüm ekranların zemini: siyah-mor uzay degradesi + yavaşça kayan,
 /// göz kırpan yıldız alanı + üstte %3-4 opaklıkta dev zodyak çarkı
@@ -82,6 +83,15 @@ class _StarfieldBackgroundState extends State<StarfieldBackground>
 
   @override
   Widget build(BuildContext context) {
+    // Reduce-motion (R12-A0): sistem tercihi açıksa yıldız alanı TEK statik
+    // karede durur — süs uğruna kimseyi rahatsız etmeyiz. Kapı build'de
+    // okunur ki tercih değişince ilk yeniden çizimde uygulansın.
+    final sabit = reduceMotion(context);
+    if (sabit) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
     return DecoratedBox(
       decoration: const BoxDecoration(gradient: RythoColors.backgroundGradient),
       child: Stack(fit: StackFit.expand, children: [
@@ -104,11 +114,15 @@ class _StarfieldBackgroundState extends State<StarfieldBackground>
             child: _ZodiacWatermark(height: 440),
           ),
         ),
-        AnimatedBuilder(
-          animation: _controller,
-          builder: (_, _) => CustomPaint(
-            painter: _StarfieldPainter(t: _controller.value, stars: _stars),
-            size: Size.infinite,
+        // RepaintBoundary (R12-A0): yıldız alanı her karede yeniden çizilir;
+        // sınır olmadan üstündeki tüm ekran ağacı aynı katmana boyanırdı.
+        RepaintBoundary(
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (_, _) => CustomPaint(
+              painter: _StarfieldPainter(t: _controller.value, stars: _stars),
+              size: Size.infinite,
+            ),
           ),
         ),
       ]),

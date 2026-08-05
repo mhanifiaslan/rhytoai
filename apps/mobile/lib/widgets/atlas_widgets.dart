@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../theme/rytho_theme.dart';
 import 'glass.dart';
+import 'motion.dart';
 
 /// "Levha" — v2'de cam panele delege eder; eski çağrı yüzeyi korunur.
 class Plaque extends StatelessWidget {
@@ -235,6 +236,13 @@ class _AstrolabeSpinnerState extends State<AstrolabeSpinner>
 
   @override
   Widget build(BuildContext context) {
+    // Reduce-motion (R12-A0): ibre durur, kadran statik kalır — "bekleniyor"
+    // bilgisini kadranın varlığı taşımaya devam eder.
+    if (reduceMotion(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
     return DecoratedBox(
       decoration: const BoxDecoration(
         shape: BoxShape.circle,

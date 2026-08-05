@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/rytho_theme.dart';
+import 'motion.dart';
 
 /// v3 kart: koyu mor dolgu, 20px köşe, %6 beyaz kontur, üst kenar ışığı.
 /// Adı tarihsel — artık blur zorunlu değil (blur: 0 varsayılan davranış
@@ -191,6 +192,13 @@ class _CenterAiButtonState extends State<_CenterAiButton>
 
   @override
   Widget build(BuildContext context) {
+    // Reduce-motion (R12-A0): nefes durur; basma tepkisi (kullanıcının kendi
+    // eylemine anlık cevap) kalır — rahatsız eden şey kendiliğinden hareket.
+    if (reduceMotion(context)) {
+      _pulse.stop();
+    } else if (!_pulse.isAnimating) {
+      _pulse.repeat(reverse: true);
+    }
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapCancel: () => setState(() => _pressed = false),

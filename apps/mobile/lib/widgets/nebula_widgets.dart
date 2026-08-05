@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../l10n/app_localizations.dart';
 import '../theme/rytho_theme.dart';
+import 'motion.dart';
 
 /// Basınca 0.96'ya küçülen + hafif haptic veren sarmalayıcı — v3 hareket
 /// dilinin standart "dokunuş" tepkisi.
@@ -250,6 +251,13 @@ class _TypingDotsState extends State<TypingDots>
 
   @override
   Widget build(BuildContext context) {
+    // Reduce-motion (R12-A0): noktalar sabit kalır; "yazıyor" bilgisini
+    // balonun varlığı taşır.
+    if (reduceMotion(context)) {
+      _controller.stop();
+    } else if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
