@@ -1,10 +1,26 @@
 {
-  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil.",
-  "indexes": [],
+  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil. --- W5 ekleri: 'private' composite indeksi admin istatistiğinin aktif abone sorgusu için (collection-group, active==true && expiresAt>now; 'active' alanı private altında yalnız subscription dokümanında var, o yüzden yalnız onlar eşleşir). 'friends.status' override'ı kabul edilmiş arkadaşlık sayımı için.",
+  "indexes": [
+    {
+      "collectionGroup": "private",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "active", "order": "ASCENDING" },
+        { "fieldPath": "expiresAt", "order": "ASCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": [
     {
       "collectionGroup": "conversations",
       "fieldPath": "expireAt",
+      "indexes": [
+        { "queryScope": "COLLECTION_GROUP", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "friends",
+      "fieldPath": "status",
       "indexes": [
         { "queryScope": "COLLECTION_GROUP", "order": "ASCENDING" }
       ]

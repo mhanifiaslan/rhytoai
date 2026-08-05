@@ -110,6 +110,9 @@ $isler = @(
     @{ ad = "rytho-notify-streak"; tur = "streak"; cron = "10 * * * *" }
     # Sohbet arsivi temizligi (R4): 30 gundur kullanilmayan konusmalar.
     @{ ad = "rytho-cleanup"; uri = "/api/v1/maintenance/cleanup"; cron = "20 3 * * *" }
+    # Admin istatistik toplama (W5): gecelik adminStats/{tarih} dokumani.
+    # Cleanup'tan (03:20) ONCE kosar ki gunun sayilari temizlikten etkilenmesin.
+    @{ ad = "rytho-stats"; uri = "/api/v1/admin/collect"; cron = "40 2 * * *" }
 )
 
 foreach ($is in $isler) {

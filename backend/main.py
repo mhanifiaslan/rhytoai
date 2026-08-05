@@ -13,6 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from api.account import router as account_router
+from api.admin import router as admin_router
 from api.astrology import router as astrology_router
 from api.billing import router as billing_router
 from api.chat import router as chat_router
@@ -133,6 +134,9 @@ app.include_router(notify_router, prefix="/api/v1/notify", tags=["Notifications"
 # tarafında yapılamaz çünkü başka kullanıcıların dokümanlarındaki karşılıklı
 # arkadaşlık kayıtlarına ve sunucuya kapalı koleksiyonlara dokunuyor.
 app.include_router(account_router, prefix="/api/v1/account", tags=["Account"])
+# Admin uçları (W5): panel /rytho-admin buradan beslenir. Her uç custom
+# claim ister (require_admin); collect ayrıca scheduler sırrını kabul eder.
+app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
 
 
 @app.get("/")

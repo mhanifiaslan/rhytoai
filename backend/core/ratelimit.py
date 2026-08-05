@@ -37,8 +37,11 @@ WINDOW_SECONDS = 60.0
 # Zamanlayıcının toplu gönderim ucu da muaftır: tek bir Authorization başlığı
 # taşıdığı için tüm çağrıları aynı kovayı paylaşır ve saatlik işler yoğun bir
 # dakikada birbirini düşürebilirdi. Uç zaten paylaşılan gizli anahtarla korunuyor.
+# İstatistik toplayıcı da muaftır (W5): scheduler'ın diğer uçlarıyla aynı
+# Authorization başlığını (dolayısıyla aynı kovayı) paylaşır.
 EXEMPT_PATHS = {"/", "/healthz", "/health", "/docs", "/openapi.json", "/redoc",
-                "/api/v1/billing/revenuecat", "/api/v1/notify/run"}
+                "/api/v1/billing/revenuecat", "/api/v1/notify/run",
+                "/api/v1/admin/collect"}
 
 # Kota mesajı dile göre core/messages.py'den gelir. Burası middleware olduğu
 # için FastAPI bağımlılığı kullanılamaz; başlık doğrudan okunur.
