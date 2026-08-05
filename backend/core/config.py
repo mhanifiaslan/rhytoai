@@ -16,6 +16,11 @@ GOOGLE_CLOUD_LOCATION: str = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
 # 1 => Firebase token yoksa da isteklere izin ver (lokal gelistirme)
 DEV_MODE: bool = os.getenv("RYTHO_DEV_MODE", "1") == "1"
 
+# 1 => DEV_MODE'un anonim "dev-user"i admin sayilir (W4). AYRI bayrak,
+# bilerek: DEV_MODE tek basina yonetim yetkisi VEREMEZ — verseydi her yerel
+# calistirma admin uclarini acardi. Uretimde ASLA 1 olmamali.
+DEV_ADMIN: bool = os.getenv("RYTHO_DEV_ADMIN", "0") == "1"
+
 GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "gemini-embedding-2")
 

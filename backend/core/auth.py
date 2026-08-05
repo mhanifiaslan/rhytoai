@@ -88,7 +88,8 @@ _bearer = HTTPBearer(auto_error=False)
 
 class AuthUser:
     def __init__(self, uid: str, email: str | None = None,
-                 anonymous: bool = False, phone: str | None = None):
+                 anonymous: bool = False, phone: str | None = None,
+                 admin: bool = False):
         self.uid = uid
         self.email = email
         self.anonymous = anonymous
@@ -96,6 +97,10 @@ class AuthUser:
         #: İstemcinin beyanı değil — SMS doğrulaması Firebase'de bitmiş
         #: numara. Rehber eşleşmesinin güven zinciri buradan başlıyor.
         self.phone = phone
+        #: Firebase custom claim `admin: true` (W4). Yalnızca
+        #: tools/set_admin.py ile basılır; istemci kendi token'ına claim
+        #: yazamaz. Yönetim uçlarının tek kapısı [require_admin].
+        self.admin = admin
 
 
 def _verify(token: str) -> dict:
@@ -122,7 +127,8 @@ async def get_current_user(
             # döngüsü durur ve TÜM istekler bekler.
             decoded = await run_in_threadpool(_verify, credentials.credentials)
             return AuthUser(uid=decoded["uid"], email=decoded.get("email"),
-                            phone=decoded.get("phone_number"))
+                            phone=decoded.get("phone_number"),
+                            admin=decoded.get("admin") is True)
         except Exception as exc:
             logger.info("Token doğrulanamadı: %s", exc)
             if not config.DEV_MODE:
@@ -130,6 +136,22 @@ async def get_current_user(
                                     detail=text("auth_invalid", lang))
 
     if config.DEV_MODE:
-        return AuthUser(uid="dev-user", anonymous=True)
+        # DEV_MODE'un anonim kullanıcısı admin DEĞİLDİR (bir numaralı
+        # değişmez): geliştirme kolaylığı yönetim yetkisine dönüşemez.
+        # Yerelde admin uçlarını denemek isteyen, ayrı ve AÇIK bir bayrak
+        # kaldırır (RYTHO_DEV_ADMIN=1).
+        return AuthUser(uid="dev-user", anonymous=True,
+                        admin=config.DEV_ADMIN)
 
     raise HTTPException(status_code=401, detail=text("auth_required", lang))
+
+
+def require_admin(user: AuthUser = Depends(get_current_user)) -> AuthUser:
+    """Yönetim uçlarının kapısı (W4): custom claim `admin: true` şart.
+
+    403 döner, 401 değil — kimlik geçerli ama yetki yok. Yanıt jenerik
+    tutulur; ucun varlığı hakkında ipucu vermez.
+    """
+    if not user.admin:
+        raise HTTPException(status_code=403, detail="Yetkisiz.")
+    return user
