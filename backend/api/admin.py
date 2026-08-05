@@ -13,9 +13,11 @@ import secrets as py_secrets
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi.security import HTTPAuthorizationCredentials
 
 from core import config, firestore as firestore_client
 from core.auth import AuthUser, get_current_user, require_admin
+from core.i18n import get_language
 from services import stats_service
 
 logger = logging.getLogger(__name__)
@@ -40,14 +42,26 @@ def _scheduler_gecerli(authorization: str | None) -> bool:
 async def collect(
     date: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
     authorization: str | None = Header(default=None),
-    user: AuthUser = Depends(get_current_user),
+    lang: str = Depends(get_language),
 ):
     """Günün istatistiklerini toplar — ÇİFT KAPI: scheduler sırrı VEYA admin.
 
+    `Depends(get_current_user)` BİLEREK yok: scheduler'ın başlığı Bearer
+    değil ham sır taşır ve dependency zinciri isteği kapıya gelmeden 401'lerdi
+    (üretimde yaşandı). Sıra: önce sır denenir; tutmazsa başlık Bearer olarak
+    ayrıştırılıp admin claim'i aranır.
+
     İdempotent: aynı günün tekrarı dokümanı ezer, birikmez.
     """
-    if not _scheduler_gecerli(authorization) and not user.admin:
-        raise HTTPException(status_code=403, detail="Yetkisiz.")
+    if not _scheduler_gecerli(authorization):
+        kimlik_bilgisi = None
+        if authorization and authorization.startswith("Bearer "):
+            kimlik_bilgisi = HTTPAuthorizationCredentials(
+                scheme="Bearer", credentials=authorization[7:])
+        kullanici = await get_current_user(credentials=kimlik_bilgisi,
+                                           lang=lang)
+        if not kullanici.admin:
+            raise HTTPException(status_code=403, detail="Yetkisiz.")
 
     tarih = dt.date.fromisoformat(date) if date else None
     try:
