@@ -1,0 +1,190 @@
+/* RythoAI web token katmanı (W1) — mobil tasarım sisteminin
+   (docs/design/design-system.md, lib/theme/rytho_theme.dart) CSS aynası.
+   Kural: sayfalar çıplak renk/süre yazmaz, buradaki değişkenleri kullanır. */
+
+:root {
+  /* Zemin ve yüzeyler */
+  --ink: #0B0710;
+  --ink-deep: #14091E;
+  --ink-light: #1C1326;
+  --ink-lighter: #271A36;
+
+  /* Metin */
+  --parchment: #F4EFFA;
+  --parchment-dim: #A99EC2;
+
+  /* Vurgular */
+  --violet: #7B2FF7;
+  --purple: #B02EFF;
+  --magenta: #E64ACF;
+  --lilac: #B79CFF;
+  --gold: #FFC24B;
+  --gold-bright: #FFD98A;
+  --celadon: #7FD8A4;
+  --madder: #FF6B81;
+  --line: #2C1F40;
+
+  /* GlassPanel reçetesi */
+  --glass-fill: rgba(28, 19, 38, 0.9);
+  --glass-stroke: rgba(255, 255, 255, 0.06);
+  --glass-edge: rgba(183, 156, 255, 0.15);
+
+  /* Degradeler */
+  --primary-gradient: linear-gradient(135deg, #7B2FF7, #B02EFF, #E64ACF);
+  --background-gradient: linear-gradient(180deg, #0B0710, #14091E);
+
+  /* Hareket — mobil RythoMotion'ın aynası */
+  --fast: 160ms;
+  --base: 260ms;
+  --slow: 380ms;
+  --slower: 600ms;
+  --stagger: 70ms;
+  --enter: cubic-bezier(0.215, 0.61, 0.355, 1);   /* easeOutCubic */
+  --pop: cubic-bezier(0.175, 0.885, 0.32, 1.275); /* easeOutBack */
+
+  /* Yarıçaplar */
+  --r-card: 22px;
+  --r-md: 16px;
+  --r-pill: 999px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--ink);
+  color: var(--parchment);
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 { font-family: 'Sora', sans-serif; letter-spacing: -0.3px; }
+.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--lilac);
+}
+
+a { color: var(--lilac); }
+
+/* ---- Yıldız alanı zemini ---- */
+.gokyuzu {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--background-gradient);
+}
+.gokyuzu canvas { width: 100%; height: 100%; display: block; }
+
+/* ---- Yerleşim ---- */
+.sarici { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+section { padding: 72px 0; }
+
+/* ---- GlassPanel: 22px köşe, %6 beyaz kontur, üst kenar ışığı, blur YOK ---- */
+.panel {
+  position: relative;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-card);
+  padding: 22px;
+  overflow: hidden;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 24px; right: 24px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--glass-edge), transparent);
+}
+.panel .etiket {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--lilac);
+  margin-bottom: 10px;
+}
+
+/* ---- GoldButton: degrade CTA ---- */
+.buton {
+  display: inline-block;
+  padding: 14px 34px;
+  border-radius: var(--r-pill);
+  background: var(--primary-gradient);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 24px rgba(123, 47, 247, 0.33);
+  transition: transform var(--fast) var(--enter);
+}
+.buton:active { transform: scale(0.96); }
+.buton.ikincil {
+  background: var(--ink-lighter);
+  box-shadow: none;
+  border-color: var(--glass-stroke);
+  color: var(--parchment);
+}
+
+/* ---- Bölüm başlığı ---- */
+.bolum-baslik {
+  font-size: clamp(24px, 4vw, 34px);
+  margin-bottom: 12px;
+}
+.bolum-alt {
+  color: var(--parchment-dim);
+  max-width: 620px;
+  margin-bottom: 36px;
+}
+
+/* ---- Kart ızgaraları ---- */
+.izgara { display: grid; gap: 16px; }
+.izgara.iki { grid-template-columns: repeat(2, 1fr); }
+.izgara.dort { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 860px) {
+  .izgara.dort { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .izgara.iki, .izgara.dort { grid-template-columns: 1fr; }
+  section { padding: 52px 0; }
+}
+
+/* ---- Kaydırmayla kademeli giriş (RythoReveal'in web aynası) ----
+   JS IntersectionObserver .gorunur sınıfını basar; --i stagger sırası. */
+.acil {
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity var(--slow) var(--enter),
+    transform var(--slow) var(--enter);
+  transition-delay: calc(var(--i, 0) * var(--stagger));
+}
+.acil.gorunur { opacity: 1; transform: none; }
+
+/* ---- Reduce-motion: tasarım sistemi kuralı — hareket hiç kurulmaz ---- */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .acil { opacity: 1; transform: none; transition: none; }
+  .buton { transition: none; }
+}
+
+/* ---- Footer ---- */
+footer {
+  border-top: 1px solid var(--line);
+  padding: 36px 0 48px;
+  color: var(--parchment-dim);
+  font-size: 13.5px;
+}
+footer a { color: var(--parchment-dim); text-decoration: none; }
+footer a:hover { color: var(--parchment); }
+footer .satir {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+}
