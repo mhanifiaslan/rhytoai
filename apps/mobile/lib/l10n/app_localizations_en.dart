@@ -748,8 +748,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get iChingQuestionRequired => 'Write your question first.';
 
   @override
-  String get iChingQuestionShallow =>
-      'The oracle opens to a question, not a greeting — put your intention into a sentence.';
+  String get iChingQuestionInvalid =>
+      'The oracle found no question to read in this text — put your intention into a sentence about your own life.';
 
   @override
   String get iChingCoinsInAir => 'Coins in the air...';

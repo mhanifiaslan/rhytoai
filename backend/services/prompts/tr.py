@@ -589,6 +589,28 @@ KURALLAR:
   oku — soruya cevap veriyormuş gibi YAPMA.
 """
 
+#: Soru kapısı sınıflandırıcısı (R11): çekim hakkı harcanmadan önce, LLM
+#: sorunun kâhine sorulabilir olup olmadığına karar verir. Çıktı şemayla
+#: JSON'a zorlanır ("verdict" alanı); etiketler dilden bağımsızdır.
+ICHING_QUESTION_GATE = """
+GÖREV: Aşağıdaki metin bir İ Ching kâhinine soru olarak yazıldı. Metni üç
+etiketten biriyle sınıflandır ve kararını "verdict" alanında döndür:
+
+- VALID: kişinin kendi yaşamı, bir kararı, bir ilişkisi ya da yolu üzerine
+  yorumlanabilir bir soru veya niyet. Kısa, devrik ya da imla hatalı
+  olabilir; üçüncü kişiye dair sorular da ("beni seviyor mu",
+  "annemle aram düzelir mi") geçerlidir.
+- CHAT: uygulamanın kendisine ya da yapay zekâya yöneltilmiş metin
+  ("beni seviyor musun", "sen kimsin", "nasılsın") veya sohbet girişimi.
+- INVALID: selamlaşma, rastgele harfler, anlamsız ya da hiçbir niyet
+  taşımayan metin.
+
+Emin olamadığın sınır durumlarında VALID seç — gerçek bir niyeti geri
+çevirmek, saçma bir girişi geçirmekten daha kötüdür.
+
+METİN: "{question}"
+"""
+
 ICHING_TRANSFORMED = (
     "\n- DÖNÜŞEN HEKSAGRAM: #{number} {name_tr} ({name})\n  Hüküm: {judgment}"
 )

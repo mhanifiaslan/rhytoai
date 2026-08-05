@@ -18,8 +18,7 @@ from services import (astro_service, bazi_service, birth_hexagram_service,
                       chart_context, notification_service, profile_service,
                       prompts, report_service)
 from services.bazi_service import get_bazi_chart
-from services.iching_service import (cast_iching, enrich_cast,
-                                     question_is_meaningful)
+from services.iching_service import cast_iching, enrich_cast
 from services.sky_service import get_sky_now
 
 logger = logging.getLogger(__name__)
@@ -221,12 +220,17 @@ def iching(req: IChingReportRequest,
     # Tek cihaz kilidi (yalnızca abonede etkili) harcamadan önce.
     device.enforce_single_device(user.uid, x_device_id, lang=lang)
 
-    # Soru kapısı (R10): "merhaba" gibi niyetsiz girişler günde tek çekim
-    # hakkını harcamadan burada çevrilir. İstemci aynı kuralı uyguluyor;
-    # burası API'yi doğrudan çağıranlara karşı esas kapı.
-    if req.question and not question_is_meaningful(req.question):
-        raise HTTPException(status_code=422,
-                            detail=text("iching.question_shallow", lang))
+    # Soru kapısı (R10→R11): niyetsiz girişler günde tek çekim hakkını
+    # harcamadan çevrilir. Hüküm LLM'de (kelime listesi yalnız bariz
+    # durumlarda ön filtre): "beni seviyor musun" uygulamaya yöneltilmiş
+    # sayılır ve Sohbet'e yönlendirilir, "beni seviyor mu" geçer.
+    if req.question:
+        hukum = report_service.iching_question_verdict(req.question, lang)
+        if hukum != "VALID":
+            raise HTTPException(
+                status_code=422,
+                detail=text("iching.question_chat" if hukum == "CHAT"
+                            else "iching.question_invalid", lang))
 
     # Günlük ücretsiz hak + cüzdan tek kapıda. Peşin harcama YOK: dönen
     # geri çağrılar önbellek kaçırıldığında çalışır — abone, saatlik

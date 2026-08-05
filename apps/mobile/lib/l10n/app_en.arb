@@ -324,7 +324,7 @@
   "iChingMethodYarrow": "Yarrow Stalks 🌿",
   "iChingCastAction": "Cast",
   "iChingQuestionRequired": "Write your question first.",
-  "iChingQuestionShallow": "The oracle opens to a question, not a greeting — put your intention into a sentence.",
+  "iChingQuestionInvalid": "The oracle found no question to read in this text — put your intention into a sentence about your own life.",
   "iChingCoinsInAir": "Coins in the air...",
   "iChingHexagramLabel": "HEXAGRAM {number}",
   "@iChingHexagramLabel": {

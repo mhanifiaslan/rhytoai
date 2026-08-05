@@ -57,12 +57,14 @@ class _IChingTabState extends ConsumerState<IChingTab> {
           SnackBar(content: Text(l10n.iChingQuestionRequired)));
       return;
     }
-    // Soru kapısı (R10): "merhaba" gibi niyetsiz girişler istek atılmadan
-    // çevrilir — sunucudaki question_is_meaningful kuralının aynası.
-    // Esas kapı sunucuda; burası yalnız gereksiz gidiş-dönüşü keser.
+    // Soru kapısı (R10→R11): bariz niyetsiz girişler istek atılmadan
+    // çevrilir. Esas hüküm sunucuda LLM'de (iching_question_verdict);
+    // burası yalnız gereksiz gidiş-dönüşü keser. Sunucunun 422 mesajı
+    // (geçersiz metin / Sohbet'e yönlendirme) friendlyError ile aynen
+    // gösterilir.
     if (!_meaningfulQuestion(question)) {
       messenger.showSnackBar(
-          SnackBar(content: Text(l10n.iChingQuestionShallow)));
+          SnackBar(content: Text(l10n.iChingQuestionInvalid)));
       return;
     }
     setState(() {

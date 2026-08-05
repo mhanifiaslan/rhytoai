@@ -1466,11 +1466,11 @@ abstract class AppLocalizations {
   /// **'Önce kalbindeki soruyu yaz.'**
   String get iChingQuestionRequired;
 
-  /// No description provided for @iChingQuestionShallow.
+  /// No description provided for @iChingQuestionInvalid.
   ///
   /// In tr, this message translates to:
-  /// **'Kâhin selamla değil, soruyla açılır — niyetini bir cümleyle yaz.'**
-  String get iChingQuestionShallow;
+  /// **'Kâhin bu metinde yorumlayacağı bir soru bulamadı — niyetini kendi yaşamınla ilgili bir cümleyle yaz.'**
+  String get iChingQuestionInvalid;
 
   /// No description provided for @iChingCoinsInAir.
   ///

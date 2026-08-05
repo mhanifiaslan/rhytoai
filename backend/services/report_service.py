@@ -548,6 +548,56 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
                             owner_uid=user_id, spend=spend, refund=refund)
 
 
+#: Soru kapısının olası hükümleri (R11). VALID dışındakiler çekimi durdurur.
+ICHING_QUESTION_VERDICTS = ("VALID", "CHAT", "INVALID")
+
+
+def iching_question_verdict(question: str, lang: str | None = None) -> str:
+    """Soru kâhine sorulabilir mi — LLM hükmü (R11).
+
+    R10'daki sabit kelime listesi "beni seviyor musun" (uygulamaya
+    yöneltilmiş) ile "beni seviyor mu" (klasik kehanet sorusu) arasındaki
+    farkı göremezdi ve selam içermeyen saçma girişlere bile "selam"
+    mesajı basıyordu. Karar artık modelde; liste yalnız bariz durumlarda
+    LLM çağrısını kesen ücretsiz ön filtre.
+
+    Hükümler: VALID (çekime uygun) / CHAT (uygulamaya-asistana yöneltilmiş)
+    / INVALID (selamlaşma, rastgele harfler, niyetsiz metin). Sınıflandırıcı
+    erişilemezse VALID varsayılır — ritüel, altyapı hıçkırığına kurban
+    edilmez; prompt'taki anlamsız-soru kuralı son ağ olarak durur.
+    """
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    from services.iching_service import question_is_meaningful
+    if not question_is_meaningful(question):
+        return "INVALID"
+
+    # Aynı soru tekrar denenirse model tekrar çağrılmaz (maliyet + spam).
+    anahtar = "iching-soru-" + hashlib.sha256(
+        f"{question}|{lang}".encode()).hexdigest()[:16]
+    onbellek = cache.get(anahtar)
+    if onbellek in ICHING_QUESTION_VERDICTS:
+        return onbellek
+
+    ham = gemini_service.extract_json(
+        prompts.get(lang).ICHING_QUESTION_GATE.format(question=question),
+        schema={
+            "type": "object",
+            "properties": {"verdict": {
+                "type": "string", "enum": list(ICHING_QUESTION_VERDICTS)}},
+            "required": ["verdict"],
+        })
+    verdict = "VALID"
+    if ham:
+        try:
+            aday = str(json.loads(ham).get("verdict", "")).strip().upper()
+            if aday in ICHING_QUESTION_VERDICTS:
+                verdict = aday
+        except (ValueError, AttributeError):
+            pass
+    cache.set(anahtar, verdict, ttl_seconds=24 * 3600)
+    return verdict
+
+
 def iching_reading(user_id: str, cast: dict[str, Any],
                    lang: str | None = None,
                    spend: Callable[[], None] | None = None,

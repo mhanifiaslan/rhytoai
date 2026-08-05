@@ -421,3 +421,56 @@ class TestSoruKapisi:
         # dolgu listesindeki "iyi" ile, "MISIN" da "misin" ile eşleşsin.
         assert not iching_service.question_is_meaningful("İYİ MISIN")
         assert not iching_service.question_is_meaningful("İyi misin")
+
+
+class TestSoruHukmu:
+    """R11: kapı kararı LLM'de — kelime listesi yalnız bariz ön filtre."""
+
+    @staticmethod
+    def _zemin(monkeypatch, tmp_path, cevap):
+        from core import cache, config
+        from services import report_service
+        monkeypatch.setattr(config, "CACHE_DIR", tmp_path)
+        monkeypatch.setattr(config, "CACHE_BACKEND", "file")
+        cache._memory.clear()
+        cagri = {"n": 0}
+
+        def sahte(prompt, schema=None):
+            cagri["n"] += 1
+            return cevap
+
+        monkeypatch.setattr(report_service.gemini_service,
+                            "extract_json", sahte)
+        return report_service, cache, cagri
+
+    def test_llm_hukumleri_uygulanir(self, monkeypatch, tmp_path):
+        rs, cache, _ = self._zemin(monkeypatch, tmp_path,
+                                   '{"verdict": "CHAT"}')
+        assert rs.iching_question_verdict("beni seviyor musun",
+                                          "tr") == "CHAT"
+        cache._memory.clear()
+
+    def test_bariz_dolgu_llm_cagirmaz(self, monkeypatch, tmp_path):
+        rs, cache, cagri = self._zemin(monkeypatch, tmp_path,
+                                       '{"verdict": "VALID"}')
+        assert rs.iching_question_verdict("merhaba", "tr") == "INVALID"
+        assert cagri["n"] == 0  # ücretsiz ön filtre kesmiş olmalı
+        cache._memory.clear()
+
+    def test_siniflandirici_dusunce_gecirir(self, monkeypatch, tmp_path):
+        # Fail-open: model erişilemezse ya da saçma dönerse ritüel durmaz;
+        # prompt'taki anlamsız-soru kuralı son ağ olarak kalır.
+        for bozuk in [None, "not-json", '{"verdict": "MAYBE"}']:
+            rs, cache, _ = self._zemin(monkeypatch, tmp_path, bozuk)
+            assert rs.iching_question_verdict(
+                f"garip metin {bozuk}", "tr") == "VALID"
+            cache._memory.clear()
+
+    def test_hukum_onbelleklenir(self, monkeypatch, tmp_path):
+        rs, cache, cagri = self._zemin(monkeypatch, tmp_path,
+                                       '{"verdict": "INVALID"}')
+        for _ in range(2):
+            assert rs.iching_question_verdict("dsfkj sdlkfj weoi",
+                                              "tr") == "INVALID"
+        assert cagri["n"] == 1  # ikinci soruş önbellekten
+        cache._memory.clear()

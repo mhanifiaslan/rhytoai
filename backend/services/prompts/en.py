@@ -610,6 +610,28 @@ RULES:
   general state of the day — do NOT pretend to answer the question.
 """
 
+#: Question gate classifier (R11): before the daily cast is spent, the LLM
+#: decides whether the text is askable of the oracle. Output is forced to
+#: JSON by schema (the "verdict" field); labels are language-neutral.
+ICHING_QUESTION_GATE = """
+TASK: The text below was written as a question for an I Ching oracle.
+Classify it with one of three labels, returning your decision in the
+"verdict" field:
+
+- VALID: an interpretable question or intention about the person's own
+  life, a decision, a relationship or their path. It may be short,
+  clumsy or misspelled; questions about a third person ("does she love
+  me", "will things heal with my mother") are valid too.
+- CHAT: text addressed to the app itself or to the AI ("do you love
+  me", "who are you", "how are you") or an attempt at small talk.
+- INVALID: a greeting, random letters, or text carrying no intent.
+
+When a borderline case leaves you unsure, choose VALID — turning away a
+real intention is worse than letting a silly one through.
+
+TEXT: "{question}"
+"""
+
 ICHING_TRANSFORMED = (
     "\n- TRANSFORMED HEXAGRAM: #{number} {name_tr} ({name})\n"
     "  Judgment: {judgment}"

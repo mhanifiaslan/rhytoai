@@ -747,8 +747,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get iChingQuestionRequired => 'Önce kalbindeki soruyu yaz.';
 
   @override
-  String get iChingQuestionShallow =>
-      'Kâhin selamla değil, soruyla açılır — niyetini bir cümleyle yaz.';
+  String get iChingQuestionInvalid =>
+      'Kâhin bu metinde yorumlayacağı bir soru bulamadı — niyetini kendi yaşamınla ilgili bir cümleyle yaz.';
 
   @override
   String get iChingCoinsInAir => 'Paralar havada...';

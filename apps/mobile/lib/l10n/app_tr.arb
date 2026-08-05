@@ -324,7 +324,7 @@
   "iChingMethodYarrow": "Civanperçemi 🌿",
   "iChingCastAction": "Çekimi yap",
   "iChingQuestionRequired": "Önce kalbindeki soruyu yaz.",
-  "iChingQuestionShallow": "Kâhin selamla değil, soruyla açılır — niyetini bir cümleyle yaz.",
+  "iChingQuestionInvalid": "Kâhin bu metinde yorumlayacağı bir soru bulamadı — niyetini kendi yaşamınla ilgili bir cümleyle yaz.",
   "iChingCoinsInAir": "Paralar havada...",
   "iChingHexagramLabel": "HEKSAGRAM {number}",
   "@iChingHexagramLabel": {
