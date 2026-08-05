@@ -155,3 +155,38 @@ final birthHexagramProvider =
   Analytics.reportGenerated('birth_hexagram');
   return Map<String, dynamic>.from(response.data['data']);
 });
+
+/// Yıl Haritası — Rytho+ (T5). Aktif güneş dönüşü + LLM yıl okuması.
+/// Sunucu SR yılı boyunca aynı raporu önbellekten servis eder.
+final solarReturnProvider =
+    FutureProvider<Map<String, dynamic>?>((ref) async {
+  if (!_hasPlus(ref)) return null;
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) return null;
+  final dio = ref.watch(apiProvider);
+  final response = await dio.post('/api/v1/reports/solar-return',
+      data: birthPayload(profile));
+  Analytics.reportGenerated('solar_return');
+  return Map<String, dynamic>.from(response.data['data']);
+});
+
+/// İç Takvim — Rytho+ (T5). İki uç paralel: progresyon okuması (LLM,
+/// jetonlu) + 30 günlük ham transit takvimi (jetonsuz; doğum verisi
+/// PROFİLDEN okunur, gövde yok).
+final innerCalendarProvider =
+    FutureProvider<Map<String, dynamic>?>((ref) async {
+  if (!_hasPlus(ref)) return null;
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) return null;
+  final dio = ref.watch(apiProvider);
+  final sonuclar = await Future.wait([
+    dio.post('/api/v1/reports/progressions', data: birthPayload(profile)),
+    dio.get('/api/v1/astrology/transit-calendar'),
+  ]);
+  Analytics.reportGenerated('progressions');
+  return {
+    'progressions':
+        Map<String, dynamic>.from(sonuclar[0].data['data']),
+    'calendar': Map<String, dynamic>.from(sonuclar[1].data['data']),
+  };
+});

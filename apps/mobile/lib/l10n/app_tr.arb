@@ -1,5 +1,53 @@
 {
   "@@locale": "tr",
+  "atlasYearChart": "Yıl Haritası",
+  "atlasYearChartSubtitle": "Güneş dönüşü",
+  "atlasInnerCalendar": "İç Takvim",
+  "atlasInnerCalendarSubtitle": "Progresyon + transit",
+  "solarReturnTitle": "Yıl Haritası",
+  "solarReturnWaitStage1": "Güneş'in dönüş anı hesaplanıyor…",
+  "solarReturnWaitStage2": "Yılın okuması yazılıyor…",
+  "solarReturnLockedBody": "Güneş'in doğum boylamına döndüğü ana kurulan yıl haritası ve Rytho'nun yıl okuması Rytho+ ile açılır.",
+  "solarReturnMoment": "Dönüş anı",
+  "solarReturnNext": "Sonraki dönüş: {date}",
+  "@solarReturnNext": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "solarReturnIdentity": "Yılın kimliği",
+  "solarReturnAsc": "Yıl Yükseleni",
+  "solarReturnSunHouse": "Güneş'in yıl evi",
+  "solarReturnHouseN": "{n}. ev",
+  "@solarReturnHouseN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "solarReturnMoon": "Yıl Ay'ı",
+  "solarReturnNote": "Rytho'nun yıl okuması",
+  "innerCalendarTitle": "İç Takvim",
+  "innerCalendarWaitStage1": "Progres harita ilerletiliyor…",
+  "innerCalendarWaitStage2": "30 günün gökyüzü taranıyor…",
+  "innerCalendarLockedBody": "Progres Ay'ın iç mevsimi ve 30 günlük kişisel transit takvimi Rytho+ ile açılır.",
+  "innerCalendarProgMoon": "Progres Ay — iç mevsimin",
+  "innerCalendarNextSign": "{date} → yeni burca geçiş",
+  "@innerCalendarNextSign": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "innerCalendarActive": "Şu an etkin",
+  "innerCalendarUpcoming": "Önümüzdeki 30 gün",
+  "innerCalendarQuiet": "Bu pencerede kesinleşen açı yok — gökyüzü sakin.",
+  "innerCalendarArc": "Yaşam yayı (solar arc)",
+  "innerCalendarNote": "Rytho'nun iç mevsim okuması",
   "appTagline": "Kadim bilgelik, hassas gökyüzü hesabıyla buluşur.\nHaritan çizilir, yolun aydınlanır. ✨",
   "signInWithGoogle": "Google ile giriş",
   "orDivider": "ya da",

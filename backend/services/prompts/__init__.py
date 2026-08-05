@@ -378,6 +378,16 @@ def localize_chart(lang: str | None, chart: dict | None) -> dict:
         sonuç["disclosure_texts"] = [
             p.ASTRO_NOTES.get(k, k) for k in beyanlar]
 
+    # Solar return alanları (T5): mobil ekran kod değil ad basar.
+    if chart.get("sr_ascendant"):
+        sonuç["sr_ascendant"] = {
+            **chart["sr_ascendant"],
+            "sign_local": sign_name_from_code(
+                lang, chart["sr_ascendant"].get("sign"))}
+    if chart.get("sr_moon_sign"):
+        sonuç["sr_moon_local"] = sign_name_from_code(
+            lang, chart["sr_moon_sign"])
+
     # ``sun_sign`` / ``moon_sign`` / ``ascendant`` alanlarına DOKUNULMAZ:
     # onboarding bu değerleri Firestore profiline yazıyor ve mobil tarafta
     # burç eşleştirmesi ("Kova ♒") bu biçime bağlı. Biçimi değiştirmek eski

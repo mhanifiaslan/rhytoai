@@ -16,6 +16,8 @@ import '../paywall/paywall_screen.dart';
 import 'birth_hexagram_screen.dart';
 import '../paywall/plus_locked_card.dart';
 import 'atlas_detail_screens.dart';
+import 'inner_calendar_screen.dart';
+import 'solar_return_screen.dart';
 import '../../widgets/motion.dart';
 import '../../core/subscription.dart' show subscriptionProvider;
 import '../../core/api.dart' show friendlyError;
@@ -238,6 +240,28 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                           label: l10n.atlasReadingNote,
                           body: data['report'] ?? '',
                         )),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: RythoSpace.md),
+                  // Zaman katmanı (T5): natal "an"ın haritasıydı; bu ikisi
+                  // yılın ve iç mevsimin haritası.
+                  Row(children: [
+                    Expanded(
+                      child: _AtlasTile(
+                        emoji: '🌞',
+                        title: l10n.atlasYearChart,
+                        subtitle: l10n.atlasYearChartSubtitle,
+                        onTap: () => ac(const SolarReturnScreen()),
+                      ),
+                    ),
+                    const SizedBox(width: RythoSpace.md),
+                    Expanded(
+                      child: _AtlasTile(
+                        emoji: '🌗',
+                        title: l10n.atlasInnerCalendar,
+                        subtitle: l10n.atlasInnerCalendarSubtitle,
+                        onTap: () => ac(const InnerCalendarScreen()),
                       ),
                     ),
                   ]),
