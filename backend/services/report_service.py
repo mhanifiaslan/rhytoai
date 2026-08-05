@@ -117,10 +117,14 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     # Bugünün gökyüzünün haritaya değdiği noktalar (Revize R8). Efemeris
     # düşerse okuma düşmez — transitsiz devam edilir; eski davranış buydu.
     transits = ""
+    upcoming = ""
     if birth:
         try:
-            vurus = chart_context.transit_facts(birth)["hits"]
-            transits = chart_context.transit_lines(vurus, lang)
+            olgular = chart_context.transit_facts(birth)
+            transits = chart_context.transit_lines(olgular["hits"], lang)
+            # YAKLAŞANLAR (T3): 7 gün içinde kesinleşen ilk iki transit.
+            upcoming = chart_context.upcoming_lines(
+                olgular.get("upcoming") or [], lang)
         except Exception as exc:
             logger.warning("Günlük okuma transitsiz: %s", exc)
 
@@ -151,6 +155,7 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
         moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
         illumination=moon.get("illumination"), retros=retros, aspects=aspects,
         transits=transits or "-",
+        upcoming=upcoming or "-",
         rag=rag, memory=_memory_block(memory, lang),
     )
     fallback = p.DAILY_FALLBACK.format(

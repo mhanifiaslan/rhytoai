@@ -275,7 +275,22 @@ def transit_facts(birth: dict[str, Any]) -> dict[str, Any]:
     # Merkür'le doldurup dönemin asıl temasını dışarıda bırakıyordu.
     vurus.sort(key=lambda v: (0 if v["transit"] in _SLOW_MOVERS else 1,
                               v["orb"]))
-    return {"hits": vurus[:_MAX_TRANSITS]}
+
+    # YAKLAŞANLAR (T3): önümüzdeki 7 günün ilk 2 kesinleşmesi. Takvim
+    # üretilemezse günlük okuma yaklaşansız devam eder — vuruşlarla aynı
+    # hoşgörü.
+    yaklasan: list[dict[str, Any]] = []
+    try:
+        from services import predict_service
+        cal = predict_service.transit_calendar(**birth, days=7)
+        yaklasan = [{"date": o["date"], "transit": o["transit"],
+                     "natal": o["natal"], "aspect": o["aspect"]}
+                    for o in cal["events"]
+                    if o["type"] == "aspect_exact"][:2]
+    except Exception as exc:
+        logger.warning("Yaklaşan transitler üretilemedi: %s", exc)
+
+    return {"hits": vurus[:_MAX_TRANSITS], "upcoming": yaklasan}
 
 
 # --------------------------------------------------------------------------
@@ -320,7 +335,9 @@ def chart_facts(uid: str, profile: dict[str, Any],
         return None
 
     # Transit üretilemezse natal kısmı yine değerli; sohbet transitsiz devam eder.
-    transit = _cached(f"transit-facts-v1-{uid}-{ozet}-{gun}", uid,
+    # v2 (T3): "upcoming" alanı eklendi — sürümsüz anahtar 36 saatlik TTL
+    # boyunca alansız kayıt servis ederdi.
+    transit = _cached(f"transit-facts-v2-{uid}-{ozet}-{gun}", uid,
                       TRANSIT_TTL_SECONDS, lambda: transit_facts(birth))
     return {**natal, "transits": (transit or {}).get("hits", [])}
 
@@ -494,6 +511,22 @@ def transit_lines(hits: list[dict[str, Any]],
         natal=prompts.planet_name(lang, t["natal"]),
         aspect=prompts.aspect_name(lang, t["aspect"]),
         orb=f"{t['orb']:.1f}") for t in hits)
+
+
+def upcoming_lines(events: list[dict[str, Any]],
+                   lang: str | None = None) -> str:
+    """Yaklaşan kesinleşmeleri isteğin dilinde tek satıra çevirir (T3).
+
+    `transit_lines`'ın kardeşi: günlük okuma prompt'unun YAKLAŞANLAR alanı
+    bu satırı kullanır. Tarih ISO kalır — model tarihten kehanet kurmasın
+    diye prompt kuralı ayrıca uyarır.
+    """
+    p = prompts.get(lang)
+    return " · ".join(p.CHART_UPCOMING_FMT.format(
+        date=e["date"],
+        transit=prompts.planet_name(lang, e["transit"]),
+        natal=prompts.planet_name(lang, e["natal"]),
+        aspect=prompts.aspect_name(lang, e["aspect"])) for e in events)
 
 
 def render_bazi(facts: dict[str, Any], lang: str | None = None) -> str:

@@ -156,6 +156,7 @@ TODAY'S ACTUAL SKY (Swiss Ephemeris + NASA JPL):
 - Retrograde planets: {retros}
 - Notable aspects today: {aspects}
 - Where today's sky touches THIS chart: {transits}
+- APPROACHING (transits perfecting within 7 days): {upcoming}
 
 SOURCE PASSAGES:
 {rag}
@@ -163,8 +164,9 @@ SOURCE PASSAGES:
 {memory}
 The reading must COLLIDE the natal placements with today's sky — not produce a
 generic sun-sign horoscope. If a transit touches the chart, draw the day's
-theme from it. Give one concrete theme for the day plus one practical
-suggestion.
+theme from it. If APPROACHING has entries, point at the horizon in AT MOST
+one sentence ("in the coming days...") — no date-listing, no prophecy.
+Give one concrete theme for the day plus one practical suggestion.
 """
 
 DAILY_FALLBACK = (
@@ -251,6 +253,8 @@ CHART_TRANSITS_LABEL = "Transits touching the chart today"
 #: Transit line: "Saturn → Sun opposition (0.8°)". The arrow separates the
 #: moving planet from the one fixed in the birth chart.
 CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
+#: Upcoming perfection line (T3): carries a date instead of an orb.
+CHART_UPCOMING_FMT = "{date}: {transit} → {natal} {aspect}"
 CHART_ASPECT_FMT = "{p1} {aspect} {p2} ({orb}°)"
 
 #: BaZi whisper line labels (B8).
@@ -492,6 +496,17 @@ ASTRO_NOTES = {
         "Because the birth time is unknown, the progressed Ascendant, MC "
         "and house placements were not computed; the reading stays at the "
         "planetary level."),
+    "transit_hour_unknown": (
+        "Because the birth time is unknown, transits to the Ascendant and "
+        "MC were left out of the calendar; it stays at the planetary "
+        "level."),
+}
+
+#: Transit calendar event types (T3).
+TRANSIT_EVENT_NAMES = {
+    "aspect_exact": "exact aspect",
+    "station_retrograde": "stations retrograde",
+    "station_direct": "stations direct",
 }
 
 SOLAR_RETURN = """

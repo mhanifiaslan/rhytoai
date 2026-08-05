@@ -288,3 +288,127 @@ def solar_arc_hits(
                         })
     vurgular.sort(key=lambda v: v["exact_on"])
     return vurgular[:limit]
+
+
+# ---------------------------------------------------------------------------
+# Kişisel transit takvimi (T3)
+# ---------------------------------------------------------------------------
+
+#: Takvime giren YAVAŞ gezegenler: hızlılar (Ay, Merkür...) günde birden
+#: çok açı kesinleştirir ve takvimi gürültüye boğar — bilinçli dışarıda.
+_TRANSIT_GEZEGENLERI = ["Jupiter", "Saturn", "Uranus", "Neptune", "Pluto",
+                        "Chiron"]
+_MAJOR_ACI_ADLARI = {"conjunction", "sextile", "square", "trine",
+                     "opposition"}
+_EKSENLER = {"Ascendant", "Medium_Coeli", "Descendant", "Imum_Coeli"}
+
+
+def transit_calendar(
+    name: str, year: int, month: int, day: int, hour: int, minute: int,
+    city: str, nation: str | None = None, hour_known: bool = True,
+    days: int = 30, start: dt.datetime | None = None,
+) -> dict[str, Any]:
+    """Önümüzdeki N günün transit olayları — LLM yok, ham takvim.
+
+    Günlük örnekleme (kerykeion EphemerisDataFactory) üzerinde iki tarama:
+    (1) açı KESİNLEŞMELERİ — ardışık iki günde applying→separating dönüşü;
+    kesin gün, orb'u küçük olan örnek. (2) retro İSTASYONLARI — boylam
+    hızının işaret değiştirdiği gün. Sonuç dilden bağımsız anahtar taşır;
+    adlandırma localize katmanında.
+    """
+    from zoneinfo import ZoneInfo
+    from kerykeion import EphemerisDataFactory, TransitsTimeRangeFactory
+
+    natal, loc = astro_service._build_subject(
+        name, year, month, day, hour, minute, city, nation)
+    tz = ZoneInfo(loc.tz_str)
+    bugun = (start or dt.datetime.now(dt.timezone.utc)).astimezone(tz)
+    baslangic = dt.datetime(bugun.year, bugun.month, bugun.day)
+
+    fab = EphemerisDataFactory(
+        baslangic, baslangic + dt.timedelta(days=days),
+        step_type="days", step=1,
+        lat=loc.lat, lng=loc.lng, tz_str=loc.tz_str)
+    gunler = fab.get_ephemeris_data_as_astrological_subjects()
+
+    aktif_noktalar = ["Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter",
+                      "Saturn", "Uranus", "Neptune", "Pluto",
+                      "True_North_Lunar_Node", "True_South_Lunar_Node",
+                      "Chiron", "Mean_Lilith"]
+    if hour_known:
+        aktif_noktalar += ["Ascendant", "Medium_Coeli"]
+    fabrika = TransitsTimeRangeFactory(
+        natal, gunler, active_points=aktif_noktalar)
+    anlar = fabrika.get_transit_moments().transits
+
+    def _gun_tarihi(i: int) -> str:
+        return (baslangic + dt.timedelta(days=i)).date().isoformat()
+
+    # --- Açı serileri: (gezen, natal nokta, açı) -> gün sırasına dizi ---
+    seriler: dict[tuple[str, str, str], list[tuple[int, float, str]]] = {}
+    for i, an in enumerate(anlar):
+        for a in an.aspects:
+            if (a.p1_name not in _TRANSIT_GEZEGENLERI
+                    or str(a.aspect) not in _MAJOR_ACI_ADLARI):
+                continue
+            if not hour_known and a.p2_name in _EKSENLER:
+                continue
+            seriler.setdefault(
+                (a.p1_name, str(a.p2_name), str(a.aspect)), []).append(
+                (i, float(a.orbit), str(a.aspect_movement).lower()))
+
+    olaylar: list[dict[str, Any]] = []
+    for (gezen, hedef, aci), dizi in seriler.items():
+        for (i1, orb1, h1), (i2, orb2, h2) in zip(dizi, dizi[1:]):
+            if i2 - i1 != 1:
+                continue  # açı orb dışına çıkıp geri girmiş — ayrı pencere
+            if h1 == "applying" and h2 != "applying":
+                kesin_gun, kesin_orb = ((i1, orb1) if orb1 <= orb2
+                                        else (i2, orb2))
+                olaylar.append({
+                    "date": _gun_tarihi(kesin_gun),
+                    "type": "aspect_exact",
+                    "transit": gezen, "natal": hedef, "aspect": aci,
+                    "orb": round(kesin_orb, 2),
+                })
+
+    # --- Retro istasyonları: hız işareti değişimi ---
+    for gezen in _TRANSIT_GEZEGENLERI:
+        hizlar = [float(getattr(g, gezen.lower()).speed) for g in gunler]
+        for i in range(1, len(hizlar)):
+            if hizlar[i - 1] > 0 >= hizlar[i]:
+                olaylar.append({"date": _gun_tarihi(i),
+                                "type": "station_retrograde",
+                                "transit": gezen})
+            elif hizlar[i - 1] <= 0 < hizlar[i]:
+                olaylar.append({"date": _gun_tarihi(i),
+                                "type": "station_direct",
+                                "transit": gezen})
+
+    olaylar.sort(key=lambda o: o["date"])
+
+    # --- Bugünün aktif açıları (çizelge bağlamı; en dar orb önce) ---
+    aktif = sorted(
+        ({"transit": a.p1_name, "natal": str(a.p2_name),
+          "aspect": str(a.aspect), "orb": round(float(a.orbit), 2),
+          "movement": str(a.aspect_movement).lower()}
+         for a in anlar[0].aspects
+         if a.p1_name in _TRANSIT_GEZEGENLERI
+         and str(a.aspect) in _MAJOR_ACI_ADLARI
+         and (hour_known or str(a.p2_name) not in _EKSENLER)),
+        key=lambda a: a["orb"])[:8]
+
+    disclosures: list[str] = []
+    if loc.fallback:
+        disclosures.append("geo_fallback_city")
+    if not hour_known:
+        disclosures.append("transit_hour_unknown")
+
+    return {
+        "calc_version": PREDICT_CALC_VERSION,
+        "start": _gun_tarihi(0),
+        "days": days,
+        "events": olaylar,
+        "active_now": aktif,
+        "disclosures": disclosures,
+    }

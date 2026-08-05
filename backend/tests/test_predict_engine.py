@@ -165,3 +165,83 @@ class TestProgresyon:
         ayrim = abs(yonlu - boylam(ilk["natal"])) % 360
         ayrim = min(ayrim, 360 - ayrim)
         assert abs(ayrim - aci_derecesi[ilk["aspect"]]) < 0.35
+
+
+_ACI_DERECESI = {"conjunction": 0, "sextile": 60, "square": 90,
+                 "trine": 120, "opposition": 180}
+
+
+class TestTransitTakvimi:
+    """T3 — kesinleşme günleri günlük örneklemeden seçilir; tanım testi
+    o gün gezenin natal noktaya ayrımının açı derecesini tutturmasıdır.
+    """
+
+    _BASLANGIC = dt.datetime(2026, 8, 5, tzinfo=dt.timezone.utc)
+
+    def _takvim(self, **kw):
+        return predict_service.transit_calendar(
+            "t", 1990, 5, 12, 14, 30, "Istanbul",
+            start=self._BASLANGIC, **kw)
+
+    def test_pencere_ve_siralama(self):
+        cal = self._takvim()
+        assert cal["start"] == "2026-08-05"
+        tarihler = [o["date"] for o in cal["events"]]
+        assert tarihler == sorted(tarihler)
+        son = self._BASLANGIC + dt.timedelta(days=cal["days"])
+        for t in tarihler:
+            an = dt.datetime.fromisoformat(t).replace(tzinfo=dt.timezone.utc)
+            assert self._BASLANGIC - dt.timedelta(days=1) <= an <= son
+
+    def test_kesinlesme_tanimi(self):
+        """Kesin günde gezenin natal noktaya ayrımı ≈ açı derecesi.
+
+        Günlük örnekleme yarım güne kadar şaşabilir; en hızlı gezen
+        (Jüpiter ~0.22°/gün) için bu ≤0.11° eder — 0.5° bol pay.
+        """
+        cal = self._takvim()
+        kesinler = [o for o in cal["events"] if o["type"] == "aspect_exact"]
+        assert kesinler, "30 günde hiç kesinleşme yok — şüpheli"
+        olay = kesinler[0]
+        gun = dt.datetime.fromisoformat(olay["date"])
+        gokyuzu, _ = astro_service._build_subject(
+            "now", gun.year, gun.month, gun.day, 12, 0, "Istanbul", None)
+        natal, _ = astro_service._build_subject(
+            "t", 1990, 5, 12, 14, 30, "Istanbul", None)
+
+        def boylam(kim, ad: str) -> float:
+            if ad == "Ascendant":
+                return float(kim.first_house.abs_pos)
+            if ad == "Medium_Coeli":
+                return float(kim.tenth_house.abs_pos)
+            return float(getattr(kim, ad.lower()).abs_pos)
+
+        ayrim = abs(boylam(gokyuzu, olay["transit"])
+                    - boylam(natal, olay["natal"])) % 360
+        ayrim = min(ayrim, 360 - ayrim)
+        assert abs(ayrim - _ACI_DERECESI[olay["aspect"]]) < 0.5
+        assert olay["orb"] < 0.5
+
+    def test_istasyon_olaylari_bicimi(self):
+        cal = self._takvim()
+        for o in cal["events"]:
+            if o["type"].startswith("station"):
+                assert "natal" not in o and "aspect" not in o
+            else:
+                assert o["transit"] in ("Jupiter", "Saturn", "Uranus",
+                                        "Neptune", "Pluto", "Chiron")
+
+    def test_saatsizlik_eksen_hedefi_uretmez(self):
+        cal = self._takvim(hour_known=False)
+        hedefler = {o.get("natal") for o in cal["events"]}
+        hedefler |= {a["natal"] for a in cal["active_now"]}
+        assert not hedefler & {"Ascendant", "Medium_Coeli",
+                               "Descendant", "Imum_Coeli"}
+        assert "transit_hour_unknown" in cal["disclosures"]
+
+    def test_aktif_liste_orb_sirali(self):
+        cal = self._takvim()
+        orblar = [a["orb"] for a in cal["active_now"]]
+        assert orblar == sorted(orblar)
+        for a in cal["active_now"]:
+            assert a["movement"] in ("applying", "separating", "static")

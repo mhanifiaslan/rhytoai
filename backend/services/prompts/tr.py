@@ -144,6 +144,7 @@ BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris + NASA JPL):
 - Retro gezegenler: {retros}
 - Günün önemli açıları: {aspects}
 - Bugün gökyüzünün SENİN haritana değdiği noktalar: {transits}
+- YAKLAŞANLAR (7 gün içinde kesinleşen transitler): {upcoming}
 
 KAYNAK PASAJLARI:
 {rag}
@@ -151,7 +152,9 @@ KAYNAK PASAJLARI:
 {memory}
 Yorum, natal konumlar ile bugünkü gökyüzünü ÇARPIŞTIRSIN; genel geçer burç
 yorumu olmasın. Haritaya değen transit varsa günün teması ORADAN çıksın.
-Somut bir günlük tema + bir pratik öneri ver.
+YAKLAŞANLAR doluysa EN FAZLA bir cümleyle ufka işaret et ("önümüzdeki
+günlerde..."); tarih sayıp kehanet kurma. Somut bir günlük tema + bir
+pratik öneri ver.
 """
 
 DAILY_FALLBACK = (
@@ -238,6 +241,8 @@ CHART_TRANSITS_LABEL = "Bugün haritasına dokunan transitler"
 #: Transit satırı: "Satürn → Güneş Karşıt (0.8°)". Ok yönü hangi gezegenin
 #: gezindiğini, hangisinin doğum haritasında sabit durduğunu ayırır.
 CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
+#: Yaklaşan kesinleşme satırı (T3): orb yerine tarih taşır.
+CHART_UPCOMING_FMT = "{date}: {transit} → {natal} {aspect}"
 CHART_ASPECT_FMT = "{p1} {aspect} {p2} ({orb}°)"
 
 #: Sohbet fısıltısının BaZi satır etiketleri (B8).
@@ -473,6 +478,16 @@ ASTRO_NOTES = {
     "prog_hour_unknown": (
         "Doğum saati bilinmediği için progres Yükselen, MC ve ev "
         "yerleşimleri hesaplanmadı; okuma gezegen düzeyinde kalır."),
+    "transit_hour_unknown": (
+        "Doğum saati bilinmediği için Yükselen ve MC'ye yapılan transitler "
+        "takvime alınmadı; takvim gezegen düzeyinde kalır."),
+}
+
+#: Transit takvimi olay türleri (T3).
+TRANSIT_EVENT_NAMES = {
+    "aspect_exact": "kesinleşme",
+    "station_retrograde": "retroya dönüş",
+    "station_direct": "ileri harekete dönüş",
 }
 
 SOLAR_RETURN = """

@@ -74,6 +74,19 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "İç Takvim (progresyon) okuması Rytho+ aboneliğine dahildir.",
         "en": "The Inner Calendar (progressions) reading is part of Rytho+.",
     },
+    "paywall.transit_calendar": {
+        "tr": "Kişisel transit takvimi Rytho+ aboneliğine dahildir.",
+        "en": "The personal transit calendar is part of Rytho+.",
+    },
+    # Profilden hesap yapan uçlar (transit takvimi): doğum kaydı gerçekten
+    # girilmemişse varsayılanla "senin haritan" üretilmez (chart_context
+    # kuralı) — istemciye açık neden döner.
+    "birth.missing": {
+        "tr": "Bu hesap için önce doğum tarihini ve şehrini kaydetmen "
+              "gerekiyor. Profil bölümünden ekleyebilirsin.",
+        "en": "This needs your birth date and city on file first. You can "
+              "add them under Profile.",
+    },
     "paywall.default": {
         "tr": "Bu özellik Rytho+ aboneliğine dahildir.",
         "en": "This feature is part of Rytho+.",

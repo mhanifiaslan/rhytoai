@@ -423,6 +423,44 @@ def localize_progressions(lang: str | None, prog: dict | None,
     return sonuç
 
 
+def localize_transit_calendar(lang: str | None, cal: dict | None) -> dict:
+    """Transit takvimini (T3) isteğin diline çevirir.
+
+    Takvim paylaşımlı önbellekten dilden bağımsız anahtarlarla gelir;
+    olay/nokta/açı adları yanıt üretilirken burada kurulur.
+    """
+    if not cal:
+        return {}
+    p = get(lang)
+
+    def olay(o: dict) -> dict:
+        sonuç = {**o,
+                 "type_local": p.TRANSIT_EVENT_NAMES.get(o.get("type"),
+                                                         o.get("type")),
+                 "transit_local": planet_name(lang, o.get("transit"))}
+        if o.get("natal"):
+            sonuç["natal_local"] = planet_name(lang, o["natal"])
+        if o.get("aspect"):
+            sonuç["aspect_local"] = aspect_name(lang, o["aspect"])
+        return sonuç
+
+    sonuç = {**cal,
+             "events": [olay(o) for o in (cal.get("events") or [])],
+             "active_now": [
+                 {**a,
+                  "transit_local": planet_name(lang, a.get("transit")),
+                  "natal_local": planet_name(lang, a.get("natal")),
+                  "aspect_local": aspect_name(lang, a.get("aspect")),
+                  "movement_local": p.MOVEMENT_NAMES.get(
+                      a.get("movement"), a.get("movement"))}
+                 for a in (cal.get("active_now") or [])]}
+    beyanlar = cal.get("disclosures") or []
+    if beyanlar:
+        sonuç["disclosure_texts"] = [p.ASTRO_NOTES.get(k, k)
+                                     for k in beyanlar]
+    return sonuç
+
+
 def localize_synastry(lang: str | None, synastry: dict | None) -> dict:
     """Sinastri çıktısındaki iki kişinin nokta adlarını ve açıları çevirir."""
     if not synastry:

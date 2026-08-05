@@ -5,10 +5,12 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from core.auth import get_current_user
+from core import cache
+from core.auth import AuthUser, get_current_user
+from core.entitlements import require_plus
 from core.i18n import get_language
 from core.messages import text
-from services import astro_service, prompts
+from services import astro_service, chart_context, profile_service, prompts
 
 logger = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(get_current_user)])
@@ -80,6 +82,51 @@ def transits(data: BirthData, lang: str = Depends(get_language)):
         return {"status": "success", "data": result}
     except Exception as e:
         raise _internal(e, "transits", lang)
+
+
+@router.get("/transit-calendar")
+def transit_calendar(user: AuthUser = Depends(require_plus("transit_calendar")),
+                     lang: str = Depends(get_language)):
+    """Kişisel transit takvimi (T3): 30 günün kesinleşme ve istasyonları.
+
+    Jeton YOK — LLM çağrısı olmayan ham hesap. Doğum verisi istekten değil
+    PROFİLDEN gelir: takvim "senin haritan" iddiasında olduğu için yalnızca
+    gerçekten girilmiş doğum kaydıyla üretilir (chart_context kuralı).
+    Önbellek doğum verisine anahtarlı ve dilden bağımsız: aynı doğum
+    bilgisine sahip herkes aynı ham takvimi paylaşır, adlar yanıt anında
+    isteğin dilinde kurulur.
+    """
+    try:
+        profile = profile_service.get_profile(user.uid)
+        if not chart_context.has_birth_data(profile):
+            raise HTTPException(status_code=400,
+                                detail=text("birth.missing", lang))
+        birth = profile_service.birth_kwargs(profile)
+        saat_biliniyor = bool(str(profile.get("birthTime") or "").strip())
+
+        from services import predict_service
+        # Anahtarda BUGÜN de var: pencere takvim gününe sabitlenir; yalnız
+        # TTL olsaydı gece 23:50'de dolan kayıt ertesi günü dünkü
+        # pencereyle karşılardı.
+        import datetime as dt
+        anahtar = ("transit-cal-{calc}-{year}{month:02d}{day:02d}"
+                   "-{hour:02d}{minute:02d}-{city}-{nation}-{hk}"
+                   "-{bugun}").format(
+            calc=predict_service.PREDICT_CALC_VERSION, hk=saat_biliniyor,
+            bugun=dt.datetime.now(dt.timezone.utc).date().isoformat(),
+            **{k: birth[k] for k in ("year", "month", "day", "hour",
+                                     "minute", "city", "nation")})
+        cal = cache.get(anahtar)
+        if cal is None:
+            cal = predict_service.transit_calendar(
+                **birth, hour_known=saat_biliniyor)
+            cache.set(anahtar, cal, ttl_seconds=24 * 3600)
+        return {"status": "success",
+                "data": prompts.localize_transit_calendar(lang, cal)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise _internal(e, "transit-calendar", lang)
 
 
 @router.post("/synastry")
