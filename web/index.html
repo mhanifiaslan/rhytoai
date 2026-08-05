@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RythoAI — Kadim bilgelik, hassas gökyüzü hesabıyla</title>
-  <meta name="description" content="Batı astrolojisi, BaZi, I Ching ve firaset — gerçek astronomik veriyle (Swiss Ephemeris + NASA JPL) beslenen, seni tanıdıkça derinleşen yapay zekâ rehberi.">
+  <title>RythoAI — Gökyüzü senin için hesaplanıyor</title>
+  <meta name="description" content="Batı astrolojisi, BaZi, I Ching ve firaset tek uygulamada. Swiss Ephemeris ve NASA JPL verisiyle hesaplanan, seni tanıdıkça derinleşen kişisel rehberin.">
   <link rel="canonical" href="https://rhytoai.web.app/">
   <link rel="alternate" hreflang="tr" href="https://rhytoai.web.app/">
   <link rel="alternate" hreflang="en" href="https://rhytoai.web.app/en/">
@@ -16,238 +16,399 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Manrope:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/assets/rytho.css">
-  <style>
-    /* Sayfaya özgü küçük dokunuşlar — token'lar rytho.css'ten. */
-    .kahraman {
-      min-height: 88vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 96px 24px 64px;
-    }
-    .kahraman img.logo { width: 84px; height: 84px; margin-bottom: 28px; }
-    .kahraman h1 {
-      font-size: clamp(32px, 6vw, 54px);
-      line-height: 1.15;
-      max-width: 720px;
-    }
-    .kahraman .slogan {
-      color: var(--parchment-dim);
-      margin: 18px auto 34px;
-      max-width: 520px;
-      font-size: 17px;
-    }
-    .magaza { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-    .magaza .yakinda {
-      font-size: 11px;
-      color: var(--parchment-dim);
-      display: block;
-      margin-top: 6px;
-    }
-    .veri-kutu {
-      font-size: 13px;
-      line-height: 1.9;
-      overflow-x: auto;
-      white-space: pre;
-    }
-    .gelenek { text-align: center; padding: 30px 18px; }
-    .gelenek .isaret { font-size: 34px; }
-    .gelenek h3 { margin: 12px 0 6px; font-size: 17px; }
-    .gelenek p { color: var(--parchment-dim); font-size: 13.5px; }
-    .fayda { display: flex; gap: 14px; align-items: flex-start; }
-    .fayda .nokta {
-      flex: none;
-      width: 10px; height: 10px;
-      margin-top: 7px;
-      border-radius: 50%;
-      background: var(--primary-gradient);
-    }
-    .fayda h3 { font-size: 16px; margin-bottom: 4px; }
-    .fayda p { color: var(--parchment-dim); font-size: 14px; }
-    .sss details {
-      border-bottom: 1px solid var(--line);
-      padding: 16px 0;
-    }
-    .sss summary {
-      cursor: pointer;
-      font-weight: 700;
-      font-family: 'Sora', sans-serif;
-      font-size: 15.5px;
-      list-style: none;
-    }
-    .sss summary::after { content: ' ✦'; color: var(--gold); font-size: 11px; }
-    .sss p { color: var(--parchment-dim); margin-top: 10px; font-size: 14px; }
-    .dil { font-size: 13px; }
-  </style>
+  <link rel="stylesheet" href="/assets/rytho.css?v=2">
 </head>
 <body>
   <div class="gokyuzu"><canvas id="yildizlar"></canvas></div>
 
-  <!-- HERO -->
-  <header class="kahraman">
-    <img class="logo acil" src="/assets/rytho_logo.svg" alt="RythoAI logosu">
-    <h1 class="acil" style="--i:1">Yıldızlar herkese aynı,<br>sen değilsin.</h1>
-    <p class="slogan acil" style="--i:2">Kadim bilgelik, hassas gökyüzü hesabıyla buluşur.<br>Haritan çizilir, yolun aydınlanır.</p>
-    <div class="magaza acil" style="--i:3">
-      <a class="buton" href="https://play.google.com/store/apps/details?id=ai.rytho">Google Play'den indir</a>
-      <span><a class="buton ikincil" href="#" aria-disabled="true">App Store</a>
-      <span class="yakinda">yakında</span></span>
+  <!-- ---------- ÜST GEZİNTİ ---------- -->
+  <header class="gezinti">
+    <div class="ic">
+      <a class="marka" href="/">
+        <img src="/assets/rytho_logo.svg" alt="RythoAI">
+        <span>RYTHO</span>
+      </a>
+      <nav>
+        <a href="#neler-var">Neler var</a>
+        <a href="#nasil">Nasıl çalışır</a>
+        <a href="#motor">Motorun içi</a>
+        <a href="#plan">Rytho+</a>
+        <a href="#sss">SSS</a>
+      </nav>
+      <div class="sag">
+        <a class="dil-sec" href="/en/">EN</a>
+        <a class="buton kucuk" href="https://play.google.com/store/apps/details?id=ai.rytho">Uygulamayı indir</a>
+      </div>
     </div>
   </header>
 
-  <main class="sarici">
-    <!-- GERÇEK GÖKYÜZÜ HESABI -->
-    <section>
-      <h2 class="bolum-baslik acil">Uydurma değil, hesap</h2>
-      <p class="bolum-alt acil" style="--i:1">Her yorum, o anın gerçek gökyüzünden başlar. Gezegen konumları Swiss
-      Ephemeris ile milisaniye hassasiyetinde hesaplanır; BaZi ay sütunları
-      takvimden değil, gerçek Jie Qi güneş terimlerinden kurulur.</p>
-      <div class="panel acil" style="--i:2">
-        <div class="etiket">Örnek: motorun gördüğü veri</div>
-        <div class="mono veri-kutu">☉ Güneş      Aslan      132.4071°
-☽ Ay         Balık      344.9182°  ↑ Yükselen  Terazi
-BaZi gün sütunu   丁卯 DingMao   ·   Jie Qi  立秋 Liqiu
-I Ching çekimi    olasılık 1/16 · 5/16 · 7/16 · 3/16</div>
-      </div>
-    </section>
+  <!-- ---------- HERO ---------- -->
+  <section class="kahraman">
+    <div class="dunya"></div>
 
-    <!-- DÖRT GELENEK -->
-    <section>
-      <h2 class="bolum-baslik acil">Dört gelenek, tek harita</h2>
-      <p class="bolum-alt acil" style="--i:1">Aynı doğum anına dört ayrı pencereden bakılır — birbirini tekrar
-      etmezler, tamamlarlar.</p>
-      <div class="izgara dort">
-        <div class="panel gelenek acil" style="--i:1">
-          <div class="isaret">☉</div>
-          <h3>Batı Astrolojisi</h3>
-          <p>Natal harita, evler, açılar ve günün gökyüzüyle çarpışması.</p>
+    <!-- Uygulamadan örnek bildirimler (dekoratif ürün önizlemesi) -->
+    <div class="uyarilar acil" style="--i:4">
+      <div class="uyari">
+        <div class="im">🌙</div>
+        <div><b>Ay Balık'a geçti</b>
+        <p>Bugün sezgin yüksek, sınırların ince. Erteleyebileceğin kararı ertele.</p></div>
+      </div>
+      <div class="uyari">
+        <div class="im">🪙</div>
+        <div><b>Günlük çekimin hazır</b>
+        <p>Bir sorun varsa, heksagram bugün onu konuşuyor.</p></div>
+      </div>
+      <div class="uyari">
+        <div class="im">🔥</div>
+        <div><b>7 gündür buradasın</b>
+        <p>Seri sürüyor — bugünkü okuman seni bekliyor.</p></div>
+      </div>
+    </div>
+
+    <span class="rozet acil">✦ Kadim bilgelik · gerçek gökyüzü hesabı</span>
+    <h1 class="acil" style="--i:1">Yıldızlar herkese aynı,<br><span class="altin">sen değilsin.</span></h1>
+    <p class="slogan acil" style="--i:2">Doğduğun anın gökyüzü bir kez kuruldu ve bir daha aynı dizilmedi.
+    Rytho o haritayı gerçek astronomik veriyle çıkarır, bugünün göğüyle
+    çarpıştırır ve sana ait olanı söyler.</p>
+    <div class="magaza acil" style="--i:3">
+      <a class="buton" href="https://play.google.com/store/apps/details?id=ai.rytho">▶ Google Play'den indir</a>
+      <span>
+        <a class="buton ikincil" href="#" aria-disabled="true"> App Store</a>
+        <span class="yakinda">yakında</span>
+      </span>
+    </div>
+    <div class="guven-satiri acil" style="--i:4">
+      <span>Ücretsiz katman süresiz</span>
+      <span>Türkçe &amp; İngilizce</span>
+      <span>Reklam yok</span>
+    </div>
+  </section>
+
+  <main>
+    <!-- ---------- DÖRTLÜ ÖZELLİK ---------- -->
+    <section id="neler-var" class="sarici">
+      <div class="orta" style="margin-bottom:52px">
+        <div class="bolum-etiket acil">Dört gelenek, tek harita</div>
+        <h2 class="bolum-baslik acil" style="--i:1">Aynı doğum anına<br>dört ayrı pencereden bakıyoruz</h2>
+        <p class="bolum-alt acil" style="--i:2">Birbirlerini tekrar etmezler; biri susunca diğeri konuşur.
+        Hepsi aynı hesaplanmış haritadan beslenir.</p>
+      </div>
+      <div class="dortlu">
+        <div class="oge acil" style="--i:1">
+          <div class="kure k1"></div>
+          <h3>Günlük Transitler</h3>
+          <p>Bugünün gökyüzü senin natal haritanla çarpışır. Genel burç
+          yorumu değil — açılar seninkiler.</p>
         </div>
-        <div class="panel gelenek acil" style="--i:2">
-          <div class="isaret">🀄</div>
-          <h3>BaZi</h3>
-          <p>Dört Sütun, Day Master ve şans dönemleri — Çin metafiziği.</p>
+        <div class="oge acil" style="--i:2">
+          <div class="kure k2"></div>
+          <h3>Doğum Haritası</h3>
+          <p>Gezegenler, evler, açılar. Yükselen, doğum saatin kadar
+          kesin — bilinmiyorsa Rytho bunu söyler, uydurmaz.</p>
         </div>
-        <div class="panel gelenek acil" style="--i:3">
-          <div class="isaret">☯</div>
-          <h3>I Ching</h3>
-          <p>Günde bir çekim; 64 heksagram, hareketli çizgiler, gerçek olasılıklar.</p>
+        <div class="oge acil" style="--i:3">
+          <div class="kure k3"></div>
+          <h3>BaZi &amp; I Ching</h3>
+          <p>Dört Sütun analizi, Day Master gücü, şans dönemleri; günde
+          bir heksagram çekimi ve hareketli çizgilerin.</p>
         </div>
-        <div class="panel gelenek acil" style="--i:4">
-          <div class="isaret">👁️</div>
+        <div class="oge acil" style="--i:4">
+          <div class="kure k4"></div>
           <h3>Firaset</h3>
-          <p>Yüz okuma geleneği — ölçüm cihazında kalır, fotoğrafın yüklenmez.</p>
+          <p>Yüz okuma geleneği. Ölçüm telefonunda yapılır —
+          fotoğrafın hiçbir sunucuya gitmez.</p>
         </div>
       </div>
     </section>
 
-    <!-- FAYDALAR -->
-    <section>
-      <h2 class="bolum-baslik acil">Rytho+ ne katar</h2>
-      <p class="bolum-alt acil" style="--i:1">Ücretsiz katmanda günlük burç yorumun ve gerçek gökyüzü verisi her
-      zaman açık kalır. Rytho+ ise yorumları senin haritanla üretir.</p>
-      <div class="izgara iki">
-        <div class="panel fayda acil" style="--i:1"><span class="nokta"></span><div>
-          <h3>Kişiye özel günlük okuma</h3>
-          <p>Natal haritan bugünün gökyüzüyle çarpışır — genel burç yorumu değil.</p></div></div>
-        <div class="panel fayda acil" style="--i:2"><span class="nokta"></span><div>
-          <h3>Derin doğum haritası raporu</h3>
-          <p>Gezegenler, evler ve açılar; tek seferlik yüzeysel özet değil.</p></div></div>
-        <div class="panel fayda acil" style="--i:3"><span class="nokta"></span><div>
-          <h3>Arkadaşlarınla günlük ikili dinamik</h3>
-          <p>Her gün yenilenen ortak okuma. Kalıcı uyum puanı yok.</p></div></div>
-        <div class="panel fayda acil" style="--i:4"><span class="nokta"></span><div>
-          <h3>Sınırsız sohbet</h3>
-          <p>Rytho seni tanıdıkça konuşma derinleşir.</p></div></div>
-        <div class="panel fayda acil" style="--i:5"><span class="nokta"></span><div>
-          <h3>BaZi ve sinastri</h3>
-          <p>Dört Sütun analizi ve ikili harita karşılaştırması.</p></div></div>
+    <!-- ---------- KOZMİK ŞİFRE (akordiyon + telefon) ---------- -->
+    <section id="nasil" class="sarici">
+      <div class="ikili">
+        <div>
+          <div class="bolum-etiket acil">Nasıl çalışır</div>
+          <h2 class="bolum-baslik acil" style="--i:1">Kozmik şifreni<br><span class="lila">üç dakikada</span> çözüyoruz</h2>
+          <p class="bolum-alt acil" style="--i:2">Doğum tarihini, saatini ve şehrini verirsin. Gerisi hesap.</p>
+          <div class="akordiyon acil" style="--i:3">
+            <details open>
+              <summary>Haritan çizilir</summary>
+              <p>Doğum anındaki gezegen konumları Swiss Ephemeris ile
+              hesaplanır, evler ve açılar kurulur. Güneş, Ay ve Yükselen'in
+              tek tek açıldığı bir sahneyle karşılanırsın.</p>
+            </details>
+            <details>
+              <summary>Bugünle çarpıştırılır</summary>
+              <p>Her sabah güncel gökyüzü haritana bindirilir; yorum
+              "Koçlar bugün şanslı" değil, senin açılarından çıkar.</p>
+            </details>
+            <details>
+              <summary>Dört gelenek konuşur</summary>
+              <p>Aynı an BaZi'de dört sütuna, I Ching'de bir heksagrama,
+              firasette yüz oranlarına dönüşür. Rytho bunları tek sesle
+              birleştirir.</p>
+            </details>
+            <details>
+              <summary>Rytho seni tanır</summary>
+              <p>Konuşmalardan yalnızca damıtılmış içgörüler saklanır — ham
+              döküm değil. Zamanla yorumlar seni tanıyan bir dile döner.</p>
+            </details>
+          </div>
+        </div>
+        <div class="telefon-sahne acil" style="--i:2">
+          <div class="telefon">
+            <div class="centik"></div>
+            <div class="ekran-etiket">Bugün senin için</div>
+            <div class="okuma">
+              <h4>Aslan · 5 Ağustos</h4>
+              <p>Ay'ın Balık'taki seyri altıncı evine düşüyor: bedenin
+              istediğini bugün yüksek sesle söylüyor. Merkür'ün gerilemesi
+              yazışmalarda değil, verdiğin sözlerde hissedilecek…</p>
+            </div>
+            <div class="okuma">
+              <h4>Günün heksagramı</h4>
+              <p>䷰ Ge — Devrim. Hareketli çizgi: dördüncü. Değişim
+              dışarıdan değil, senin kararınla geliyor.</p>
+            </div>
+            <div class="satir-mono"><span>☉ 132.40°</span><span>☽ 344.91°</span><span>↑ Terazi</span></div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- PERSONA + HAFIZA -->
-    <section>
-      <h2 class="bolum-baslik acil">Pohpohlamayan bir rehber</h2>
-      <div class="izgara iki">
+    <!-- ---------- GÜNLÜK KOZMİK UYARILAR ---------- -->
+    <section class="sarici">
+      <div class="orta">
+        <div class="bolum-etiket acil">Günlük kozmik uyarılar</div>
+        <h2 class="bolum-baslik acil" style="--i:1">Gökyüzü kıpırdadığında<br>haberin olur</h2>
+        <p class="bolum-alt acil" style="--i:2">Retro başlangıcı, dolunay, seri hatırlatması ve günlük okuman —
+        hepsi senin saat dilimine göre, sessiz saatlerine saygıyla.</p>
+      </div>
+      <div class="kure-sahne">
+        <div class="buyuk-kure acil"></div>
+        <div class="cipler">
+          <div class="cip c1 acil" style="--i:1"><span class="im">☿</span>
+            <div><b>Merkür geriliyor</b><span>3 hafta · sözleşme ve söz</span></div></div>
+          <div class="cip c2 acil" style="--i:2"><span class="im">🌕</span>
+            <div><b>Dolunay Kova'da</b><span>Biten bir şeyi bitir</span></div></div>
+          <div class="cip c3 acil" style="--i:3"><span class="im">☀️</span>
+            <div><b>Güneş burcuna girdi</b><span>Yeni bir yıl döngüsü</span></div></div>
+          <div class="cip c4 acil" style="--i:4"><span class="im">🀄</span>
+            <div><b>Yeni şans dönemi</b><span>Da Yun sütunu değişti</span></div></div>
+          <div class="cip c5 acil" style="--i:5"><span class="im">💬</span>
+            <div><b>Rytho seni bekliyor</b><span>Dünkü konuşma kaldığı yerde</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- MOTORUN İÇİ (teknik güç) ---------- -->
+    <section id="motor" class="sarici">
+      <div class="ikili">
+        <div class="panel acil">
+          <div class="etiket">Motorun gördüğü ham veri</div>
+          <div class="mono" style="font-size:12.5px;line-height:2;overflow-x:auto;white-space:pre">☉ Güneş      Aslan      132.4071°
+☽ Ay         Balık      344.9182°
+↑ Yükselen   Terazi     201.6640°
+BaZi gün     丁卯 DingMao
+Jie Qi       立秋 Liqiu  (gerçek güneş terimi)
+GST düzeltme -14 dk (boylam + zaman denklemi)
+I Ching      1/16 · 5/16 · 7/16 · 3/16</div>
+        </div>
+        <div>
+          <div class="bolum-etiket acil">Motorun içi</div>
+          <h2 class="bolum-baslik acil" style="--i:1">Uydurmuyoruz.<br><span class="altin">Hesaplıyoruz.</span></h2>
+          <p class="bolum-alt acil" style="--i:2">Astroloji uygulamalarının çoğu birkaç yüz hazır metni burçlara
+          dağıtır. Rytho her okumayı o anın gerçek gökyüzünden kurar:</p>
+          <div class="akordiyon acil" style="--i:3">
+            <details open>
+              <summary>Swiss Ephemeris + NASA JPL</summary>
+              <p>Gezegen konumları milisaniye hassasiyetinde efemeris
+              verisinden gelir; tablo yaklaşımı değil.</p>
+            </details>
+            <details>
+              <summary>Gerçek Güneş Zamanı</summary>
+              <p>BaZi sütunları boylam farkı ve zaman denklemiyle düzeltilir.
+              Ay sütunları takvimden değil, gerçek Jie Qi güneş
+              terimlerinden kurulur.</p>
+            </details>
+            <details>
+              <summary>Gerçek olasılıklı çekim</summary>
+              <p>I Ching çekimi donanımsal entropiyle, civanperçemi
+              yönteminin klasik 1/16·5/16·7/16·3/16 dağılımını birebir
+              simüle eder. 384 çizgi metninin tamamı yerinde.</p>
+            </details>
+            <details>
+              <summary>Kaynaklara dayalı yorum</summary>
+              <p>Yorumlar, kamu malı klasiklerden ve Rytho'nun kendi
+              doktrin metinlerinden oluşan bir bilgi tabanına dayanır —
+              modelin hafızasından uydurulmaz.</p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- SÖZLERİMİZ (sahte yorum yerine gerçek taahhüt) ---------- -->
+    <section class="sarici">
+      <div class="orta" style="margin-bottom:44px">
+        <div class="bolum-etiket acil">Neye söz veriyoruz</div>
+        <h2 class="bolum-baslik acil" style="--i:1">Sana yaranmaya çalışmayan<br>bir rehber</h2>
+      </div>
+      <div class="kanit">
         <div class="panel acil" style="--i:1">
-          <div class="etiket">Dürüstlük</div>
-          <p>Rytho zor bir döneme "zor" der. Ölçülmemiş hiçbir şeyi ölçülmüş
-          gibi göstermez; doğum saatin bilinmiyorsa bunu söyler, uydurmaz.
-          Kesin tarihli kehanet yapmaz.</p>
+          <h3>🜂 Pohpohlama yok</h3>
+          <p>Zor bir döneme "zor" der. Herkese "özel bir enerjin var"
+          demeyi bilerek reddediyoruz — o cümle kimseyi tanımıyor.</p>
         </div>
         <div class="panel acil" style="--i:2">
-          <div class="etiket">Hafıza</div>
-          <p>Konuşmalardan yalnızca damıtılmış içgörüler saklanır — ham
-          konuşma dökümleri değil. Rytho seni tanıdıkça yorumlar kişiselleşir;
-          Türkçe ve İngilizce'de çeviri değil, ayrı birer ses konuşur.</p>
+          <h3>🜁 Ölçülmeyen ölçülmüş gibi gösterilmez</h3>
+          <p>Doğum saatin yoksa saat sütunu hiç kurulmaz ve bu sana
+          söylenir. Kesin tarihli kehanet, sağlık ve finans tavsiyesi yok.</p>
+        </div>
+        <div class="panel acil" style="--i:3">
+          <h3>🜃 Yüzün cihazında kalır</h3>
+          <p>Firaset ölçümü telefonunda yapılır; fotoğrafın sunucuya
+          yüklenmez, hiçbir yerde saklanmaz.</p>
+        </div>
+        <div class="panel acil" style="--i:4">
+          <h3>🜄 Gürültüsüz sosyal</h3>
+          <p>Akış yok, yorum savaşı yok. Arkadaşınla günlük ikili okuma ve
+          kapalı kümeden bir tepki — serbest metin olmadığı için taciz de
+          olmuyor.</p>
         </div>
       </div>
     </section>
 
-    <!-- SOSYAL -->
-    <section>
-      <h2 class="bolum-baslik acil">Sessiz bir sosyal katman</h2>
-      <p class="bolum-alt acil" style="--i:1">Akış yok, yorum savaşı yok. Arkadaşını davet edersin, günlük ikili
-      dinamiğinizi okursunuz, kapalı kümeden bir tepkiyle selam bırakırsın.
-      Serbest metin olmadığı için taciz de olmaz.</p>
+    <!-- ---------- PLAN ---------- -->
+    <section id="plan" class="sarici">
+      <div class="orta" style="margin-bottom:40px">
+        <div class="bolum-etiket acil">Rytho+</div>
+        <h2 class="bolum-baslik acil" style="--i:1">Ücretsiz kalan çok şey var</h2>
+        <p class="bolum-alt acil" style="--i:2">Günlük burç yorumun, gerçek gökyüzü ekranı, günde bir I Ching
+        çekimi ve arkadaş katmanı süresiz ücretsiz. Rytho+ ise yorumları
+        senin haritandan üretir.</p>
+      </div>
+      <div class="kanit">
+        <div class="panel acil" style="--i:1">
+          <div class="etiket">Ücretsiz</div>
+          <p>Günlük · haftalık · aylık burç yorumu<br>
+          Canlı gökyüzü ve gezegen konumları<br>
+          Günde 5 sohbet mesajı<br>
+          Günde 1 I Ching çekimi<br>
+          Arkadaş listesi, seri ve tepkiler</p>
+        </div>
+        <div class="panel acil" style="--i:2; border-color:rgba(183,156,255,.3)">
+          <div class="etiket altin">Rytho+ · aylık</div>
+          <p>Kişiye özel günlük okuma<br>
+          Aylık 300 jeton hakkı<br>
+          Derin doğum haritası, BaZi ve sinastri raporları<br>
+          Sınırsız sohbet<br>
+          İkili dinamik ve Doğum Kapısı</p>
+          <p style="margin-top:12px;font-size:12.5px">Jetonlar rapor başına
+          harcanır (sohbet 1 · I Ching 2 · natal/BaZi 5). Dileyen ayrıca
+          süresiz geçerli jeton paketi alır.</p>
+        </div>
+      </div>
     </section>
 
-    <!-- EKRAN GÖRÜNTÜLERİ (W10'da doldurulacak) -->
-    <section id="kareler" hidden>
-      <h2 class="bolum-baslik">Uygulamadan kareler</h2>
-      <!-- W10: taze ekran görüntüleri buraya -->
+    <!-- ---------- İNDİRME BANDI ---------- -->
+    <section class="sarici">
+      <div class="indir-bandi acil">
+        <div>
+          <h2>Haritan çoktan çizildi.<br><span class="altin">Bakmaya hazır mısın?</span></h2>
+          <p>Kayıt bir dakika, ilk okuman hemen ardından. Ücretsiz katman
+          için kart istemiyoruz.</p>
+          <div class="magaza">
+            <a class="buton" href="https://play.google.com/store/apps/details?id=ai.rytho">▶ Google Play</a>
+            <span>
+              <a class="buton ikincil" href="#" aria-disabled="true"> App Store</a>
+              <span class="yakinda">yakında</span>
+            </span>
+          </div>
+        </div>
+        <div class="mini-telefonlar">
+          <div class="mini-telefon"><i class="kisa"></i><i class="buyuk"></i><i></i><i class="kisa"></i><i></i></div>
+          <div class="mini-telefon orta"><i class="kisa"></i><i></i><i class="buyuk"></i><i></i><i class="kisa"></i><i></i></div>
+          <div class="mini-telefon"><i class="kisa"></i><i></i><i></i><i class="buyuk"></i><i class="kisa"></i></div>
+        </div>
+      </div>
     </section>
 
-    <!-- SSS -->
-    <section class="sss">
-      <h2 class="bolum-baslik acil">Sık sorulanlar</h2>
-      <details class="acil" style="--i:1">
-        <summary>Ücretsiz sürümde ne var?</summary>
-        <p>Günlük/haftalık/aylık burç yorumu, gerçek gökyüzü ekranı, günde 5
-        sohbet mesajı, günde 1 I Ching çekimi, arkadaş listesi ve seri takibi —
-        süresiz ücretsiz.</p>
-      </details>
+    <!-- ---------- SSS ---------- -->
+    <section id="sss" class="sarici sss">
+      <div class="bolum-etiket acil">Sık sorulanlar</div>
+      <h2 class="bolum-baslik acil" style="--i:1;margin-bottom:22px">Merak edilenler</h2>
       <details class="acil" style="--i:2">
-        <summary>Rytho+ nasıl çalışır?</summary>
-        <p>Aylık abonelik; kişiye özel günlük okuma ve aylık 300 jeton içerir.
-        Derin raporlar jetonla üretilir (sohbet 1, I Ching 2, natal/BaZi 5).
-        Dileyen ayrıca jeton paketi alabilir; paket jetonları devreder.</p>
+        <summary>Doğum saatimi bilmiyorum, yine de işe yarar mı?</summary>
+        <p>Yarar. Yükselen ve evler saat gerektirir; Rytho saatin
+        bilinmediğini açıkça söyler ve o alanlarda iddia etmez. BaZi
+        tarafında saat sütunu hiç kurulmaz — üç sütunla okunur.</p>
       </details>
       <details class="acil" style="--i:3">
-        <summary>Verilerim nerede duruyor?</summary>
-        <p>Doğum verin şifreli olarak Google Cloud üzerinde saklanır ve
-        yalnızca senin okumalarını üretmek için kullanılır. Yüz okuma ölçümü
-        cihazında yapılır — fotoğrafın sunucuya hiç yüklenmez. Ayrıntılar
-        <a href="/legal/gizlilik.html">gizlilik politikasında</a>.</p>
+        <summary>Ücretsiz sürümde ne var?</summary>
+        <p>Günlük, haftalık ve aylık burç yorumu; canlı gökyüzü ekranı;
+        günde 5 sohbet mesajı; günde 1 I Ching çekimi; arkadaş listesi ve
+        seri takibi. Süresiz ve reklamsız.</p>
       </details>
       <details class="acil" style="--i:4">
+        <summary>Verilerim ne oluyor?</summary>
+        <p>Doğum verin yalnızca senin okumalarını üretmek için işlenir,
+        reklam için kimseyle paylaşılmaz. Yüz okuma ölçümü cihazında
+        yapılır; fotoğrafın hiç yüklenmez. Hesabını uygulama içinden anında
+        silebilirsin. Ayrıntı: <a href="/legal/gizlilik.html">gizlilik
+        politikası</a>.</p>
+      </details>
+      <details class="acil" style="--i:5">
         <summary>Bu bir fal uygulaması mı?</summary>
-        <p>Rytho bir eğlence ve içgörü uygulamasıdır. Kadim gelenekleri gerçek
-        astronomik hesapla buluşturur; sağlık, hukuk ya da finans tavsiyesi
-        vermez, kesin gelecek iddiasında bulunmaz.</p>
+        <p>Rytho bir eğlence ve içgörü uygulamasıdır. Kadim gelenekleri
+        gerçek astronomik hesapla buluşturur; sağlık, hukuk veya finans
+        tavsiyesi vermez ve kesin gelecek iddiasında bulunmaz.</p>
+      </details>
+      <details class="acil" style="--i:6">
+        <summary>iPhone'da ne zaman?</summary>
+        <p>iOS sürümü hazırlanıyor. Android sürümü şimdiden Google Play'de;
+        aynı hesapla iOS'a geçtiğinde haritan ve aboneliğin seninle gelir.</p>
       </details>
     </section>
   </main>
 
+  <!-- ---------- FOOTER ---------- -->
   <footer>
-    <div class="sarici satir">
-      <span>© 2026 RythoAI</span>
-      <span>
-        <a href="/legal/gizlilik.html">Gizlilik</a> ·
-        <a href="/legal/kullanim.html">Kullanım Şartları</a> ·
-        <a href="mailto:aslan.mh@gmail.com">İletişim</a> ·
-        <a class="dil" href="/en/">English</a>
-      </span>
+    <div class="sarici">
+      <div class="ust-alan">
+        <div class="marka-blok">
+          <img src="/assets/rytho_logo.svg" alt="RythoAI">
+          <p style="max-width:320px">Kadim bilgelik, hassas gökyüzü
+          hesabıyla buluşur. Haritan çizilir, yolun aydınlanır.</p>
+        </div>
+        <div>
+          <h4>Uygulama</h4>
+          <ul>
+            <li><a href="#neler-var">Neler var</a></li>
+            <li><a href="#nasil">Nasıl çalışır</a></li>
+            <li><a href="#motor">Motorun içi</a></li>
+            <li><a href="#plan">Rytho+</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>İletişim &amp; hukuk</h4>
+          <ul>
+            <li><a href="mailto:aslan.mh@gmail.com">aslan.mh@gmail.com</a></li>
+            <li><a href="/legal/gizlilik.html">Gizlilik Politikası</a></li>
+            <li><a href="/legal/kullanim.html">Kullanım Şartları</a></li>
+            <li><a href="/en/">English</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="satir">
+        <span>© 2026 RythoAI · Efemeris: Swiss Ephemeris (© Astrodienst AG)</span>
+        <a class="buton kucuk" href="https://play.google.com/store/apps/details?id=ai.rytho">Uygulamayı indir</a>
+      </div>
     </div>
   </footer>
 
   <script src="/assets/starfield.js" defer></script>
   <script>
     // Kaydırmayla kademeli giriş — RythoReveal'in web aynası.
-    // prefers-reduced-motion'da CSS zaten her şeyi görünür kılıyor;
-    // observer yalnız sınıf basar, zararı olmaz.
+    // prefers-reduced-motion'da CSS zaten her şeyi görünür kılıyor.
     (function () {
       'use strict';
       var gozcu = new IntersectionObserver(function (girisler) {
@@ -257,7 +418,7 @@ I Ching çekimi    olasılık 1/16 · 5/16 · 7/16 · 3/16</div>
             gozcu.unobserve(g.target);
           }
         });
-      }, { threshold: 0.15 });
+      }, { threshold: 0.12 });
       document.querySelectorAll('.acil').forEach(function (el) {
         gozcu.observe(el);
       });
