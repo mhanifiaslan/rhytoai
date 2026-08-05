@@ -13,10 +13,12 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../theme/rytho_theme.dart';
 import '../theme/rytho_tokens.dart';
 import 'glass.dart';
+import 'motion.dart';
 
 /// Bölüm başlığı — "Bugün senin için", "Şu an", "Araçlar".
 class SectionHeader extends StatelessWidget {
@@ -55,7 +57,7 @@ class ErrorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ingilizce = Localizations.localeOf(context).languageCode == 'en';
-    return GlassPanel(
+    final kart = GlassPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -82,6 +84,12 @@ class ErrorCard extends StatelessWidget {
         ],
       ),
     );
+    if (reduceMotion(context)) return kart;
+    // Girişte TEK küçük sarsıntı (R12-C3): hata fark edilir, panik
+    // yaratmaz. Döngü yok.
+    return kart
+        .animate()
+        .shake(hz: 3, offset: const Offset(3, 0), duration: 400.ms);
   }
 }
 
@@ -105,22 +113,42 @@ class EmptyState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Kademeli giriş (R12-C3): amblem pop'la, metinler reveal'le gelir —
+    // TEK atış; 8+ ekrandaki boş durum tek dokunuşta ısındı.
+    Widget amblem = Text(emoji, style: const TextStyle(fontSize: 34));
+    if (!reduceMotion(context)) {
+      amblem = amblem
+          .animate()
+          .fadeIn(duration: RythoMotion.base)
+          .scale(
+              begin: const Offset(0.7, 0.7),
+              end: const Offset(1, 1),
+              duration: const Duration(milliseconds: 400),
+              curve: RythoMotion.pop);
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(
           horizontal: RythoSpace.xl, vertical: RythoSpace.xxl),
       child: Column(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 34)),
+          amblem,
           const SizedBox(height: RythoSpace.md),
-          Text(title, style: RythoType.cardTitle, textAlign: TextAlign.center),
+          RythoReveal(
+            index: 1,
+            child: Text(title,
+                style: RythoType.cardTitle, textAlign: TextAlign.center),
+          ),
           if (description != null) ...[
             const SizedBox(height: RythoSpace.sm),
-            Text(description!,
-                style: RythoType.bodyDim, textAlign: TextAlign.center),
+            RythoReveal(
+              index: 2,
+              child: Text(description!,
+                  style: RythoType.bodyDim, textAlign: TextAlign.center),
+            ),
           ],
           if (action != null) ...[
             const SizedBox(height: RythoSpace.lg),
-            action!,
+            RythoReveal(index: 3, child: action!),
           ],
         ],
       ),

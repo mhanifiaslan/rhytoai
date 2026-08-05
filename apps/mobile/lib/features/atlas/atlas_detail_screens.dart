@@ -24,6 +24,7 @@ import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart';
 import 'atlas_screen.dart'
     show aspectKindLabel, aspectPairLabel, planetSignLabel;
@@ -43,7 +44,12 @@ class _DetayIskelet extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(RythoSpace.lg, RythoSpace.md,
               RythoSpace.lg, RythoSpace.xxl),
-          children: children,
+          // Kademeli giriş (R12-C3): üç detay sayfası tek iskeletten
+          // ısınır; uzun listede gecikme 8. blokta sabitlenir.
+          children: [
+            for (var i = 0; i < children.length; i++)
+              RythoReveal(index: i.clamp(0, 7), child: children[i]),
+          ],
         ),
       ),
     );

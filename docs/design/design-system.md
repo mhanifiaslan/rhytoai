@@ -105,18 +105,34 @@ Cormorant/Spectral tamamen kalktı.
 7. **Onboarding/Login**: aynı dil; login'de e-posta + Google akışı korunur,
    nefes alan degrade ✦ küresi.
 
-## 6. Hareket dili (flutter_animate)
+## 6. Hareket dili (flutter_animate + `lib/widgets/motion.dart`, R12)
 
-- Kart girişleri: 70ms stagger ile fadeIn + slideY (easeOutCubic).
-- Sayfa geçişleri: `FadeForwardsPageTransitionsBuilder`.
-- Merkez AI butonu: sürekli scale 1.0→1.06 + glow pulse.
-- Promo banner: hafif shimmer döngüsü.
-- Beğeni: ✨ scale patlaması (elasticOut) + tick sesi.
-- İlerleme çubukları: 800ms scaleX dolumu.
-- Sohbet balonları: scale+slide easeOutBack.
-- Butonlar: basınca scale 0.96 + `HapticFeedback.lightImpact`.
-- Pull-to-refresh: magenta.
-- Yıldız alanı: 3 katman parallax süzülme + göz kırpma; zodyak nefesi korunur.
+Token'lar (`RythoMotion`): süreler `fast 160 / base 260 / slow 380 /
+slower 600 / stagger 70`; eğriler `enter (easeOutCubic, giriş-kayma)`,
+`pop (easeOutBack, rozet-balon-kutlama)`, `settle (easeOut, dokunuş)`.
+Yeni kod çıplak süre/eğri yazmaz; eski ekranlar dokunuldukça geçer.
+
+| Desen | Araç | Nerede |
+|---|---|---|
+| Kademeli giriş | `RythoReveal(index)` — stagger×index + fadeIn(slow) + slideY(enter) | onboarding, okuma sayfası, boş durumlar, listeler |
+| Uzun bekleyiş | `StagedWaiting(stages)` — usturlap + sırayla değişen, SONDA DURAN aşama metinleri; yüzde çubuğu yasak | yüz okuma, natal, BaZi, onboarding kaydı |
+| İçerik açılışı | `FadeThroughRoute` — eski sayfa ~90ms, gelen fade+scale 0.96→1; Hero bilerek yok | kart→okuma, kilit→paywall |
+| Kutlama | `StarBurst` — Starfield boyacısından tek atış parçacık; asla döngü | satın alma, streak, tepki |
+| İskelet | `SkeletonPanel` — GlassPanel hacmi + shimmer 1200ms | profil, konu listesi |
+| Morph | `AnimatedSwitcher(base)` sabit hücrede kimlik değişimi | dots→balon, paralar→heksagram, spinner→kart |
+| Dokunuş | `Pressable` scale 0.96 + lightImpact | tüm basılabilirler |
+| Sürekli nefes | yalnız dock merkez butonu + yıldız alanı + usturlap | başka yerde YASAK — çok nefes ekranı ucuzlatır |
+
+**Reduce-motion:** `reduceMotion(context)` tek kapı — sürekli animatörler
+tek karede durur, girişler hiç kurulmaz, kutlamalar çizilmez. Yeni animasyon
+eklerken bu kapıdan geçmeyen hareket PR'dan dönmeli.
+
+**Test kuralı:** sonsuz repeat içeren ağaçta `pumpAndSettle` YASAK —
+süreli `tester.pump(...)` adımları.
+
+**Bilinçli sükûnet:** ayar/hukuk sayfaları, biyometrik rıza formu, paywall
+fiyat metinleri, hesap silme — bu yüzeylerde süs animasyonu yok; sükûnet de
+tasarım.
 
 ## 7. Ses (`lib/core/sound.dart` + `tools/generate_sounds.py`)
 

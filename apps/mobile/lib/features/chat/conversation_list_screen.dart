@@ -19,6 +19,7 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/common.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/motion.dart';
 import 'chat_screen.dart';
 
 class ConversationListScreen extends ConsumerWidget {
@@ -77,7 +78,11 @@ class ConversationListScreen extends ConsumerWidget {
                   itemCount: liste.length,
                   itemBuilder: (_, i) {
                     final konu = liste[i];
-                    return Dismissible(
+                    // Kademeli giriş (R12-C3); uzun listede stagger borcu
+                    // birikmesin diye gecikme 8. satırda sabitlenir.
+                    return RythoReveal(
+                        index: i.clamp(0, 7),
+                        child: Dismissible(
                       key: ValueKey(konu.id),
                       direction: DismissDirection.endToStart,
                       background: Container(
@@ -143,7 +148,7 @@ class ConversationListScreen extends ConsumerWidget {
                               size: 20, color: RythoColors.parchmentDim),
                         ]),
                       ),
-                    );
+                    ));
                   },
                 ),
         ),

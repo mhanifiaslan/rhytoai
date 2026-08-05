@@ -14,6 +14,7 @@ import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
+import '../../widgets/motion.dart';
 
 class DeviceConflictScreen extends StatelessWidget {
   const DeviceConflictScreen({super.key});
@@ -28,23 +29,38 @@ class DeviceConflictScreen extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            // Yumuşak giriş (R12-C3): kullanıcının oturumdan atıldığını
+            // öğrendiği şok anı — sert bir kesmeyle daha da sertleşmesin.
             children: [
-              const Text('📱', style: TextStyle(fontSize: 44),
-                  textAlign: TextAlign.center),
+              const RythoReveal(
+                slide: 0,
+                child: Text('📱',
+                    style: TextStyle(fontSize: 44),
+                    textAlign: TextAlign.center),
+              ),
               const SizedBox(height: RythoSpace.lg),
-              Text(l10n.deviceConflictTitle,
-                  style: RythoText.display(22),
-                  textAlign: TextAlign.center),
+              RythoReveal(
+                index: 1,
+                child: Text(l10n.deviceConflictTitle,
+                    style: RythoText.display(22),
+                    textAlign: TextAlign.center),
+              ),
               const SizedBox(height: RythoSpace.md),
-              Text(l10n.deviceConflictBody,
-                  style: RythoType.bodyDim, textAlign: TextAlign.center),
+              RythoReveal(
+                index: 2,
+                child: Text(l10n.deviceConflictBody,
+                    style: RythoType.bodyDim, textAlign: TextAlign.center),
+              ),
               const SizedBox(height: RythoSpace.xxl),
-              GoldButton(
-                text: l10n.deviceConflictAction,
-                // Oturum zaten kapalı: bu ekran kapanınca kök karar
-                // mekanizması (authStateProvider) giriş ekranını gösterir.
-                onPressed: () =>
-                    Navigator.of(context).popUntil((r) => r.isFirst),
+              RythoReveal(
+                index: 3,
+                child: GoldButton(
+                  text: l10n.deviceConflictAction,
+                  // Oturum zaten kapalı: bu ekran kapanınca kök karar
+                  // mekanizması (authStateProvider) giriş ekranını gösterir.
+                  onPressed: () =>
+                      Navigator.of(context).popUntil((r) => r.isFirst),
+                ),
               ),
             ],
           ),
