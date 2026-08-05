@@ -39,6 +39,13 @@ _DEACTIVATING_EVENTS = {"EXPIRATION", "SUBSCRIPTION_PAUSED", "REFUND"}
 #: kullanici odedigi donemin sonuna kadar erisimini korur.
 _CANCELLATION_EVENTS = {"CANCELLATION", "BILLING_ISSUE"}
 
+#: Parasal anlami olan olaylar — append-only gelir defterine yazilir (W3).
+#: TRIAL_STARTED bilerek yok: deneme baslangicinda para el degistirmez.
+_REVENUE_EVENTS = {
+    "INITIAL_PURCHASE", "RENEWAL", "TRIAL_CONVERTED",
+    "NON_RENEWING_PURCHASE", "REFUND",
+}
+
 #: Aboneligi bir kimlikten digerine tasiyan olay.
 #:
 #: Anonim bir kimlikle satin alma yapilip sonra oturum acildiginda RevenueCat
@@ -188,6 +195,58 @@ def _handle_transfer(client, event: dict[str, Any]) -> dict[str, Any]:
             "active": bool(kayit.get("active"))}
 
 
+def _record_revenue_event(event: dict[str, Any], event_type: str,
+                          uid: str) -> None:
+    """Parasal olayi append-only gelir defterine yazar (W3).
+
+    Abonelik dokumani ``set()`` ile ezildigi icin gecmis tutmuyor; para
+    cinsinden gelirin TEK gercegi ``revenueEvents`` koleksiyonudur. Dokuman
+    kimligi RevenueCat ``event.id`` — ayni olayin tekrari ayni dokumani ezer
+    (ledger deseniyle ayni dogal idempotency, bkz. core/wallet.py).
+
+    Yazim EN-IYI-CABA: gelir kaydi dusse bile abonelik/cuzdan islemeye devam
+    eder — muhasebe kaydi ugruna kullanicinin erisimi kesilmez.
+    """
+    event_id = str(event.get("id") or "")
+    if not event_id:
+        logger.warning("Gelir olayinda event.id yok; deftere yazilmadi: %s",
+                       event_type)
+        return
+    client = firestore_client.get_client()
+    if client is None:
+        logger.warning("Gelir defteri yazilamadi (Firestore yok): %s", event_id)
+        return
+    try:
+        # Ortak atfi (W7): kod kullanmis kullanicinin geliri ortagina islenir.
+        # Kod sistemi kurulana kadar dokuman yoktur ve alan null kalir.
+        partner_id = None
+        attribution = (client.collection("users").document(uid)
+                       .collection("private").document("attribution").get())
+        if getattr(attribution, "exists", False):
+            partner_id = (attribution.to_dict() or {}).get("partnerId")
+
+        client.collection("revenueEvents").document(event_id).set({
+            "uid": uid,
+            "eventType": event_type,
+            "productId": event.get("product_id"),
+            "store": event.get("store"),
+            # `price` RevenueCat'in USD normalize degeri; satin alinan para
+            # birimindeki ham deger ayrica tasinir. REFUND'da isaret HAM
+            # birakilir — yorum panelin isi (eventType zaten ayirt ediyor).
+            "price": event.get("price"),
+            "priceInPurchasedCurrency": event.get("price_in_purchased_currency"),
+            "currency": event.get("currency"),
+            "countryCode": event.get("country_code"),
+            "isTrial": str(event.get("period_type") or "").upper() == "TRIAL",
+            "partnerId": partner_id,
+            "at": (_ms_to_datetime(event.get("event_timestamp_ms"))
+                   or dt.datetime.now(dt.timezone.utc)),
+            "recordedAt": dt.datetime.now(dt.timezone.utc),
+        })
+    except Exception as exc:
+        logger.warning("Gelir defteri yazilamadi (%s): %s", event_id, exc)
+
+
 @router.post("/revenuecat")
 async def revenuecat_webhook(
     payload: dict[str, Any],
@@ -222,9 +281,11 @@ async def revenuecat_webhook(
             return {"status": "ignored", "event": event_type}
         if event_type == "NON_RENEWING_PURCHASE":
             wallet.credit_pack(uid, product_id, event_id)
+            _record_revenue_event(event, event_type, uid)
             return {"status": "ok", "event": event_type, "pack": product_id}
         if event_type == "REFUND":
             wallet.debit_refund(uid, product_id, event_id)
+            _record_revenue_event(event, event_type, uid)
             return {"status": "ok", "event": event_type, "pack": product_id}
         logger.info("Paket ürününde beklenmeyen olay: %s", event_type)
         return {"status": "ignored", "event": event_type}
@@ -267,6 +328,10 @@ async def revenuecat_webhook(
     }
 
     _subscription_ref(client, uid).set(record)
+
+    # Parasal abonelik olaylari gelir defterine de islenir (W3).
+    if event_type in _REVENUE_EVENTS:
+        _record_revenue_event(event, event_type, uid)
 
     # Yeni/yenilenen donem aylik token hakkini tazeler. Idempotent: ayni
     # donemin tekrarlanan webhook'u hakki iki kez veremez (isaret esitligi).
