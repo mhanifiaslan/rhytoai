@@ -34,17 +34,13 @@ class IChingTab extends ConsumerStatefulWidget {
   ConsumerState<IChingTab> createState() => _IChingTabState();
 }
 
-class _IChingTabState extends ConsumerState<IChingTab>
-    with AutomaticKeepAliveClientMixin {
+class _IChingTabState extends ConsumerState<IChingTab> {
+  // Keepalive karışımı KALKTI (R10): ekran artık TabBarView içinde değil,
+  // kendi sayfasında — sayfa yığındayken state zaten yaşıyor.
   final _controller = TextEditingController();
   String _method = 'coins';
   bool _busy = false;
   Map<String, dynamic>? _result;
-
-  // Sekme değişince çekim kaybolmasın (İ0): kullanıcı BaZi'ye bakıp
-  // dönünce günde bir hakkı olan çekiminin sonucu hâlâ ekranda olmalı.
-  @override
-  bool get wantKeepAlive => true;
 
   @override
   void dispose() {
@@ -59,6 +55,14 @@ class _IChingTabState extends ConsumerState<IChingTab>
     if (question.isEmpty) {
       messenger.showSnackBar(
           SnackBar(content: Text(l10n.iChingQuestionRequired)));
+      return;
+    }
+    // Soru kapısı (R10): "merhaba" gibi niyetsiz girişler istek atılmadan
+    // çevrilir — sunucudaki question_is_meaningful kuralının aynası.
+    // Esas kapı sunucuda; burası yalnız gereksiz gidiş-dönüşü keser.
+    if (!_meaningfulQuestion(question)) {
+      messenger.showSnackBar(
+          SnackBar(content: Text(l10n.iChingQuestionShallow)));
       return;
     }
     setState(() {
@@ -95,7 +99,6 @@ class _IChingTabState extends ConsumerState<IChingTab>
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // AutomaticKeepAliveClientMixin gereği.
     final l10n = AppLocalizations.of(context);
     return ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
@@ -194,6 +197,27 @@ class _IChingTabState extends ConsumerState<IChingTab>
       const SizedBox(height: 32),
     ]);
   }
+}
+
+/// Soru kutusuna niyet yerine yazılan tipik doldurmalar — sunucudaki
+/// `_DOLGU_KELIMELER` listesinin aynası (iching_service.py). Karşılaştırma
+/// küçük harfle; noktasız-I varyantları iki ayrı girdi olarak duruyor.
+const _dolguKelimeler = {
+  'merhaba', 'selam', 'selamlar', 'hello', 'hi', 'hey', 'naber',
+  'nasılsın', 'nasilsin', 'iyi', 'misin', 'test', 'deneme', 'asdf',
+  'qwerty', 'abc', 'ok', 'tamam', 'evet', 'hayır', 'hayir',
+};
+
+/// Soru gerçek bir niyet taşıyor mu — dolgu kelimeler ayıklandıktan sonra
+/// en az iki kelime kalmalı. Günde tek çekim hakkı selamla harcanmasın.
+bool _meaningfulQuestion(String question) {
+  final kelimeler = question
+      .toLowerCase()
+      .replaceAll('\u0307', '') // İ küçülünce kalan birleşik nokta
+      .split(RegExp(r"[^\p{L}\p{N}']+", unicode: true));
+  final anlamli =
+      kelimeler.where((k) => k.isNotEmpty && !_dolguKelimeler.contains(k));
+  return anlamli.length >= 2;
 }
 
 /// Üç paranın 3D dönüş animasyonu — çekim sürerken oynar.

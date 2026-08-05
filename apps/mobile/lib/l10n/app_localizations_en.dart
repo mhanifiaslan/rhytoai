@@ -554,15 +554,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get suggestMarriage => 'Commitment 💍';
 
   @override
-  String get oracleTitle => 'Oracle Room';
-
-  @override
-  String get tabIChing => 'I CHING 🪙';
-
-  @override
-  String get tabBaZi => 'BAZI 🀄';
-
-  @override
   String get onboardingTitle => 'Your Birth Moment';
 
   @override
@@ -755,6 +746,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get iChingQuestionRequired => 'Write your question first.';
+
+  @override
+  String get iChingQuestionShallow =>
+      'The oracle opens to a question, not a greeting — put your intention into a sentence.';
 
   @override
   String get iChingCoinsInAir => 'Coins in the air...';

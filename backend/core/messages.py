@@ -125,6 +125,14 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "en": "You've used today's free allowance.",
     },
 
+    # --- I Ching soru kapısı (R10) ---
+    "iching.question_shallow": {
+        "tr": "Kâhin selamla değil, soruyla açılır — niyetini bir cümleyle "
+              "yaz.",
+        "en": "The oracle opens to a question, not a greeting — put your "
+              "intention into a sentence.",
+    },
+
     # --- İkili dinamik ---
     "dyad.self": {
         "tr": "Kendinle ikili okuma yapılamaz.",

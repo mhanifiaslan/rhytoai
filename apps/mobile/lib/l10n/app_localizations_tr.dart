@@ -554,15 +554,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get suggestMarriage => 'Evlilik zamanı 💍';
 
   @override
-  String get oracleTitle => 'Kehanet Odası';
-
-  @override
-  String get tabIChing => 'I CHING 🪙';
-
-  @override
-  String get tabBaZi => 'BAZI 🀄';
-
-  @override
   String get onboardingTitle => 'Doğum Anın';
 
   @override
@@ -754,6 +745,10 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get iChingQuestionRequired => 'Önce kalbindeki soruyu yaz.';
+
+  @override
+  String get iChingQuestionShallow =>
+      'Kâhin selamla değil, soruyla açılır — niyetini bir cümleyle yaz.';
 
   @override
   String get iChingCoinsInAir => 'Paralar havada...';

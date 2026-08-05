@@ -255,9 +255,6 @@
   "suggestMonth": "What does this month hold?",
   "suggestFinance": "Money and work 💰",
   "suggestMarriage": "Commitment 💍",
-  "oracleTitle": "Oracle Room",
-  "tabIChing": "I CHING 🪙",
-  "tabBaZi": "BAZI 🀄",
   "onboardingTitle": "Your Birth Moment",
   "onboardingBody": "Your chart needs the exact arrangement of the sky at that moment. The more precise the time, the more accurate your rising sign.",
   "onboardingCity": "Birth city",
@@ -327,6 +324,7 @@
   "iChingMethodYarrow": "Yarrow Stalks 🌿",
   "iChingCastAction": "Cast",
   "iChingQuestionRequired": "Write your question first.",
+  "iChingQuestionShallow": "The oracle opens to a question, not a greeting — put your intention into a sentence.",
   "iChingCoinsInAir": "Coins in the air...",
   "iChingHexagramLabel": "HEXAGRAM {number}",
   "@iChingHexagramLabel": {

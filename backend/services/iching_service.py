@@ -11,6 +11,7 @@ Eski (hareketli) çizgiler tersine döner ve "dönüşen heksagram" oluşur.
 from __future__ import annotations
 
 import json
+import re
 import secrets
 from functools import lru_cache
 from pathlib import Path
@@ -22,10 +23,38 @@ DATA_FILE = Path(__file__).resolve().parent.parent / "data" / "hexagrams.json"
 #: rapor önbellek anahtarına girer — BaZi'deki calc_version disiplininin
 #: birebir aynısı. Eski yorumlar kendiliğinden düşer, migrasyon gerekmez.
 #: v3: nükleer heksagram + çekim günü bağlamı (İ2). v4: Liu Yao — najia,
-#: saray, altı akraba, shi/ying, boşluk/çarpışma (İ3).
-ICHING_CALC_VERSION = "4"
+#: saray, altı akraba, shi/ying, boşluk/çarpışma (İ3). v5: anlamsız-soru
+#: kuralı prompt'a girdi (R10) — eski önbellek yeni kuralı bilmez.
+ICHING_CALC_VERSION = "5"
 
 Method = Literal["coins", "yarrow"]
+
+#: Soru kutusuna niyet yerine yazılan tipik doldurmalar. Liste kasıtlı
+#: kısa: amaç anlam denetimi değil (o imkânsız), günde tek çekim hakkının
+#: "merhaba" ile harcanmasını engellemek. Türkçe kırpık biçimler de var
+#: çünkü karşılaştırma casefold'la yapılır ve noktasız-I varyantları iki
+#: ayrı dizgi üretir (bkz. hafıza: Türkçe metin tuzakları).
+_DOLGU_KELIMELER = frozenset({
+    "merhaba", "selam", "selamlar", "hello", "hi", "hey", "naber",
+    "nasılsın", "nasilsin", "iyi", "misin", "test", "deneme", "asdf",
+    "qwerty", "abc", "ok", "tamam", "evet", "hayır", "hayir",
+})
+
+
+def question_is_meaningful(question: str) -> bool:
+    """Soru gerçek bir niyet taşıyor mu — kaba ama ucuz bir kapı (R10).
+
+    Kural: dolgu kelimeler ayıklandıktan sonra EN AZ İKİ kelime kalmalı.
+    "merhaba" ve "selam naber" çevrilir; "iş değiştirmeli miyim" geçer.
+    Tek kelimelik gerçek sorular da ("evlilik?") bilerek çevrilir —
+    kullanıcıdan istenen şey niyetini bir cümleye dökmesi.
+    """
+    # casefold("İ") = "i" + birleşik nokta (U+0307); nokta atılmazsa "İYİ"
+    # dolgu listesindeki "iyi" ile eşleşmez (Türkçe noktalı-I tuzağı).
+    kelimeler = re.split(r"[^\w']+",
+                         question.casefold().replace("\u0307", ""))
+    anlamli = [k for k in kelimeler if k and k not in _DOLGU_KELIMELER]
+    return len(anlamli) >= 2
 
 
 @lru_cache(maxsize=1)

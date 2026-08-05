@@ -330,11 +330,13 @@ class _AtlasTile extends StatelessWidget {
   }
 }
 
-/// Kehanet satırı: Yüz Okuma · İching · BaZi — üç eşit karo, tek satır.
+/// Kehanet satırı: Yüz Okuma · İching · BaZi · Doğum Kapısı — eşit karolar.
 ///
 /// Madde 11 (Revize R6): İching + BaZi Gökyüzü'ndeki ARAÇLAR bölümünden
 /// buraya taşındı; kullanıcının istediği "tek satırda yan yana" düzen bu.
-/// Rotalar değişmedi — karolar hâlâ `OracleScreen`'i açıyor.
+/// R10: sekmeli `OracleScreen` kalktı — her karo kendi bağımsız sayfasını
+/// açıyor (karodan sonra sayfada aynı iki seçeneğin sekme olarak tekrar
+/// çıkması kafa karıştırıyordu).
 ///
 /// Yüz Okuma karosu ücretli uca **istek atmadan** kilit gösteriyor: abone
 /// olmayan biri karoda 🔒 görür, dokununca paywall açılır, kamera hiç
@@ -355,8 +357,8 @@ class _DivinationRow extends ConsumerWidget {
           fullscreenDialog: true,
         ));
 
-    void oracle(int tab) => Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => OracleScreen(initialTab: tab)));
+    void ac(Widget sayfa) => Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => sayfa));
 
     return SizedBox(
       height: 100,
@@ -377,7 +379,7 @@ class _DivinationRow extends ConsumerWidget {
             emoji: '🪙',
             title: l10n.iChing,
             subtitle: l10n.iChingSubtitle,
-            onTap: () => oracle(0),
+            onTap: () => ac(const IChingScreen()),
           ),
         ),
         const SizedBox(width: 10),
@@ -386,7 +388,7 @@ class _DivinationRow extends ConsumerWidget {
             emoji: '🀄',
             title: l10n.baZi,
             subtitle: l10n.baZiSubtitle,
-            onTap: () => oracle(1),
+            onTap: () => ac(const BaziScreen()),
           ),
         ),
         const SizedBox(width: 10),
@@ -398,10 +400,8 @@ class _DivinationRow extends ConsumerWidget {
             title: l10n.birthHexagram,
             subtitle: l10n.birthHexagramSubtitle,
             locked: !faceAcik,
-            onTap: () => faceAcik
-                ? Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const BirthHexagramScreen()))
-                : paywall(),
+            onTap: () =>
+                faceAcik ? ac(const BirthHexagramScreen()) : paywall(),
           ),
         ),
       ]),

@@ -584,6 +584,9 @@ KURALLAR:
   yalnız işaretli olanlar için.
 - Yorum SORUYA ÖZGÜ olsun; genel felsefe dersi verme. Kesin tarihli
   öngörü yok, pohpohlama yok.
+- Soru anlamlı bir niyet taşımıyorsa (selamlama, rastgele harfler) bunu
+  TEK cümleyle nazikçe belirt ve heksagramı günün genel durumu olarak
+  oku — soruya cevap veriyormuş gibi YAPMA.
 """
 
 ICHING_TRANSFORMED = (

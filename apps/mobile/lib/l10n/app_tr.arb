@@ -255,9 +255,6 @@
   "suggestMonth": "Bu ay beni ne bekliyor?",
   "suggestFinance": "Finansal şans 💰",
   "suggestMarriage": "Evlilik zamanı 💍",
-  "oracleTitle": "Kehanet Odası",
-  "tabIChing": "I CHING 🪙",
-  "tabBaZi": "BAZI 🀄",
   "onboardingTitle": "Doğum Anın",
   "onboardingBody": "Haritanın çizilebilmesi için gökyüzünün o anki dizilişi gerekir. Saat ne kadar kesinse, yükselen o kadar doğrudur.",
   "onboardingCity": "Doğum şehri",
@@ -327,6 +324,7 @@
   "iChingMethodYarrow": "Civanperçemi 🌿",
   "iChingCastAction": "Çekimi yap",
   "iChingQuestionRequired": "Önce kalbindeki soruyu yaz.",
+  "iChingQuestionShallow": "Kâhin selamla değil, soruyla açılır — niyetini bir cümleyle yaz.",
   "iChingCoinsInAir": "Paralar havada...",
   "iChingHexagramLabel": "HEKSAGRAM {number}",
   "@iChingHexagramLabel": {

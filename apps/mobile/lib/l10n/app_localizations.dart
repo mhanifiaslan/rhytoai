@@ -1094,24 +1094,6 @@ abstract class AppLocalizations {
   /// **'Evlilik zamanı 💍'**
   String get suggestMarriage;
 
-  /// No description provided for @oracleTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Kehanet Odası'**
-  String get oracleTitle;
-
-  /// No description provided for @tabIChing.
-  ///
-  /// In tr, this message translates to:
-  /// **'I CHING 🪙'**
-  String get tabIChing;
-
-  /// No description provided for @tabBaZi.
-  ///
-  /// In tr, this message translates to:
-  /// **'BAZI 🀄'**
-  String get tabBaZi;
-
   /// No description provided for @onboardingTitle.
   ///
   /// In tr, this message translates to:
@@ -1483,6 +1465,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Önce kalbindeki soruyu yaz.'**
   String get iChingQuestionRequired;
+
+  /// No description provided for @iChingQuestionShallow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kâhin selamla değil, soruyla açılır — niyetini bir cümleyle yaz.'**
+  String get iChingQuestionShallow;
 
   /// No description provided for @iChingCoinsInAir.
   ///

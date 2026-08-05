@@ -90,6 +90,23 @@ alma çalışmaz:
    `REVENUECAT_ANDROID_KEY` ve `REVENUECAT_IOS_KEY` değerlerini değiştir.
    (Dosya gitignore'da; anahtarlar repoya girmez.)
 
+## 3b. Test kilidi: RYTHO_FORCE_PLUS (yayın öncesi GERİ ALINACAK)
+
+Test sürecinde tüm Rytho+ kilitleri açık dursun diye backend'e
+`RYTHO_FORCE_PLUS=1` ortam değişkeni verildi (R10): sunucu herkesi abone
+sayar, mobil kilitler de `/billing/status` üzerinden buna uyar.
+
+**Yayına çıkmadan önce mutlaka kaldır** (yoksa ücretli içerik herkese
+açık gider):
+
+```
+gcloud run services update rytho-backend --region us-central1 \
+  --project rhytoai --remove-env-vars RYTHO_FORCE_PLUS
+```
+
+Aynı kapanış listesinde: `RYTHO_TOKENS_ENFORCE` hâlâ 0 (jeton harcaması
+kuru çalışma modunda) — gözlem bitince 1 yapılacak.
+
 ## 4. Mağaza veri güvenliği formları (R2/R3/R4/R5 sonrası güncelleme)
 
 Yapılmadan: form ile uygulamanın gerçek davranışı çelişir; iki mağaza da

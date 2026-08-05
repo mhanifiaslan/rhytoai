@@ -399,3 +399,25 @@ class TestOnbellekAnahtari:
         report_service.iching_reading("u-i0", cekim("yarrow"), lang="tr")
         assert uretim["n"] == 2  # yarrow AYRI anahtar
         cache._memory.clear()
+
+
+class TestSoruKapisi:
+    """R10: günde tek çekim hakkı "merhaba" ile harcanmasın."""
+
+    def test_niyetsiz_girisler_cevrilir(self):
+        for soru in ["merhaba", "selam", "Selam naber", "MERHABA NASILSIN",
+                     "iyi misin", "test", "deneme", "asdf", "evet", "iş?"]:
+            assert not iching_service.question_is_meaningful(soru), soru
+
+    def test_gercek_sorular_gecer(self):
+        for soru in ["İş değiştirmeli miyim?", "Önümdeki yol nereye çıkıyor",
+                     "Bu ilişki beni büyütüyor mu",
+                     "Should I take the new job offer?",
+                     "taşınma kararım doğru mu"]:
+            assert iching_service.question_is_meaningful(soru), soru
+
+    def test_turkce_buyuk_i_tuzagi(self):
+        # casefold("İ") birleşik nokta üretir; motor onu atmalı ki "İYİ"
+        # dolgu listesindeki "iyi" ile, "MISIN" da "misin" ile eşleşsin.
+        assert not iching_service.question_is_meaningful("İYİ MISIN")
+        assert not iching_service.question_is_meaningful("İyi misin")

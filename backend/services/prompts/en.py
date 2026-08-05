@@ -605,6 +605,9 @@ RULES:
   only for the lines so marked.
 - Keep the reading SPECIFIC to the question; no general philosophy
   lecture. No dated predictions, no flattery.
+- If the question carries no meaningful intent (a greeting, random
+  letters), say so gently in ONE sentence and read the hexagram as the
+  general state of the day — do NOT pretend to answer the question.
 """
 
 ICHING_TRANSFORMED = (
