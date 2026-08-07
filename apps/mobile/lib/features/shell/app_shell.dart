@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../core/device_claim.dart';
 import '../../core/providers.dart'
-    show justOnboardedProvider, profileProvider;
+    show OnboardOutcome, justOnboardedProvider, profileProvider;
 import '../../widgets/big_three_reveal.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../l10n/app_localizations.dart';
@@ -51,15 +51,24 @@ class _AppShellState extends ConsumerState<AppShell> {
   /// Büyük Üçlü perdesi burada açılır — onboarding ekranında açılamaz, çünkü
   /// `onboardingCompleted` yazımı iner inmez `_Gate` o ekranı söker.
   void _buyukUcluPerdesi() {
-    if (!ref.read(justOnboardedProvider)) return;
-    ref.read(justOnboardedProvider.notifier).state = false;
+    final sonuc = ref.read(justOnboardedProvider);
+    if (sonuc == null) return;
+    ref.read(justOnboardedProvider.notifier).state = null;
     final profil = ref.read(profileProvider).value ?? const {};
     final gunes = profil['sunSign'] as String?;
     final ay = profil['moonSign'] as String?;
     final yukselen = profil['ascendant'] as String?;
-    // Harita hesaplanamadıysa (savedWithoutChart) perde HİÇ açılmaz —
-    // yalan rozet göstermeme kuralı (core/birth_record.dart).
-    if (gunes == null || ay == null || yukselen == null) return;
+    // Harita hesaplanamadıysa perde açılmaz — yalan rozet göstermeme
+    // kuralı (core/birth_record.dart). Ama artık SESSİZ değil (O3):
+    // kullanıcı verisinin kaydedildiğini ve haritanın sonra çizileceğini
+    // duyar; rozetlerin yokluğu açıklanamayan bir davranış olmaktan çıkar.
+    if (sonuc == OnboardOutcome.chartMissing ||
+        gunes == null || ay == null || yukselen == null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content:
+              Text(AppLocalizations.of(context).birthRecordSavedNoChart)));
+      return;
+    }
     showBigThreeReveal(context, sun: gunes, moon: ay, ascendant: yukselen);
   }
 

@@ -27,6 +27,11 @@ class Analytics {
   // --- Okumalar ---
 
   /// Rapor üretimi — type: daily | natal | bazi | synastry | dyad
+  /// Sihirbaz hunisi (O3): adım başına bir olay — drop-off ölçülmeden
+  /// oyunlaştırmanın işe yarayıp yaramadığı bilinemez.
+  static void onboardingStep(String step) =>
+      _log('onboarding_step', {'step': step});
+
   static void reportGenerated(String type) =>
       _log('report_generated', {'report_type': type});
 

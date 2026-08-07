@@ -49,6 +49,17 @@ service cloud.firestore {
             && request.resource.data.faceConsent == resource.data.faceConsent);
     }
 
+    // Şartlar/gizlilik kabulü (O3) — faceConsent ile aynı model: alan
+    // listede (merge yazımlar düşmesin) ama DEĞİŞMEZ; yalnız sunucu
+    // (POST /account/consent, Admin SDK) yazar. Kullanıcı kendi kabul
+    // kaydını uyduramaz ya da geri süremez.
+    function termsConsentDegismedi() {
+      return !('termsConsent' in request.resource.data)
+        || (resource != null
+            && 'termsConsent' in resource.data
+            && request.resource.data.termsConsent == resource.data.termsConsent);
+    }
+
     // ---------- Kullanıcı profili (HASSAS — yalnızca sahibi) ----------
     // Doğum tarihi + saati + yeri hassas bir üçlüdür (kimlik doğrulama
     // sorularında kullanılır). Firestore kuralları okumada alan filtreleyemediği
@@ -88,9 +99,12 @@ service cloud.firestore {
           // motor merge'de SONUÇ dokümana bakar). O2'de kapatıldı.
           'residenceCity', 'residenceNation',
           // Biyometrik işleme rızası — LİSTEDE ama DEĞİŞMEZ (aşağıya bak).
-          'faceConsent'
+          'faceConsent',
+          // Şartlar/gizlilik kabulü (O3) — LİSTEDE ama DEĞİŞMEZ.
+          'termsConsent'
         ])
-        && faceConsentDegismedi();
+        && faceConsentDegismedi()
+        && termsConsentDegismedi();
       allow delete: if isOwner(uid);
 
       // ---------- Sohbet arşivi (Revize R4) ----------

@@ -86,6 +86,45 @@ def _local_write(kayitlar: dict[str, Any]) -> bool:
 #: ve rızayı anlamsızlaştırır.
 FACE_CONSENT_VERSION = 1
 
+#: Kullanım şartları + gizlilik kabulünün güncel sürümü (O3).
+#:
+#: Metinlerin ANLAMI değiştiğinde artırılır (yeni veri işleme, yeni
+#: paylaşım); yazım düzeltmesi artırmaz (rıza yorgunluğu üretmemek —
+#: FACE_CONSENT_VERSION ile aynı kural). Sürüm artınca sihirbaz/istemci
+#: kabulü yeniden sorar; uçlar ZORLAMAZ (bu bir kilit değil, ispat kaydı).
+TERMS_CONSENT_VERSION = 1
+
+#: users/{uid}.termsConsent — faceConsent gibi YALNIZ sunucu yazar
+#: (firestore.rules: listede ama değişmezlik bekçili).
+_TERMS_FIELD = "termsConsent"
+
+
+def grant_terms_consent(uid: str, version: int, locale: str) -> bool:
+    """Şartlar/gizlilik kabulünü İSPATLANABİLİR biçimde kaydeder.
+
+    "İstemci alanı metni hiç görmeden yazdı" itirazını kapatan şey yazımın
+    sunucudan olması; "neye rıza gösterildi" sorusunu kapatan şey ise
+    İSTEMCİNİN GÖRDÜĞÜ sürümün kaydedilmesi — sunucunun güncel sürümü
+    değil. Eski istemci eski metni gösteriyorsa kayıt bunu söylemeli.
+    """
+    kayit = {
+        "granted": True,
+        "version": version,
+        "acceptedAt": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "locale": locale,
+    }
+    doc_ref = _user_doc(uid)
+    if doc_ref is None:
+        kayitlar = _local_read()
+        kayitlar[f"terms-{uid}"] = kayit
+        return _local_write(kayitlar)
+    try:
+        doc_ref.set({_TERMS_FIELD: kayit}, merge=True)
+        return True
+    except Exception as exc:
+        logger.warning("Şartlar kabulü kaydedilemedi (%s): %s", uid, exc)
+        return False
+
 #: Firestore kullanıcı dokümanındaki alan.
 #:
 #: **Bu alan `infra/firestore.rules` içindeki yazılabilir alan listesine ASLA

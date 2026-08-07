@@ -12,14 +12,25 @@ final authStateProvider = StreamProvider<User?>(
   (ref) => FirebaseAuth.instance.authStateChanges(),
 );
 
-/// Onboarding'i BU oturumda bitiren kullanıcı (R12-B1).
+/// Onboarding finalinin sonucu (R12-B1 + O3).
+enum OnboardOutcome {
+  /// Harita hesaplandı — Büyük Üçlü perdesi açılır.
+  chartOk,
+
+  /// Doğum verisi yazıldı ama harita hesaplanamadı (ör. çevrimdışı).
+  /// Perde açılmaz; kullanıcıya DÜRÜSTÇE söylenir — eskiden bu durum
+  /// sessizce yutuluyordu ve rozetlerin yokluğu açıklanamıyordu.
+  chartMissing,
+}
+
+/// Onboarding'i BU oturumda bitiren kullanıcının sonucu (R12-B1).
 ///
 /// `saveBirthRecord` onboardingCompleted'ı tek yazımda yazar ve yazım iner
 /// inmez `_Gate` kabuğa geçer — Büyük Üçlü perdesi bu yüzden onboarding
-/// ekranında yaşayamaz. Bayrak yazım ÖNCESİ kalkar; AppShell ilk karede
-/// görür, perdeyi açar ve indirir. Kalıcı değil: uygulamanın sonraki
+/// ekranında yaşayamaz. Değer yazım ÖNCESİ konur; AppShell ilk karede
+/// görür, sahneyi oynatır ve sıfırlar. Kalıcı değil: uygulamanın sonraki
 /// açılışlarında sahne tekrarlanmaz.
-final justOnboardedProvider = StateProvider<bool>((_) => false);
+final justOnboardedProvider = StateProvider<OnboardOutcome?>((_) => null);
 
 /// Engellenen kullanıcı kimlikleri (users/{uid}/blocked). Akış ve mesajlar
 /// bu kümeye göre istemci tarafında filtrelenir.

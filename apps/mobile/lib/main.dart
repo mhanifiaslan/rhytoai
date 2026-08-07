@@ -14,7 +14,7 @@ import 'core/notifications.dart';
 import 'core/providers.dart';
 import 'core/subscription.dart';
 import 'features/auth/login_screen.dart';
-import 'features/onboarding/onboarding_screen.dart';
+import 'features/onboarding/onboarding_wizard.dart';
 import 'features/shell/app_shell.dart';
 import 'l10n/app_localizations.dart';
 import 'theme/rytho_theme.dart';
@@ -118,7 +118,7 @@ class _Gate extends ConsumerWidget {
                     'onboardingCompleted=${data?['onboardingCompleted']}');
                 return true;
               }());
-              return const OnboardingScreen();
+              return const OnboardingWizard();
             }
             return const AppShell();
           },

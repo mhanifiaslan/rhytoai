@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
-from services import account_service, phone_service
+from services import account_service, consent_service, phone_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -49,6 +49,29 @@ def delete_me(user: AuthUser = Depends(get_current_user),
         raise HTTPException(status_code=500, detail=text("internal", lang))
 
     return DeleteResult(status="deleted", deleted=dict(sayim))
+
+
+class ConsentRequest(BaseModel):
+    #: İstemcinin GÖSTERDİĞİ metin sürümü — kayıt bunu tutar (eski istemci
+    #: eski metni göstermiş olabilir; ispat gördüğü şeye bağlanmalı).
+    version: int = consent_service.TERMS_CONSENT_VERSION
+
+
+@router.post("/consent")
+def record_consent(req: ConsentRequest,
+                   user: AuthUser = Depends(get_current_user),
+                   lang: str = Depends(get_language)):
+    """Kullanım şartları + gizlilik kabulünü kaydeder (O3).
+
+    Sihirbazın karşılama adımı çağırır. Google/Apple girişlerinde bugüne
+    dek HİÇBİR onay kutusu yoktu; bu uç her sağlayıcı için ispatlanabilir
+    clickwrap kaydı üretir. Uçlarda ZORLANMAZ — eski kullanıcılar
+    kilitlenmez, kayıt yalnız tutulur.
+    """
+    if not consent_service.grant_terms_consent(user.uid, req.version, lang):
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+    return {"status": "success",
+            "version": consent_service.TERMS_CONSENT_VERSION}
 
 
 @router.post("/phone/sync")
