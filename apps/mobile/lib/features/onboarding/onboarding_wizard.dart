@@ -36,14 +36,25 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/city_search_field.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/motion.dart';
+import '../../core/notifications.dart'
+    show markNotificationPromptShown, requestNotificationPermission;
 import '../profile/legal_page.dart';
 import '../profile/legal_texts.dart';
+import '../profile/phone_verify_screen.dart';
 import 'constellation_progress.dart';
 
 /// İstemcinin gösterdiği şartlar/gizlilik metin sürümü — backend
 /// `TERMS_CONSENT_VERSION` ile elle senkron (legal_texts güncellenince
 /// ikisi birlikte artar).
 const int kTermsConsentVersion = 1;
+
+/// Telefon adımı bayrağı (O4). Konsol tarafı hazır (Phone sağlayıcısı,
+/// SHA-256, region policy, Blaze — 2026-08-07) ama SMS cihazda uçtan uca
+/// doğrulanana kadar varsayılan KAPALI: kod göndermeyen bir adımı
+/// göstermek güven kırar. Açmak: --dart-define=RYTHO_PHONE_STEP=true
+/// (dart_defines.example.json'da hazır).
+const bool kPhoneStepEnabled =
+    bool.fromEnvironment('RYTHO_PHONE_STEP', defaultValue: false);
 
 class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({super.key});
@@ -69,10 +80,16 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   bool _busy = false;
 
   static const _adimAdlari = [
-    'welcome', 'date', 'time', 'place', 'gender'
+    'welcome', 'date', 'time', 'place', 'gender',
+    if (kPhoneStepEnabled) 'phone',
+    'notify',
   ];
 
   int get _toplamAdim => _adimAdlari.length;
+
+  /// Atlanabilir adımlar: zorunlu veri istemezler, alt düğme "Sonra" der.
+  bool get _atlanabilirAdim =>
+      _adimAdlari[_adim] == 'phone' || _adimAdlari[_adim] == 'notify';
 
   @override
   void initState() {
@@ -87,11 +104,11 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   }
 
   /// Adım ilerleyebilir mi — düğme durumu buradan.
-  bool get _ilerleyebilir => switch (_adim) {
-        0 => _riza,
-        1 => _tarih != null,
-        2 => !_saatBiliniyor || _saatSecildi,
-        3 => _sehir != null && _sehir!.trim().isNotEmpty,
+  bool get _ilerleyebilir => switch (_adimAdlari[_adim]) {
+        'welcome' => _riza,
+        'date' => _tarih != null,
+        'time' => !_saatBiliniyor || _saatSecildi,
+        'place' => _sehir != null && _sehir!.trim().isNotEmpty,
         _ => true,
       };
 
@@ -327,6 +344,30 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                       onSec: (g) => setState(() => _cinsiyet = g),
                     ),
                   ),
+                  // Telefon (O4, bayrak açıksa): rehber eşleşmesinin
+                  // kapısı — atlanabilir, hiçbir çekirdek özellik buna
+                  // kilitlenmez (mağaza kuralı). Mevcut PhoneVerifyScreen
+                  // olduğu gibi yeniden kullanılır.
+                  if (kPhoneStepEnabled)
+                    _AdimSayfasi(
+                      emoji: '🤝',
+                      baslik: l10n.wizardPhoneTitle,
+                      govde: l10n.wizardPhoneBody,
+                      child: _TelefonAdimi(onVerified: () {
+                        if (mounted) setState(() {});
+                      }),
+                    ),
+                  // Bildirim izni: sürpriz sistem dialogu yerine önce
+                  // değer önerisi (kabul oranını artıran sıra). İzin
+                  // verilirse sky_screen'deki eski istem kendiliğinden
+                  // devre dışı kalır; atlanırsa oradaki tek seferlik
+                  // istem ikinci şans olarak yaşamaya devam eder.
+                  _AdimSayfasi(
+                    emoji: '🔔',
+                    baslik: l10n.wizardNotifyTitle,
+                    govde: l10n.wizardNotifyBody,
+                    child: _BildirimAdimi(onDone: _ileri),
+                  ),
                 ],
               ),
             ),
@@ -344,9 +385,14 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                       interval: const Duration(milliseconds: 1600),
                     )
                   : GoldButton(
+                      // Atlanabilir adımda alt düğme DÜRÜST "Sonra"dır —
+                      // asıl eylem adımın içindeki düğmede. Son adımda
+                      // yolculuk "Haritamı çiz"le biter.
                       text: _adim == _toplamAdim - 1
                           ? l10n.wizardFinish
-                          : l10n.wizardNext,
+                          : (_atlanabilirAdim
+                              ? l10n.wizardLater
+                              : l10n.wizardNext),
                       onPressed: _ilerleyebilir ? _ileri : null,
                     ),
             ),
@@ -594,5 +640,76 @@ class _CinsiyetSecimi extends StatelessWidget {
         if (g.$1 != 'other') const SizedBox(width: 8),
       ],
     ]);
+  }
+}
+
+/// Telefon adımı içeriği (O4): mevcut PhoneVerifyScreen'i olduğu gibi
+/// açar — doğrulama akışı TEK yerde kalır. Dönüşte durum tazelenir;
+/// doğrulanmışsa yeşil onay görünür.
+class _TelefonAdimi extends StatelessWidget {
+  const _TelefonAdimi({required this.onVerified});
+
+  final VoidCallback onVerified;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final dogrulandi =
+        FirebaseAuth.instance.currentUser?.phoneNumber != null;
+    if (dogrulandi) {
+      return Row(children: [
+        const Icon(Icons.check_circle_rounded,
+            size: 20, color: RythoColors.goldBright),
+        const SizedBox(width: 8),
+        Text(l10n.wizardPhoneDone,
+            style: RythoText.body(14, w: FontWeight.w600)),
+      ]);
+    }
+    return GoldButton(
+      text: l10n.wizardPhoneVerify,
+      onPressed: () async {
+        await Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => const PhoneVerifyScreen()));
+        onVerified();
+      },
+    );
+  }
+}
+
+/// Bildirim izni adımı içeriği (O4): sistem dialogu ancak kullanıcı
+/// değer önerisini okuyup istediğinde açılır. İzin istendiyse (sonuç ne
+/// olursa olsun) tek seferlik bayrak işaretlenir — sky_screen bir daha
+/// sormaz. Adım atlanırsa bayrak DOKUNULMAZ: oradaki istem ikinci şans.
+class _BildirimAdimi extends StatefulWidget {
+  const _BildirimAdimi({required this.onDone});
+
+  final VoidCallback onDone;
+
+  @override
+  State<_BildirimAdimi> createState() => _BildirimAdimiState();
+}
+
+class _BildirimAdimiState extends State<_BildirimAdimi> {
+  bool _busy = false;
+
+  Future<void> _izinIste() async {
+    setState(() => _busy = true);
+    try {
+      await requestNotificationPermission();
+      await markNotificationPromptShown();
+    } catch (_) {
+      // İzin akışı düşerse yolculuk düşmez; sky_screen ikinci şansı verir.
+    }
+    if (mounted) widget.onDone();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return GoldButton(
+      text: l10n.wizardNotifyAllow,
+      busy: _busy,
+      onPressed: _busy ? null : _izinIste,
+    );
   }
 }

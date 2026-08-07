@@ -14,19 +14,21 @@ politikası kuruldu. Aşağıdakiler sende.
 
 ## 1. Firebase: Telefon sağlayıcısını aç (R2 — SMS doğrulama)
 
-Açılmadan: Profil > "Telefonunu doğrula" akışı SMS gönderemez ve
-`auth/operation-not-allowed` hatası verir. Rehber eşleşmesi de telefona
-bağlı olduğu için o da fiilen kapalı kalır.
+**DURUM (2026-08-07): DÖRT ADIM DA TAMAMLANDI** — Phone sağlayıcısı
+açık, SMS region policy'de Türkiye, Blaze aktif, **SHA-256 eklendi**
+(debug anahtarı `4E:29:8B:F0:...:DF:70`; Phone Auth Android'de Play
+Integrity doğrulaması için SHA-256 ister — yalnız SHA-1 yetmez).
 
-1. console.firebase.google.com → **rhytoai** projesi.
-2. Sol menü **Authentication → Sign-in method**.
-3. **Add new provider → Phone** → aç (Enable) → **Save**.
-4. Aynı sayfada **Settings → SMS region policy**: **Allow** listesine
-   yalnızca hedef ülkeleri ekle (ilk sürüm için Türkiye yeter).
-   Bu ayar SMS-pompalama istismarına karşı: açık bırakılırsa botlar
-   pahalı ülkelere SMS attırıp fatura şişirebiliyor.
-5. İstersen **Phone numbers for testing** bölümüne kendi numaranı sabit
-   bir kodla ekle — mağaza incelemesi için de işe yarar.
+Kalan işler:
+- Cihazda SMS uçtan uca doğrulanınca sihirbazın telefon adımı açılır:
+  derlemede `RYTHO_PHONE_STEP=true` (dart_defines) — doğrulama sonrası
+  `onboarding_wizard.dart` içindeki varsayılan da true yapılabilir.
+- **Play'e yüklerken**: Play App Signing'in mağaza imza anahtarının
+  SHA-256'sı da Firebase'e eklenmeli (Play Console → Setup → App
+  integrity → App signing key certificate) — yoksa mağazadan inen
+  sürümde SMS düşer (W10/yayın turu).
+- İstersen **Phone numbers for testing** bölümüne kendi numaranı sabit
+  bir kodla ekle — mağaza incelemesi için de işe yarar.
 
 Not: SMS gönderimi Blaze planında ücretlidir (Türkiye ~0,01-0,05 USD/SMS).
 

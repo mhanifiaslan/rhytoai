@@ -4,5 +4,7 @@
   "_entitlement": "RevenueCat panelindeki Entitlements > Identifier ile BIREBIR ayni olmali (bosluk ve buyuk/kucuk harf dahil). Yanlissa satin alma basarili olur ama uygulama aboneligi gormez.",
   "REVENUECAT_ANDROID_KEY": "goog_XXXXXXXXXXXXXXXX",
   "REVENUECAT_IOS_KEY": "appl_XXXXXXXXXXXXXXXX",
-  "RYTHO_PLUS_ENTITLEMENT": "RhytoAI Pro"
+  "RYTHO_PLUS_ENTITLEMENT": "RhytoAI Pro",
+  "_telefon": "Sihirbazdaki telefon adimi (O4). Konsol onkosullari: Phone saglayicisi + SHA-256 + SMS region policy + Blaze (2026-08-07'de tamamlandi). Cihazda SMS dogrulanana kadar varsayilan kapali.",
+  "RYTHO_PHONE_STEP": "true"
 }

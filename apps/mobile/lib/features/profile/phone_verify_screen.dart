@@ -15,6 +15,8 @@
 library;
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,6 +26,7 @@ import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
+import '../../widgets/phone_number_field.dart';
 
 class PhoneVerifyScreen extends ConsumerStatefulWidget {
   const PhoneVerifyScreen({super.key});
@@ -33,7 +36,9 @@ class PhoneVerifyScreen extends ConsumerStatefulWidget {
 }
 
 class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
-  final _numara = TextEditingController();
+  /// E.164 derlenmiş numara — PhoneNumberField'dan gelir (O4): ülke
+  /// aramalı listeden, boşluk/sıfır temizliği bileşende.
+  String _numara = '';
   final _kod = TextEditingController();
   String? _verificationId;
   bool _mesgul = false;
@@ -41,14 +46,13 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
 
   @override
   void dispose() {
-    _numara.dispose();
     _kod.dispose();
     super.dispose();
   }
 
   Future<void> _kodGonder() async {
     final l10n = AppLocalizations.of(context);
-    final numara = _numara.text.trim();
+    final numara = _numara;
     if (!numara.startsWith('+') || numara.length < 10) {
       setState(() => _hata = l10n.phoneInvalid);
       return;
@@ -139,12 +143,30 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
       case 'account-exists-with-different-credential':
         return l10n.phoneTakenError;
       case 'invalid-verification-code':
+      case 'invalid-verification-id':
         return l10n.phoneCodeWrong;
       case 'invalid-phone-number':
         return l10n.phoneInvalid;
       case 'too-many-requests':
+      case 'quota-exceeded':
         return l10n.phoneTooManyTries;
+      // Aşağıdaki üçü KURULUM sorunlarıdır ve eskiden jenerik "bir şeyler
+      // ters gitti"ye düşüyordu — kullanıcı "kod gelmiyor" diyor, neden
+      // hiç görünmüyordu. Artık ayrışıyor: sağlayıcı kapalı / uygulama
+      // doğrulaması (SHA-256, Play Integrity) eksik.
+      case 'operation-not-allowed':
+        return l10n.phoneSmsDisabled;
+      case 'app-not-authorized':
+      case 'missing-client-identifier':
+        return l10n.phoneAppNotVerified;
       default:
+        // Nedeni bilmiyorsak en azından BİZ öğrenelim: kod+mesaj
+        // Crashlytics'e gider (eskiden hiçbir yere gitmiyordu).
+        if (!kDebugMode) {
+          FirebaseCrashlytics.instance.recordError(
+              'phone-verify: ${e.code}: ${e.message}', StackTrace.current,
+              fatal: false);
+        }
         return l10n.genericError;
     }
   }
@@ -164,20 +186,14 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
             Text(l10n.phoneVerifyBody, style: RythoType.bodyDim),
             const SizedBox(height: RythoSpace.xl),
             if (!kodAsamasi) ...[
-              TextField(
-                controller: _numara,
-                style: RythoType.body,
-                keyboardType: TextInputType.phone,
-                autofillHints: const [AutofillHints.telephoneNumber],
-                decoration: InputDecoration(
-                  labelText: l10n.phoneFieldLabel,
-                  hintText: '+90 5xx xxx xx xx',
-                ),
-                onChanged: (_) => setState(() => _hata = null),
+              PhoneNumberField(
+                onChanged: (e164) => setState(() {
+                  _numara = e164;
+                  _hata = null;
+                }),
               ),
             ] else ...[
-              Text(l10n.phoneCodeSentTo(_numara.text.trim()),
-                  style: RythoType.body),
+              Text(l10n.phoneCodeSentTo(_numara), style: RythoType.body),
               const SizedBox(height: RythoSpace.md),
               TextField(
                 controller: _kod,
