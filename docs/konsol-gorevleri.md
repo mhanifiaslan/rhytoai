@@ -89,22 +89,22 @@ alma çalışmaz:
    `REVENUECAT_ANDROID_KEY` ve `REVENUECAT_IOS_KEY` değerlerini değiştir.
    (Dosya gitignore'da; anahtarlar repoya girmez.)
 
-## 3b. Test kilidi: RYTHO_FORCE_PLUS (yayın öncesi GERİ ALINACAK)
+## 3b. Test kilidi: RYTHO_FORCE_PLUS — **KALDIRILDI (2026-08-07, M3)**
 
-Test sürecinde tüm Rytho+ kilitleri açık dursun diye backend'e
-`RYTHO_FORCE_PLUS=1` ortam değişkeni verildi (R10): sunucu herkesi abone
-sayar, mobil kilitler de `/billing/status` üzerinden buna uyar.
+R10'da verilen `RYTHO_FORCE_PLUS=1` üretimden kaldırıldı (rev 00046):
+`/billing/status` artık GERÇEK abonelik durumunu döner; paywall gerçek
+haliyle görünür. Test hesabına Rytho+ gerektiğinde yol: Play lisanslı
+test hesabıyla ücretsiz satın alma (iç test kanalı).
 
-**Yayına çıkmadan önce mutlaka kaldır** (yoksa ücretli içerik herkese
-açık gider):
+Tekrar gerekirse (yalnız geçici test için):
+`gcloud run services update rytho-backend --region us-central1
+--project rhytoai --update-env-vars RYTHO_FORCE_PLUS=1` — ama bir
+sonraki `deploy-backend.ps1` çalışması bunu sessizce siler (betikteki
+--set-env-vars uyarısına bak).
 
-```
-gcloud run services update rytho-backend --region us-central1 \
-  --project rhytoai --remove-env-vars RYTHO_FORCE_PLUS
-```
-
-Aynı kapanış listesinde: `RYTHO_TOKENS_ENFORCE` hâlâ 0 (jeton harcaması
-kuru çalışma modunda) — gözlem bitince 1 yapılacak.
+Kapanış listesinde kalan: `RYTHO_TOKENS_ENFORCE` hâlâ 0 (jeton
+harcaması kuru çalışma) — M4 gözlemi bitince 1 yapılacak ve
+deploy-backend.ps1'e kalıcı yazılacak.
 
 ## 3c. Web sitesi + gizli admin paneli (W0–W9 ile kuruldu)
 
