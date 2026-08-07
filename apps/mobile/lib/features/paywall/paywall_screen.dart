@@ -19,7 +19,6 @@ import '../../widgets/glass.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/star_burst.dart';
 import '../profile/legal_page.dart';
-import 'redeem_code_dialog.dart';
 
 /// RYTHO+ paywall.
 ///
@@ -269,17 +268,10 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                 style: RythoText.label(12, color: RythoColors.parchmentDim)),
           ),
         ),
-        // Ortak kodu (W9): dönüşüm anında yakalar — kod jeton bonusu verir,
-        // fiyatı DEĞİŞTİRMEZ (mağaza kuralı; dialog sunucu hükmünü gösterir).
-        Center(
-          child: TextButton(
-            onPressed: _busy
-                ? null
-                : () => showRedeemCodeDialog(context, ref),
-            child: Text(l10n.paywallHaveCode,
-                style: RythoText.label(12, color: RythoColors.lilac)),
-          ),
-        ),
+        // Ortak kodu girişi KALDIRILDI (A2): jeton-bonusu/atıf modeli
+        // şimdilik kullanılmıyor. Backend (/billing/redeem-code + admin
+        // Ortaklar paneli) bilinçli olarak duruyor — ileride farklı bir
+        // ödül modeli tasarlanırsa zemin hazır.
         // Mağaza kuralı: iptal ve yenileme koşulları satın alma ekranında
         // açıkça yazmalı.
         Padding(

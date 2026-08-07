@@ -56,6 +56,8 @@ dependencies:
   # Araçlar
   image_picker: ^1.2.1
   intl: ^0.20.2
+  # Play abonelik yönetimi sayfası (Abonelik ekranındaki "Aboneliği yönet").
+  url_launcher: ^6.3.1
   audioplayers: ^6.8.1
   shared_preferences: ^2.5.5
   # Uygulama ON PLANDAYKEN gelen bildirimi gostermek icin. Android'de FCM'in

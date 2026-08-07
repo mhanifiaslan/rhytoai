@@ -703,21 +703,56 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bigThreeStart => 'Begin the journey';
 
   @override
-  String get redeemCodeTitle => 'Use a code';
+  String get profileSubscriptionRow => 'Subscription & tokens';
 
   @override
-  String get redeemCodeHint => 'PARTNER CODE';
+  String get subscriptionScreenTitle => 'Subscription & Tokens';
 
   @override
-  String get redeemCodeAction => 'Redeem';
+  String get subPlanLabel => 'PLAN';
 
   @override
-  String redeemCodeSuccess(int tokens) {
-    return '$tokens tokens added ✨';
-  }
+  String get subPlanFree => 'Free';
 
   @override
-  String get paywallHaveCode => 'Have a partner code?';
+  String get subPlanFreeBody =>
+      'Your personalised daily reading, natal report, BaZi, Year Chart and Inner Calendar open with Rytho+.';
+
+  @override
+  String get subPlanMonthly => 'Rytho+ Monthly';
+
+  @override
+  String get subPlanYearly => 'Rytho+ Yearly';
+
+  @override
+  String get subGoPlus => 'Go Rytho+';
+
+  @override
+  String get subStatusLabel => 'Status';
+
+  @override
+  String get subStatusTrial => 'Trial';
+
+  @override
+  String get subRenewsLabel => 'Renews';
+
+  @override
+  String get subEndsLabel => 'Ends';
+
+  @override
+  String get subManage => 'Manage subscription';
+
+  @override
+  String get subRestoreDone => 'Your subscription is back ✨';
+
+  @override
+  String get subMonthlyAllowanceRow => 'Monthly allowance';
+
+  @override
+  String get subAllowanceResetsRow => 'Refreshes on';
+
+  @override
+  String get subBuyTokens => 'Buy a token pack';
 
   @override
   String get atlasWaitStage1 => 'Placing the planets';

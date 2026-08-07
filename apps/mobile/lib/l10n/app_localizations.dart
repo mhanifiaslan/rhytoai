@@ -1370,35 +1370,107 @@ abstract class AppLocalizations {
   /// **'Yolculuğa başla'**
   String get bigThreeStart;
 
-  /// No description provided for @redeemCodeTitle.
+  /// No description provided for @profileSubscriptionRow.
   ///
   /// In tr, this message translates to:
-  /// **'Kod kullan'**
-  String get redeemCodeTitle;
+  /// **'Abonelik ve jetonlar'**
+  String get profileSubscriptionRow;
 
-  /// No description provided for @redeemCodeHint.
+  /// No description provided for @subscriptionScreenTitle.
   ///
   /// In tr, this message translates to:
-  /// **'ORTAK KODU'**
-  String get redeemCodeHint;
+  /// **'Abonelik ve Jetonlar'**
+  String get subscriptionScreenTitle;
 
-  /// No description provided for @redeemCodeAction.
+  /// No description provided for @subPlanLabel.
   ///
   /// In tr, this message translates to:
-  /// **'Kullan'**
-  String get redeemCodeAction;
+  /// **'PLAN'**
+  String get subPlanLabel;
 
-  /// No description provided for @redeemCodeSuccess.
+  /// No description provided for @subPlanFree.
   ///
   /// In tr, this message translates to:
-  /// **'{tokens} jeton yüklendi ✨'**
-  String redeemCodeSuccess(int tokens);
+  /// **'Ücretsiz'**
+  String get subPlanFree;
 
-  /// No description provided for @paywallHaveCode.
+  /// No description provided for @subPlanFreeBody.
   ///
   /// In tr, this message translates to:
-  /// **'Ortak kodun mu var?'**
-  String get paywallHaveCode;
+  /// **'Kişiye özel günlük okuma, natal rapor, BaZi, Yıl Haritası ve İç Takvim Rytho+ ile açılır.'**
+  String get subPlanFreeBody;
+
+  /// No description provided for @subPlanMonthly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık Rytho+'**
+  String get subPlanMonthly;
+
+  /// No description provided for @subPlanYearly.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıllık Rytho+'**
+  String get subPlanYearly;
+
+  /// No description provided for @subGoPlus.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho+\'a geç'**
+  String get subGoPlus;
+
+  /// No description provided for @subStatusLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Durum'**
+  String get subStatusLabel;
+
+  /// No description provided for @subStatusTrial.
+  ///
+  /// In tr, this message translates to:
+  /// **'Deneme sürümü'**
+  String get subStatusTrial;
+
+  /// No description provided for @subRenewsLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yenilenme'**
+  String get subRenewsLabel;
+
+  /// No description provided for @subEndsLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sona erme'**
+  String get subEndsLabel;
+
+  /// No description provided for @subManage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aboneliği yönet'**
+  String get subManage;
+
+  /// No description provided for @subRestoreDone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aboneliğin geri yüklendi ✨'**
+  String get subRestoreDone;
+
+  /// No description provided for @subMonthlyAllowanceRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aylık hak'**
+  String get subMonthlyAllowanceRow;
+
+  /// No description provided for @subAllowanceResetsRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hak tazelenir'**
+  String get subAllowanceResetsRow;
+
+  /// No description provided for @subBuyTokens.
+  ///
+  /// In tr, this message translates to:
+  /// **'Jeton paketi al'**
+  String get subBuyTokens;
 
   /// No description provided for @atlasWaitStage1.
   ///

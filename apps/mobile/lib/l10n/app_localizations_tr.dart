@@ -703,21 +703,56 @@ class AppLocalizationsTr extends AppLocalizations {
   String get bigThreeStart => 'Yolculuğa başla';
 
   @override
-  String get redeemCodeTitle => 'Kod kullan';
+  String get profileSubscriptionRow => 'Abonelik ve jetonlar';
 
   @override
-  String get redeemCodeHint => 'ORTAK KODU';
+  String get subscriptionScreenTitle => 'Abonelik ve Jetonlar';
 
   @override
-  String get redeemCodeAction => 'Kullan';
+  String get subPlanLabel => 'PLAN';
 
   @override
-  String redeemCodeSuccess(int tokens) {
-    return '$tokens jeton yüklendi ✨';
-  }
+  String get subPlanFree => 'Ücretsiz';
 
   @override
-  String get paywallHaveCode => 'Ortak kodun mu var?';
+  String get subPlanFreeBody =>
+      'Kişiye özel günlük okuma, natal rapor, BaZi, Yıl Haritası ve İç Takvim Rytho+ ile açılır.';
+
+  @override
+  String get subPlanMonthly => 'Aylık Rytho+';
+
+  @override
+  String get subPlanYearly => 'Yıllık Rytho+';
+
+  @override
+  String get subGoPlus => 'Rytho+\'a geç';
+
+  @override
+  String get subStatusLabel => 'Durum';
+
+  @override
+  String get subStatusTrial => 'Deneme sürümü';
+
+  @override
+  String get subRenewsLabel => 'Yenilenme';
+
+  @override
+  String get subEndsLabel => 'Sona erme';
+
+  @override
+  String get subManage => 'Aboneliği yönet';
+
+  @override
+  String get subRestoreDone => 'Aboneliğin geri yüklendi ✨';
+
+  @override
+  String get subMonthlyAllowanceRow => 'Aylık hak';
+
+  @override
+  String get subAllowanceResetsRow => 'Hak tazelenir';
+
+  @override
+  String get subBuyTokens => 'Jeton paketi al';
 
   @override
   String get atlasWaitStage1 => 'Gezegenler yerleşiyor';

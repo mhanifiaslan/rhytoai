@@ -121,11 +121,15 @@ kuru çalışma modunda) — gözlem bitince 1 yapılacak.
 - **İstatistikler:** her gece 02:40 UTC `rytho-stats` işi `adminStats/`
   dokümanını üretir; panel Genel Bakış'tan "Topla" ile elle de tetiklenir.
 - **Ortak kodları:** panel > Ortaklar: ortak ekle → kod üret (bonus jeton +
-  kullanım limiti). Kullanıcı kodu uygulamada Profil > "Kod kullan" ya da
-  paywall'daki linkten girer; her hesapta TEK kod. Kod girildikten SONRAKİ
+  kullanım limiti). Her hesapta TEK kod. Kod girildikten SONRAKİ
   satın almalar ortağa atfedilir; hakediş = atfedilen brüt × pay yüzdesi.
   **Mağaza fiyat indirimi buradan yapılamaz** — gerekiyorsa RevenueCat
   Offering / Play promo kodu konsoldan elle.
+  **NOT (2026-08-07, A2):** mobil girişler KALDIRILDI (Profil satırı +
+  paywall linki + dialog) — jeton-bonusu modeli şimdilik kullanılmıyor.
+  Backend (`/billing/redeem-code`, partner_service) ve panel Ortaklar
+  ekranı çalışır durumda DURUYOR; ileride farklı bir ödül/atıf modeli
+  tasarlanırsa zemin hazır, yalnız mobil arayüz yeniden kurulur.
 - **Deploy komutları:** site `firebase deploy --only hosting` · indeksler
   `firebase deploy --only firestore:indexes` · backend infra/deploy betiği.
 - Alan adı bağlanınca: Hosting'e özel alan adı + deep_links.dart

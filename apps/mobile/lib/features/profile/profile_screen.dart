@@ -10,9 +10,11 @@ import 'account_screen.dart';
 import 'birth_record_screen.dart';
 import 'delete_account.dart';
 import 'profile_sections.dart';
-import '../paywall/redeem_code_dialog.dart';
 import 'residence_dialog.dart';
+import 'subscription_screen.dart';
 import '../../core/providers.dart';
+import '../../core/subscription.dart';
+import '../../core/wallet.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/nebula_widgets.dart';
@@ -236,12 +238,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onTap: () => _ac(const AppearanceSettingsScreen()),
             ),
             const Divider(height: 1, indent: RythoSpace.lg),
-            // Ortak kodu (W9): jeton bonusu + gelir atfı. Kalıcı giriş
-            // noktası burası; paywall'da da küçük bir link var.
+            // Abonelik + jeton bilgisi (A1): plan, yenilenme, bakiye —
+            // hepsi tek ekranda. ("Kod kullan" satırı A2'de kaldırıldı;
+            // ortak kodu sistemi şimdilik kullanılmıyor, backend duruyor.)
             SettingsRow(
-              icon: Icons.redeem_rounded,
-              title: l10n.redeemCodeTitle,
-              onTap: () => showRedeemCodeDialog(context, ref),
+              icon: Icons.workspace_premium_outlined,
+              title: l10n.profileSubscriptionRow,
+              value: _abonelikOzeti(ref, l10n),
+              onTap: () => _ac(const SubscriptionScreen()),
             ),
             const Divider(height: 1, indent: RythoSpace.lg),
             SettingsRow(
@@ -287,6 +291,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   void _ac(Widget sayfa) =>
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => sayfa));
 
+  /// Satır değeri: "Rytho+ · 320 🪙" / "Ücretsiz · 12 🪙".
+  ///
+  /// İki sağlayıcı da hata durumunda sessiz varsayılana düşer
+  /// (SubscriptionStatus.none / WalletStatus.none) — satır hiçbir zaman
+  /// patlamaz, en kötü "Ücretsiz · 0 🪙" görünür.
+  String _abonelikOzeti(WidgetRef ref, AppLocalizations l10n) {
+    final abonelik =
+        ref.watch(subscriptionProvider).value ?? SubscriptionStatus.none;
+    final cuzdan = ref.watch(walletProvider).value ?? WalletStatus.none;
+    final plan = abonelik.active ? 'Rytho+' : l10n.subPlanFree;
+    return '$plan · ${cuzdan.total} 🪙';
+  }
 }
 
 // `_row` ve `_FaceConsentRow` KALDIRILDI (Tasarım A4). Etiket-değer
