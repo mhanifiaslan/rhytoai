@@ -23,6 +23,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/city_search_field.dart';
 import '../../widgets/cosmic_scaffold.dart';
 
 class BirthRecordScreen extends ConsumerStatefulWidget {
@@ -42,6 +43,9 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
   late bool _saatBiliniyor;
 
   final _sehir = TextEditingController();
+
+  /// Şehir seçiciden gelen ülke kodu; serbest metin girişinde null.
+  String? _ulke;
   late String _cinsiyet;
   bool _mesgul = false;
 
@@ -59,6 +63,7 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
       minute: int.tryParse(parcalar.last) ?? 0,
     );
     _sehir.text = kayit.city;
+    _ulke = kayit.nation;
     _cinsiyet = kayit.gender;
   }
 
@@ -70,7 +75,20 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
                 '${_saat.minute.toString().padLeft(2, '0')}',
         city: _sehir.text,
         gender: _cinsiyet,
+        nation: _ulke,
       );
+
+  Future<void> _sehirSec() async {
+    final secim =
+        await showCitySearch(context, initialQuery: _sehir.text);
+    if (secim == null) return;
+    setState(() {
+      _sehir.text = secim.name;
+      // Serbest metin kaçışında ülke boş döner → "bilinmiyor" yazılır;
+      // bayat ülke kodu bırakmak aynı adlı şehirlerde yanlış çözüm demek.
+      _ulke = secim.nation.isEmpty ? null : secim.nation;
+    });
+  }
 
   bool get _degisti => _baslangic != null && !_baslangic!.sameAs(_guncel);
 
@@ -170,11 +188,12 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
                   style: RythoText.body(13, color: RythoColors.parchmentDim)),
             ),
             const SizedBox(height: RythoSpace.md),
-            TextField(
-              controller: _sehir,
-              style: RythoType.body,
-              onChanged: (_) => setState(() {}),
-              decoration: InputDecoration(labelText: l10n.onboardingCity),
+            // Serbest TextField'ın yerini aranabilir seçici aldı (O2):
+            // yanlış yazım kaynağında biter, ülke kodu da kaydedilir.
+            _AlanSatiri(
+              label: l10n.onboardingCity,
+              value: _sehir.text.isEmpty ? '—' : _sehir.text,
+              onTap: _sehirSec,
             ),
             const SizedBox(height: RythoSpace.lg),
             Row(

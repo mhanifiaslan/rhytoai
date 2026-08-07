@@ -82,6 +82,11 @@ service cloud.firestore {
           // Tercihler (varsayılan açık) ve sessiz saat aralığı (yerel saat).
           'notifyDaily', 'notifyStreak', 'notifyFriends',
           'quietFrom', 'quietTo',
+          // Yaşanan şehir (D3): Yıl Haritası bu konuma kurulur. Alan D3'te
+          // eklendi ama bu listeye GİRMEMİŞTİ — dialog üretimde
+          // permission-denied ile düşüyordu (faceConsent olayının aynısı;
+          // motor merge'de SONUÇ dokümana bakar). O2'de kapatıldı.
+          'residenceCity', 'residenceNation',
           // Biyometrik işleme rızası — LİSTEDE ama DEĞİŞMEZ (aşağıya bak).
           'faceConsent'
         ])

@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/city_search_field.dart';
 
 /// "Şu an yaşadığın şehir" dialogu (D3).
 ///
@@ -84,12 +85,24 @@ class _ResidenceDialogState extends ConsumerState<_ResidenceDialog> {
       content: Column(mainAxisSize: MainAxisSize.min, children: [
         Text(l10n.residenceCityBody, style: RythoType.bodyDim),
         const SizedBox(height: 16),
+        // Serbest metin yerine aranabilir seçici (O2): alan dokunulunca
+        // tam ekran arama açılır, seçim kutuya yazılır.
         TextField(
           controller: _controller,
-          autofocus: true,
+          readOnly: true,
           style: RythoType.body,
-          decoration: InputDecoration(labelText: l10n.onboardingCity),
-          onSubmitted: (_) => _kaydet(),
+          decoration: InputDecoration(
+            labelText: l10n.onboardingCity,
+            suffixIcon: const Icon(Icons.search_rounded,
+                size: 18, color: RythoColors.lilac),
+          ),
+          onTap: () async {
+            final secim = await showCitySearch(context,
+                initialQuery: _controller.text);
+            if (secim != null && mounted) {
+              setState(() => _controller.text = secim.name);
+            }
+          },
         ),
         if (_hata != null) ...[
           const SizedBox(height: 10),

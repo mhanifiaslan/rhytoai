@@ -93,6 +93,9 @@ flutter:
 
   assets:
     - assets/sounds/
+    # Şehir + ülke dizinleri (O1): GeoNames'ten build_gazetteer.py üretir.
+    # CC-BY 4.0 — atıf hukuk sayfasında.
+    - assets/data/
     # Marka: giris basligindaki logo (Revize R7). SVG kaynak olarak repoda
     # duruyor, pakete yalnizca PNG giriyor.
     - assets/brand/rytho_logo_512.png

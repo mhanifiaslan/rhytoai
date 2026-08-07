@@ -35,6 +35,7 @@ class BirthRecord {
     required this.time,
     required this.city,
     required this.gender,
+    this.nation,
   });
 
   /// Yalnızca gün/ay/yıl anlamlı.
@@ -51,6 +52,13 @@ class BirthRecord {
 
   /// `female` | `male` | `other`.
   final String gender;
+
+  /// ISO-2 ülke kodu (`TR`, `DE`...) — şehir seçiciden gelir (O2).
+  ///
+  /// null = bilinmiyor (eski kayıt ya da serbest metin girişi). Sunucu
+  /// aynı adlı şehirleri (Tripoli LB/LY) bu kodla ayırt eder; yokluğunda
+  /// nüfusça en büyük aday seçilir — davranış eskisiyle aynı.
+  final String? nation;
 
   String get dateText => '${date.year.toString().padLeft(4, '0')}-'
       '${date.month.toString().padLeft(2, '0')}-'
@@ -73,6 +81,7 @@ class BirthRecord {
       time: profile?['birthTime'] as String?,
       city: (profile?['birthCity'] as String?) ?? 'Istanbul',
       gender: (profile?['gender'] as String?) ?? 'female',
+      nation: profile?['birthNation'] as String?,
     );
   }
 
@@ -80,7 +89,8 @@ class BirthRecord {
       dateText == other.dateText &&
       time == other.time &&
       city.trim() == other.city.trim() &&
-      gender == other.gender;
+      gender == other.gender &&
+      nation == other.nation;
 }
 
 /// [saveBirthRecord] sonucu.
@@ -111,6 +121,9 @@ Map<String, dynamic> birthWriteData(
     // da korunur; birthPayload hour_known bayrağını buradan türetiyor.
     'birthTime': record.time ?? FieldValue.delete(),
     'birthCity': record.city.trim(),
+    // Şehir seçiciden gelen ülke kodu; serbest metin girişinde silinir —
+    // bayat ülke, bayat burç kadar yanıltıcıdır (aynı adlı şehirler).
+    'birthNation': record.nation ?? FieldValue.delete(),
     'gender': record.gender,
     'onboardingCompleted': true,
     'sunSign': chart?['sun_sign'] ?? FieldValue.delete(),
@@ -142,6 +155,7 @@ Future<BirthSaveResult> saveBirthRecord(
           'birthDate': record.dateText,
           'birthTime': record.time,
           'birthCity': record.city.trim(),
+          'birthNation': record.nation,
           'gender': record.gender,
           'displayName': user.displayName,
         }));

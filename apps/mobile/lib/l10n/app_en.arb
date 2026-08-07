@@ -4,6 +4,17 @@
   "atlasYearChartSubtitle": "Solar return",
   "atlasInnerCalendar": "Inner Calendar",
   "atlasInnerCalendarSubtitle": "Progressions + transits",
+  "citySearchHint": "Search for a city…",
+  "citySearchPrompt": "Start typing your birth city — search across 34,000 cities.",
+  "citySearchNoResults": "Not in the list — you can save it exactly as typed.",
+  "citySearchUseAsTyped": "Save as \"{query}\"",
+  "@citySearchUseAsTyped": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "residenceCityTitle": "Where you live",
   "residenceCityRowSubtitle": "Your year chart is cast here",
   "residenceCityBody": "A solar return is cast for wherever you are on your birthday — the city changes the Ascendant and the houses. Leave it empty and your birth city is used.",

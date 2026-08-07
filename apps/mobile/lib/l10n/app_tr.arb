@@ -4,6 +4,17 @@
   "atlasYearChartSubtitle": "Güneş dönüşü",
   "atlasInnerCalendar": "İç Takvim",
   "atlasInnerCalendarSubtitle": "Progresyon + transit",
+  "citySearchHint": "Şehir ara…",
+  "citySearchPrompt": "Doğduğun şehrin adını yazmaya başla — 34 bin şehir arasından bul.",
+  "citySearchNoResults": "Listede bulunamadı — yazdığın adla da kaydedebilirsin.",
+  "citySearchUseAsTyped": "\"{query}\" olarak kaydet",
+  "@citySearchUseAsTyped": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
   "residenceCityTitle": "Yaşadığın şehir",
   "residenceCityRowSubtitle": "Yıl haritası buraya kurulur",
   "residenceCityBody": "Yıl haritası, doğum gününde bulunduğun yere kurulur — şehir Yükselen'i ve evleri değiştirir. Boş bırakırsan doğum şehrin kullanılır.",
