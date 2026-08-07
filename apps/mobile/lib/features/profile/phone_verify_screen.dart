@@ -159,6 +159,12 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
       case 'app-not-authorized':
       case 'missing-client-identifier':
         return l10n.phoneAppNotVerified;
+      // 17499/39 (cihazda görüldü, 2026-08-07): Firebase'in kötüye
+      // kullanım koruması — aynı numara/cihazla kısa sürede çok deneme.
+      // Birkaç saatte kendiliğinden açılır; kullanıcıya bunu söylemek
+      // "bir şeyler ters gitti"den çok daha az korkutucu.
+      case 'internal-error':
+        return l10n.phoneTemporarilyBlocked;
       default:
         // Nedeni bilmiyorsak en azından BİZ öğrenelim: kod+mesaj
         // Crashlytics'e gider (eskiden hiçbir yere gitmiyordu).

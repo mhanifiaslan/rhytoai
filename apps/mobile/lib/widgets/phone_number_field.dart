@@ -54,13 +54,25 @@ class CountryDirectory {
 }
 
 /// E.164 derleyici: seçili ülke + ulusal numara.
+///
+/// Kullanıcı alışkanlıkları affedilir: boşluk/tire, baştaki sıfır
+/// ("0532..."), hatta ülke kodunun ELLE tekrar yazılması ("+90 532..."
+/// ya da "90532...") — hepsi aynı doğru numaraya derlenir. Bu önemli
+/// çünkü Firebase yanlış derlenmiş numarayı da kabul edip "SMS
+/// gönderildi" diyebiliyor; SMS hiç var olmayan numaraya gider ve
+/// kullanıcının gördüğü şey "kod gelmiyor" olur.
 String composeE164(Country country, String national) {
-  var n = national.replaceAll(RegExp(r'[\s\-().]'), '');
-  // Ulusal yazımın baştaki sıfırı uluslararası biçimde yer almaz
-  // ("0532..." → "532..."). Kullanıcı alışkanlığı sıfırla yazmak;
-  // sessizce düzeltilir.
+  // Rakam dışı her şey atılır ('+' dahil).
+  var n = national.replaceAll(RegExp(r'\D'), '');
+  // Ülke kodu ulusal alana da yazıldıysa kırpılır ("90532..." → "532...")
+  // — kalan uzunluk gerçek bir ulusal numarayı andırıyorsa.
+  final kod = country.dialCode;
+  if (n.startsWith(kod) && n.length - kod.length >= 8) {
+    n = n.substring(kod.length);
+  }
+  // Ulusal yazımın baştaki sıfırı uluslararası biçimde yer almaz.
   if (n.startsWith('0')) n = n.substring(1);
-  return '+${country.dialCode}$n';
+  return '+$kod$n';
 }
 
 /// Ülke + ulusal numara girişi; her değişimde E.164'ü bildirir.

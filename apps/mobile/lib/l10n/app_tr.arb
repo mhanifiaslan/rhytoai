@@ -28,6 +28,7 @@
   "wizardNotifyAllow": "Haber ver 🔔",
   "countrySearchHint": "Ülke ara…",
   "phoneSmsDisabled": "SMS doğrulama şu an açık değil. Daha sonra tekrar dene.",
+  "phoneTemporarilyBlocked": "Çok sayıda deneme yüzünden doğrulama geçici olarak durduruldu. Birkaç saat sonra tekrar dene.",
   "phoneAppNotVerified": "Uygulama doğrulaması başarısız oldu. Uygulamayı güncelleyip tekrar dene.",
   "citySearchHint": "Şehir ara…",
   "citySearchPrompt": "Doğduğun şehrin adını yazmaya başla — 34 bin şehir arasından bul.",
