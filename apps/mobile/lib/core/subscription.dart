@@ -36,8 +36,13 @@ const String kRevenueCatIosKey = String.fromEnvironment('REVENUECAT_IOS_KEY');
 /// RevenueCat panelinde tanımlı yetki (entitlement) kimliği.
 /// Paneldeki adla birebir aynı olmalı; farklıysa satın alma sonrası
 /// `entitlements.active` boş görünür ve abonelik açılmaz.
-const String kPlusEntitlement =
-    String.fromEnvironment('RYTHO_PLUS_ENTITLEMENT', defaultValue: 'rytho_plus');
+///
+/// Varsayılan panele HİZALI (M1): eski varsayılan 'rytho_plus' idi ve
+/// dart-define'sız her derleme (CI, düz `flutter build`) sessizce yanlış
+/// yetkiye bakıyordu — panel 'RhytoAI Pro'. Tek gerçek panel kimliğidir.
+const String kPlusEntitlement = String.fromEnvironment(
+    'RYTHO_PLUS_ENTITLEMENT',
+    defaultValue: 'RhytoAI Pro');
 
 bool get billingConfigured =>
     kRevenueCatAndroidKey.isNotEmpty || kRevenueCatIosKey.isNotEmpty;

@@ -105,6 +105,13 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       if (ok && mounted) {
         await _kutla();
         if (mounted) Navigator.of(context).pop(true);
+      } else if (!ok && mounted) {
+        // Satın alma cihazda bitti ama beklenen yetki (entitlement)
+        // müşteri kaydında görünmüyor — tipik nedeni panelde ürünün
+        // yanlış/eksik entitlement'a bağlanması. Eskiden bu dal SESSİZDİ:
+        // kullanıcı parayı öder, ekran tepkisiz kalırdı (M1 onarımı).
+        setState(() => _error =
+            AppLocalizations.of(context).purchaseEntitlementMissing);
       }
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
@@ -361,19 +368,37 @@ class _PlanTile extends StatelessWidget {
 
   /// Deneme süresi varsa "3 gün ücretsiz, sonra X" — mağaza kuralı gereği
   /// denemenin ne zaman ücrete döndüğü satın alma ekranında yazmak zorunda.
+  ///
+  /// İki kaynak denenir (M1): `introductoryPrice` (eski model) boşsa
+  /// Play'in modern teklif modelindeki ücretsiz faz
+  /// (`defaultOption.freePhase`). Google Play'de deneme bir base-plan
+  /// TEKLİFİDİR ve intro alanı null kalabiliyor — yedek olmadan ibare
+  /// sessizce kaybolur (inceleme reddi sebebi).
   static String _priceLine(AppLocalizations l10n, StoreProduct product) {
-    final intro = product.introductoryPrice;
-    if (intro == null) return product.priceString;
+    var sayi = 0;
+    PeriodUnit? birim;
 
-    final unit = switch (intro.periodUnit) {
+    final intro = product.introductoryPrice;
+    if (intro != null) {
+      sayi = intro.periodNumberOfUnits;
+      birim = intro.periodUnit;
+    } else {
+      final donem = product.defaultOption?.freePhase?.billingPeriod;
+      if (donem != null) {
+        sayi = donem.value;
+        birim = donem.unit;
+      }
+    }
+    if (birim == null || sayi <= 0) return product.priceString;
+
+    final unit = switch (birim) {
       PeriodUnit.day => l10n.unitDay,
       PeriodUnit.week => l10n.unitWeek,
       PeriodUnit.month => l10n.unitMonth,
       PeriodUnit.year => l10n.unitYear,
       _ => l10n.unitDay,
     };
-    return l10n.trialThenPrice(
-        intro.periodNumberOfUnits, unit, product.priceString);
+    return l10n.trialThenPrice(sayi, unit, product.priceString);
   }
 
   @override

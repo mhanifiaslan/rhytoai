@@ -67,13 +67,10 @@ birebir şu olmalı:
 2. Bu üç ürünü HİÇBİR entitlement'a BAĞLAMA: bunlar aboneliğe değil
    cüzdana gidiyor; krediyi webhook'taki `NON_RENEWING_PURCHASE` olayı
    ürün kimliğinden veriyor.
-3. **Entitlement adı tutarsızlığı**: mobil kod varsayılan olarak
-   `rytho_plus` entitlement'ına bakıyor (`RYTHO_PLUS_ENTITLEMENT`
-   define'ı ile değiştirilebilir). RevenueCat'te entitlement'ın
-   "RhytoAI Pro" ise iki seçenekten birini yap:
-   - (önerilen) RevenueCat → Entitlements → kimliği `rytho_plus` yap; YA DA
-   - `apps/mobile/dart_defines.local.json` içine
-     `"RYTHO_PLUS_ENTITLEMENT": "RhytoAI Pro"` ekle.
+3. **Entitlement kimliği: `RhytoAI Pro`** (M1'de ÇÖZÜLDÜ, 2026-08-07):
+   mobil kodun varsayılanı panele hizalandı — dart-define'sız derleme
+   de artık `RhytoAI Pro` yetkisine bakar. Panelde kimliği DEĞİŞTİRME;
+   abonelik ürünü (`rytho_plus_monthly`) bu entitlement'a bağlanır.
 4. **Webhook** (kuruluysa atla): Project settings → Integrations →
    Webhooks → URL:
    `https://rytho-backend-770582338651.us-central1.run.app/api/v1/billing/revenuecat`

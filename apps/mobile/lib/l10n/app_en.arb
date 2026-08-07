@@ -29,6 +29,7 @@
   "countrySearchHint": "Search for a country…",
   "phoneSmsDisabled": "SMS verification isn't available right now. Please try again later.",
   "phoneTemporarilyBlocked": "Verification is temporarily paused after too many attempts. Please try again in a few hours.",
+  "purchaseEntitlementMissing": "Payment went through but the subscription couldn't be confirmed. Try \"Restore purchases\"; if it persists, contact us — your payment is safe.",
   "phoneAppNotVerified": "App verification failed. Update the app and try again.",
   "citySearchHint": "Search for a city…",
   "citySearchPrompt": "Start typing your birth city — search across 34,000 cities.",

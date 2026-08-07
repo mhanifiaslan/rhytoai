@@ -1,9 +1,24 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("com.google.gms.google-services")
     id("com.google.firebase.crashlytics")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// Yükleme anahtarı (M1): android/key.properties git DIŞI, keystore C:\keys
+// altında (repo dışı). Dosya yoksa release DEBUG anahtarına düşer —
+// geliştirici makinesinde `flutter run --release` çalışmaya devam etsin;
+// Play'e giden AAB'yi üreten makinede key.properties ZORUNLU (yanlış
+// imzalı AAB'yi Play zaten reddeder).
+val keyProps = Properties()
+val keyPropsFile = rootProject.file("key.properties")
+val releaseImzasiVar = keyPropsFile.exists()
+if (releaseImzasiVar) {
+    keyProps.load(FileInputStream(keyPropsFile))
 }
 
 android {
@@ -31,11 +46,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (releaseImzasiVar) {
+            create("release") {
+                keyAlias = keyProps.getProperty("keyAlias")
+                keyPassword = keyProps.getProperty("keyPassword")
+                storeFile = file(keyProps.getProperty("storeFile"))
+                storePassword = keyProps.getProperty("storePassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (releaseImzasiVar) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
     }
 }

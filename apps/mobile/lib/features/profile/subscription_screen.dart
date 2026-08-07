@@ -34,10 +34,14 @@ import '../paywall/token_store_screen.dart';
 /// açılır — kullanıcıyı hiçbir durumda çıkmaz sokakta bırakmayız.
 Uri _playSubscriptionUri(String? productId) {
   const paket = 'ai.rytho';
-  return Uri.parse(productId == null || productId.isEmpty
+  // Play webhook'u ürün kimliğini "urun:base_plan" biçiminde gönderebilir
+  // (rytho_plus_monthly:monthly). Play'in sku parametresi base-plan eki
+  // tanımaz — ':' öncesi kırpılır, yoksa "Yönet" sayfası açılmaz (M1).
+  final sku = (productId ?? '').split(':').first;
+  return Uri.parse(sku.isEmpty
       ? 'https://play.google.com/store/account/subscriptions'
       : 'https://play.google.com/store/account/subscriptions'
-          '?sku=$productId&package=$paket');
+          '?sku=$sku&package=$paket');
 }
 
 /// Bilinen ürün kimliğini insan diline çevirir; bilinmeyene ham kimlik.

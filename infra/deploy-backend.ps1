@@ -47,6 +47,11 @@ gcloud run deploy $SERVICE `
     --timeout 300 `
     --max-instances 3 `
     --min-instances 1 `
+    # DIKKAT: --set-env-vars mevcut degiskenleri TUMUYLE degistirir.
+    # Konsoldan elle verilen RYTHO_FORCE_PLUS / RYTHO_TOKENS_ENFORCE gibi
+    # bayraklar bir sonraki deploy'da SESSIZCE silinir. Jeton zorlamasi
+    # kalici acilacaksa (M4 gozlemi sonrasi) su satira eklenmeli:
+    #   RYTHO_TOKENS_ENFORCE=1
     --set-env-vars "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT" `
     --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest"
 
