@@ -9,6 +9,7 @@ import '../../widgets/glass.dart' show SkeletonPanel;
 import 'account_screen.dart';
 import 'birth_record_screen.dart';
 import 'delete_account.dart';
+import 'avatar_editor.dart';
 import 'profile_sections.dart';
 import 'residence_dialog.dart';
 import 'subscription_screen.dart';
@@ -80,25 +81,48 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           children: [
         const SizedBox(height: 12),
         Center(
-          child: Container(
-            padding: const EdgeInsets.all(3),
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RythoColors.primaryGradient,
-              boxShadow: [
-                BoxShadow(color: RythoColors.magentaGlow, blurRadius: 26),
-              ],
-            ),
-            child: CircleAvatar(
-              radius: 40,
-              backgroundColor: RythoColors.inkLight,
-              backgroundImage: profile['photoUrl'] != null
-                  ? NetworkImage(profile['photoUrl'])
-                  : null,
-              child: profile['photoUrl'] == null
-                  ? Text('☽', style: RythoText.display(28))
-                  : null,
-            ),
+          // Avatar dokunulabilir (U1): galeriden seç → konumlandır/
+          // yakınlaştır → yükle. Küçük kalem rozeti dokunulabilirliği
+          // İLAN eder — rozetsiz avatar "sadece resim" okunur.
+          child: Pressable(
+            onTap: _fotoDegistir,
+            child: Stack(children: [
+              Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RythoColors.primaryGradient,
+                  boxShadow: [
+                    BoxShadow(
+                        color: RythoColors.magentaGlow, blurRadius: 26),
+                  ],
+                ),
+                child: CircleAvatar(
+                  radius: 40,
+                  backgroundColor: RythoColors.inkLight,
+                  backgroundImage: profile['photoUrl'] != null
+                      ? NetworkImage(profile['photoUrl'])
+                      : null,
+                  child: profile['photoUrl'] == null
+                      ? Text('☽', style: RythoText.display(28))
+                      : null,
+                ),
+              ),
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: RythoColors.inkLighter,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: RythoColors.glassStroke),
+                  ),
+                  child: const Icon(Icons.edit_rounded,
+                      size: 12, color: RythoColors.goldBright),
+                ),
+              ),
+            ]),
           ),
         ),
         const SizedBox(height: 12),
@@ -290,6 +314,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _ac(Widget sayfa) =>
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => sayfa));
+
+  Future<void> _fotoDegistir() async {
+    final l10n = AppLocalizations.of(context);
+    final mesajci = ScaffoldMessenger.of(context);
+    try {
+      final ok = await changeAvatar(context);
+      if (ok && mounted) {
+        mesajci.showSnackBar(
+            SnackBar(content: Text(l10n.avatarUpdated)));
+      }
+    } catch (_) {
+      // Yükleme/ağ hatası: sessiz kalmak "bastım, olmadı" bırakır.
+      if (mounted) {
+        mesajci.showSnackBar(
+            SnackBar(content: Text(l10n.avatarChangeFailed)));
+      }
+    }
+  }
 
   /// Satır değeri: "Rytho+ · 320 🪙" / "Ücretsiz · 12 🪙".
   ///

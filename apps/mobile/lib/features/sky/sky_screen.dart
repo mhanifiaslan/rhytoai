@@ -16,7 +16,9 @@ import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../../widgets/reading_card.dart';
 import '../../widgets/star_burst.dart';
+import '../../widgets/token_chip.dart';
 import '../chat/conversation_list_screen.dart';
+import '../shell/app_shell.dart' show shellTabProvider;
 import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
 import 'sign_story_screen.dart';
@@ -183,6 +185,8 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                 photoUrl: profile['photoUrl'],
                 streak: streak,
                 celebrate: _streakYeni,
+                onAvatarTap: () =>
+                    ref.read(shellTabProvider.notifier).state = 3,
               ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
                   begin: 0.08, curve: Curves.easeOutCubic),
               const SizedBox(height: RythoSpace.lg),
@@ -363,6 +367,7 @@ class _Header extends StatelessWidget {
     required this.name,
     required this.photoUrl,
     required this.streak,
+    required this.onAvatarTap,
     this.celebrate,
   });
 
@@ -370,6 +375,9 @@ class _Header extends StatelessWidget {
   final String name;
   final String? photoUrl;
   final int streak;
+
+  /// Avatara dokunuş — Profil sekmesine geçiş (U1).
+  final VoidCallback onAvatarTap;
 
   /// Seri bu oturumda büyüdüyse yeni sayı (R12-C1): rozet bir kez şişip
   /// yerine oturur, arkasında mini yıldız patlaması. Null: vurgu yok.
@@ -411,20 +419,25 @@ class _Header extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(children: [
-        Container(
-          padding: const EdgeInsets.all(2.5),
-          decoration: const BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: RythoColors.primaryGradient,
-          ),
-          child: CircleAvatar(
-            radius: 23,
-            backgroundColor: RythoColors.inkLight,
-            backgroundImage:
-                photoUrl != null ? NetworkImage(photoUrl!) : null,
-            child: photoUrl == null
-                ? Text('☽', style: RythoText.display(18))
-                : null,
+        // Avatar dokunulabilir (U1): Profil sekmesine götürür — en
+        // tanıdık desen (üstteki avatar = profil kapısı).
+        Pressable(
+          onTap: onAvatarTap,
+          child: Container(
+            padding: const EdgeInsets.all(2.5),
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RythoColors.primaryGradient,
+            ),
+            child: CircleAvatar(
+              radius: 23,
+              backgroundColor: RythoColors.inkLight,
+              backgroundImage:
+                  photoUrl != null ? NetworkImage(photoUrl!) : null,
+              child: photoUrl == null
+                  ? Text('☽', style: RythoText.display(18))
+                  : null,
+            ),
           ),
         ),
         const SizedBox(width: 12),
@@ -438,6 +451,10 @@ class _Header extends StatelessWidget {
                 style: RythoText.display(18, w: FontWeight.w600)),
           ]),
         ),
+        // Jeton hapı (U1): ekonomi ana ekranda her an görünür; dokununca
+        // Abonelik ve Jetonlar açılır (Duolingo mücevher sayacı modeli).
+        const TokenChip(),
+        const SizedBox(width: 8),
         _rozet(context),
         const SizedBox(width: 10),
         // Dock'taki merkez balonun MİNİSİ — aynı hedef (sohbet), aynı işaret.
