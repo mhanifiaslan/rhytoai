@@ -255,6 +255,17 @@ gerekiyor, o da konum istiyor.
 | Lisans | Swiss Ephemeris veri dosyaları — lisans yönetimi ürün sahibinde (ticari lisans süreci ayrıca yürütülüyor) |
 | Doğrulama | `tests/test_astro_engine.py::TestEfemerisVerisi` + almanak altın vektörleri (USNO ekinoks/gündönümü, 2020 büyük kavuşumu, 2019 Ay tutulması, 2023 Merkür retrosu) |
 
+## Gazetteer verisi (2026-08-07, O1)
+
+| Alan | Değer |
+|---|---|
+| Dosyalar | `backend/data/gazetteer.json`, `apps/mobile/assets/data/cities.json`, `apps/mobile/assets/data/countries.json` |
+| Kaynak | GeoNames (geonames.org) — `cities15000.zip`, `admin1CodesASCII.txt`, `countryInfo.txt` dump'ları |
+| Lisans | **CC-BY 4.0** — atıf zorunlu; uygulama içi atıf hukuk sayfasında (legal_texts.dart), dosya meta'sında kaynak satırı |
+| Üretici | `backend/scripts/build_gazetteer.py` (doğrulamalı: 81 TR ili + Türkçe egzonimler + eski gazetteer anahtarları assert edilir; ham dump'lar `backend/data/raw/` altında, git dışı) |
+| Neden | Eski elle yazılmış sözlük 81 ilin yalnız 33'ünü tanıyordu; çözülemeyen şehir sessizce İstanbul'a düşüyordu. Kullanıcı kararı: dump indirilip kendi veritabanımıza alınır — API/ağ bağımlılığı yok |
+| Doğrulama | `tests/test_geo_service.py` |
+
 ## Korpus dosyası künye biçimi
 
 Kitap kaynaklı dosyalar başlarında künye taşır. `rag_service` bunu okur ve her

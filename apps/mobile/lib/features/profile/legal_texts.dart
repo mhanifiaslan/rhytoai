@@ -228,7 +228,9 @@ const LegalSections kTermsOfUseTr = [
   (
     'Fikri mülkiyet',
     'Uygulamanın tasarımı, yazılımı ve bilgi tabanı Rytho\'ya aittir. '
-        'Efemeris hesaplarında Swiss Ephemeris (© Astrodienst AG) kullanılır.'
+        'Efemeris hesaplarında Swiss Ephemeris (© Astrodienst AG) kullanılır. '
+        'Şehir ve ülke verileri GeoNames\'ten (geonames.org) alınmıştır ve '
+        'CC-BY 4.0 lisansıyla kullanılmaktadır.'
   ),
   (
     'Sorumluluk sınırı',
@@ -451,7 +453,9 @@ const LegalSections kTermsOfUseEn = [
   (
     'Intellectual property',
     'The design, software and knowledge base of the app belong to Rytho. '
-        'Ephemeris calculations use Swiss Ephemeris (© Astrodienst AG).'
+        'Ephemeris calculations use Swiss Ephemeris (© Astrodienst AG). '
+        'City and country data is sourced from GeoNames (geonames.org), '
+        'used under the CC-BY 4.0 licence.'
   ),
   (
     'Limitation of liability',
