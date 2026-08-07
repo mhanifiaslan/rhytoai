@@ -4,6 +4,9 @@
   "atlasYearChartSubtitle": "Güneş dönüşü",
   "atlasInnerCalendar": "İç Takvim",
   "atlasInnerCalendarSubtitle": "Progresyon + transit",
+  "residenceCityTitle": "Yaşadığın şehir",
+  "residenceCityRowSubtitle": "Yıl haritası buraya kurulur",
+  "residenceCityBody": "Yıl haritası, doğum gününde bulunduğun yere kurulur — şehir Yükselen'i ve evleri değiştirir. Boş bırakırsan doğum şehrin kullanılır.",
   "solarReturnTitle": "Yıl Haritası",
   "solarReturnWaitStage1": "Güneş'in dönüş anı hesaplanıyor…",
   "solarReturnWaitStage2": "Yılın okuması yazılıyor…",
@@ -372,6 +375,14 @@
     "placeholders": {
       "percent": {
         "type": "Object"
+      }
+    }
+  },
+  "moonIlluminationAsOf": "{time} itibarıyla — oran gün içinde değişir",
+  "@moonIlluminationAsOf": {
+    "placeholders": {
+      "time": {
+        "type": "String"
       }
     }
   },

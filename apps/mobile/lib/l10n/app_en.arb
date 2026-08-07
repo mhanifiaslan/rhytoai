@@ -4,6 +4,9 @@
   "atlasYearChartSubtitle": "Solar return",
   "atlasInnerCalendar": "Inner Calendar",
   "atlasInnerCalendarSubtitle": "Progressions + transits",
+  "residenceCityTitle": "Where you live",
+  "residenceCityRowSubtitle": "Your year chart is cast here",
+  "residenceCityBody": "A solar return is cast for wherever you are on your birthday — the city changes the Ascendant and the houses. Leave it empty and your birth city is used.",
   "solarReturnTitle": "Year Chart",
   "solarReturnWaitStage1": "Calculating the Sun's return moment…",
   "solarReturnWaitStage2": "Writing the year's reading…",
@@ -372,6 +375,14 @@
     "placeholders": {
       "percent": {
         "type": "Object"
+      }
+    }
+  },
+  "moonIlluminationAsOf": "as of {time} — the figure shifts through the day",
+  "@moonIlluminationAsOf": {
+    "placeholders": {
+      "time": {
+        "type": "String"
       }
     }
   },

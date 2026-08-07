@@ -115,11 +115,77 @@ def is_subscriber(uid: str) -> bool:
 # Gunluk kotalar
 # ---------------------------------------------------------------------------
 
-def _today() -> str:
-    return dt.date.today().isoformat()
+#: Kullanicinin saat dilimi profilden gelir (cihaz yaziyor). Kota sicak bir
+#: yol; her istekte profil okumamak icin kisa sureli onbelleklenir. Dilim
+#: degisikligi en fazla bu kadar gecikmeyle yansir.
+_TZ_CACHE_TTL = 15 * 60
 
 
-def quota_state(uid: str, key: str, limit: int) -> tuple[int, int]:
+def _user_tz(uid: str):
+    """Kullanicinin saat dilimi; okunamazsa varsayilan (bildirimlerle ayni)."""
+    from core import cache  # tembel: core.cache -> core.* yonu karisik olmasin
+    anahtar = f"user-tz-{uid}"
+    ad = cache.get(anahtar)
+    if ad is None:
+        # Tembel import: services -> core yonu zaten var, modul duzeyinde
+        # geri bag dongusel import olurdu (device desenindeki gerekce).
+        from services import notification_service, profile_service
+        tz = notification_service.user_timezone(
+            profile_service.get_profile(uid) or {})
+        cache.set(anahtar, tz.key, ttl_seconds=_TZ_CACHE_TTL, owner_uid=uid)
+        return tz
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+    try:
+        return ZoneInfo(ad)
+    except (ZoneInfoNotFoundError, ValueError):
+        from services.notification_service import DEFAULT_TIMEZONE
+        return ZoneInfo(DEFAULT_TIMEZONE)
+
+
+def user_local_date(uid: str) -> dt.date:
+    """Kullanicinin YEREL takvim gunu.
+
+    Gun sinirinin tek kaynagi burasi: sunucu UTC'de calisiyor ve
+    `dt.date.today()` her yerde sunucunun gununu veriyordu — Turkiye'de
+    kullanicinin gunu saat 03:00'te donuyor, gece yarisindan sonra gunluk
+    okuma dunku metni gosteriyordu. Saat dilimi profilden gelir ve kisa
+    sureli onbelleklidir (bkz. `_user_tz`).
+    """
+    return dt.datetime.now(dt.timezone.utc).astimezone(_user_tz(uid)).date()
+
+
+def _quota_window(tz) -> tuple[str, float]:
+    """(yerel gun etiketi, pencerenin UTC epoch olarak kapanis ani).
+
+    Gun sinirini SUNUCUNUN degil kullanicinin gunune baglar: Cloud Run
+    UTC'de calisiyor ve Turkiye'de kullanicinin gunu saat 03:00'te
+    donuyordu — gece yarisindan sonra kota hâlâ dunku sayaci tasiyordu.
+    """
+    simdi = dt.datetime.now(dt.timezone.utc)
+    gun = simdi.astimezone(tz).date()
+    kapanis = dt.datetime.combine(gun + dt.timedelta(days=1), dt.time.min,
+                                  tzinfo=tz)
+    return gun.isoformat(), kapanis.timestamp()
+
+
+def _sayac_gecerli(data: dict[str, Any], gun: str, simdi_ts: float) -> bool:
+    """Kayitli sayac hâlâ yururlukteki pencereye mi ait?
+
+    Yerel gune gecmenin acacagi istismar kapisi burada kapaniyor: gun
+    etiketi tek basina yeterli olsaydi kullanici cihazinin saat dilimini
+    oynatarak gunde defalarca "yeni gun" tetikleyip ucretsiz kotayi
+    sifirlayabilirdi. Bu yuzden sifirlama, kayitli pencerenin GERCEKTEN
+    kapanmis olmasina bagli — dilim degisse de zaman geri alinamaz.
+
+    ``resetAtUtc`` tasimayan eski kayitlar icin davranis eskisi gibi: gun
+    etiketi degistiginde sifirlanir.
+    """
+    if data.get("date") == gun:
+        return True
+    return simdi_ts < float(data.get("resetAtUtc") or 0)
+
+
+def quota_state(uid: str, key: str, limit: int, tz=None) -> tuple[int, int]:
     """(kullanilan, kalan) — sayaci artirmadan okur."""
     doc_ref = _private_doc(uid, "quota")
     if doc_ref is None:
@@ -130,16 +196,20 @@ def quota_state(uid: str, key: str, limit: int) -> tuple[int, int]:
         return 0, limit
 
     data = (snapshot.to_dict() or {}) if snapshot.exists else {}
-    if data.get("date") != _today():
+    gun, _ = _quota_window(tz or _user_tz(uid))
+    if not _sayac_gecerli(data, gun,
+                          dt.datetime.now(dt.timezone.utc).timestamp()):
         return 0, limit
     used = int(data.get(key, 0))
     return used, max(limit - used, 0)
 
 
-def consume_quota(uid: str, key: str, limit: int) -> bool:
+def consume_quota(uid: str, key: str, limit: int, tz=None) -> bool:
     """Kotadan bir hak duser. Hak kalmadiysa ``False`` doner ve dusmez.
 
-    Gun degistiginde sayaclar sifirlanir (dokumandaki ``date`` alani).
+    Sayaclar kullanicinin YEREL gunu dondugunde sifirlanir; belgedeki
+    ``date`` etiketi o gunu, ``resetAtUtc`` ise pencerenin kapanis anini
+    tutar (bkz. `_sayac_gecerli`).
     """
     doc_ref = _private_doc(uid, "quota")
     if doc_ref is None:
@@ -150,15 +220,18 @@ def consume_quota(uid: str, key: str, limit: int) -> bool:
     try:
         snapshot = doc_ref.get()
         data = (snapshot.to_dict() or {}) if snapshot.exists else {}
-        today = _today()
-        if data.get("date") != today:
-            data = {"date": today}
+        gun, kapanis = _quota_window(tz or _user_tz(uid))
+        if not _sayac_gecerli(data, gun,
+                              dt.datetime.now(dt.timezone.utc).timestamp()):
+            data = {"date": gun, "resetAtUtc": kapanis}
 
         used = int(data.get(key, 0))
         if used >= limit:
             return False
 
         data[key] = used + 1
+        # Pencere alanlari SIFIRLAMA aninda yazilir, tuketimde degil: aksi
+        # halde dilim oynatan kullanici pencereyi ileri kaydirabilirdi.
         doc_ref.set(data)
         return True
     except Exception as exc:

@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Any, Callable
 
-from core import cache, i18n
+from core import cache, entitlements, i18n
 from services import (
     chart_context,
     chart_query,
@@ -81,7 +81,8 @@ def _cached_generate(cache_key: str, prompt: str, fallback: str,
 
 def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
                   lang: str | None = None,
-                  birth: dict[str, Any] | None = None) -> dict[str, Any]:
+                  birth: dict[str, Any] | None = None,
+                  today: dt.date | None = None) -> dict[str, Any]:
     """Kişiye özel günlük kozmik yorum: natal harita x güncel gökyüzü.
 
     ``birth`` verilirse bugünün gökyüzünün HARİTAYA değdiği noktalar da
@@ -94,7 +95,10 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     """
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
-    today = dt.date.today().isoformat()
+    # Gün, KULLANICININ yerel günü (D2). Sunucu UTC'de çalışıyor ve burada
+    # `dt.date.today()` vardı: Türkiye'de gece yarısıyla 03:00 arasında
+    # okuma hâlâ dünkü metni gösteriyordu.
+    today = (today or entitlements.user_local_date(user_id)).isoformat()
     # Dil önbellek anahtarına girer; aksi halde İngilizce kullanıcı Türkçe
     # üretilmiş yorumu görür.
     cache_key = f"daily-{user_id}-{today}-{lang}"
@@ -195,16 +199,23 @@ def horoscope_cache_key(sign: str, period: str, bucket: str, lang: str) -> str:
 
 
 def horoscope_reading(sign: str, period: str, sky: dict[str, Any],
-                      lang: str | None = None) -> dict[str, Any]:
+                      lang: str | None = None,
+                      today: dt.date | None = None) -> dict[str, Any]:
     """Burç bazlı günlük/haftalık/aylık yorum.
 
     Kullanıcıdan BAĞIMSIZ önbelleklenir: anahtar (burç, dönem, tarih kovası,
     dil). Böylece dil x burç x dönem başına LLM'e en fazla 1 kez gidilir;
     sonraki tüm kullanıcılar aynı dönem içinde önbellekten okur.
+
+    ``today`` isteğin sahibinin yerel günüdür (D2) ve önbelleği KİŞİSEL
+    yapmaz: anahtara giren şey gün değil tarih KOVASI, ve dünyada aynı anda
+    en fazla iki kova canlıdır. Yeni Zelanda'daki kullanıcı kendi gününü,
+    Türkiye'deki kendi gününü okur; ikisi de aynı kovadaki herkesle aynı
+    metni paylaşır.
     """
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
-    today = dt.date.today()
+    today = today or dt.date.today()
     bucket = _horoscope_bucket(period, today)
     cache_key = horoscope_cache_key(sign, period, bucket, lang)
 
@@ -264,17 +275,23 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
                  synastry: dict[str, Any], sky: dict[str, Any],
                  lang: str | None = None,
                  spend: Callable[[], None] | None = None,
-                 refund: Callable[[], None] | None = None) -> dict[str, Any]:
+                 refund: Callable[[], None] | None = None,
+                 today: dt.date | None = None) -> dict[str, Any]:
     """İki arkadaş için GÜNLÜK ikili dinamik okuması.
 
     Kalıcı bir uyum skoru üretilmez. Gerekçe iki katlı: skor ölçüm değil
     gelenektir (ürünün dürüstlük ilkesi), ve geri alınamaz bir damga gerçek
     ilişkilere zarar verir. Bunun yerine bugüne özgü, yarın değişebilecek bir
     dinamik anlatılır.
+
+    Gün, İSTEYEN tarafın yerel günü (D2). Çift bazlı anahtarın iki ucu
+    farklı dilimlerdeyse bir taraf ötekinden birkaç saat önce yeni okumaya
+    geçer — kabul edilen bir kayma; alternatifi, iki profili de okuyup
+    "ortak gün" uydurmaktı.
     """
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
-    today = dt.date.today()
+    today = today or entitlements.user_local_date(uid_a)
     cache_key = dyad_cache_key(uid_a, uid_b, today)
 
     cached = cache.get(cache_key)
@@ -413,8 +430,11 @@ def solar_return_report(user_id: str, sr: dict[str, Any],
     """
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
+    # Konum anahtara girer (D3): harita başka bir şehre kurulunca Yükselen
+    # ve evler tamamen değişir — eski rapor artık o haritayı anlatmıyor.
     cache_key = (f"solar-return-{user_id}"
                  f"-{str(sr.get('return_at_utc'))[:10]}"
+                 f"-{(sr.get('location') or {}).get('city') or '-'}"
                  f"-{sr.get('calc_version')}-{lang}")
     cached = cache.get(cache_key)
     if cached is not None:

@@ -496,6 +496,15 @@ ASTRO_NOTES = {
     "transit_hour_unknown": (
         "Doğum saati bilinmediği için Yükselen ve MC'ye yapılan transitler "
         "takvime alınmadı; takvim gezegen düzeyinde kalır."),
+    # {city} biçim alanı taşıyan beyanlar (D3): metin localize katmanında
+    # haritanın kurulduğu şehirle doldurulur.
+    "sr_relocated": (
+        "Bu yıl haritası {city} için kuruldu — yıl haritası, doğum "
+        "gününde bulunulan yere kurulur."),
+    "sr_birthplace_fallback": (
+        "Yaşadığın şehir kayıtlı olmadığı için yıl haritası doğum şehrine "
+        "kuruldu. Doğum gününde başka bir yerdeysen Yükselen ve evler "
+        "değişir; Profil'den yaşadığın şehri ekleyebilirsin."),
 }
 
 #: Transit takvimi olay türleri (T3).

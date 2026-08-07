@@ -83,15 +83,29 @@ _MOON_PHASES = [
 
 
 def _moon_phase(jd: float) -> dict[str, Any]:
+    """Evre adı boylam farkından, AYDINLANMA swisseph'in fenomen hesabından.
+
+    İkisi ayrı sorular. Evre adı, Ay-Güneş boylam farkının 45°'lik
+    dilimlerinden çıkar ve öyle doğrudur. Aydınlanan yüzde ise o açının
+    KOSİNÜSÜNE bağlıdır: k = (1 - cos ψ) / 2. Burada uzun süre lineer bir
+    yaklaşım kullanıldı ((1 - |açı-180|/180)) ve bu iki eğri yalnız 0°,
+    90°, 180°'de çakışıyor — arada 30 günlük ölçümde ortalama 6.7,
+    en fazla 10.5 puan sapıyordu (kullanıcı raporu: "başka kaynaklarda
+    farklı oran"). `swe.pheno_ut` aydınlanan kesri zaten döndürüyor ve
+    Ay'ın ekliptik enlemini de hesaba katıyor; ikinci bir formül yazmak
+    yerine o kullanılır.
+    """
     sun_lon = swe.calc_ut(jd, swe.SUN)[0][0]
     moon_lon = swe.calc_ut(jd, swe.MOON)[0][0]
     angle = (moon_lon - sun_lon) % 360
+    # pheno_ut -> (faz açısı, AYDINLANAN KESİR, elongasyon, çap, parlaklık)
+    illumination = round(swe.pheno_ut(jd, swe.MOON, swe.FLG_SWIEPH)[1] * 100)
     for limit, key, emoji in _MOON_PHASES:
         if angle < limit:
             return {"angle": round(angle, 1), "key": key, "emoji": emoji,
-                    "illumination": round((1 - abs(angle - 180) / 180) * 100)}
+                    "illumination": illumination}
     return {"angle": round(angle, 1), "key": "new_moon", "emoji": "🌑",
-            "illumination": 0}
+            "illumination": illumination}
 
 
 # --------------------------------------------------------------------------
@@ -205,7 +219,9 @@ def _horizons_distances() -> dict[str, float]:
 #: Yük şekli her değiştiğinde SÜRÜM YÜKSELTİLİR. v2 -> v3: `moon_mansion`
 #: eklendi. Bu adım bir kez atlandı ve sonucu şuydu: eski kayıt yeni alan
 #: olmadan servis edilmeye devam etti, dolayısıyla değişiklik hiç görünmedi.
-_SKY_CACHE_KEY = "sky-now-v3"
+#: v3 -> v4: aydınlanma pheno_ut'a geçti + `as_of_utc` eklendi; sürüm
+#: yükseltilmeseydi düzeltilmiş değer bir saat boyunca görünmezdi.
+_SKY_CACHE_KEY = "sky-now-v4"
 
 
 def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
@@ -255,12 +271,17 @@ def get_sky_now(include_nasa: bool = True) -> dict[str, Any]:
                     })
                     break
 
+    simdi = dt.datetime.now(dt.timezone.utc).isoformat()
     result = {
-        "timestamp_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "timestamp_utc": simdi,
         "julian_day": round(jd, 5),
         "planets": planets,
         "retrogrades": retrogrades,
-        "moon_phase": _moon_phase(jd),
+        # Aydınlanma ANA bağlıdır — bir gün içinde 10 puan değişir. Değeri
+        # taşıyan sözlüğe ait olduğu an da girer; ekran "şu kadar itibarıyla"
+        # diyebilsin diye (kullanıcı başka kaynakla kıyaslarken ilk sorusu
+        # "hangi an?" oluyor).
+        "moon_phase": {**_moon_phase(jd), "as_of_utc": simdi},
         # Menzil konumdan bağımsız; gün yöneticisi DEĞİL (yerel tarihe bağlı)
         # ve o yüzden burada yok, çağıran tarafta hesaplanıyor.
         "moon_mansion": moon_mansion(positions["Moon"]),

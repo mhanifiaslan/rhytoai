@@ -517,6 +517,16 @@ ASTRO_NOTES = {
         "Because the birth time is unknown, transits to the Ascendant and "
         "MC were left out of the calendar; it stays at the planetary "
         "level."),
+    # Disclosures carrying a {city} field (D3): filled in by the localize
+    # layer with the place the chart was cast for.
+    "sr_relocated": (
+        "This year chart was cast for {city} — a solar return is cast for "
+        "wherever you are on your birthday."),
+    "sr_birthplace_fallback": (
+        "No city of residence is on file, so the year chart was cast for "
+        "your birth city. If you are elsewhere on your birthday the "
+        "Ascendant and houses change; you can add where you live under "
+        "Profile."),
 }
 
 #: Transit calendar event types (T3).

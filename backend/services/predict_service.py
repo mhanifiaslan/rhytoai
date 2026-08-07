@@ -23,7 +23,9 @@ from services.geo_service import resolve_city
 
 #: Tahmin hesabı sürümü — davranış değişince artar, önbellekler tazelenir
 #: (BaZi calc_version disiplini).
-PREDICT_CALC_VERSION = "2"  # v2: sr_sun_house metin değil ev NUMARASI
+#: v2: sr_sun_house metin değil ev NUMARASI. v3: SR haritası relocation
+#: şehrine kurulabiliyor (D3) — konum değişince ASC/evler değişir.
+PREDICT_CALC_VERSION = "3"
 
 
 def _model_points(model) -> list[dict[str, Any]]:
@@ -40,20 +42,35 @@ def solar_return(
     name: str, year: int, month: int, day: int, hour: int, minute: int,
     city: str, nation: str | None = None, hour_known: bool = True,
     target_year: int | None = None,
+    relocation_city: str | None = None, relocation_nation: str | None = None,
 ) -> dict[str, Any]:
     """Aktif solar return haritası + bir sonraki dönüş anı.
 
     ``target_year`` verilmezse İÇİNDE BULUNULAN SR yılı seçilir: son dönüş
     (doğum günü geçmediyse geçen yılınki) aktif haritadır; bir sonraki
     dönüşün tarihi de ayrıca döner ("yeni yılın şu gün başlıyor").
+
+    ``relocation_city`` (D3) verilirse harita O ŞEHRE kurulur — geleneksel
+    çoğunluk görüşü budur: yıl haritası doğum gününde BULUNULAN yere
+    kurulur. Dönüş ANI konumdan bağımsızdır (Güneş'in natal boylamına
+    dönmesi evrensel bir olay); değişen yalnız Yükselen, MC ve evlerdir —
+    ve bu az bir fark değil: aynı dönüş anında Yükselen İstanbul'da
+    İkizler, Sydney'de Terazi çıkabiliyor. Şehir verilmezse doğum şehri
+    kullanılır ve bu BEYAN EDİLİR.
     """
     natal, loc = astro_service._build_subject(
         name, year, month, day, hour, minute, city, nation)
 
+    # Haritanın kurulacağı yer: relocation varsa o, yoksa doğum yeri.
+    harita_loc = loc
+    if relocation_city:
+        harita_loc = resolve_city(relocation_city, relocation_nation)
+
     ker = astro_service._kerykeion()
     factory = ker.PlanetaryReturnFactory(
-        natal, city=loc.city, nation=loc.nation,
-        lng=loc.lng, lat=loc.lat, tz_str=loc.tz_str, online=False)
+        natal, city=harita_loc.city, nation=harita_loc.nation,
+        lng=harita_loc.lng, lat=harita_loc.lat, tz_str=harita_loc.tz_str,
+        online=False)
 
     now = dt.datetime.now(dt.timezone.utc)
     if target_year is not None:
@@ -72,11 +89,17 @@ def solar_return(
             sonraki = factory.next_return_from_year(now.year + 1, "Solar")
 
     disclosures: list[str] = []
-    if loc.fallback:
+    if loc.fallback or harita_loc.fallback:
         disclosures.append("geo_fallback_city")
     if not hour_known:
         # Natal Güneş ±0.5° → dönüş anı ±12 saat; ASC/evler anlamsız.
         disclosures.append("sr_hour_unknown")
+    elif relocation_city and not harita_loc.fallback:
+        # Hangi şehre kurulduğu söylenir; saat bilinmiyorsa zaten ASC/ev
+        # üretilmiyor, o durumda konumu anmak yanıltıcı olurdu.
+        disclosures.append("sr_relocated")
+    elif hour_known:
+        disclosures.append("sr_birthplace_fallback")
 
     aspects = ker.NatalAspects(aktif).relevant_aspects
 
@@ -89,7 +112,10 @@ def solar_return(
         "aspects": astro_service._aspects_list(aspects, limit=12),
         "sr_moon_sign": aktif.moon.sign,
         "disclosures": disclosures,
-        "location": {"city": loc.city, "tz": loc.tz_str},
+        # Haritanın kurulduğu yer — doğum yeri DEĞİL (relocation varsa o).
+        # Beyan metni şehri buradan okuyor.
+        "location": {"city": harita_loc.city, "tz": harita_loc.tz_str,
+                     "relocated": bool(relocation_city)},
     }
 
     if hour_known:

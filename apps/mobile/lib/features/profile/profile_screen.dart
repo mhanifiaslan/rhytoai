@@ -11,6 +11,7 @@ import 'birth_record_screen.dart';
 import 'delete_account.dart';
 import 'profile_sections.dart';
 import '../paywall/redeem_code_dialog.dart';
+import 'residence_dialog.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
@@ -196,6 +197,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               subtitle: l10n.birthRecordRowSubtitle,
               value: profile['birthDate'] as String?,
               onTap: () => _ac(const BirthRecordScreen()),
+            ),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            // Yaşanan şehir (D3): doğum şehrinden AYRI durur — natal
+            // haritanın verisi o, bu ise yıl haritasının kurulacağı yer.
+            SettingsRow(
+              icon: Icons.location_city_outlined,
+              title: l10n.residenceCityTitle,
+              subtitle: l10n.residenceCityRowSubtitle,
+              value: profile['residenceCity'] as String?,
+              onTap: () => showResidenceDialog(context, ref),
             ),
             const Divider(height: 1, indent: RythoSpace.lg),
             SettingsRow(

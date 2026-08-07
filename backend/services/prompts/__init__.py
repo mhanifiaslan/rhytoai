@@ -329,6 +329,22 @@ def localize_iching(lang: str | None, cast: dict | None) -> dict:
     return sonuç
 
 
+def _disclosure_texts(lang: str | None, chart: dict) -> list[str]:
+    """Beyan anahtarlarını isteğin dilinde cümleye çevirir.
+
+    Bazı beyanlar biçim alanı taşır (``{city}`` — hangi şehre kuruldu):
+    sabit metin yetmez, değeri yükün kendisinden gelir. BaZi'nin
+    `BAZI_TST_NOTE` deseninin aynısı, tablo tarafında.
+    """
+    p = get(lang)
+    sehir = (chart.get("location") or {}).get("city") or ""
+    metinler = []
+    for anahtar in chart.get("disclosures") or []:
+        ham = p.ASTRO_NOTES.get(anahtar, anahtar)
+        metinler.append(ham.format(city=sehir) if "{city}" in ham else ham)
+    return metinler
+
+
 def localize_chart(lang: str | None, chart: dict | None) -> dict:
     """Natal haritadaki nokta ve açı adlarını isteğin diline çevirir.
 
@@ -372,11 +388,8 @@ def localize_chart(lang: str | None, chart: dict | None) -> dict:
 
     # Beyanlar (T0): motor anahtar döner, metin burada çözülür — BaZi'nin
     # note_keys deseni. Mobil doğrudan bu metin listesini basar.
-    beyanlar = chart.get("disclosures") or []
-    if beyanlar:
-        p = get(lang)
-        sonuç["disclosure_texts"] = [
-            p.ASTRO_NOTES.get(k, k) for k in beyanlar]
+    if chart.get("disclosures"):
+        sonuç["disclosure_texts"] = _disclosure_texts(lang, chart)
 
     # Solar return alanları (T5): mobil ekran kod değil ad basar.
     if chart.get("sr_ascendant"):
@@ -429,10 +442,8 @@ def localize_progressions(lang: str | None, prog: dict | None,
         if prog.get(alan):
             sonuç[alan] = burçlu(prog[alan])
 
-    beyanlar = prog.get("disclosures") or []
-    if beyanlar:
-        sonuç["disclosure_texts"] = [p.ASTRO_NOTES.get(k, k)
-                                     for k in beyanlar]
+    if prog.get("disclosures"):
+        sonuç["disclosure_texts"] = _disclosure_texts(lang, prog)
 
     if hits is not None:
         sonuç["solar_arc_hits"] = [
@@ -476,10 +487,8 @@ def localize_transit_calendar(lang: str | None, cal: dict | None) -> dict:
                   "movement_local": p.MOVEMENT_NAMES.get(
                       a.get("movement"), a.get("movement"))}
                  for a in (cal.get("active_now") or [])]}
-    beyanlar = cal.get("disclosures") or []
-    if beyanlar:
-        sonuç["disclosure_texts"] = [p.ASTRO_NOTES.get(k, k)
-                                     for k in beyanlar]
+    if cal.get("disclosures"):
+        sonuç["disclosure_texts"] = _disclosure_texts(lang, cal)
     return sonuç
 
 

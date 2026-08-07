@@ -90,6 +90,14 @@ class SkyDetails extends StatelessWidget {
               style: RythoType.dataSmall),
         ],
       ),
+      // Aydınlanma oranı ANA bağlıdır: bir gün içinde 10 puana kadar
+      // değişir. Başka bir kaynakla kıyaslayan kullanıcının ilk sorusu
+      // "hangi ana ait?" oluyor — cevabı ekranda duruyor.
+      if (moon['as_of_utc'] != null) ...[
+        const SizedBox(height: 4),
+        Text(l10n.moonIlluminationAsOf(_yerelAn('${moon['as_of_utc']}')),
+            style: RythoType.caption),
+      ],
       if (retros.isNotEmpty) ...[
         const SizedBox(height: RythoSpace.md),
         Wrap(
@@ -117,6 +125,14 @@ class SkyDetails extends StatelessWidget {
         ),
       ],
     ]);
+  }
+
+  /// UTC ISO damgasını cihazın yerel saatinde "07.08 06:12" biçimine çevirir.
+  static String _yerelAn(String iso) {
+    final t = DateTime.tryParse(iso)?.toLocal();
+    if (t == null) return '';
+    String iki(int n) => n.toString().padLeft(2, '0');
+    return '${iki(t.day)}.${iki(t.month)} ${iki(t.hour)}:${iki(t.minute)}';
   }
 }
 

@@ -9,6 +9,7 @@ Calistirma:  .venv\\Scripts\\python.exe -m pytest tests/test_sky_marifetname.py 
 from __future__ import annotations
 
 import datetime as dt
+import re
 
 import pytest
 
@@ -127,11 +128,26 @@ def test_menzil_gokyuzu_yukunde(temiz_onbellek):
     assert menzil["name"] in sky_service._MANSIONS
 
 
-def test_onbellek_surumu_yukseltildi():
+def test_onbellek_anahtari_surumlu(temiz_onbellek):
     """Yuk sekli degistiginde surum yukseltilmezse eski kayit yeni alan
     olmadan servis edilmeye devam eder ve degisiklik HIC gorunmez.
-    Bu bir kez yasandi (ay evresi 'Dolunay'da takildi)."""
-    assert sky_service._SKY_CACHE_KEY == "sky-now-v3"
+    Bu bir kez yasandi (ay evresi 'Dolunay'da takildi).
+
+    Test eskiden surumu SABIT bir degere kilitliyordu (`== "sky-now-v3"`);
+    o hâliyle her mesru yukseltmede kiriliyor ve gercek iddiayi (yukun her
+    alani anahtarin arkasinda duruyor) hic sinamiyordu. Simdi anahtarin
+    surumlu OLDUGU ve yukun bekledigimiz alanlari tasidigi sinaniyor —
+    yeni alan eklendiginde bu liste de buyumeli, surum de artmali.
+    """
+    assert re.fullmatch(r"sky-now-v\d+", sky_service._SKY_CACHE_KEY)
+
+    sky = sky_service.get_sky_now(include_nasa=False)
+    for alan in ("timestamp_utc", "planets", "retrogrades", "moon_phase",
+                 "moon_mansion", "aspects"):
+        assert alan in sky, f"gokyuzu yukunde {alan} yok"
+    # Ay evresi yuku (D1): oran + ait oldugu an birlikte tasinir.
+    for alan in ("key", "emoji", "angle", "illumination", "as_of_utc"):
+        assert alan in sky["moon_phase"], f"ay evresinde {alan} yok"
 
 
 # --------------------------------------------------------------------------

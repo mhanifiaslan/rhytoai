@@ -9,6 +9,106 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get atlasYearChart => 'Year Chart';
+
+  @override
+  String get atlasYearChartSubtitle => 'Solar return';
+
+  @override
+  String get atlasInnerCalendar => 'Inner Calendar';
+
+  @override
+  String get atlasInnerCalendarSubtitle => 'Progressions + transits';
+
+  @override
+  String get residenceCityTitle => 'Where you live';
+
+  @override
+  String get residenceCityRowSubtitle => 'Your year chart is cast here';
+
+  @override
+  String get residenceCityBody =>
+      'A solar return is cast for wherever you are on your birthday — the city changes the Ascendant and the houses. Leave it empty and your birth city is used.';
+
+  @override
+  String get solarReturnTitle => 'Year Chart';
+
+  @override
+  String get solarReturnWaitStage1 => 'Calculating the Sun\'s return moment…';
+
+  @override
+  String get solarReturnWaitStage2 => 'Writing the year\'s reading…';
+
+  @override
+  String get solarReturnLockedBody =>
+      'The year chart cast for the Sun\'s exact return to your natal degree — and Rytho\'s reading of it — opens with Rytho+.';
+
+  @override
+  String get solarReturnMoment => 'Return moment';
+
+  @override
+  String solarReturnNext(String date) {
+    return 'Next return: $date';
+  }
+
+  @override
+  String get solarReturnIdentity => 'The year\'s identity';
+
+  @override
+  String get solarReturnAsc => 'Year Ascendant';
+
+  @override
+  String get solarReturnSunHouse => 'Sun\'s house this year';
+
+  @override
+  String solarReturnHouseN(int n) {
+    return 'house $n';
+  }
+
+  @override
+  String get solarReturnMoon => 'Year Moon';
+
+  @override
+  String get solarReturnNote => 'Rytho\'s year reading';
+
+  @override
+  String get innerCalendarTitle => 'Inner Calendar';
+
+  @override
+  String get innerCalendarWaitStage1 => 'Advancing the progressed chart…';
+
+  @override
+  String get innerCalendarWaitStage2 => 'Scanning 30 days of sky…';
+
+  @override
+  String get innerCalendarLockedBody =>
+      'The progressed Moon\'s inner season and your 30-day personal transit calendar open with Rytho+.';
+
+  @override
+  String get innerCalendarProgMoon => 'Progressed Moon — your inner season';
+
+  @override
+  String innerCalendarNextSign(String date) {
+    return '$date → next sign';
+  }
+
+  @override
+  String get innerCalendarActive => 'Active now';
+
+  @override
+  String get innerCalendarUpcoming => 'The next 30 days';
+
+  @override
+  String get innerCalendarQuiet =>
+      'No aspect perfects in this window — a quiet sky.';
+
+  @override
+  String get innerCalendarArc => 'Arc of life (solar arc)';
+
+  @override
+  String get innerCalendarNote => 'Rytho\'s inner-season reading';
+
+  @override
   String get appTagline =>
       'Ancient wisdom, met with precise sky calculation.\nYour chart is drawn; your path lights up. ✨';
 
@@ -751,6 +851,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String moonIllumination(Object percent) {
     return '$percent% illuminated';
+  }
+
+  @override
+  String moonIlluminationAsOf(String time) {
+    return 'as of $time — the figure shifts through the day';
   }
 
   @override

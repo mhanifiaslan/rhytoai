@@ -98,6 +98,186 @@ abstract class AppLocalizations {
     Locale('tr'),
   ];
 
+  /// No description provided for @atlasYearChart.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl Haritası'**
+  String get atlasYearChart;
+
+  /// No description provided for @atlasYearChartSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güneş dönüşü'**
+  String get atlasYearChartSubtitle;
+
+  /// No description provided for @atlasInnerCalendar.
+  ///
+  /// In tr, this message translates to:
+  /// **'İç Takvim'**
+  String get atlasInnerCalendar;
+
+  /// No description provided for @atlasInnerCalendarSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Progresyon + transit'**
+  String get atlasInnerCalendarSubtitle;
+
+  /// No description provided for @residenceCityTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaşadığın şehir'**
+  String get residenceCityTitle;
+
+  /// No description provided for @residenceCityRowSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl haritası buraya kurulur'**
+  String get residenceCityRowSubtitle;
+
+  /// No description provided for @residenceCityBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl haritası, doğum gününde bulunduğun yere kurulur — şehir Yükselen\'i ve evleri değiştirir. Boş bırakırsan doğum şehrin kullanılır.'**
+  String get residenceCityBody;
+
+  /// No description provided for @solarReturnTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl Haritası'**
+  String get solarReturnTitle;
+
+  /// No description provided for @solarReturnWaitStage1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güneş\'in dönüş anı hesaplanıyor…'**
+  String get solarReturnWaitStage1;
+
+  /// No description provided for @solarReturnWaitStage2.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılın okuması yazılıyor…'**
+  String get solarReturnWaitStage2;
+
+  /// No description provided for @solarReturnLockedBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güneş\'in doğum boylamına döndüğü ana kurulan yıl haritası ve Rytho\'nun yıl okuması Rytho+ ile açılır.'**
+  String get solarReturnLockedBody;
+
+  /// No description provided for @solarReturnMoment.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dönüş anı'**
+  String get solarReturnMoment;
+
+  /// No description provided for @solarReturnNext.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonraki dönüş: {date}'**
+  String solarReturnNext(String date);
+
+  /// No description provided for @solarReturnIdentity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yılın kimliği'**
+  String get solarReturnIdentity;
+
+  /// No description provided for @solarReturnAsc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl Yükseleni'**
+  String get solarReturnAsc;
+
+  /// No description provided for @solarReturnSunHouse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güneş\'in yıl evi'**
+  String get solarReturnSunHouse;
+
+  /// No description provided for @solarReturnHouseN.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n}. ev'**
+  String solarReturnHouseN(int n);
+
+  /// No description provided for @solarReturnMoon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yıl Ay\'ı'**
+  String get solarReturnMoon;
+
+  /// No description provided for @solarReturnNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun yıl okuması'**
+  String get solarReturnNote;
+
+  /// No description provided for @innerCalendarTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'İç Takvim'**
+  String get innerCalendarTitle;
+
+  /// No description provided for @innerCalendarWaitStage1.
+  ///
+  /// In tr, this message translates to:
+  /// **'Progres harita ilerletiliyor…'**
+  String get innerCalendarWaitStage1;
+
+  /// No description provided for @innerCalendarWaitStage2.
+  ///
+  /// In tr, this message translates to:
+  /// **'30 günün gökyüzü taranıyor…'**
+  String get innerCalendarWaitStage2;
+
+  /// No description provided for @innerCalendarLockedBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Progres Ay\'ın iç mevsimi ve 30 günlük kişisel transit takvimi Rytho+ ile açılır.'**
+  String get innerCalendarLockedBody;
+
+  /// No description provided for @innerCalendarProgMoon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Progres Ay — iç mevsimin'**
+  String get innerCalendarProgMoon;
+
+  /// No description provided for @innerCalendarNextSign.
+  ///
+  /// In tr, this message translates to:
+  /// **'{date} → yeni burca geçiş'**
+  String innerCalendarNextSign(String date);
+
+  /// No description provided for @innerCalendarActive.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an etkin'**
+  String get innerCalendarActive;
+
+  /// No description provided for @innerCalendarUpcoming.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önümüzdeki 30 gün'**
+  String get innerCalendarUpcoming;
+
+  /// No description provided for @innerCalendarQuiet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu pencerede kesinleşen açı yok — gökyüzü sakin.'**
+  String get innerCalendarQuiet;
+
+  /// No description provided for @innerCalendarArc.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaşam yayı (solar arc)'**
+  String get innerCalendarArc;
+
+  /// No description provided for @innerCalendarNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun iç mevsim okuması'**
+  String get innerCalendarNote;
+
   /// No description provided for @appTagline.
   ///
   /// In tr, this message translates to:
@@ -1477,6 +1657,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'aydınlanma %{percent}'**
   String moonIllumination(Object percent);
+
+  /// No description provided for @moonIlluminationAsOf.
+  ///
+  /// In tr, this message translates to:
+  /// **'{time} itibarıyla — oran gün içinde değişir'**
+  String moonIlluminationAsOf(String time);
 
   /// No description provided for @reportPostTitle.
   ///

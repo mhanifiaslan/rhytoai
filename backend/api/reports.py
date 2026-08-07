@@ -107,7 +107,11 @@ def horoscope(
     dahil) ve ucu kötüye kullanıma karşı korur; abonelik gerektirmez.
     """
     sky = prompts.localize_sky(lang, get_sky_now())
-    report = report_service.horoscope_reading(sign, period, sky, lang=lang)
+    # Gün kovası isteğin sahibinin yerel gününden (D2): sunucu UTC'de ve
+    # gece yarısından sonra kullanıcı dünkü yorumu görüyordu.
+    report = report_service.horoscope_reading(
+        sign, period, sky, lang=lang,
+        today=entitlements.user_local_date(user.uid))
     return {"status": "success", "data": {
         "sign": sign,
         "sign_tr": SIGN_TR[sign],
@@ -139,8 +143,9 @@ def daily(data: BirthData,
         sky = prompts.localize_sky(lang, get_sky_now())
         # birth: bugünün transitlerinin haritaya değdiği noktalar da okumaya
         # girsin (Revize R8) — ek LLM çağrısı yok, hesap yerel efemeris.
-        report = report_service.daily_reading(user.uid, natal, sky, lang=lang,
-                                              birth=_natal_kwargs(data))
+        report = report_service.daily_reading(
+            user.uid, natal, sky, lang=lang, birth=_natal_kwargs(data),
+            today=entitlements.user_local_date(user.uid))
         return {"status": "success", "data": {
             "reading": report["text"], "cached": report.get("cached", False),
             "sun_sign": natal["sun_sign"], "moon_sign": natal["moon_sign"],
@@ -284,13 +289,22 @@ class SolarReturnRequest(BirthData):
 def solar_return(data: SolarReturnRequest,
                  user: AuthUser = Depends(require_plus("solar_return")),
                  lang: str = Depends(get_language)):
-    """Yıl haritası (T1): aktif güneş dönüşü + LLM yıl okuması."""
+    """Yıl haritası (T1): aktif güneş dönüşü + LLM yıl okuması.
+
+    Harita, kayıtlıysa kullanıcının YAŞADIĞI şehre kurulur (D3): yıl
+    haritası doğum gününde bulunulan yere kurulur ve konum Yükselen'i
+    tamamen değiştirir. Şehir istekten değil PROFİLDEN okunur — "senin
+    haritan" iddiası kullanıcının kaydına dayanmalı (chart_context kuralı).
+    """
     try:
         from services import predict_service
+        profil = profile_service.get_profile(user.uid) or {}
         sr = predict_service.solar_return(
             data.name, data.year, data.month, data.day,
             data.hour, data.minute, data.city, data.nation,
-            hour_known=data.hour_known, target_year=data.target_year)
+            hour_known=data.hour_known, target_year=data.target_year,
+            relocation_city=(profil.get("residenceCity") or "").strip() or None,
+            relocation_nation=profil.get("residenceNation"))
         report = report_service.solar_return_report(
             user.uid, sr, lang=lang,
             spend=wallet.spender(user.uid, "solar_return", lang=lang),

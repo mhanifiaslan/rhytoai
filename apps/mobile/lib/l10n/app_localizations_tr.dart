@@ -9,6 +9,106 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
+  String get atlasYearChart => 'Yıl Haritası';
+
+  @override
+  String get atlasYearChartSubtitle => 'Güneş dönüşü';
+
+  @override
+  String get atlasInnerCalendar => 'İç Takvim';
+
+  @override
+  String get atlasInnerCalendarSubtitle => 'Progresyon + transit';
+
+  @override
+  String get residenceCityTitle => 'Yaşadığın şehir';
+
+  @override
+  String get residenceCityRowSubtitle => 'Yıl haritası buraya kurulur';
+
+  @override
+  String get residenceCityBody =>
+      'Yıl haritası, doğum gününde bulunduğun yere kurulur — şehir Yükselen\'i ve evleri değiştirir. Boş bırakırsan doğum şehrin kullanılır.';
+
+  @override
+  String get solarReturnTitle => 'Yıl Haritası';
+
+  @override
+  String get solarReturnWaitStage1 => 'Güneş\'in dönüş anı hesaplanıyor…';
+
+  @override
+  String get solarReturnWaitStage2 => 'Yılın okuması yazılıyor…';
+
+  @override
+  String get solarReturnLockedBody =>
+      'Güneş\'in doğum boylamına döndüğü ana kurulan yıl haritası ve Rytho\'nun yıl okuması Rytho+ ile açılır.';
+
+  @override
+  String get solarReturnMoment => 'Dönüş anı';
+
+  @override
+  String solarReturnNext(String date) {
+    return 'Sonraki dönüş: $date';
+  }
+
+  @override
+  String get solarReturnIdentity => 'Yılın kimliği';
+
+  @override
+  String get solarReturnAsc => 'Yıl Yükseleni';
+
+  @override
+  String get solarReturnSunHouse => 'Güneş\'in yıl evi';
+
+  @override
+  String solarReturnHouseN(int n) {
+    return '$n. ev';
+  }
+
+  @override
+  String get solarReturnMoon => 'Yıl Ay\'ı';
+
+  @override
+  String get solarReturnNote => 'Rytho\'nun yıl okuması';
+
+  @override
+  String get innerCalendarTitle => 'İç Takvim';
+
+  @override
+  String get innerCalendarWaitStage1 => 'Progres harita ilerletiliyor…';
+
+  @override
+  String get innerCalendarWaitStage2 => '30 günün gökyüzü taranıyor…';
+
+  @override
+  String get innerCalendarLockedBody =>
+      'Progres Ay\'ın iç mevsimi ve 30 günlük kişisel transit takvimi Rytho+ ile açılır.';
+
+  @override
+  String get innerCalendarProgMoon => 'Progres Ay — iç mevsimin';
+
+  @override
+  String innerCalendarNextSign(String date) {
+    return '$date → yeni burca geçiş';
+  }
+
+  @override
+  String get innerCalendarActive => 'Şu an etkin';
+
+  @override
+  String get innerCalendarUpcoming => 'Önümüzdeki 30 gün';
+
+  @override
+  String get innerCalendarQuiet =>
+      'Bu pencerede kesinleşen açı yok — gökyüzü sakin.';
+
+  @override
+  String get innerCalendarArc => 'Yaşam yayı (solar arc)';
+
+  @override
+  String get innerCalendarNote => 'Rytho\'nun iç mevsim okuması';
+
+  @override
   String get appTagline =>
       'Kadim bilgelik, hassas gökyüzü hesabıyla buluşur.\nHaritan çizilir, yolun aydınlanır. ✨';
 
@@ -750,6 +850,11 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String moonIllumination(Object percent) {
     return 'aydınlanma %$percent';
+  }
+
+  @override
+  String moonIlluminationAsOf(String time) {
+    return '$time itibarıyla — oran gün içinde değişir';
   }
 
   @override

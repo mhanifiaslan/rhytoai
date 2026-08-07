@@ -65,6 +65,46 @@ class TestSolarReturn:
             "t", 1990, 5, 12, 14, 30, "Istanbul", target_year=2020)
         assert sr["return_at_utc"].startswith("2020-05-1")
 
+    def test_relocation_ani_degistirmez_haritayi_degistirir(self):
+        """D3: yıl haritası yaşanan şehre kurulur.
+
+        Dönüş ANI evrensel bir olaydır (Güneş natal boylamına döner) ve
+        konumdan bağımsızdır; değişen Yükselen, MC ve evlerdir. Ölçüm:
+        aynı anda İstanbul'da İkizler, Sydney'de Terazi yükseliyor.
+        """
+        dogum = ("t", 1990, 5, 12, 14, 30, "Istanbul")
+        ev = predict_service.solar_return(*dogum, target_year=2026)
+        uzak = predict_service.solar_return(*dogum, target_year=2026,
+                                            relocation_city="Sydney")
+
+        assert ev["return_at_utc"] == uzak["return_at_utc"]
+        assert ev["sr_moon_sign"] == uzak["sr_moon_sign"]  # burçlar evrensel
+        assert ev["sr_ascendant"] != uzak["sr_ascendant"]
+        assert uzak["location"]["city"] == "Sydney"
+        assert uzak["location"]["relocated"] is True
+
+    def test_relocation_beyanlari(self):
+        dogum = ("t", 1990, 5, 12, 14, 30, "Istanbul")
+        ev = predict_service.solar_return(*dogum, target_year=2026)
+        assert "sr_birthplace_fallback" in ev["disclosures"]
+
+        uzak = predict_service.solar_return(*dogum, target_year=2026,
+                                            relocation_city="Sydney")
+        assert "sr_relocated" in uzak["disclosures"]
+        # Metin şehri TAŞIMALI — sabit cümle "bir yere kuruldu" derdi.
+        from services import prompts
+        metinler = prompts.localize_chart("tr", uzak)["disclosure_texts"]
+        assert any("Sydney" in m for m in metinler)
+
+    def test_saatsizlikte_konum_beyani_yok(self):
+        """Saat yoksa ASC/ev zaten üretilmiyor; konumu anmak yanıltıcı."""
+        sr = predict_service.solar_return(
+            "t", 1990, 5, 12, 12, 0, "Istanbul", hour_known=False,
+            target_year=2026, relocation_city="Sydney")
+        assert "sr_relocated" not in sr["disclosures"]
+        assert "sr_birthplace_fallback" not in sr["disclosures"]
+        assert "sr_hour_unknown" in sr["disclosures"]
+
     def test_sr_gunes_evi_sayi(self):
         """Ev alanı SAYI döner — kerykeion'un "Tenth_House" metni değil.
 
