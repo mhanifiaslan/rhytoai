@@ -79,13 +79,13 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
   Ayarlar → Google bölümünden doğrulayıp tekrar deneyin").
 - Gözlenen: Genel "bir şeyler ters gitti" mesajı; kullanıcı çıkmaza
   giriyor.
-- KÖK NEDEN (sonradan bulundu): `[16]` bir üst katman mesajıymış;
-  altında `[8] UNREGISTERED_ON_API_CONSOLE` — Play imza SHA-1'i
-  Firebase'e CLI ile eklendiğinde GCP'de Android OAuth istemcisi
-  OLUŞMUYOR. Düzeltme: GCP Credentials'ta elle iki Android OAuth
-  istemcisi (Play imza 65:49... + upload E6:02...). Ders: SHA
-  eklemeleri konsoldan yapılmalı ya da OAuth istemcisi ayrıca
-  elle açılmalı.
+- KÖK NEDEN (sonradan bulundu): `[16]` üst katman maskesiymiş;
+  altında `[8] UNREGISTERED_ON_API_CONSOLE`. Play imza SHA'ları
+  test gecesine kadar Firebase'de yoktu (yalnız debug istemcisi
+  vardı) — eklenince OAuth istemcileri oluştu ama Google tarafında
+  etkinleşme "5 dk – birkaç saat" sürüyor. Ders: yeni SHA sonrası
+  girişi test etmeden önce yayılmayı bekle; logcat'te gerçek neden
+  `GetTokenResponseHandler` satırında.
 - Önem: orta (nadir ama tıkayıcı; mesaj iyileştirmesi ucuz)
 - Durum: düzeltildi (kod: 858cc49; 1.0.0+4 ile dağıtılacak) —
   reauth hatasına özel l10n mesajı + bilinmeyen sosyal giriş
