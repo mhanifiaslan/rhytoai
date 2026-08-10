@@ -91,6 +91,26 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
   reauth hatasına özel l10n mesajı + bilinmeyen sosyal giriş
   hatalarına Crashlytics kaydı
 
+### B2 — Satın alma doğrulaması: Play izin yayılması bekleniyor
+- Ekran/akış: Paywall + jeton mağazası (Feyza'nın cihazı, lisanslı test)
+- Gözlenen: Play satın almayı tamamlıyor; RevenueCat makbuzu
+  doğrulayamadığı için kayıt/entitlement/webhook oluşmuyor; kilit
+  açılmıyor. Kimlik bağlama (Purchases.logIn=uid) ÇALIŞIYOR
+  (RC last_seen güncelleniyor).
+- Kök neden: servis hesabında "Uygulama bilgilerini görüntüleme"
+  izni satın alma DENEMELERİNDEN SONRA verildi; ürün listeleme hemen
+  düzeldi (Published), makbuz doğrulama yetkisi Google'ın 36 saate
+  kadar sürebilen yayılma penceresinde.
+- Durum: açık — yarın "Satın alımları geri yükle" ile yeniden
+  denenecek; sunucudan RC subscriber + webhook teyidi yapılacak.
+
+### B3 — Fiyat ₺179,99 görünüyor (KDV)
+- Gözlenen: Paywall ₺179,99 gösteriyor; karar ₺149,99 idi.
+  Neden: Play, girilen fiyata %20 KDV ekliyor (149,99×1,2).
+- Öneri: temel plan fiyatını ₺124,99 yap → alıcı ₺149,99 görür;
+  jetonlar için ₺41,66/₺108,33/₺291,66 → 49,99/129,99/349,99.
+- Durum: açık — kullanıcı kararı bekliyor; B2 çözülünce uygulanacak.
+
 ## 2. tur kapsamı
 
 - RYTHO_TOKENS_ENFORCE=1 → jeton tükenme/yetersiz bakiye UX'i
