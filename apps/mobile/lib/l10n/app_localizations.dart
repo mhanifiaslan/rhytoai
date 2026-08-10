@@ -122,6 +122,216 @@ abstract class AppLocalizations {
   /// **'Progresyon + transit'**
   String get atlasInnerCalendarSubtitle;
 
+  /// No description provided for @wizardWelcomeTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yolculuk başlıyor'**
+  String get wizardWelcomeTitle;
+
+  /// No description provided for @wizardWelcomeBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Birkaç adımda haritanı çizeceğiz: doğduğun an, gökyüzünün o anki hâli. Her adımda bir yıldız yanacak.'**
+  String get wizardWelcomeBody;
+
+  /// No description provided for @wizardConsentLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanım Şartları\'nı ve Gizlilik Politikası\'nı okudum, kabul ediyorum. 13 yaşından büyüğüm.'**
+  String get wizardConsentLabel;
+
+  /// No description provided for @wizardDateTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi gün doğdun?'**
+  String get wizardDateTitle;
+
+  /// No description provided for @wizardDateBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gökyüzü her gün başka bir düzendeydi — seninki hangisiydi?'**
+  String get wizardDateBody;
+
+  /// No description provided for @wizardTimeTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saat kaçtı?'**
+  String get wizardTimeTitle;
+
+  /// No description provided for @wizardTimeBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum saati Yükselen\'ini ve evlerini belirler. Bilmiyorsan sorun değil — dürüstçe onsuz hesaplarız.'**
+  String get wizardTimeBody;
+
+  /// No description provided for @wizardTimeUnknownNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Saatsiz doğumda Yükselen ve evler hesaplanmaz; okuma gezegen düzeyinde kalır.'**
+  String get wizardTimeUnknownNote;
+
+  /// No description provided for @wizardPlaceTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Nerede doğdun?'**
+  String get wizardPlaceTitle;
+
+  /// No description provided for @wizardPlaceBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Konum, gökyüzünün sana göre nasıl durduğunu belirler — ufkun neresinde ne yükseliyordu?'**
+  String get wizardPlaceBody;
+
+  /// No description provided for @wizardGenderTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son bir dokunuş'**
+  String get wizardGenderTitle;
+
+  /// No description provided for @wizardGenderBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'BaZi (Dört Sütun) hesabı şans dönemlerini cinsiyete göre yönlendirir.'**
+  String get wizardGenderBody;
+
+  /// No description provided for @wizardNext.
+  ///
+  /// In tr, this message translates to:
+  /// **'Devam ✦'**
+  String get wizardNext;
+
+  /// No description provided for @wizardFinish.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritamı çiz ✨'**
+  String get wizardFinish;
+
+  /// No description provided for @wizardLater.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sonra'**
+  String get wizardLater;
+
+  /// No description provided for @wizardPhoneTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Arkadaşlarını bul'**
+  String get wizardPhoneTitle;
+
+  /// No description provided for @wizardPhoneBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numaranı doğrularsan rehberindeki Rytho kullanıcılarını görebilirsin. Numara paylaşılmaz; yalnız eşleşme için kullanılır. İstersen bu adımı sonraya bırak.'**
+  String get wizardPhoneBody;
+
+  /// No description provided for @wizardPhoneVerify.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numaramı doğrula'**
+  String get wizardPhoneVerify;
+
+  /// No description provided for @wizardPhoneDone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numaran doğrulandı'**
+  String get wizardPhoneDone;
+
+  /// No description provided for @wizardNotifyTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günün okuması hazır olunca?'**
+  String get wizardNotifyTitle;
+
+  /// No description provided for @wizardNotifyBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük okuman ve serin için nazik bir hatırlatma gönderelim mi? Sessiz saatlerini Profil\'den ayarlayabilirsin.'**
+  String get wizardNotifyBody;
+
+  /// No description provided for @wizardNotifyAllow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haber ver 🔔'**
+  String get wizardNotifyAllow;
+
+  /// No description provided for @countrySearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ülke ara…'**
+  String get countrySearchHint;
+
+  /// No description provided for @phoneSmsDisabled.
+  ///
+  /// In tr, this message translates to:
+  /// **'SMS doğrulama şu an açık değil. Daha sonra tekrar dene.'**
+  String get phoneSmsDisabled;
+
+  /// No description provided for @phoneTemporarilyBlocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çok sayıda deneme yüzünden doğrulama geçici olarak durduruldu. Birkaç saat sonra tekrar dene.'**
+  String get phoneTemporarilyBlocked;
+
+  /// No description provided for @purchaseEntitlementMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ödeme tamamlandı ama abonelik doğrulanamadı. \"Satın alımları geri yükle\"yi dene; sürerse bize yaz — ödemen güvende.'**
+  String get purchaseEntitlementMissing;
+
+  /// No description provided for @avatarEditTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fotoğrafı yerleştir'**
+  String get avatarEditTitle;
+
+  /// No description provided for @avatarEditHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sürükleyerek konumlandır, iki parmakla yakınlaştır.'**
+  String get avatarEditHint;
+
+  /// No description provided for @avatarUpdated.
+  ///
+  /// In tr, this message translates to:
+  /// **'Profil fotoğrafın güncellendi ✨'**
+  String get avatarUpdated;
+
+  /// No description provided for @avatarChangeFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Fotoğraf yüklenemedi. Bağlantını kontrol edip tekrar dene.'**
+  String get avatarChangeFailed;
+
+  /// No description provided for @phoneAppNotVerified.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulama doğrulaması başarısız oldu. Uygulamayı güncelleyip tekrar dene.'**
+  String get phoneAppNotVerified;
+
+  /// No description provided for @citySearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şehir ara…'**
+  String get citySearchHint;
+
+  /// No description provided for @citySearchPrompt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğduğun şehrin adını yazmaya başla — 34 bin şehir arasından bul.'**
+  String get citySearchPrompt;
+
+  /// No description provided for @citySearchNoResults.
+  ///
+  /// In tr, this message translates to:
+  /// **'Listede bulunamadı — yazdığın adla da kaydedebilirsin.'**
+  String get citySearchNoResults;
+
+  /// No description provided for @citySearchUseAsTyped.
+  ///
+  /// In tr, this message translates to:
+  /// **'\"{query}\" olarak kaydet'**
+  String citySearchUseAsTyped(String query);
+
   /// No description provided for @residenceCityTitle.
   ///
   /// In tr, this message translates to:

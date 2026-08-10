@@ -21,6 +21,129 @@ class AppLocalizationsEn extends AppLocalizations {
   String get atlasInnerCalendarSubtitle => 'Progressions + transits';
 
   @override
+  String get wizardWelcomeTitle => 'The journey begins';
+
+  @override
+  String get wizardWelcomeBody =>
+      'A few steps and your chart is drawn: the moment you were born, the sky exactly as it stood. A star lights up at every step.';
+
+  @override
+  String get wizardConsentLabel =>
+      'I have read and accept the Terms of Use and Privacy Policy. I am over 13.';
+
+  @override
+  String get wizardDateTitle => 'What day were you born?';
+
+  @override
+  String get wizardDateBody =>
+      'The sky arranged itself differently every single day — which one was yours?';
+
+  @override
+  String get wizardTimeTitle => 'What time was it?';
+
+  @override
+  String get wizardTimeBody =>
+      'Birth time sets your Ascendant and houses. Don\'t know it? That\'s fine — we calculate honestly without it.';
+
+  @override
+  String get wizardTimeUnknownNote =>
+      'Without a time, the Ascendant and houses are not computed; the reading stays at the planetary level.';
+
+  @override
+  String get wizardPlaceTitle => 'Where were you born?';
+
+  @override
+  String get wizardPlaceBody =>
+      'Place decides how the sky stood from where you were — what was rising on your horizon?';
+
+  @override
+  String get wizardGenderTitle => 'One last touch';
+
+  @override
+  String get wizardGenderBody =>
+      'BaZi (Four Pillars) directs its luck cycles by gender.';
+
+  @override
+  String get wizardNext => 'Continue ✦';
+
+  @override
+  String get wizardFinish => 'Draw my chart ✨';
+
+  @override
+  String get wizardLater => 'Later';
+
+  @override
+  String get wizardPhoneTitle => 'Find your friends';
+
+  @override
+  String get wizardPhoneBody =>
+      'Verify your number to see who from your contacts is on Rytho. The number is never shared; it is used only for matching. You can leave this for later.';
+
+  @override
+  String get wizardPhoneVerify => 'Verify my number';
+
+  @override
+  String get wizardPhoneDone => 'Number verified';
+
+  @override
+  String get wizardNotifyTitle => 'When your reading is ready?';
+
+  @override
+  String get wizardNotifyBody =>
+      'Shall we send a gentle nudge for your daily reading and streak? Quiet hours can be set under Profile.';
+
+  @override
+  String get wizardNotifyAllow => 'Notify me 🔔';
+
+  @override
+  String get countrySearchHint => 'Search for a country…';
+
+  @override
+  String get phoneSmsDisabled =>
+      'SMS verification isn\'t available right now. Please try again later.';
+
+  @override
+  String get phoneTemporarilyBlocked =>
+      'Verification is temporarily paused after too many attempts. Please try again in a few hours.';
+
+  @override
+  String get purchaseEntitlementMissing =>
+      'Payment went through but the subscription couldn\'t be confirmed. Try \"Restore purchases\"; if it persists, contact us — your payment is safe.';
+
+  @override
+  String get avatarEditTitle => 'Position your photo';
+
+  @override
+  String get avatarEditHint => 'Drag to position, pinch to zoom.';
+
+  @override
+  String get avatarUpdated => 'Profile photo updated ✨';
+
+  @override
+  String get avatarChangeFailed =>
+      'The photo couldn\'t be uploaded. Check your connection and try again.';
+
+  @override
+  String get phoneAppNotVerified =>
+      'App verification failed. Update the app and try again.';
+
+  @override
+  String get citySearchHint => 'Search for a city…';
+
+  @override
+  String get citySearchPrompt =>
+      'Start typing your birth city — search across 34,000 cities.';
+
+  @override
+  String get citySearchNoResults =>
+      'Not in the list — you can save it exactly as typed.';
+
+  @override
+  String citySearchUseAsTyped(String query) {
+    return 'Save as \"$query\"';
+  }
+
+  @override
   String get residenceCityTitle => 'Where you live';
 
   @override

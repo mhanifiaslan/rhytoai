@@ -21,6 +21,130 @@ class AppLocalizationsTr extends AppLocalizations {
   String get atlasInnerCalendarSubtitle => 'Progresyon + transit';
 
   @override
+  String get wizardWelcomeTitle => 'Yolculuk başlıyor';
+
+  @override
+  String get wizardWelcomeBody =>
+      'Birkaç adımda haritanı çizeceğiz: doğduğun an, gökyüzünün o anki hâli. Her adımda bir yıldız yanacak.';
+
+  @override
+  String get wizardConsentLabel =>
+      'Kullanım Şartları\'nı ve Gizlilik Politikası\'nı okudum, kabul ediyorum. 13 yaşından büyüğüm.';
+
+  @override
+  String get wizardDateTitle => 'Hangi gün doğdun?';
+
+  @override
+  String get wizardDateBody =>
+      'Gökyüzü her gün başka bir düzendeydi — seninki hangisiydi?';
+
+  @override
+  String get wizardTimeTitle => 'Saat kaçtı?';
+
+  @override
+  String get wizardTimeBody =>
+      'Doğum saati Yükselen\'ini ve evlerini belirler. Bilmiyorsan sorun değil — dürüstçe onsuz hesaplarız.';
+
+  @override
+  String get wizardTimeUnknownNote =>
+      'Saatsiz doğumda Yükselen ve evler hesaplanmaz; okuma gezegen düzeyinde kalır.';
+
+  @override
+  String get wizardPlaceTitle => 'Nerede doğdun?';
+
+  @override
+  String get wizardPlaceBody =>
+      'Konum, gökyüzünün sana göre nasıl durduğunu belirler — ufkun neresinde ne yükseliyordu?';
+
+  @override
+  String get wizardGenderTitle => 'Son bir dokunuş';
+
+  @override
+  String get wizardGenderBody =>
+      'BaZi (Dört Sütun) hesabı şans dönemlerini cinsiyete göre yönlendirir.';
+
+  @override
+  String get wizardNext => 'Devam ✦';
+
+  @override
+  String get wizardFinish => 'Haritamı çiz ✨';
+
+  @override
+  String get wizardLater => 'Sonra';
+
+  @override
+  String get wizardPhoneTitle => 'Arkadaşlarını bul';
+
+  @override
+  String get wizardPhoneBody =>
+      'Numaranı doğrularsan rehberindeki Rytho kullanıcılarını görebilirsin. Numara paylaşılmaz; yalnız eşleşme için kullanılır. İstersen bu adımı sonraya bırak.';
+
+  @override
+  String get wizardPhoneVerify => 'Numaramı doğrula';
+
+  @override
+  String get wizardPhoneDone => 'Numaran doğrulandı';
+
+  @override
+  String get wizardNotifyTitle => 'Günün okuması hazır olunca?';
+
+  @override
+  String get wizardNotifyBody =>
+      'Günlük okuman ve serin için nazik bir hatırlatma gönderelim mi? Sessiz saatlerini Profil\'den ayarlayabilirsin.';
+
+  @override
+  String get wizardNotifyAllow => 'Haber ver 🔔';
+
+  @override
+  String get countrySearchHint => 'Ülke ara…';
+
+  @override
+  String get phoneSmsDisabled =>
+      'SMS doğrulama şu an açık değil. Daha sonra tekrar dene.';
+
+  @override
+  String get phoneTemporarilyBlocked =>
+      'Çok sayıda deneme yüzünden doğrulama geçici olarak durduruldu. Birkaç saat sonra tekrar dene.';
+
+  @override
+  String get purchaseEntitlementMissing =>
+      'Ödeme tamamlandı ama abonelik doğrulanamadı. \"Satın alımları geri yükle\"yi dene; sürerse bize yaz — ödemen güvende.';
+
+  @override
+  String get avatarEditTitle => 'Fotoğrafı yerleştir';
+
+  @override
+  String get avatarEditHint =>
+      'Sürükleyerek konumlandır, iki parmakla yakınlaştır.';
+
+  @override
+  String get avatarUpdated => 'Profil fotoğrafın güncellendi ✨';
+
+  @override
+  String get avatarChangeFailed =>
+      'Fotoğraf yüklenemedi. Bağlantını kontrol edip tekrar dene.';
+
+  @override
+  String get phoneAppNotVerified =>
+      'Uygulama doğrulaması başarısız oldu. Uygulamayı güncelleyip tekrar dene.';
+
+  @override
+  String get citySearchHint => 'Şehir ara…';
+
+  @override
+  String get citySearchPrompt =>
+      'Doğduğun şehrin adını yazmaya başla — 34 bin şehir arasından bul.';
+
+  @override
+  String get citySearchNoResults =>
+      'Listede bulunamadı — yazdığın adla da kaydedebilirsin.';
+
+  @override
+  String citySearchUseAsTyped(String query) {
+    return '\"$query\" olarak kaydet';
+  }
+
+  @override
   String get residenceCityTitle => 'Yaşadığın şehir';
 
   @override
