@@ -80,8 +80,9 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
 - Gözlenen: Genel "bir şeyler ters gitti" mesajı; kullanıcı çıkmaza
   giriyor. Hesap Ayarlar'dan doğrulanınca giriş sorunsuz çalıştı.
 - Önem: orta (nadir ama tıkayıcı; mesaj iyileştirmesi ucuz)
-- Durum: açık — düzeltme 1.0.0+4'e: giriş hata eşlemesine
-  reauth/credential hatası için özel l10n mesajı + Crashlytics kaydı
+- Durum: düzeltildi (kod: 858cc49; 1.0.0+4 ile dağıtılacak) —
+  reauth hatasına özel l10n mesajı + bilinmeyen sosyal giriş
+  hatalarına Crashlytics kaydı
 
 ## 2. tur kapsamı
 
