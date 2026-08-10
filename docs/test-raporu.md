@@ -78,7 +78,14 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
   hesabınızın yeniden doğrulanması gerekiyor — telefonunuzun
   Ayarlar → Google bölümünden doğrulayıp tekrar deneyin").
 - Gözlenen: Genel "bir şeyler ters gitti" mesajı; kullanıcı çıkmaza
-  giriyor. Hesap Ayarlar'dan doğrulanınca giriş sorunsuz çalıştı.
+  giriyor.
+- KÖK NEDEN (sonradan bulundu): `[16]` bir üst katman mesajıymış;
+  altında `[8] UNREGISTERED_ON_API_CONSOLE` — Play imza SHA-1'i
+  Firebase'e CLI ile eklendiğinde GCP'de Android OAuth istemcisi
+  OLUŞMUYOR. Düzeltme: GCP Credentials'ta elle iki Android OAuth
+  istemcisi (Play imza 65:49... + upload E6:02...). Ders: SHA
+  eklemeleri konsoldan yapılmalı ya da OAuth istemcisi ayrıca
+  elle açılmalı.
 - Önem: orta (nadir ama tıkayıcı; mesaj iyileştirmesi ucuz)
 - Durum: düzeltildi (kod: 858cc49; 1.0.0+4 ile dağıtılacak) —
   reauth hatasına özel l10n mesajı + bilinmeyen sosyal giriş
