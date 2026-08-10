@@ -935,6 +935,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authFailed => 'Something went wrong. Please try again.';
 
   @override
+  String get authReauthNeeded =>
+      'Your Google account needs to be re-verified on this device. Open your phone\'s Settings → Google and verify the account (remove and re-add it if needed), then try again.';
+
+  @override
   String get displayName => 'Your name';
 
   @override

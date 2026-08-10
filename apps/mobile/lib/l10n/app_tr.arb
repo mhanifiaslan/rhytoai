@@ -399,6 +399,7 @@
   "authDisabled": "E-posta ile giriş şu an kapalı.",
   "authNetwork": "Bağlantı kurulamadı. İnternetini kontrol et.",
   "authFailed": "Bir şeyler ters gitti. Tekrar dene.",
+  "authReauthNeeded": "Google hesabının bu cihazda yeniden doğrulanması gerekiyor. Telefonunun Ayarlar → Google bölümüne girip hesabını doğrula (gerekirse hesabı kaldırıp yeniden ekle), sonra tekrar dene.",
   "displayName": "Adın",
   "passwordRepeat": "Şifre (tekrar)",
   "passwordsDoNotMatch": "Şifreler eşleşmiyor.",

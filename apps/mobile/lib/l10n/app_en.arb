@@ -399,6 +399,7 @@
   "authDisabled": "Email sign-in is currently unavailable.",
   "authNetwork": "Couldn't connect. Check your internet.",
   "authFailed": "Something went wrong. Please try again.",
+  "authReauthNeeded": "Your Google account needs to be re-verified on this device. Open your phone's Settings → Google and verify the account (remove and re-add it if needed), then try again.",
   "displayName": "Your name",
   "passwordRepeat": "Password (repeat)",
   "passwordsDoNotMatch": "Passwords don't match.",

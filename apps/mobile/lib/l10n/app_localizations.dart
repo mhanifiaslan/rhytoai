@@ -1790,6 +1790,12 @@ abstract class AppLocalizations {
   /// **'Bir şeyler ters gitti. Tekrar dene.'**
   String get authFailed;
 
+  /// No description provided for @authReauthNeeded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Google hesabının bu cihazda yeniden doğrulanması gerekiyor. Telefonunun Ayarlar → Google bölümüne girip hesabını doğrula (gerekirse hesabı kaldırıp yeniden ekle), sonra tekrar dene.'**
+  String get authReauthNeeded;
+
   /// No description provided for @displayName.
   ///
   /// In tr, this message translates to:

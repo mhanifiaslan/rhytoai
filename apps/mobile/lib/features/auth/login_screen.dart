@@ -1,4 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -123,10 +125,23 @@ class _LoginScreenState extends State<LoginScreen> {
       await action();
     } on FirebaseAuthException catch (e) {
       _showSnack(_authErrorMessage(e));
-    } catch (_) {
+    } catch (e) {
       // Kullanıcı akışı iptal ettiyse de buraya düşüyor; sessiz kalmak
       // yerine nötr bir mesaj göstermek "hiçbir şey olmadı" hissini önler.
-      _showSnack(l10n.authFailed);
+      //
+      // Tek istisna: GMS'in "[16] Account reauth failed" hatası. Cihazdaki
+      // Google oturumu bayatladığında düşer ve kullanıcının uygulama içinde
+      // yapabileceği hiçbir şey yoktur — nötr mesaj onu çıkmaza sokar,
+      // yol gösteren mesaj gerekir (iç test bulgusu B1).
+      final metin = e.toString();
+      final reauth = metin.toLowerCase().contains('reauth') ||
+          metin.contains('[16]');
+      if (!reauth && !kDebugMode) {
+        FirebaseCrashlytics.instance.recordError(
+            'social-signin: $metin', StackTrace.current,
+            fatal: false);
+      }
+      _showSnack(reauth ? l10n.authReauthNeeded : l10n.authFailed);
     } finally {
       if (mounted) setState(() => setBusy(false));
     }

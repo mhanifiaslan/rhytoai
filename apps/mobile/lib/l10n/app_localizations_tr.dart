@@ -935,6 +935,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get authFailed => 'Bir şeyler ters gitti. Tekrar dene.';
 
   @override
+  String get authReauthNeeded =>
+      'Google hesabının bu cihazda yeniden doğrulanması gerekiyor. Telefonunun Ayarlar → Google bölümüne girip hesabını doğrula (gerekirse hesabı kaldırıp yeniden ekle), sonra tekrar dene.';
+
+  @override
   String get displayName => 'Adın';
 
   @override

@@ -69,7 +69,19 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
 
 ## Bulgular
 
-(henüz yok)
+### B1 — Google giriş hatası kullanıcıya yol göstermiyor
+- Ekran/akış: Giriş ekranı, "Google ile devam et"
+- Adımlar: Play iç test kurulumunda Google girişi denendi; cihazdaki
+  hesabın oturumu bayat olduğu için GMS `[16] Account reauth failed`
+  döndürdü (logcat ile doğrulandı; SHA/OAuth yapılandırması temiz).
+- Beklenen: Kullanıcıya ne yapacağını söyleyen mesaj ("Google
+  hesabınızın yeniden doğrulanması gerekiyor — telefonunuzun
+  Ayarlar → Google bölümünden doğrulayıp tekrar deneyin").
+- Gözlenen: Genel "bir şeyler ters gitti" mesajı; kullanıcı çıkmaza
+  giriyor. Hesap Ayarlar'dan doğrulanınca giriş sorunsuz çalıştı.
+- Önem: orta (nadir ama tıkayıcı; mesaj iyileştirmesi ucuz)
+- Durum: açık — düzeltme 1.0.0+4'e: giriş hata eşlemesine
+  reauth/credential hatası için özel l10n mesajı + Crashlytics kaydı
 
 ## 2. tur kapsamı
 
