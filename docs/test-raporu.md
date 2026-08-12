@@ -127,6 +127,19 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
   gösterilince yanar, çıkış yolları sıfırlar, abonelik ön-kontrolü
   kaldırıldı (sunucu `claimed:false` zaten döner). Cihaz testi bekliyor.
 
+### B5 — "Abonelik alındı ama sürekli Rytho+ istiyor" (hata değil)
+- Gözlenen: 3 test hesabında da satın almadan ~30 dk sonra kilitler
+  geri geldi.
+- Açıklama: lisanslı test aboneliklerinde Google saati hızlandırır —
+  aylık plan ~5 dk'da yenilenir, birkaç yenilemeden sonra kendiliğinden
+  sona erer. Loglarda tam yaşam döngüsü doğrulandı: INITIAL_PURCHASE →
+  RENEWAL'lar → CANCELLATION → EXPIRATION, hepsi DOĞRU uid ile
+  (kimlik düzeltmesi sahada kanıtlandı). Üretimde döngü gerçek
+  takvimle işler.
+- Sonuç: M4 ödeme doğrulaması TAMAMLANDI (senaryo 18-19-24 ✅).
+  Özellik testi için seçenek: süresi dolunca yeniden satın alma ya da
+  geçici RYTHO_FORCE_PLUS=1 (kapalı test öncesi kaldırılır).
+
 ### K1 — Kapsam değişikliği: İching Rytho+ kapısında (2026-08-12)
 - Kullanıcı kararı: BaZi gibi İching de tam premium. Günde 1 ücretsiz
   çekim kalktı (geri istenirse reports.py'de tek değişiklik — commit
