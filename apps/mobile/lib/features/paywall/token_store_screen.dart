@@ -19,6 +19,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/api.dart' show friendlyError;
+import '../../core/purchase_errors.dart';
 import '../../core/wallet.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
@@ -61,10 +62,12 @@ class _TokenStoreScreenState extends ConsumerState<TokenStoreScreen> {
       mesajci.showSnackBar(
           SnackBar(content: Text(l10n.tokenPurchaseDone)));
     } on PlatformException catch (e) {
-      // Kullanıcının vazgeçmesi hata değil; sessiz geçilir.
+      // Kullanıcının vazgeçmesi hata değil; sessiz geçilir. Diğer mağaza
+      // hataları l10n'a çevrilir (ham İngilizce metin ekrana çıkmaz).
       final code = PurchasesErrorHelper.getErrorCode(e);
       if (code != PurchasesErrorCode.purchaseCancelledError && mounted) {
-        mesajci.showSnackBar(SnackBar(content: Text(friendlyError(e, l10n))));
+        mesajci.showSnackBar(
+            SnackBar(content: Text(storeErrorText(e, l10n))));
       }
     } catch (e) {
       if (mounted) {

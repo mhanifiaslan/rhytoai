@@ -1760,6 +1760,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changePasswordAction => 'Change password';
 
   @override
+  String get purchaseAlreadyOwned =>
+      'This Google account already has an active subscription — restoring your purchases…';
+
+  @override
+  String get purchaseItemUnavailable =>
+      'The product couldn\'t be found in the store. Make sure the Google account that joined the test track is selected in Play Store, then try again.';
+
+  @override
+  String get purchaseStoreProblem =>
+      'Google Play couldn\'t complete the purchase right now. Please try again in a few minutes.';
+
+  @override
   String get tokenStoreTitle => 'Token Store';
 
   @override

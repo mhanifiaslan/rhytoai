@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/analytics.dart';
+import '../../core/purchase_errors.dart';
 import '../../core/sound.dart';
 import '../../core/subscription.dart';
 import '../../l10n/app_localizations.dart';
@@ -115,12 +116,23 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
       }
     } on PlatformException catch (e) {
       final code = PurchasesErrorHelper.getErrorCode(e);
-      if (code != PurchasesErrorCode.purchaseCancelledError && mounted) {
+      if (code == PurchasesErrorCode.purchaseCancelledError) {
+        // Vazgeçmek hata değil.
+      } else if (code == PurchasesErrorCode.productAlreadyPurchasedError) {
+        // Play hesabında abonelik zaten var (tipik: sunucu kaydı henüz
+        // eşitlenmemiş ya da abonelik başka app-kimliğinde). Kullanıcıyı
+        // çıkmaza sokma: kendiliğinden geri yükle — abonelik hangi
+        // kimlikteyse bu hesaba çekilir (G-turu, iç test bulgusu).
+        if (mounted) await _restore();
+      } else if (mounted) {
         setState(() => _error =
-            e.message ?? AppLocalizations.of(context).purchaseFailed);
+            storeErrorText(e, AppLocalizations.of(context)));
       }
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (mounted) {
+        setState(
+            () => _error = AppLocalizations.of(context).purchaseFailed);
+      }
     } finally {
       if (mounted) _mesguliyet(false);
     }
@@ -158,8 +170,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
         setState(() =>
             _error = AppLocalizations.of(context).noActiveSubscription);
       }
+    } on PlatformException catch (e) {
+      if (mounted) {
+        setState(() =>
+            _error = storeErrorText(e, AppLocalizations.of(context)));
+      }
     } catch (e) {
-      if (mounted) setState(() => _error = '$e');
+      if (mounted) {
+        setState(
+            () => _error = AppLocalizations.of(context).purchaseFailed);
+      }
     } finally {
       if (mounted) _mesguliyet(false);
     }

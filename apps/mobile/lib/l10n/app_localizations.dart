@@ -3236,6 +3236,24 @@ abstract class AppLocalizations {
   /// **'Şifreyi değiştir'**
   String get changePasswordAction;
 
+  /// No description provided for @purchaseAlreadyOwned.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu Google hesabında zaten etkin bir abonelik var — satın alımların geri yükleniyor…'**
+  String get purchaseAlreadyOwned;
+
+  /// No description provided for @purchaseItemUnavailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ürün mağazada bulunamadı. Play Store\'da test kanalına katılan Google hesabının seçili olduğundan emin olup tekrar dene.'**
+  String get purchaseItemUnavailable;
+
+  /// No description provided for @purchaseStoreProblem.
+  ///
+  /// In tr, this message translates to:
+  /// **'Google Play şu an satın almayı tamamlayamadı. Birkaç dakika sonra tekrar dene.'**
+  String get purchaseStoreProblem;
+
   /// No description provided for @tokenStoreTitle.
   ///
   /// In tr, this message translates to:

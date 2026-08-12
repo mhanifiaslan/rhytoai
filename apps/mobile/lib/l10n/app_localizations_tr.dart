@@ -1758,6 +1758,18 @@ class AppLocalizationsTr extends AppLocalizations {
   String get changePasswordAction => 'Şifreyi değiştir';
 
   @override
+  String get purchaseAlreadyOwned =>
+      'Bu Google hesabında zaten etkin bir abonelik var — satın alımların geri yükleniyor…';
+
+  @override
+  String get purchaseItemUnavailable =>
+      'Ürün mağazada bulunamadı. Play Store\'da test kanalına katılan Google hesabının seçili olduğundan emin olup tekrar dene.';
+
+  @override
+  String get purchaseStoreProblem =>
+      'Google Play şu an satın almayı tamamlayamadı. Birkaç dakika sonra tekrar dene.';
+
+  @override
   String get tokenStoreTitle => 'Token Mağazası';
 
   @override
