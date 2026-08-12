@@ -166,6 +166,13 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
       case 'internal-error':
         return l10n.phoneTemporarilyBlocked;
       default:
+        // Aynı 17499/39 hatası her cihazda 'internal-error' koduyla
+        // gelmiyor (2026-08-12'de 'unknown' kodla, mesajın içinde
+        // "Error code:39" olarak görüldü) — koddan önce mesaja da bak.
+        final mesaj = e.message ?? '';
+        if (mesaj.contains('17499') || mesaj.contains('Error code:39')) {
+          return l10n.phoneTemporarilyBlocked;
+        }
         // Nedeni bilmiyorsak en azından BİZ öğrenelim: kod+mesaj
         // Crashlytics'e gider (eskiden hiçbir yere gitmiyordu).
         if (!kDebugMode) {
