@@ -61,6 +61,8 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 26 | Bildirim izni + günlük bildirim gelişi | ⬜ | |
 | 27 | Dil EN'e çevrilince ekranlar (sihirbaz + paywall + abonelik) | ⬜ | |
 | 28 | Hesap silme akışı | ⬜ | |
+| 29 | Cihaz devralma: B cihazında giriş → "bu cihazda kullan?" sorusu → Taşı → A düşer → A'da yeniden giriş → soru A'da çıkar (döngü yok) | ⬜ | 1.0.0+5 |
+| 30 | İching/BaZi: abonesizde kilit kartı + Atlas karo rozetleri; abonede çekim (2/5 jeton) | ⬜ | 1.0.0+5 |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,
 users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
@@ -109,9 +111,26 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
 ### B3 — Fiyat ₺179,99 görünüyor (KDV)
 - Gözlenen: Paywall ₺179,99 gösteriyor; karar ₺149,99 idi.
   Neden: Play, girilen fiyata %20 KDV ekliyor (149,99×1,2).
-- Öneri: temel plan fiyatını ₺124,99 yap → alıcı ₺149,99 görür;
-  jetonlar için ₺41,66/₺108,33/₺291,66 → 49,99/129,99/349,99.
-- Durum: açık — kullanıcı kararı bekliyor; B2 çözülünce uygulanacak.
+- Öneri: temel plan fiyatını ₺124,99 yap → alıcı ₺149,99 görür.
+- Durum: KAPANDI (2026-08-12) — kullanıcı kararı: fiyatlar OLDUĞU
+  GİBİ kalıyor (₺179,99 görünür fiyat); ileride artırılabilir.
+
+### B4 — Cihaz devralma sorusu hiç çıkmıyor, çakışma ekranı döngüde
+- Ekran/akış: "Aboneliğin başka bir cihazda" ekranı → yeniden giriş
+- Gözlenen: Ekran "girişte devralmak isteyip istemediğin sorulacak"
+  diyor ama soru hiç çıkmıyor; giriş → aynı ekran döngüsü.
+- Kök neden: `device_claim.dart` — "soruldu" bayrağı dialog
+  gösterilmeden yanıyor ve hiçbir yol sıfırlamıyordu; ayrıca abonelik
+  durumu yüklenmeden senkron okunup erken çıkılıyordu (soru ilk
+  denemede de sorulmuyordu).
+- Durum: düzeltildi (91577b1, 1.0.0+5) — bayrak yalnız dialog
+  gösterilince yanar, çıkış yolları sıfırlar, abonelik ön-kontrolü
+  kaldırıldı (sunucu `claimed:false` zaten döner). Cihaz testi bekliyor.
+
+### K1 — Kapsam değişikliği: İching Rytho+ kapısında (2026-08-12)
+- Kullanıcı kararı: BaZi gibi İching de tam premium. Günde 1 ücretsiz
+  çekim kalktı (geri istenirse reports.py'de tek değişiklik — commit
+  91577b1 yorumunda tarif). Atlas'ta 4 kehanet karosu da kilit rozetli.
 
 ## 2. tur kapsamı
 
