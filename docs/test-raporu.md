@@ -34,7 +34,7 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | # | Senaryo | Durum | Not |
 |---|---------|-------|-----|
 | 1 | Play iç test linkinden kurulum (eski sürüm kaldırıldıktan sonra) | ⬜ | |
-| 2 | Google ile giriş (yeni hesap) | ⬜ | |
+| 2 | Google ile giriş (yeni hesap) | ✅ | 2026-08-12: gerçek Play imzası kaydedilince açıldı (B1/B4 kök nedeni) |
 | 3 | Sihirbaz: doğum tarihi/saati adımları | ⬜ | |
 | 4 | Sihirbaz: şehir arama (listede olan) | ⬜ | |
 | 5 | Sihirbaz: şehir arama (listede OLMAYAN — elle kaydet) | ⬜ | |
