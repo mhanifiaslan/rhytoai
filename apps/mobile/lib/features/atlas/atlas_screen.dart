@@ -392,7 +392,8 @@ class _DivinationRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final abonelik = ref.watch(subscriptionProvider);
-    final faceAcik = abonelik.value?.active ?? false;
+    // Dört karo da Rytho+ (V2: İching ve BaZi de kilitlendi) — tek bayrak.
+    final plus = abonelik.value?.active ?? false;
 
     void paywall() => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => const PaywallScreen(),
@@ -410,9 +411,9 @@ class _DivinationRow extends ConsumerWidget {
             emoji: '👁️',
             title: l10n.faceReadingTitle,
             subtitle: l10n.faceReadingTileSubtitle,
-            locked: !faceAcik,
+            locked: !plus,
             onTap: () =>
-                faceAcik ? startFaceReading(context, ref) : paywall(),
+                plus ? startFaceReading(context, ref) : paywall(),
           ),
         ),
         const SizedBox(width: 10),
@@ -421,7 +422,8 @@ class _DivinationRow extends ConsumerWidget {
             emoji: '🪙',
             title: l10n.iChing,
             subtitle: l10n.iChingSubtitle,
-            onTap: () => ac(const IChingScreen()),
+            locked: !plus,
+            onTap: () => plus ? ac(const IChingScreen()) : paywall(),
           ),
         ),
         const SizedBox(width: 10),
@@ -430,7 +432,8 @@ class _DivinationRow extends ConsumerWidget {
             emoji: '🀄',
             title: l10n.baZi,
             subtitle: l10n.baZiSubtitle,
-            onTap: () => ac(const BaziScreen()),
+            locked: !plus,
+            onTap: () => plus ? ac(const BaziScreen()) : paywall(),
           ),
         ),
         const SizedBox(width: 10),
@@ -441,9 +444,9 @@ class _DivinationRow extends ConsumerWidget {
             emoji: '☯',
             title: l10n.birthHexagram,
             subtitle: l10n.birthHexagramSubtitle,
-            locked: !faceAcik,
+            locked: !plus,
             onTap: () =>
-                faceAcik ? ac(const BirthHexagramScreen()) : paywall(),
+                plus ? ac(const BirthHexagramScreen()) : paywall(),
           ),
         ),
       ]),

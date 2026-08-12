@@ -376,6 +376,13 @@ class AppLocalizationsTr extends AppLocalizations {
       'Day Master, On Tanrı ve şans sütunları analizi Rytho+ ile açılır.';
 
   @override
+  String get iChingLockedTitle => 'İ Ching — Değişimler Kitabı';
+
+  @override
+  String get iChingLockedBody =>
+      'Soru sor, gerçek olasılıklarla çekim yap, Rytho yorumuyla oku — Rytho+ ile açılır.';
+
+  @override
   String get friendsTitle => 'Arkadaşlar';
 
   @override
@@ -1637,7 +1644,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deviceConflictBody =>
-      'Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; girişte cihazı devralmak isteyip istemediğin sorulacak.';
+      'Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; giriş yaptıktan hemen sonra aboneliği bu cihaza taşımak isteyip istemediğin sorulacak.';
 
   @override
   String get deviceConflictAction => 'Giriş ekranına dön';

@@ -9,7 +9,9 @@ import 'package:dio/dio.dart';
 import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../core/sound.dart';
+import '../../core/subscription.dart' show subscriptionProvider;
 import '../../core/wallet.dart';
+import '../paywall/plus_locked_card.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
@@ -103,6 +105,18 @@ class _IChingTabState extends ConsumerState<IChingTab> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // V2: İ Ching Rytho+ kapısında (BaZi ile aynı desen). Abone değilken
+    // ücretli uca istek atılmaz; kilit kartı paywall'a götürür.
+    final plus =
+        ref.watch(subscriptionProvider).value?.active ?? false;
+    if (!plus) {
+      return PlusLockedCard(
+        emoji: '🪙',
+        title: l10n.iChingLockedTitle,
+        description: l10n.iChingLockedBody,
+        centered: true,
+      );
+    }
     return ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 110),
         children: [
@@ -163,15 +177,14 @@ class _IChingTabState extends ConsumerState<IChingTab> {
       ]),
       const SizedBox(height: 16),
       GoldButton(text: l10n.iChingCastAction, busy: _busy, onPressed: _cast),
-      // Kota rozeti (İ6): abone token bedelini, ücretsiz kullanıcı günlük
-      // hakkını görür — hak yalnız 402'de değil, ÖNCE görünür.
+      // Bedel rozeti (İ6→V2): ekran artık yalnız aboneye açık; rozet çekim
+      // başına token bedelini ÖNCEDEN gösterir (bedel yalnız 402'de görünür
+      // olmasın diye).
       Consumer(builder: (context, ref, _) {
         final durum = ref.watch(ichingStatusProvider).value;
         if (durum == null) return const SizedBox(height: 8);
-        final metin = durum['subscriber'] == true
-            ? l10n.iChingQuotaTokens(durum['token_cost'] as int? ?? 2)
-            : l10n.iChingQuotaFree(durum['free_remaining'] as int? ?? 0,
-                durum['free_limit'] as int? ?? 1);
+        final metin =
+            l10n.iChingQuotaTokens(durum['token_cost'] as int? ?? 2);
         return Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Center(

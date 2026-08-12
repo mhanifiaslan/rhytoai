@@ -375,6 +375,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Day Master, Ten Gods and luck pillars unlock with Rytho+.';
 
   @override
+  String get iChingLockedTitle => 'I Ching — Book of Changes';
+
+  @override
+  String get iChingLockedBody =>
+      'Ask a question, cast with true probabilities, read the Rytho interpretation — unlocks with Rytho+.';
+
+  @override
   String get friendsTitle => 'Friends';
 
   @override
@@ -1638,7 +1645,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceConflictBody =>
-      'Rytho+ works on one device at a time, and it\'s currently registered to another one. Sign in again to continue here; you\'ll be asked whether to take over.';
+      'Rytho+ works on one device at a time, and it\'s currently registered to another one. Sign in again to continue here; right after signing in you\'ll be asked whether to move your subscription to this device.';
 
   @override
   String get deviceConflictAction => 'Back to sign-in';

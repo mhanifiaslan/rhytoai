@@ -7,6 +7,8 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
+import 'device_claim.dart' show resetDeviceTakeoverPrompt;
+
 /// Kimlik doğrulama işlemleri.
 ///
 /// Ekrandan ayrı tutuluyor: giriş akışının kuralları (Apple zorunluluğu,
@@ -156,6 +158,8 @@ Future<void> sendPasswordReset(String email) async {
 // Bilgi sızdırmadan çıkmazı çözer.
 
 Future<void> signOutEverywhere() async {
+  // Cihaz devralma sorusu yeni oturumda yeniden sorulabilsin (V1).
+  resetDeviceTakeoverPrompt();
   try {
     await GoogleSignIn.instance.signOut();
   } catch (_) {}

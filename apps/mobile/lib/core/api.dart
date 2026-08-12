@@ -7,6 +7,7 @@ import '../features/auth/device_conflict_screen.dart';
 import '../features/paywall/paywall_screen.dart';
 import '../features/paywall/token_store_screen.dart';
 import '../l10n/app_localizations.dart';
+import 'device_claim.dart' show resetDeviceTakeoverPrompt;
 import 'device_id.dart';
 import 'locale.dart';
 
@@ -31,6 +32,8 @@ Future<void> _handleDeviceConflict() async {
   if (_deviceConflictHandling) return;
   _deviceConflictHandling = true;
   try {
+    // Yeni girişte devralma sorusu YENİDEN sorulabilsin (V1 döngü onarımı).
+    resetDeviceTakeoverPrompt();
     await FirebaseAuth.instance.signOut();
     final navigator = rythoNavigatorKey.currentState;
     if (navigator == null) return;

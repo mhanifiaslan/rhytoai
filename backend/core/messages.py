@@ -53,6 +53,10 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "BaZi analizi Rytho+ aboneliğine dahildir.",
         "en": "BaZi analysis is part of Rytho+.",
     },
+    "paywall.iching": {
+        "tr": "İ Ching çekimi Rytho+ aboneliğine dahildir.",
+        "en": "I Ching readings are part of Rytho+.",
+    },
     # Uç `require_plus("firasa")` ile kilitli ama mesajı YOKTU: kullanıcı
     # jenerik "Bu özellik..." metnine düşüyordu. test_messages.py'deki
     # "her require_plus özelliğinin mesajı var" denetimi de bu anahtarı

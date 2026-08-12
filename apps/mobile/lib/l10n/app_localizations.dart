@@ -740,6 +740,18 @@ abstract class AppLocalizations {
   /// **'Day Master, On Tanrı ve şans sütunları analizi Rytho+ ile açılır.'**
   String get baziLockedBody;
 
+  /// No description provided for @iChingLockedTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'İ Ching — Değişimler Kitabı'**
+  String get iChingLockedTitle;
+
+  /// No description provided for @iChingLockedBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Soru sor, gerçek olasılıklarla çekim yap, Rytho yorumuyla oku — Rytho+ ile açılır.'**
+  String get iChingLockedBody;
+
   /// No description provided for @friendsTitle.
   ///
   /// In tr, this message translates to:
@@ -3023,7 +3035,7 @@ abstract class AppLocalizations {
   /// No description provided for @deviceConflictBody.
   ///
   /// In tr, this message translates to:
-  /// **'Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; girişte cihazı devralmak isteyip istemediğin sorulacak.'**
+  /// **'Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; giriş yaptıktan hemen sonra aboneliği bu cihaza taşımak isteyip istemediğin sorulacak.'**
   String get deviceConflictBody;
 
   /// No description provided for @deviceConflictAction.

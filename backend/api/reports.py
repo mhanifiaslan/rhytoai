@@ -3,17 +3,14 @@ import datetime as dt
 import logging
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
-from core.entitlements import (
-    FREE_ICHING_PER_DAY,
-    require_plus,
-)
-from core import device, entitlements, wallet
+from core.entitlements import require_plus
+from core import entitlements, wallet
 from services import (astro_service, bazi_service, birth_hexagram_service,
                       chart_context, notification_service, profile_service,
                       prompts, report_service)
@@ -214,18 +211,17 @@ def bazi(data: BirthData,
 
 @router.post("/iching")
 def iching(req: IChingReportRequest,
-           user: AuthUser = Depends(get_current_user),
-           lang: str = Depends(get_language),
-           x_device_id: str | None = Header(default=None)):
-    """I Ching hafif gunluk ritual olarak ucretsiz kalir, ama gunde bir cekilis.
+           user: AuthUser = Depends(require_plus("iching")),
+           lang: str = Depends(get_language)):
+    """I Ching Rytho+ kapısında (V2, 2026-08-12 kullanıcı kararı).
 
-    Sinirsiz olsaydi ucretsiz kullanici basina acik uclu LLM maliyeti olusurdu;
-    gunde bir cekilis hem ritueli korur hem maliyeti ongorulur tutar.
+    Eski model gunde 1 ucretsiz cekilis + 2 token idi; urun karari kadim
+    bilgelik modullerini (BaZi ile ayni desen) tamamen premium'a aldi.
+    Gunluk ucretsiz ritual geri istenirse: require_plus -> get_current_user
+    + metered_callbacks(user, "iching", FREE_ICHING_PER_DAY) donusu yeterli.
+    Cihaz kilidi require_plus icinde uygulanir.
     """
-    # Tek cihaz kilidi (yalnızca abonede etkili) harcamadan önce.
-    device.enforce_single_device(user.uid, x_device_id, lang=lang)
-
-    # Soru kapısı (R10→R11): niyetsiz girişler günde tek çekim hakkını
+    # Soru kapısı (R10→R11): niyetsiz girişler jeton hakkını
     # harcamadan çevrilir. Hüküm LLM'de (kelime listesi yalnız bariz
     # durumlarda ön filtre): "beni seviyor musun" uygulamaya yöneltilmiş
     # sayılır ve Sohbet'e yönlendirilir, "beni seviyor mu" geçer.
@@ -237,11 +233,10 @@ def iching(req: IChingReportRequest,
                 detail=text("iching.question_chat" if hukum == "CHAT"
                             else "iching.question_invalid", lang))
 
-    # Günlük ücretsiz hak + cüzdan tek kapıda. Peşin harcama YOK: dönen
-    # geri çağrılar önbellek kaçırıldığında çalışır — abone, saatlik
-    # önbellekteki aynı çekilişe ikinci bakışında ödemez.
-    spend_cb, refund_cb = wallet.metered_callbacks(
-        user, "iching", FREE_ICHING_PER_DAY, lang=lang)
+    # Cüzdan: natal/bazi ile aynı desen — harcama yalnız önbellek
+    # kaçırıldığında düşer, üretim hatasında iade edilir.
+    spend_cb = wallet.spender(user.uid, "iching", lang=lang)
+    refund_cb = lambda: wallet.refund_spend(user.uid, "iching")  # noqa: E731
     try:
         # Soru verilmediyse varsayılan metin İSTEĞİN DİLİNDE (Revize İ0).
         soru = req.question or prompts.get(lang).ICHING_DEFAULT_QUESTION
@@ -394,15 +389,14 @@ def birth_hexagram(data: BirthData,
 def iching_status(user: AuthUser = Depends(get_current_user)):
     """Çekim hakkı durumu — SALT OKUR, hak düşmez (Revize İ6).
 
-    UI "bugünkü hak: 1/1" rozetini buradan kurar; eskiden kota yalnız
-    402'de, yani hak BİTİNCE görünür oluyordu. Abone bilgisi de döner:
-    abonede rozet günlük hak yerine token bedelini gösterir.
+    V2 (2026-08-12): İching Rytho+ kapısına alındı; günlük ücretsiz hak
+    kalktı. Alan adları geriye dönük korunur (eski istemciler okuyor):
+    `free_limit/free_remaining` artık hep 0 — rozet aboneye token
+    bedelini, abone olmayana kilidi gösterir.
     """
-    _, kalan = entitlements.quota_state(user.uid, "iching",
-                                        FREE_ICHING_PER_DAY)
     return {"status": "success", "data": {
-        "free_limit": FREE_ICHING_PER_DAY,
-        "free_remaining": kalan,
+        "free_limit": 0,
+        "free_remaining": 0,
         "token_cost": wallet.TOKEN_COSTS["iching"],
         "subscriber": entitlements.is_subscriber(user.uid),
     }}
