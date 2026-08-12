@@ -1585,6 +1585,40 @@ class AppLocalizationsTr extends AppLocalizations {
   String get contactSuggestionsLabel => 'REHBERİNDEN';
 
   @override
+  String get contactMatchOffTitle => 'Rehberindekileri bul';
+
+  @override
+  String get contactMatchOffBody =>
+      'Rehber eşleşmesini açarsan Rytho kullanan tanıdıkların burada görünür. Numaralar cihazında şifrelenir; rehberin hiçbir zaman sunucuda saklanmaz.';
+
+  @override
+  String get contactMatchEnable => 'Eşleşmeyi aç';
+
+  @override
+  String get contactMatchPhoneTitle => 'Önce numaranı doğrula';
+
+  @override
+  String get contactMatchPhoneBody =>
+      'Eşleşme telefon numarası üzerinden çalışır. Numaranı doğruladığında tanıdıkların seni bulabilir, sen de onları görebilirsin.';
+
+  @override
+  String get contactMatchVerifyPhone => 'Numaranı doğrula';
+
+  @override
+  String get contactMatchPermTitle => 'Rehber izni gerekiyor';
+
+  @override
+  String get contactMatchPermBody =>
+      'Tanıdıklarını bulmak için rehber okuma izni gerekli. İzni reddettiysen telefonunun Ayarlar → Uygulamalar → Rytho bölümünden açabilirsin.';
+
+  @override
+  String get contactMatchRetry => 'Tekrar dene';
+
+  @override
+  String get contactMatchEmptyBody =>
+      'Rehberinden kimse henüz görünmüyor. Eşleşme için arkadaşının da Rytho\'da numarasını doğrulamış ve rehber eşleşmesini açmış olması gerekir.';
+
+  @override
   String get phoneSectionLabel => 'TELEFON';
 
   @override
@@ -1658,6 +1692,70 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deviceTakeoverConfirm => 'Bu cihazda kullan';
+
+  @override
+  String get forceUpdateTitle => 'Yeni sürüm gerekli';
+
+  @override
+  String get forceUpdateBody =>
+      'Rytho\'nun bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — yıldızlar bekliyor.';
+
+  @override
+  String get forceUpdateAction => 'Google Play\'de güncelle';
+
+  @override
+  String get signInMethodsRow => 'Giriş yöntemleri';
+
+  @override
+  String get signInMethodsTitle => 'Giriş yöntemleri';
+
+  @override
+  String get signInMethodsBody =>
+      'Hesabına birden fazla giriş yolu bağlayabilirsin: hangi yöntemle girersen gir aynı hesaba ulaşırsın.';
+
+  @override
+  String get providerPhone => 'Telefon';
+
+  @override
+  String get linkAction => 'Bağla';
+
+  @override
+  String get linkAlreadyLinked => 'Bu giriş yöntemi zaten hesabına bağlı.';
+
+  @override
+  String get linkCredentialInUse =>
+      'Bu kimlik başka bir hesaba bağlı. Önce o hesaptan çözülmesi gerekir.';
+
+  @override
+  String get linkRequiresRecentLogin =>
+      'Güvenlik için yakın zamanlı giriş gerekiyor: çıkış yapıp yeniden girdikten sonra tekrar dene.';
+
+  @override
+  String get linkPasswordDone =>
+      'Şifre kaydedildi. Artık e-posta ve şifreyle de girebilirsin ✨';
+
+  @override
+  String get linkGoogleDone => 'Google hesabın bağlandı ✨';
+
+  @override
+  String get setPasswordSection => 'ŞİFRE OLUŞTUR';
+
+  @override
+  String get setPasswordBody =>
+      'Bir e-posta ve şifre belirlersen Google/Apple olmadan da giriş yapabilirsin.';
+
+  @override
+  String get setPasswordAction => 'Şifreyi kaydet';
+
+  @override
+  String get changePasswordSection => 'ŞİFREYİ DEĞİŞTİR';
+
+  @override
+  String get changePasswordBody =>
+      'Yeni şifreni belirle. Değişiklik anında geçerli olur.';
+
+  @override
+  String get changePasswordAction => 'Şifreyi değiştir';
 
   @override
   String get tokenStoreTitle => 'Token Mağazası';

@@ -99,20 +99,37 @@ class ContactMatch {
       );
 }
 
-/// Rehber eşleşmesini uçtan uca koşturur.
+/// Eşleşmenin neden BOŞ olduğunu ayırt eden durum (F1).
 ///
-/// İzin reddedilirse boş liste döner (çağıran ayarı açık bırakabilir;
-/// kullanıcı sistem ayarından izni sonra verebilir).
-Future<List<ContactMatch>> runContactMatch(Ref ref) async {
+/// Eski tasarım her eksikte sessizce boş liste döndürüyordu; iç testte
+/// kullanıcı "rehberimdekiler görünmüyor" dedi ve neyin eksik olduğunu
+/// öğrenmenin hiçbir yolu yoktu. Ekran artık nedene göre yol gösteriyor.
+enum ContactMatchBlocker {
+  /// Kullanıcının kendi telefonu doğrulanmamış — karşı taraf onu hangi
+  /// numarayla bulacak?
+  telefonYok,
+
+  /// Rehber okuma izni reddedilmiş.
+  izinYok,
+}
+
+class ContactMatchResult {
+  const ContactMatchResult({this.blocker, this.matches = const []});
+
+  final ContactMatchBlocker? blocker;
+  final List<ContactMatch> matches;
+}
+
+/// Rehber eşleşmesini uçtan uca koşturur.
+Future<ContactMatchResult> runContactMatch(Ref ref) async {
   final kendiNumaram = FirebaseAuth.instance.currentUser?.phoneNumber;
   if (kendiNumaram == null) {
-    // Telefon doğrulanmadan eşleşme anlamsız: karşı taraf bizi hangi
-    // numarayla bulacak? Çağıran ekran bunu ayrı bir durumla gösterir.
-    return const [];
+    return const ContactMatchResult(
+        blocker: ContactMatchBlocker.telefonYok);
   }
 
   if (!await FlutterContacts.requestPermission(readonly: true)) {
-    return const [];
+    return const ContactMatchResult(blocker: ContactMatchBlocker.izinYok);
   }
 
   // withProperties: telefon alanları gelsin; foto/organizasyon GELMESİN.
@@ -126,26 +143,28 @@ Future<List<ContactMatch>> runContactMatch(Ref ref) async {
       if (e164 != null && e164 != kendiNumaram) hashler.add(_hash(e164));
     }
   }
-  if (hashler.isEmpty) return const [];
+  if (hashler.isEmpty) return const ContactMatchResult();
 
   final dio = ref.read(apiProvider);
   final yanit = await dio.post('/api/v1/contacts/match',
       data: {'hashes': hashler.take(2000).toList()});
   final ham = (yanit.data as Map)['matches'] as List? ?? const [];
-  return [
+  return ContactMatchResult(matches: [
     for (final m in ham)
       ContactMatch.fromJson(Map<String, dynamic>.from(m as Map)),
-  ];
+  ]);
 }
 
 /// Eşleşme sonuçları — ayar açıkken çağrılır, bellekte yaşar (sunucu gibi
 /// istemci de listeyi KALICI saklamaz).
 final contactMatchesProvider =
-    FutureProvider.autoDispose<List<ContactMatch>>((ref) async {
+    FutureProvider.autoDispose<ContactMatchResult>((ref) async {
   try {
     return await runContactMatch(ref);
   } catch (e) {
+    // Ağ/sunucu hatası kullanıcıyı yanıltmasın: boş-ama-nedensiz sonuç,
+    // ekranda "rehberinden kimse görünmüyor" bilgi metnine düşer.
     debugPrint('Rehber eşleşmesi başarısız: $e');
-    return const [];
+    return const ContactMatchResult();
   }
 });

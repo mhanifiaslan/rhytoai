@@ -79,6 +79,11 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
             content: Text(AppLocalizations.of(context)
                 .reactionSent(kReactions[key]!))));
       }
+      // Kutlama görünsün, sonra çipler yeniden açılsın (iç test bulgusu:
+      // seçim kalıcı kalınca ikinci dürtme için ekrandan çıkıp girmek
+      // gerekiyordu — kilit yalnız gönderim anlığı içindir).
+      await Future<void>.delayed(const Duration(milliseconds: 1200));
+      if (mounted) setState(() => _sentReaction = null);
     } catch (e) {
       if (mounted) {
         setState(() => _sentReaction = null);

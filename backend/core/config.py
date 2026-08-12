@@ -62,3 +62,20 @@ REVENUECAT_WEBHOOK_SECRET: str | None = os.getenv("REVENUECAT_WEBHOOK_SECRET")
 # gizli anahtar. Tanimsizken uc 503 doner: acik birakmak, herkesin tum
 # kullanicilara bildirim gonderebilmesi demek olurdu.
 NOTIFY_SCHEDULER_SECRET: str | None = os.getenv("NOTIFY_SCHEDULER_SECRET")
+
+
+def _int_env(ad: str, varsayilan: int) -> int:
+    """Bozuk değerde varsayılana düşer — sürüm kapısı FAIL-OPEN kalmalı:
+    yanlış yazılmış bir env yüzünden tüm kullanıcıları kilitlemek,
+    kapının önleyeceği her sorundan daha kötüdür."""
+    try:
+        return int(os.getenv(ad, str(varsayilan)))
+    except ValueError:
+        return varsayilan
+
+
+# Zorunlu güncelleme kapısı (F3): istemci versionCode'u bundan KÜÇÜKSE
+# uygulama güncelleme ekranına kilitlenir. 0 = kimse engellenmez.
+# Kalıcı değer infra/deploy-backend.ps1'deki --set-env-vars satırında —
+# gcloud ile elle verilen değer bir sonraki deploy'da silinir.
+MIN_APP_BUILD: int = _int_env("RYTHO_MIN_BUILD", 0)

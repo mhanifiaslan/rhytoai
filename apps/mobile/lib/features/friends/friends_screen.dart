@@ -16,6 +16,7 @@ import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../profile/account_screen.dart' show AccountScreen;
+import '../profile/phone_verify_screen.dart' show PhoneVerifyScreen;
 import 'friend_detail_screen.dart' show FriendDetailScreen, reactionLabel;
 import '../../core/api.dart' show friendlyError;
 import '../../l10n/app_localizations.dart';
@@ -87,9 +88,11 @@ class FriendsScreen extends ConsumerWidget {
             streakVisible: profile?['streakVisible'] == true,
           ),
         _InboxPanel(friends: friendsAsync.value ?? const []),
-        // Rehber önerileri (Revize R3): yalnızca ayar AÇIKKEN görünür.
-        // Sonuçlar bellekte yaşar; ne istemci ne sunucu listeyi saklar.
-        if (profile?['contactMatch'] == true) const _ContactSuggestions(),
+        // Rehber önerileri (Revize R3 → F1): panel artık HER ZAMAN mount —
+        // ayar kapalıysa/telefon doğrusuzsa/izin yoksa sessiz boşluk yerine
+        // yol gösteren kart çizer. Sonuçlar bellekte yaşar; ne istemci ne
+        // sunucu listeyi saklar.
+        _ContactSuggestions(ayarAcik: profile?['contactMatch'] == true),
         friendsAsync.when(
           loading: () => const Padding(
             padding: EdgeInsets.only(top: 48),
@@ -185,28 +188,86 @@ class _UsernameSetupPanelState extends State<_UsernameSetupPanel> {
   }
 }
 
-/// Kendi kartım: kullanıcı adı, davet bağlantısı ve seri görünürlüğü.
-/// Rehberden bulunan, karşılıklı ayarı açık kullanıcılar.
+/// Rehberden bulunan, karşılıklı ayarı açık kullanıcılar — ya da eşleşmenin
+/// önündeki engeli anlatan kart (F1). Eski hâli her eksik koşulda
+/// `SizedBox.shrink()` dönüyordu; kullanıcı özelliğin varlığından bile
+/// habersiz kalıyordu.
 class _ContactSuggestions extends ConsumerWidget {
-  const _ContactSuggestions();
+  const _ContactSuggestions({required this.ayarAcik});
+
+  final bool ayarAcik;
+
+  Widget _kart(AppLocalizations l10n,
+      {required String baslik,
+      required String metin,
+      String? eylem,
+      VoidCallback? onTap}) {
+    return GlassPanel(
+      label: l10n.contactSuggestionsLabel,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(baslik, style: RythoText.display(16)),
+        const SizedBox(height: 6),
+        Text(metin,
+            style: RythoText.body(12.5, color: RythoColors.parchmentDim)),
+        if (eylem != null) ...[
+          const SizedBox(height: 12),
+          GoldButton(text: eylem, filled: false, onPressed: onTap),
+        ],
+      ]),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final eslesmeler = ref.watch(contactMatchesProvider);
 
+    if (!ayarAcik) {
+      return _kart(l10n,
+          baslik: l10n.contactMatchOffTitle,
+          metin: l10n.contactMatchOffBody,
+          eylem: l10n.contactMatchEnable, onTap: () async {
+        await setContactMatch(true);
+        ref.invalidate(profileProvider);
+        ref.invalidate(contactMatchesProvider);
+      });
+    }
+
+    final eslesmeler = ref.watch(contactMatchesProvider);
     return eslesmeler.when(
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
-      data: (kisiler) {
-        if (kisiler.isEmpty) return const SizedBox.shrink();
-        return GlassPanel(
-          label: l10n.contactSuggestionsLabel,
-          child: Column(children: [
-            for (final kisi in kisiler)
-              _ContactSuggestionRow(kisi: kisi),
-          ]),
-        );
+      data: (sonuc) {
+        switch (sonuc.blocker) {
+          case ContactMatchBlocker.telefonYok:
+            return _kart(l10n,
+                baslik: l10n.contactMatchPhoneTitle,
+                metin: l10n.contactMatchPhoneBody,
+                eylem: l10n.contactMatchVerifyPhone,
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const PhoneVerifyScreen())));
+          case ContactMatchBlocker.izinYok:
+            return _kart(l10n,
+                baslik: l10n.contactMatchPermTitle,
+                metin: l10n.contactMatchPermBody,
+                eylem: l10n.contactMatchRetry,
+                // İzin istemi provider yeniden koşunca tekrar açılır;
+                // kalıcı retteyse kullanıcı sistem ayarından açmalı
+                // (metin bunu söylüyor).
+                onTap: () => ref.invalidate(contactMatchesProvider));
+          case null:
+            if (sonuc.matches.isEmpty) {
+              return _kart(l10n,
+                  baslik: l10n.contactSuggestionsLabel,
+                  metin: l10n.contactMatchEmptyBody);
+            }
+            return GlassPanel(
+              label: l10n.contactSuggestionsLabel,
+              child: Column(children: [
+                for (final kisi in sonuc.matches)
+                  _ContactSuggestionRow(kisi: kisi),
+              ]),
+            );
+        }
       },
     );
   }

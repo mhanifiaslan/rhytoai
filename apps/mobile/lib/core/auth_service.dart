@@ -157,6 +157,44 @@ Future<void> sendPasswordReset(String email) async {
 // (şifre yanlış olabilir ya da hesap sosyal giriş ile açılmış olabilir).
 // Bilgi sızdırmadan çıkmazı çözer.
 
+/// Hesaba e-posta/şifre girişi bağlar (F4).
+///
+/// Google/Apple ile açılmış hesapta `password` sağlayıcısı yoktur;
+/// `updatePassword` çağrısı orada anlamsızdır — doğru araç
+/// `linkWithCredential`: aynı hesaba ikinci bir giriş yolu ekler.
+/// Şifre zaten bağlıysa `updatePassword` ile değiştirilir.
+///
+/// E-posta parametre olarak alınır ve `user.email` varsayılmaz: Apple
+/// "Hide My Email" kullanıcısında adres privaterelay olabilir ya da hiç
+/// gelmeyebilir; kullanıcı giriş için KULLANACAĞI adresi kendi yazar.
+Future<void> linkPassword(String email, String password) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw StateError('Oturum yok');
+
+  final sifreBagli =
+      user.providerData.any((p) => p.providerId == 'password');
+  if (sifreBagli) {
+    await user.updatePassword(password);
+    return;
+  }
+  await user.linkWithCredential(
+      EmailAuthProvider.credential(email: email.trim(), password: password));
+  // Sağlayıcı listesi token'da taşınır; tazelenmezse arayüz eski kalır.
+  await user.getIdToken(true);
+}
+
+/// Hesaba Google girişini bağlar (F4) — e-posta/şifre kullanıcısı için.
+Future<void> linkGoogle() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) throw StateError('Oturum yok');
+
+  final account = await GoogleSignIn.instance.authenticate();
+  final auth = account.authentication;
+  await user.linkWithCredential(
+      GoogleAuthProvider.credential(idToken: auth.idToken));
+  await user.getIdToken(true);
+}
+
 Future<void> signOutEverywhere() async {
   // Cihaz devralma sorusu yeni oturumda yeniden sorulabilsin (V1).
   resetDeviceTakeoverPrompt();

@@ -12,6 +12,7 @@ import 'delete_account.dart';
 import 'avatar_editor.dart';
 import 'profile_sections.dart';
 import 'residence_dialog.dart';
+import 'sign_in_methods_screen.dart';
 import 'subscription_screen.dart';
 import '../../core/providers.dart';
 import '../../core/subscription.dart';
@@ -242,6 +243,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ? '@${profile['username']}'
                   : profile['displayName'] as String?,
               onTap: () => _ac(const AccountScreen()),
+            ),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            // Giriş yöntemleri (F4): şifre atama + Google bağlama.
+            SettingsRow(
+              icon: Icons.key_outlined,
+              title: l10n.signInMethodsRow,
+              value: signInMethodsSummary(user, l10n),
+              onTap: () => _ac(const SignInMethodsScreen()),
             ),
             const Divider(height: 1, indent: RythoSpace.lg),
             SettingsRow(

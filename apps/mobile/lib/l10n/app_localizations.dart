@@ -2924,6 +2924,66 @@ abstract class AppLocalizations {
   /// **'REHBERİNDEN'**
   String get contactSuggestionsLabel;
 
+  /// No description provided for @contactMatchOffTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehberindekileri bul'**
+  String get contactMatchOffTitle;
+
+  /// No description provided for @contactMatchOffBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehber eşleşmesini açarsan Rytho kullanan tanıdıkların burada görünür. Numaralar cihazında şifrelenir; rehberin hiçbir zaman sunucuda saklanmaz.'**
+  String get contactMatchOffBody;
+
+  /// No description provided for @contactMatchEnable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşleşmeyi aç'**
+  String get contactMatchEnable;
+
+  /// No description provided for @contactMatchPhoneTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önce numaranı doğrula'**
+  String get contactMatchPhoneTitle;
+
+  /// No description provided for @contactMatchPhoneBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşleşme telefon numarası üzerinden çalışır. Numaranı doğruladığında tanıdıkların seni bulabilir, sen de onları görebilirsin.'**
+  String get contactMatchPhoneBody;
+
+  /// No description provided for @contactMatchVerifyPhone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numaranı doğrula'**
+  String get contactMatchVerifyPhone;
+
+  /// No description provided for @contactMatchPermTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehber izni gerekiyor'**
+  String get contactMatchPermTitle;
+
+  /// No description provided for @contactMatchPermBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tanıdıklarını bulmak için rehber okuma izni gerekli. İzni reddettiysen telefonunun Ayarlar → Uygulamalar → Rytho bölümünden açabilirsin.'**
+  String get contactMatchPermBody;
+
+  /// No description provided for @contactMatchRetry.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar dene'**
+  String get contactMatchRetry;
+
+  /// No description provided for @contactMatchEmptyBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehberinden kimse henüz görünmüyor. Eşleşme için arkadaşının da Rytho\'da numarasını doğrulamış ve rehber eşleşmesini açmış olması gerekir.'**
+  String get contactMatchEmptyBody;
+
   /// No description provided for @phoneSectionLabel.
   ///
   /// In tr, this message translates to:
@@ -3061,6 +3121,120 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu cihazda kullan'**
   String get deviceTakeoverConfirm;
+
+  /// No description provided for @forceUpdateTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni sürüm gerekli'**
+  String get forceUpdateTitle;
+
+  /// No description provided for @forceUpdateBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — yıldızlar bekliyor.'**
+  String get forceUpdateBody;
+
+  /// No description provided for @forceUpdateAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Google Play\'de güncelle'**
+  String get forceUpdateAction;
+
+  /// No description provided for @signInMethodsRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Giriş yöntemleri'**
+  String get signInMethodsRow;
+
+  /// No description provided for @signInMethodsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Giriş yöntemleri'**
+  String get signInMethodsTitle;
+
+  /// No description provided for @signInMethodsBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabına birden fazla giriş yolu bağlayabilirsin: hangi yöntemle girersen gir aynı hesaba ulaşırsın.'**
+  String get signInMethodsBody;
+
+  /// No description provided for @providerPhone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefon'**
+  String get providerPhone;
+
+  /// No description provided for @linkAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağla'**
+  String get linkAction;
+
+  /// No description provided for @linkAlreadyLinked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu giriş yöntemi zaten hesabına bağlı.'**
+  String get linkAlreadyLinked;
+
+  /// No description provided for @linkCredentialInUse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kimlik başka bir hesaba bağlı. Önce o hesaptan çözülmesi gerekir.'**
+  String get linkCredentialInUse;
+
+  /// No description provided for @linkRequiresRecentLogin.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güvenlik için yakın zamanlı giriş gerekiyor: çıkış yapıp yeniden girdikten sonra tekrar dene.'**
+  String get linkRequiresRecentLogin;
+
+  /// No description provided for @linkPasswordDone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifre kaydedildi. Artık e-posta ve şifreyle de girebilirsin ✨'**
+  String get linkPasswordDone;
+
+  /// No description provided for @linkGoogleDone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Google hesabın bağlandı ✨'**
+  String get linkGoogleDone;
+
+  /// No description provided for @setPasswordSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'ŞİFRE OLUŞTUR'**
+  String get setPasswordSection;
+
+  /// No description provided for @setPasswordBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir e-posta ve şifre belirlersen Google/Apple olmadan da giriş yapabilirsin.'**
+  String get setPasswordBody;
+
+  /// No description provided for @setPasswordAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifreyi kaydet'**
+  String get setPasswordAction;
+
+  /// No description provided for @changePasswordSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'ŞİFREYİ DEĞİŞTİR'**
+  String get changePasswordSection;
+
+  /// No description provided for @changePasswordBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yeni şifreni belirle. Değişiklik anında geçerli olur.'**
+  String get changePasswordBody;
+
+  /// No description provided for @changePasswordAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifreyi değiştir'**
+  String get changePasswordAction;
 
   /// No description provided for @tokenStoreTitle.
   ///

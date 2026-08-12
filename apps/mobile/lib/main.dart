@@ -8,11 +8,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/api.dart';
+import 'core/app_config.dart';
 import 'core/deep_links.dart';
 import 'core/locale.dart';
 import 'core/notifications.dart';
 import 'core/providers.dart';
 import 'core/subscription.dart';
+import 'features/auth/force_update_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/onboarding/onboarding_wizard.dart';
 import 'features/shell/app_shell.dart';
@@ -94,6 +96,14 @@ class _Gate extends ConsumerWidget {
     ref.watch(notificationSyncProvider);
     // Davet bağlantılarını yakalar (bkz. core/deep_links.dart).
     ref.watch(deepLinkProvider);
+
+    // Zorunlu güncelleme kapısı (F3): sunucu bu derlemeyi asgari sürümün
+    // altında ilan ettiyse giriş/onboarding/kabuğa hiç girilmez. Yanıt
+    // beklenmez ve hata kilitlemez (fail-open): yalnız kesin "true"
+    // cevabı kapıyı kapatır — splash gecikmesi de yaşanmaz.
+    if (ref.watch(updateRequiredProvider).value == true) {
+      return const ForceUpdateScreen();
+    }
 
     final auth = ref.watch(authStateProvider);
     final ekran = auth.when(

@@ -17,6 +17,7 @@ from api.admin import router as admin_router
 from api.astrology import router as astrology_router
 from api.billing import router as billing_router
 from api.chat import router as chat_router
+from api.config import router as config_router
 from api.contacts import router as contacts_router
 from api.device import router as device_router
 from api.face_reading import router as face_reading_router
@@ -137,6 +138,8 @@ app.include_router(account_router, prefix="/api/v1/account", tags=["Account"])
 # Admin uçları (W5): panel /rytho-admin buradan beslenir. Her uç custom
 # claim ister (require_admin); collect ayrıca scheduler sırrını kabul eder.
 app.include_router(admin_router, prefix="/api/v1/admin", tags=["Admin"])
+# Açılış yapılandırması (F3): kimliksiz — giriş ekranından ÖNCE çağrılır.
+app.include_router(config_router, prefix="/api/v1/config", tags=["Config"])
 
 
 @app.get("/")

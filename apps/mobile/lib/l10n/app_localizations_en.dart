@@ -1587,6 +1587,40 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactSuggestionsLabel => 'FROM YOUR CONTACTS';
 
   @override
+  String get contactMatchOffTitle => 'Find people you know';
+
+  @override
+  String get contactMatchOffBody =>
+      'Turn on contact matching and people from your address book who use Rytho will appear here. Numbers are hashed on your device; your contacts are never stored on our servers.';
+
+  @override
+  String get contactMatchEnable => 'Turn on matching';
+
+  @override
+  String get contactMatchPhoneTitle => 'Verify your number first';
+
+  @override
+  String get contactMatchPhoneBody =>
+      'Matching works through phone numbers. Once you verify yours, people you know can find you — and you can see them.';
+
+  @override
+  String get contactMatchVerifyPhone => 'Verify your number';
+
+  @override
+  String get contactMatchPermTitle => 'Contacts permission needed';
+
+  @override
+  String get contactMatchPermBody =>
+      'Reading your contacts is required to find people you know. If you denied it, you can enable it under your phone\'s Settings → Apps → Rytho.';
+
+  @override
+  String get contactMatchRetry => 'Try again';
+
+  @override
+  String get contactMatchEmptyBody =>
+      'No one from your contacts is visible yet. For a match, your friend also needs to verify their number on Rytho and turn on contact matching.';
+
+  @override
   String get phoneSectionLabel => 'PHONE';
 
   @override
@@ -1659,6 +1693,71 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deviceTakeoverConfirm => 'Use here';
+
+  @override
+  String get forceUpdateTitle => 'Update required';
+
+  @override
+  String get forceUpdateBody =>
+      'This version of Rytho is no longer supported. Update the app to continue — the stars are waiting.';
+
+  @override
+  String get forceUpdateAction => 'Update on Google Play';
+
+  @override
+  String get signInMethodsRow => 'Sign-in methods';
+
+  @override
+  String get signInMethodsTitle => 'Sign-in methods';
+
+  @override
+  String get signInMethodsBody =>
+      'You can attach more than one way to sign in: whichever method you use, you reach the same account.';
+
+  @override
+  String get providerPhone => 'Phone';
+
+  @override
+  String get linkAction => 'Link';
+
+  @override
+  String get linkAlreadyLinked =>
+      'This sign-in method is already linked to your account.';
+
+  @override
+  String get linkCredentialInUse =>
+      'This identity is linked to another account. It needs to be unlinked there first.';
+
+  @override
+  String get linkRequiresRecentLogin =>
+      'For security this needs a recent sign-in: sign out, sign back in, then try again.';
+
+  @override
+  String get linkPasswordDone =>
+      'Password saved. You can now sign in with email and password too ✨';
+
+  @override
+  String get linkGoogleDone => 'Your Google account is linked ✨';
+
+  @override
+  String get setPasswordSection => 'CREATE A PASSWORD';
+
+  @override
+  String get setPasswordBody =>
+      'Set an email and password to sign in without Google/Apple as well.';
+
+  @override
+  String get setPasswordAction => 'Save password';
+
+  @override
+  String get changePasswordSection => 'CHANGE PASSWORD';
+
+  @override
+  String get changePasswordBody =>
+      'Set your new password. The change takes effect immediately.';
+
+  @override
+  String get changePasswordAction => 'Change password';
 
   @override
   String get tokenStoreTitle => 'Token Store';
