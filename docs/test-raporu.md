@@ -67,6 +67,7 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 32 | Dürtme: aynı ekranda art arda 2-3 dürtme (geri git-gel gerekmeden) | ⬜ | 1.0.0+6 |
 | 33 | Zorunlu güncelleme: RYTHO_MIN_BUILD=999 → kapı ekranı + Play düğmesi; 0 → normal açılış (Claude sunucudan açar/kapar) | ⬜ | 1.0.0+6 |
 | 34 | Giriş yöntemleri: Google hesabına şifre ata → çık → e-posta+şifreyle gir; e-posta hesabına Google bağla | ⬜ | 1.0.0+6 |
+| 35 | Genel burç yorumunda mizaç/safravi YOK; arkadaş ekle→kabul et akışı ve kullanıcı adıyla arama hâlâ çalışıyor (kural sıkılaştırması regresyonu) | ⬜ | sunucu (rev 00050) |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,
 users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
@@ -148,6 +149,29 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
 - Kullanıcı kararı: BaZi gibi İching de tam premium. Günde 1 ücretsiz
   çekim kalktı (geri istenirse reports.py'de tek değişiklik — commit
   91577b1 yorumunda tarif). Atlas'ta 4 kehanet karosu da kilit rozetli.
+
+### B7 — Genel burç yorumunda uydurma mizaç ("ölçülmeyen söylenmez" ihlali)
+- Gözlenen: Gökyüzü'ndeki genel burç kartlarında "safravi" gibi mizaç
+  hükümleri — kişiye özel veri olmadan.
+- Kök neden: RAG tohumu 'temperament' korpustaki burç→mizaç tablosunu
+  genel yoruma taşıyordu + prompt "mizacıyla çarpıştır" diye emrediyordu.
+  Ayrıca mizaç v1'de hiçbir yerde HESAPLANMIYOR.
+- Durum: düzeltildi (4ca85b9, rev 00050) — yeni 'horoscope' tohumu
+  (gökyüzü/arketip), prompt'a negatif kısıt, korpus tabloları "unsur
+  baskınlığı, yalnız kişisel analizde" çerçevesine alındı, embeddings
+  yenilendi, kirli 20 önbellek dokümanı silindi. Bekçi testler eklendi
+  (tr+en, sorgu+prompt). İleri iş: elementten gerçek mizaç hesabı.
+
+### B8 — Arkadaşlık durumu tek taraflı uydurulabiliyordu (yetki açığı)
+- Kullanıcı şüphesi "başka kişi sorgulanınca veri sızıyor" — tarama
+  sonucu: ham doğum verisi/telefon/e-posta HİÇBİR yoldan sızmıyor;
+  ama arkadaşlık 'accepted' durumu tek taraflı yazılabiliyordu →
+  arkadaş olmayan biri hakkında ikili okuma + onaysız dürtme mümkündü.
+- Durum: düzeltildi (4ca85b9) — are_friends ÇİFT taraflı doğrular;
+  firestore.rules'ta accepted yalnız gerçek davet kabulüyle yazılır;
+  publicProfiles/usernames koleksiyon LİSTELEME kapatıldı (enumeration).
+  Kurallar + backend deploy edildi (rev 00050). Cihaz regresyonu: arkadaş
+  ekle/kabul + kullanıcı adı arama çalışmalı (senaryo 35).
 
 ## 2. tur kapsamı
 
