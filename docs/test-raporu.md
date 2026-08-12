@@ -79,12 +79,14 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
   Ayarlar → Google bölümünden doğrulayıp tekrar deneyin").
 - Gözlenen: Genel "bir şeyler ters gitti" mesajı; kullanıcı çıkmaza
   giriyor.
-- KÖK NEDEN (sonradan bulundu): `[16]` üst katman maskesiymiş;
-  altında `[8] UNREGISTERED_ON_API_CONSOLE`. Play imza SHA'ları
-  test gecesine kadar Firebase'de yoktu (yalnız debug istemcisi
-  vardı) — eklenince OAuth istemcileri oluştu ama Google tarafında
-  etkinleşme "5 dk – birkaç saat" sürüyor. Ders: yeni SHA sonrası
-  girişi test etmeden önce yayılmayı bekle; logcat'te gerçek neden
+- KÖK NEDEN (KESİN, 2026-08-12): `[16]` üst katman maskesiymiş;
+  altında `[8] UNREGISTERED_ON_API_CONSOLE`. Play Console'dan
+  kopyalanan imza SHA'ları (klasik/kuantum) mağazadan inen APK'nın
+  GERÇEK imzasıyla eşleşmiyordu — iki gün yanlış parmak izleri
+  kayıtlıydı. Gerçek imza cihazdaki APK'dan okundu (adb pull +
+  apksigner): SHA-1 9E:12:F5:F1...CD:E8:40. Firebase'e eklendi +
+  assetlinks güncellendi. Ders: imza SHA'sının tek güvenilir
+  kaynağı cihazdaki APK'dır; logcat'te gerçek neden
   `GetTokenResponseHandler` satırında.
 - Önem: orta (nadir ama tıkayıcı; mesaj iyileştirmesi ucuz)
 - Durum: düzeltildi (kod: 858cc49; 1.0.0+4 ile dağıtılacak) —
