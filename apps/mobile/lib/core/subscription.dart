@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
@@ -123,7 +124,16 @@ final billingIdentityProvider = Provider<void>((ref) {
           await Purchases.logIn(uid);
         }
       } catch (e) {
+        // Sahada görünmez kalmasın: kimlik bağlanamazsa satın almalar anonim
+        // kimliğe iner ve sunucuda yetim kalır (iç test bulgusu, 2026-08-12).
+        // Satın alma anındaki ensureBillingIdentity son savunma hattı; burası
+        // ise sorunun YAYGINLIĞINI gösteren telemetri.
         debugPrint('RevenueCat kimliği bağlanamadı: $e');
+        if (!kDebugMode) {
+          FirebaseCrashlytics.instance.recordError(
+              'billing-identity: $e', StackTrace.current,
+              fatal: false);
+        }
       }
       ref.invalidate(subscriptionProvider);
     });
@@ -176,6 +186,26 @@ final offeringsProvider = FutureProvider<List<Package>>((ref) async {
   }
 });
 
+/// Satın alma/geri yükleme ÖNCESİ RevenueCat kimliğini garantiye alır.
+///
+/// [billingIdentityProvider] oturum akışına bağlı ama tek denemeli:
+/// `logIn` o an düşerse (ağ, soğuk başlangıç) kimlik anonim kalıyor ve
+/// satın alma `$RCAnonymousID:...` altına yazılıyordu — webhook sunucuda
+/// anonim dokümana işledi, kullanıcının uid'i boş kaldı, ödeme yapılmış
+/// ama her şey kilitli görünmüştü (iç test, 2026-08-10, Feyza vakası).
+/// Paranın el değiştirdiği anda kimliği şansa bırakmıyoruz.
+Future<void> ensureBillingIdentity() async {
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  if (uid == null) {
+    // Paywall yalnız oturumlu ekranlardan açılır; buraya düşmek anormal.
+    throw StateError('Oturum yokken satın alma başlatıldı.');
+  }
+  final mevcut = await Purchases.appUserID;
+  if (mevcut != uid) {
+    await Purchases.logIn(uid);
+  }
+}
+
 /// Satın alma. Başarılıysa sunucu yetkiyi görene kadar bekler.
 ///
 /// Yetki sunucuya **webhook üzerinden** işleniyor: satın almanın bitmesiyle
@@ -188,6 +218,7 @@ final offeringsProvider = FutureProvider<List<Package>>((ref) async {
 /// `true` döneriz: satın alma cihazda gerçekleşti, gecikme sunucu tarafındadır
 /// ve kullanıcıyı ödeme ekranına geri göndermek yanlış olur.
 Future<bool> purchasePackage(WidgetRef ref, Package package) async {
+  await ensureBillingIdentity();
   final result = await Purchases.purchase(PurchaseParams.package(package));
   final active =
       result.customerInfo.entitlements.active.containsKey(kPlusEntitlement);
@@ -259,6 +290,7 @@ Future<void> markIntroPaywallShown() async {
 
 /// Satın alımları geri yükle (mağaza kuralı: bu seçenek sunulmak zorunda).
 Future<bool> restorePurchases(WidgetRef ref) async {
+  await ensureBillingIdentity();
   final info = await Purchases.restorePurchases();
   final active = info.entitlements.active.containsKey(kPlusEntitlement);
   if (active) {

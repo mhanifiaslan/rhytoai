@@ -25,7 +25,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'api.dart';
-import 'subscription.dart' show billingConfigured;
+import 'subscription.dart' show billingConfigured, ensureBillingIdentity;
 
 /// Mağazadaki consumable ürün kimlikleri. Sunucudaki `TOKEN_PACKS` ile aynı
 /// olmak zorunda; adetler BURADA TUTULMAZ (istemciye güvenilmez).
@@ -115,6 +115,9 @@ final tokenPacksProvider = FutureProvider<List<StoreProduct>>((ref) async {
 Future<bool> purchaseTokenPack(WidgetRef ref, StoreProduct product) async {
   final onceki = ref.read(walletProvider).value?.purchased ?? 0;
 
+  // Kimlik garantisi: anonim kimliğe inen satın alma sunucuda yetim kalır
+  // (bkz. subscription.ensureBillingIdentity — Feyza vakası).
+  await ensureBillingIdentity();
   await Purchases.purchase(PurchaseParams.storeProduct(product));
 
   // Webhook'un cüzdana yüklemesini bekle — abonelikteki desenle aynı bütçe.
