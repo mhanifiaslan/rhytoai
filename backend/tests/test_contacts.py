@@ -30,8 +30,11 @@ uygulama_gerekir = pytest.mark.skipif(
 
 
 class _SahteAnlik:
-    def __init__(self, data):
+    def __init__(self, data, doc_id=None):
         self._data = data
+        # Gerçek Firestore snapshot'ında olduğu gibi doküman kimliği. I-turu:
+        # /match eşleşen hash'i (doküman kimliği) yanıta koyuyor.
+        self.id = doc_id
 
     @property
     def exists(self):
@@ -47,7 +50,7 @@ class _SahteDoc:
         self._yol = yol
 
     def get(self):
-        return _SahteAnlik(self._depo.get(self._yol))
+        return _SahteAnlik(self._depo.get(self._yol), self._yol.split("/")[-1])
 
     def set(self, data, merge=False):
         self._depo[self._yol] = dict(data)
@@ -119,8 +122,12 @@ def test_karsilikli_acik_taraflar_eslesir(monkeypatch):
     kartlar = yanit.json()["matches"]
     assert len(kartlar) == 1
     assert kartlar[0]["username"] == "deniz"
-    # Kart yalnızca türetilmiş alanlar taşır — doğum verisi ASLA.
-    assert set(kartlar[0]) <= {"uid", "displayName", "username",
+    # Eşleşen hash geri döner (I-turu: istemci kişi→app-kullanıcı eşlemesi
+    # kurup rehberini aktif/pasif ayırsın).
+    assert kartlar[0]["hash"] == "h-arkadas"
+    # Kart yalnızca türetilmiş alanlar + eşleşme hash'i taşır — doğum
+    # verisi ASLA.
+    assert set(kartlar[0]) <= {"uid", "hash", "displayName", "username",
                                "sunSign", "photoUrl"}
 
 

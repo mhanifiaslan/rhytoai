@@ -16,7 +16,7 @@ import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../profile/account_screen.dart' show AccountScreen;
-import '../profile/phone_verify_screen.dart' show PhoneVerifyScreen;
+import 'contacts_screen.dart' show ContactsScreen;
 import 'friend_detail_screen.dart' show FriendDetailScreen, reactionLabel;
 import '../../core/api.dart' show friendlyError;
 import '../../l10n/app_localizations.dart';
@@ -92,7 +92,7 @@ class FriendsScreen extends ConsumerWidget {
         // ayar kapalıysa/telefon doğrusuzsa/izin yoksa sessiz boşluk yerine
         // yol gösteren kart çizer. Sonuçlar bellekte yaşar; ne istemci ne
         // sunucu listeyi saklar.
-        _ContactSuggestions(ayarAcik: profile?['contactMatch'] == true),
+        _ContactsEntry(ayarAcik: profile?['contactMatch'] == true),
         friendsAsync.when(
           loading: () => const Padding(
             padding: EdgeInsets.only(top: 48),
@@ -188,161 +188,79 @@ class _UsernameSetupPanelState extends State<_UsernameSetupPanel> {
   }
 }
 
-/// Rehberden bulunan, karşılıklı ayarı açık kullanıcılar — ya da eşleşmenin
-/// önündeki engeli anlatan kart (F1). Eski hâli her eksik koşulda
-/// `SizedBox.shrink()` dönüyordu; kullanıcı özelliğin varlığından bile
-/// habersiz kalıyordu.
-class _ContactSuggestions extends ConsumerWidget {
-  const _ContactSuggestions({required this.ayarAcik});
+/// Rehber ekranına KOMPAKT giriş (I-turu). Eski hâli büyük açıklama
+/// kartları/uzun liste çiziyordu ("çok büyük" şikâyeti). Artık tek satır:
+/// başlık + duruma göre alt yazı (N kişi uygulamada / aç / doğrula) +
+/// ok. Dokununca tam ekran [ContactsScreen] açılır (aktif/pasif + davet).
+class _ContactsEntry extends ConsumerWidget {
+  const _ContactsEntry({required this.ayarAcik});
 
   final bool ayarAcik;
 
-  Widget _kart(AppLocalizations l10n,
-      {required String baslik,
-      required String metin,
-      String? eylem,
-      VoidCallback? onTap}) {
-    return GlassPanel(
-      label: l10n.contactSuggestionsLabel,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(baslik, style: RythoText.display(16)),
-        const SizedBox(height: 6),
-        Text(metin,
-            style: RythoText.body(12.5, color: RythoColors.parchmentDim)),
-        if (eylem != null) ...[
-          const SizedBox(height: 12),
-          GoldButton(text: eylem, filled: false, onPressed: onTap),
-        ],
-      ]),
-    );
-  }
+  void _ac(BuildContext context) => Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ContactsScreen()));
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
 
+    String altYazi;
+    VoidCallback onTap;
+
     if (!ayarAcik) {
-      return _kart(l10n,
-          baslik: l10n.contactMatchOffTitle,
-          metin: l10n.contactMatchOffBody,
-          eylem: l10n.contactMatchEnable, onTap: () async {
+      altYazi = l10n.contactsFindEnable;
+      onTap = () async {
         await setContactMatch(true);
         ref.invalidate(profileProvider);
         ref.invalidate(contactMatchesProvider);
-      });
+        if (context.mounted) _ac(context);
+      };
+    } else {
+      final sonuc = ref.watch(contactMatchesProvider);
+      altYazi = switch (sonuc) {
+        AsyncData(:final value) => switch (value.blocker) {
+            ContactMatchBlocker.telefonYok => l10n.contactsFindVerifyPhone,
+            ContactMatchBlocker.izinYok => l10n.contactMatchPermTitle,
+            null => l10n.contactsFindActive(value.active.length),
+          },
+        _ => '…',
+      };
+      onTap = () => _ac(context);
     }
 
-    final eslesmeler = ref.watch(contactMatchesProvider);
-    return eslesmeler.when(
-      loading: () => const SizedBox.shrink(),
-      error: (_, _) => const SizedBox.shrink(),
-      data: (sonuc) {
-        switch (sonuc.blocker) {
-          case ContactMatchBlocker.telefonYok:
-            return _kart(l10n,
-                baslik: l10n.contactMatchPhoneTitle,
-                metin: l10n.contactMatchPhoneBody,
-                eylem: l10n.contactMatchVerifyPhone,
-                onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                    builder: (_) => const PhoneVerifyScreen())));
-          case ContactMatchBlocker.izinYok:
-            return _kart(l10n,
-                baslik: l10n.contactMatchPermTitle,
-                metin: l10n.contactMatchPermBody,
-                eylem: l10n.contactMatchRetry,
-                // İzin istemi provider yeniden koşunca tekrar açılır;
-                // kalıcı retteyse kullanıcı sistem ayarından açmalı
-                // (metin bunu söylüyor).
-                onTap: () => ref.invalidate(contactMatchesProvider));
-          case null:
-            if (sonuc.matches.isEmpty) {
-              return _kart(l10n,
-                  baslik: l10n.contactSuggestionsLabel,
-                  metin: l10n.contactMatchEmptyBody);
-            }
-            return GlassPanel(
-              label: l10n.contactSuggestionsLabel,
-              child: Column(children: [
-                for (final kisi in sonuc.matches)
-                  _ContactSuggestionRow(kisi: kisi),
-              ]),
-            );
-        }
-      },
-    );
-  }
-}
-
-class _ContactSuggestionRow extends ConsumerStatefulWidget {
-  const _ContactSuggestionRow({required this.kisi});
-
-  final ContactMatch kisi;
-
-  @override
-  ConsumerState<_ContactSuggestionRow> createState() =>
-      _ContactSuggestionRowState();
-}
-
-class _ContactSuggestionRowState
-    extends ConsumerState<_ContactSuggestionRow> {
-  bool _gonderildi = false;
-  bool _mesgul = false;
-
-  Future<void> _ekle() async {
-    final l10n = AppLocalizations.of(context);
-    final mesajci = ScaffoldMessenger.of(context);
-    setState(() => _mesgul = true);
-    try {
-      await sendFriendRequest(widget.kisi.uid);
-      if (!mounted) return;
-      setState(() => _gonderildi = true);
-    } catch (e) {
-      if (!mounted) return;
-      mesajci.showSnackBar(SnackBar(content: Text(friendlyError(e, l10n))));
-    } finally {
-      if (mounted) setState(() => _mesgul = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final kisi = widget.kisi;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(children: [
-        CircleAvatar(
-          radius: 17,
-          backgroundColor: RythoColors.inkLighter,
-          backgroundImage:
-              kisi.photoUrl != null ? NetworkImage(kisi.photoUrl!) : null,
-          child: kisi.photoUrl == null
-              ? Text('☽', style: RythoText.display(13))
-              : null,
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(kisi.displayName ?? l10n.defaultUserName,
-                    style: RythoText.body(14, w: FontWeight.w600)),
-                if (kisi.username != null)
-                  Text('@${kisi.username}',
-                      style: RythoText.mono(
-                          11, color: RythoColors.parchmentDim)),
-              ]),
-        ),
-        _gonderildi
-            ? Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                child: Icon(Icons.check_rounded,
-                    size: 18, color: RythoColors.celadon),
-              )
-            : TextButton(
-                onPressed: _mesgul ? null : _ekle,
-                child: Text(l10n.addFriend, style: RythoText.label(12)),
-              ),
-      ]),
+    return GlassPanel(
+      child: Pressable(
+        onTap: onTap,
+        child: Row(children: [
+          Container(
+            width: 38,
+            height: 38,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: RythoColors.inkLight,
+              border: Border.all(color: RythoColors.glassStroke),
+            ),
+            child: const Icon(Icons.contacts_outlined,
+                size: 19, color: RythoColors.parchment),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.contactsFindEntry,
+                      style: RythoText.body(14, w: FontWeight.w600)),
+                  const SizedBox(height: 2),
+                  Text(altYazi,
+                      style: RythoText.body(
+                          12, color: RythoColors.parchmentDim)),
+                ]),
+          ),
+          const Icon(Icons.chevron_right_rounded,
+              size: 20, color: RythoColors.parchmentDim),
+        ]),
+      ),
     );
   }
 }

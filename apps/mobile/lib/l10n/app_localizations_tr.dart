@@ -1619,6 +1619,50 @@ class AppLocalizationsTr extends AppLocalizations {
       'Rehberinden kimse henüz görünmüyor. Eşleşme için arkadaşının da Rytho\'da numarasını doğrulamış ve rehber eşleşmesini açmış olması gerekir.';
 
   @override
+  String get contactsTitle => 'Rehberin';
+
+  @override
+  String get contactsSearchHint => 'Rehberinde ara';
+
+  @override
+  String get contactsActiveSection => 'Uygulamada';
+
+  @override
+  String get contactsInviteSection => 'Davet et';
+
+  @override
+  String get contactsInvite => 'Davet et';
+
+  @override
+  String get contactsAlreadyFriend => 'Arkadaşın';
+
+  @override
+  String get contactsNoSearchResult => 'Aramayla eşleşen kişi yok.';
+
+  @override
+  String get contactsInviteNeedsUsername =>
+      'Davet için önce bir kullanıcı adı al.';
+
+  @override
+  String inviteShareMessage(Object link) {
+    return 'Seni Rytho\'ya davet ediyorum — kişisel kozmik zekân. Beni buradan ekleyebilirsin: $link';
+  }
+
+  @override
+  String get contactsFindEntry => 'Rehberinden arkadaş bul';
+
+  @override
+  String contactsFindActive(int count) {
+    return '$count kişi uygulamada';
+  }
+
+  @override
+  String get contactsFindEnable => 'Rehber eşleşmesini aç';
+
+  @override
+  String get contactsFindVerifyPhone => 'Bulmak için numaranı doğrula';
+
+  @override
   String get phoneSectionLabel => 'TELEFON';
 
   @override

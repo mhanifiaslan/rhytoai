@@ -1621,6 +1621,50 @@ class AppLocalizationsEn extends AppLocalizations {
       'No one from your contacts is visible yet. For a match, your friend also needs to verify their number on Rytho and turn on contact matching.';
 
   @override
+  String get contactsTitle => 'Your contacts';
+
+  @override
+  String get contactsSearchHint => 'Search your contacts';
+
+  @override
+  String get contactsActiveSection => 'On Rytho';
+
+  @override
+  String get contactsInviteSection => 'Invite';
+
+  @override
+  String get contactsInvite => 'Invite';
+
+  @override
+  String get contactsAlreadyFriend => 'Friend';
+
+  @override
+  String get contactsNoSearchResult => 'No one matches your search.';
+
+  @override
+  String get contactsInviteNeedsUsername =>
+      'Pick a username first to invite people.';
+
+  @override
+  String inviteShareMessage(Object link) {
+    return 'I\'m inviting you to Rytho — your personal cosmic intelligence. Add me here: $link';
+  }
+
+  @override
+  String get contactsFindEntry => 'Find friends from your contacts';
+
+  @override
+  String contactsFindActive(int count) {
+    return '$count on Rytho';
+  }
+
+  @override
+  String get contactsFindEnable => 'Turn on contact matching';
+
+  @override
+  String get contactsFindVerifyPhone => 'Verify your number to find them';
+
+  @override
   String get phoneSectionLabel => 'PHONE';
 
   @override

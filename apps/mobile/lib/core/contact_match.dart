@@ -26,6 +26,7 @@ import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'api.dart';
+import 'city_directory.dart' show foldTurkish;
 
 /// Yerel biçimli numarayı E.164'e çevirir; çeviremezse `null`.
 ///
@@ -74,10 +75,13 @@ String countryCodeOf(String e164) {
 String _hash(String e164) =>
     sha256.convert(utf8.encode(e164.trim())).toString();
 
-/// Eşleşen kullanıcı kartı (sunucudan; publicProfiles alanları).
+/// Eşleşen kullanıcı kartı (sunucudan; publicProfiles alanları + eşleşme
+/// hash'i). `hash` istemcinin gönderdiği değerdir; cihaz kişisiyle bu
+/// app-kullanıcısını eşlemek için geri döner (I-turu).
 class ContactMatch {
   const ContactMatch({
     required this.uid,
+    this.hash,
     this.displayName,
     this.username,
     this.sunSign,
@@ -85,6 +89,7 @@ class ContactMatch {
   });
 
   final String uid;
+  final String? hash;
   final String? displayName;
   final String? username;
   final String? sunSign;
@@ -92,11 +97,81 @@ class ContactMatch {
 
   factory ContactMatch.fromJson(Map<String, dynamic> json) => ContactMatch(
         uid: json['uid'] as String,
+        hash: json['hash'] as String?,
         displayName: json['displayName'] as String?,
         username: json['username'] as String?,
         sunSign: json['sunSign'] as String?,
         photoUrl: json['photoUrl'] as String?,
       );
+}
+
+/// Cihaz rehberindeki bir kişi — CİHAZDA kalır, sunucuya GİTMEZ.
+/// [hashes] kişinin numaralarının SHA-256'ları (eşleşme korelasyonu için).
+class DeviceContact {
+  const DeviceContact({required this.name, required this.hashes, this.e164});
+
+  final String name;
+  final Set<String> hashes;
+
+  /// Davet paylaşımı için birincil numara (pasif kişide gösterilmez,
+  /// yalnız paylaş metnine değil; şimdilik kullanılmıyor ama elde tutulur).
+  final String? e164;
+}
+
+/// Uygulamayı kullanan rehber kişisi (aktif): cihaz adı + app kartı.
+class ActiveContact {
+  const ActiveContact({required this.name, required this.match});
+  final String name; // rehberdeki ad (app displayName'inden farklı olabilir)
+  final ContactMatch match;
+}
+
+/// Uygulamayı kullanmayan rehber kişisi (pasif): yalnız ad — davet edilir.
+class PassiveContact {
+  const PassiveContact({required this.name});
+  final String name;
+}
+
+/// Cihaz kişilerini, sunucu eşleşmeleriyle aktif/pasif olarak ayırır.
+///
+/// SAF fonksiyon (test edilebilir): app'te olan kişiler [active]'e (app
+/// kartıyla), kalanlar [passive]'e düşer. İkisi de ada göre alfabetik
+/// (Türkçe-duyarlı) sıralanır. Bir kişinin herhangi bir numarası eşleşirse
+/// aktiftir. app'te olup contactMatch KAPALI kişi eşleşme dönmez → pasifte
+/// görünür (mahremiyet doğru; onu ifşa edemeyiz).
+({List<ActiveContact> active, List<PassiveContact> passive}) splitContacts(
+    List<DeviceContact> devContacts, List<ContactMatch> matches) {
+  final hashToMatch = <String, ContactMatch>{};
+  for (final m in matches) {
+    if (m.hash != null) hashToMatch[m.hash!] = m;
+  }
+
+  final active = <ActiveContact>[];
+  final passive = <PassiveContact>[];
+  final gorulenUid = <String>{};
+  for (final k in devContacts) {
+    ContactMatch? eslesme;
+    for (final h in k.hashes) {
+      final m = hashToMatch[h];
+      if (m != null) {
+        eslesme = m;
+        break;
+      }
+    }
+    if (eslesme != null) {
+      // Aynı app-kullanıcısı birden çok rehber kaydında olabilir; bir kez.
+      if (gorulenUid.add(eslesme.uid)) {
+        active.add(ActiveContact(name: k.name, match: eslesme));
+      }
+    } else {
+      passive.add(PassiveContact(name: k.name));
+    }
+  }
+
+  int cmp(String a, String b) =>
+      foldTurkish(a).compareTo(foldTurkish(b));
+  active.sort((a, b) => cmp(a.name, b.name));
+  passive.sort((a, b) => cmp(a.name, b.name));
+  return (active: active, passive: passive);
 }
 
 /// Eşleşmenin neden BOŞ olduğunu ayırt eden durum (F1).
@@ -114,13 +189,24 @@ enum ContactMatchBlocker {
 }
 
 class ContactMatchResult {
-  const ContactMatchResult({this.blocker, this.matches = const []});
+  const ContactMatchResult({
+    this.blocker,
+    this.active = const [],
+    this.passive = const [],
+  });
 
   final ContactMatchBlocker? blocker;
-  final List<ContactMatch> matches;
+
+  /// Uygulamayı kullanan rehber kişileri (alfabetik).
+  final List<ActiveContact> active;
+
+  /// Uygulamayı kullanmayan rehber kişileri (alfabetik) — davet edilir.
+  final List<PassiveContact> passive;
 }
 
-/// Rehber eşleşmesini uçtan uca koşturur.
+/// Rehber eşleşmesini uçtan uca koşturur: cihaz kişilerini okur, hash'ler,
+/// sunucuyla eşleştirir, aktif/pasif olarak ayırır. Rehber ADLARI CİHAZDA
+/// kalır; ağa yalnız hash gider.
 Future<ContactMatchResult> runContactMatch(Ref ref) async {
   final kendiNumaram = FirebaseAuth.instance.currentUser?.phoneNumber;
   if (kendiNumaram == null) {
@@ -136,23 +222,38 @@ Future<ContactMatchResult> runContactMatch(Ref ref) async {
   final kisiler = await FlutterContacts.getContacts(withProperties: true);
 
   final kod = countryCodeOf(kendiNumaram);
-  final hashler = <String>{};
+  final devContacts = <DeviceContact>[];
+  final tumHashler = <String>{};
   for (final kisi in kisiler) {
+    final ad = kisi.displayName.trim();
+    if (ad.isEmpty) continue; // adsız kayıt (yalnız numara) listelenmez
+    final hashler = <String>{};
+    String? birincilE164;
     for (final tel in kisi.phones) {
       final e164 = normalizeE164(tel.number, countryCode: kod);
-      if (e164 != null && e164 != kendiNumaram) hashler.add(_hash(e164));
+      if (e164 == null || e164 == kendiNumaram) continue;
+      hashler.add(_hash(e164));
+      birincilE164 ??= e164;
     }
+    if (hashler.isEmpty) continue; // geçerli numarası olmayan kişi atlanır
+    devContacts.add(
+        DeviceContact(name: ad, hashes: hashler, e164: birincilE164));
+    tumHashler.addAll(hashler);
   }
-  if (hashler.isEmpty) return const ContactMatchResult();
+  if (tumHashler.isEmpty) return const ContactMatchResult();
 
   final dio = ref.read(apiProvider);
   final yanit = await dio.post('/api/v1/contacts/match',
-      data: {'hashes': hashler.take(2000).toList()});
+      data: {'hashes': tumHashler.take(2000).toList()});
   final ham = (yanit.data as Map)['matches'] as List? ?? const [];
-  return ContactMatchResult(matches: [
+  final matches = [
     for (final m in ham)
       ContactMatch.fromJson(Map<String, dynamic>.from(m as Map)),
-  ]);
+  ];
+
+  final bolunmus = splitContacts(devContacts, matches);
+  return ContactMatchResult(
+      active: bolunmus.active, passive: bolunmus.passive);
 }
 
 /// Eşleşme sonuçları — ayar açıkken çağrılır, bellekte yaşar (sunucu gibi

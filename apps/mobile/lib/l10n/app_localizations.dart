@@ -2984,6 +2984,84 @@ abstract class AppLocalizations {
   /// **'Rehberinden kimse henüz görünmüyor. Eşleşme için arkadaşının da Rytho\'da numarasını doğrulamış ve rehber eşleşmesini açmış olması gerekir.'**
   String get contactMatchEmptyBody;
 
+  /// No description provided for @contactsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehberin'**
+  String get contactsTitle;
+
+  /// No description provided for @contactsSearchHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehberinde ara'**
+  String get contactsSearchHint;
+
+  /// No description provided for @contactsActiveSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uygulamada'**
+  String get contactsActiveSection;
+
+  /// No description provided for @contactsInviteSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Davet et'**
+  String get contactsInviteSection;
+
+  /// No description provided for @contactsInvite.
+  ///
+  /// In tr, this message translates to:
+  /// **'Davet et'**
+  String get contactsInvite;
+
+  /// No description provided for @contactsAlreadyFriend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Arkadaşın'**
+  String get contactsAlreadyFriend;
+
+  /// No description provided for @contactsNoSearchResult.
+  ///
+  /// In tr, this message translates to:
+  /// **'Aramayla eşleşen kişi yok.'**
+  String get contactsNoSearchResult;
+
+  /// No description provided for @contactsInviteNeedsUsername.
+  ///
+  /// In tr, this message translates to:
+  /// **'Davet için önce bir kullanıcı adı al.'**
+  String get contactsInviteNeedsUsername;
+
+  /// No description provided for @inviteShareMessage.
+  ///
+  /// In tr, this message translates to:
+  /// **'Seni Rytho\'ya davet ediyorum — kişisel kozmik zekân. Beni buradan ekleyebilirsin: {link}'**
+  String inviteShareMessage(Object link);
+
+  /// No description provided for @contactsFindEntry.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehberinden arkadaş bul'**
+  String get contactsFindEntry;
+
+  /// No description provided for @contactsFindActive.
+  ///
+  /// In tr, this message translates to:
+  /// **'{count} kişi uygulamada'**
+  String contactsFindActive(int count);
+
+  /// No description provided for @contactsFindEnable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rehber eşleşmesini aç'**
+  String get contactsFindEnable;
+
+  /// No description provided for @contactsFindVerifyPhone.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bulmak için numaranı doğrula'**
+  String get contactsFindVerifyPhone;
+
   /// No description provided for @phoneSectionLabel.
   ///
   /// In tr, this message translates to:

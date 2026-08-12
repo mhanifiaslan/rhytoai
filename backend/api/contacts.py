@@ -77,22 +77,27 @@ def match(req: MatchRequest,
         return {"status": "success", "matches": []}
 
     # Dizin okuması: doküman kimliği hash'in kendisi — sorgu değil get_all.
+    # Eşleşen uid'in HANGİ hash'ten geldiği izlenir: istemci "bu kişi = bu
+    # app kullanıcısı" eşlemesini kurup rehberini aktif/pasif ayırabilsin
+    # (I-turu). Hash zaten istemcinin kendi gönderdiği değer; geri dönmesi
+    # yeni bir mahremiyet açığı DEĞİL.
     refs = [client.collection("phoneHashes").document(h) for h in hashes]
-    eslesen_uidler: list[str] = []
+    uid_hash: dict[str, str] = {}
     try:
         for anlik in client.get_all(refs):
             if not anlik.exists:
                 continue
             uid = (anlik.to_dict() or {}).get("uid")
             if uid and uid != user.uid:
-                eslesen_uidler.append(uid)
+                # anlik.id doküman kimliği = hash.
+                uid_hash.setdefault(uid, anlik.id)
     except Exception as exc:
         logger.warning("Rehber eşleşmesi dizin okuması düştü: %s", exc)
         raise HTTPException(status_code=500, detail=text("internal", lang))
 
     # Karşılıklılık + engel süzgeci + herkese açık kart.
     kartlar = []
-    for uid in eslesen_uidler:
+    for uid, eslesen_hash in uid_hash.items():
         karsi = _kullanici(client, uid)
         if not karsi.get("contactMatch"):
             continue  # karşı taraf kapalı: görünmez
@@ -105,6 +110,7 @@ def match(req: MatchRequest,
         kart = kart_anlik.to_dict() or {}
         kartlar.append({
             "uid": uid,
+            "hash": eslesen_hash,
             "displayName": kart.get("displayName"),
             "username": kart.get("username"),
             "sunSign": kart.get("sunSign"),
