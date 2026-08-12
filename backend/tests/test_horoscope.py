@@ -69,6 +69,74 @@ def test_haftalik_kova_farkli_haftalari_ayirir():
 
 
 # --------------------------------------------------------------------------
+# Mizaç sızıntısı bekçisi (H1)
+# --------------------------------------------------------------------------
+
+#: Genel burç yorumunda ASLA geçmemesi gereken kişisel/mizaç terimleri.
+#: Bunlar ancak doğum haritasından ölçülür; kişiye özel veri olmayan genel
+#: yorumda geçmeleri "ölçülmeyen söylenmez" ilkesinin ihlalidir.
+_YASAK_MIZAC = [
+    "mizaç", "mizac", "safravi", "sevdavi", "demevi", "balgami",
+    "ahlat", "ahlât",
+    "temperament", "choleric", "sanguine", "melancholic", "phlegmatic",
+    "humour", "humor",
+]
+
+
+@pytest.mark.parametrize("lang", ["tr", "en"])
+def test_horoscope_sorgusu_mizac_cekmez(monkeypatch, lang):
+    """Genel burç yorumunun RAG sorgusu mizaç tohumu KULLANMAZ (H1).
+
+    Eskiden `topic_seed('temperament')` kullanılıyor ve korpustaki
+    burç→mizaç tablosunu genel yoruma taşıyordu; artık gökyüzü/arketip
+    tohumu kullanılır.
+    """
+    kutu = {}
+
+    def sahte_retrieve(query, **kwargs):
+        kutu["sorgu"] = query
+        return "KAYNAK"
+
+    def sahte_generate(cache_key, prompt, fallback, **kwargs):
+        kutu["prompt"] = prompt
+        return {"text": "ok", "cached": False}
+
+    monkeypatch.setattr(report_service, "retrieve_context", sahte_retrieve)
+    monkeypatch.setattr(report_service, "_cached_generate", sahte_generate)
+
+    sky = {"retrogrades": [], "aspects": [], "moon_phase": None}
+    report_service.horoscope_reading("leo", "daily", sky, lang=lang)
+
+    dusuk = kutu["sorgu"].lower()
+    for terim in _YASAK_MIZAC:
+        assert terim not in dusuk, f"Burç yorumu sorgusunda yasak terim: {terim}"
+
+
+@pytest.mark.parametrize("lang", ["tr", "en"])
+def test_horoscope_promptu_mizac_hukmu_yasaklar(monkeypatch, lang):
+    """Prompt kişisel mizaç hükmünü açıkça YASAKLAR (negatif kısıt)."""
+    kutu = {}
+
+    monkeypatch.setattr(report_service, "retrieve_context",
+                        lambda q, **k: "KAYNAK")
+
+    def sahte_generate(cache_key, prompt, fallback, **kwargs):
+        kutu["prompt"] = prompt
+        return {"text": "ok", "cached": False}
+
+    monkeypatch.setattr(report_service, "_cached_generate", sahte_generate)
+    sky = {"retrogrades": [], "aspects": [], "moon_phase": None}
+    report_service.horoscope_reading("leo", "daily", sky, lang=lang)
+
+    dusuk = kutu["prompt"].lower()
+    # Prompt "mizaç kullanma" kısıtını içermeli.
+    assert ("mizaç" in dusuk or "temperament" in dusuk)
+    # Ve eski "mizacıyla çarpıştır / collide with temperament" emri GİTMİŞ.
+    assert "mizacıyla çarpıştır" not in dusuk
+    assert "temperament of" not in dusuk
+
+
+# --------------------------------------------------------------------------
 # Önbellek katmanı
 # --------------------------------------------------------------------------
 

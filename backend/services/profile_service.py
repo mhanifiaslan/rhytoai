@@ -145,20 +145,35 @@ def _yerel_burc(lang: str | None, deger: Any) -> str:
     return metin
 
 
+def _friend_status(owner_uid: str, other_uid: str) -> str | None:
+    """`users/{owner}/friends/{other}` dokümanının status'ü (yoksa None)."""
+    doc_ref = _user_doc(owner_uid)
+    if doc_ref is None:
+        return None
+    try:
+        snapshot = doc_ref.collection("friends").document(other_uid).get()
+    except Exception as exc:
+        logger.warning("Arkadaşlık okunamadı (%s-%s): %s",
+                       owner_uid, other_uid, exc)
+        return None
+    if not snapshot.exists:
+        return None
+    return (snapshot.to_dict() or {}).get("status")
+
+
 def are_friends(uid: str, other_uid: str) -> bool:
     """İki kullanıcı arasında **kabul edilmiş** arkadaşlık var mı?
 
     İkili okuma pahalı (LLM) ve kişiseldir; arkadaş olmayan biri hakkında
     üretilmesi hem bütçe hem gizlilik açığıdır. Bu yüzden uç bunu doğrular.
+
+    ÇİFT TARAFLI doğrulama (H2 güvenlik onarımı): eskiden yalnız çağıranın
+    kendi `friends/{other}` dokümanına bakılıyordu. Ama firestore.rules
+    kullanıcının KENDİ ağacına yazmasına izin verdiği için saldırgan bu
+    dokümana tek taraflı `accepted` yazıp arkadaş olmayan biri hakkında
+    ikili okuma ürettirebiliyordu (+ onaysız dürtme/bildirim). Artık
+    HER İKİ dokümanın da accepted olması şart; gerçek kabul iki tarafı da
+    accepted yaptığı için meşru arkadaşlık etkilenmez.
     """
-    doc_ref = _user_doc(uid)
-    if doc_ref is None:
-        return False
-    try:
-        snapshot = doc_ref.collection("friends").document(other_uid).get()
-    except Exception as exc:
-        logger.warning("Arkadaşlık doğrulanamadı (%s-%s): %s", uid, other_uid, exc)
-        return False
-    if not snapshot.exists:
-        return False
-    return (snapshot.to_dict() or {}).get("status") == "accepted"
+    return (_friend_status(uid, other_uid) == "accepted"
+            and _friend_status(other_uid, uid) == "accepted")

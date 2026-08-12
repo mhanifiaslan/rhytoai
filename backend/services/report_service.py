@@ -236,10 +236,12 @@ def horoscope_reading(sign: str, period: str, sky: dict[str, Any],
         f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
     ) or "-"
     moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
-    # Mizaç tohumu + yerel burç adı (Revize R8): eski sabit şablon TR
-    # korpusta "sign temperament planet transit" diye İngilizce arıyordu.
+    # Gökyüzü/arketip tohumu + yerel burç adı (H1): eskiden 'temperament'
+    # tohumu kullanılıyordu ve korpustaki burç→mizaç tablosunu (safravi...)
+    # genel yoruma taşıyordu — kişiye özel veri olmadan mizaç uydurmaktı.
+    # Genel yorum artık mizaç ÇEKMEZ.
     rag = retrieve_context(
-        f"{chart_query.topic_seed('temperament', lang)} {sign_name}",
+        f"{chart_query.topic_seed('horoscope', lang)} {sign_name}",
         lang=lang)
 
     prompt = p.HOROSCOPE.format(

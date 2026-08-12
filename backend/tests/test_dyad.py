@@ -155,6 +155,33 @@ def test_firestore_yokken_arkadaslik_dogrulanamaz(monkeypatch):
     assert profile_service.get_profile("a") is None
 
 
+def test_are_friends_cift_tarafli_dogrular(monkeypatch):
+    """H2: tek taraflı 'accepted' arkadaşlık SAYILMAZ.
+
+    Saldırgan yalnız kendi ağacına accepted yazabildiği için, tek taraflı
+    kayıt dyad/dürtme tetiklememeli. Gerçek arkadaşlıkta iki taraf da
+    accepted'tır."""
+    # Sözde Firestore: {owner: {other: status}}
+    dunya: dict[str, dict[str, str]] = {}
+
+    def sahte_status(owner, other):
+        return dunya.get(owner, {}).get(other)
+
+    monkeypatch.setattr(profile_service, "_friend_status", sahte_status)
+
+    # Tek taraflı (saldırgan S kendi ağacına V=accepted yazdı): SAYILMAZ.
+    dunya["S"] = {"V": "accepted"}
+    assert profile_service.are_friends("S", "V") is False
+
+    # Karşı taraf da accepted (gerçek kabul): sayılır.
+    dunya["V"] = {"S": "accepted"}
+    assert profile_service.are_friends("S", "V") is True
+
+    # Bir taraf 'incoming' (kabul edilmemiş davet): sayılmaz.
+    dunya["V"]["S"] = "incoming"
+    assert profile_service.are_friends("S", "V") is False
+
+
 # --------------------------------------------------------------------------
 # Uç davranışı
 # --------------------------------------------------------------------------

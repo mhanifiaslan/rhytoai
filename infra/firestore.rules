@@ -140,14 +140,42 @@ service cloud.firestore {
       // Her iki taraf da kendi listesini tutar. Davet eden kişi hem kendi
       // kaydını ('outgoing') hem karşı tarafın kaydını ('incoming') yazar;
       // bu yüzden karşı tarafa da yazma izni verilir. Serbest metin alanı yok.
+      // H2 güvenlik onarımı: eski kural 'accepted'ı hem sahibe hem
+      // counterpart'a serbest bırakıyordu. Sonuç: saldırgan hem kendi
+      // (users/S/friends/V) hem karşı (users/V/friends/S) dokümanına
+      // accepted yazıp — V hiç davet etmese de — çift taraflı arkadaşlık
+      // uydurabiliyor, arkadaş olmayan biri hakkında ikili okuma/dürtme
+      // tetikleyebiliyordu. Artık 'accepted' yalnız GERÇEK bir davetin
+      // kabulüyle oluşur:
+      //   * counterpart accepted yazabilir SADECE karşıdaki mevcut kayıt
+      //     'outgoing' ise (yani sahip gerçekten davet göndermişse).
+      //   * sahip accepted yazabilir SADECE kendi kaydı 'incoming' iken
+      //     (yani gerçekten davet almışsa).
+      // Saldırganın kurbanın ağacına yazabilmesi için kurbanın önce ona
+      // 'outgoing' göndermiş olması gerekir — bu da gerçek davettir.
       match /friends/{otherUid} {
         function counterpart() {
           return signedIn() && request.auth.uid == otherUid;
         }
+        function sadeceIzinliAlan() {
+          return request.resource.data.keys()
+            .hasOnly(['status', 'createdAt', 'updatedAt']);
+        }
         allow read: if isOwner(uid);
-        allow create, update: if (isOwner(uid) || counterpart())
-          && request.resource.data.status in ['outgoing', 'incoming', 'accepted']
-          && request.resource.data.keys().hasOnly(['status', 'createdAt', 'updatedAt']);
+        // Davet başlatma: sahip kendine 'outgoing', counterpart karşıya
+        // 'incoming' yazar. 'accepted' create edilemez (önce davet şart).
+        allow create: if sadeceIzinliAlan() && (
+          (isOwner(uid) && request.resource.data.status == 'outgoing') ||
+          (counterpart() && request.resource.data.status == 'incoming')
+        );
+        allow update: if sadeceIzinliAlan() && (
+          // Sahip kendi gelen davetini kabul eder.
+          (isOwner(uid) && request.resource.data.status == 'accepted'
+            && resource.data.status == 'incoming') ||
+          // Karşı taraf, sahibin gönderdiği daveti kabul eder.
+          (counterpart() && request.resource.data.status == 'accepted'
+            && resource.data.status == 'outgoing')
+        );
         allow delete: if isOwner(uid) || counterpart();
       }
 
@@ -173,7 +201,12 @@ service cloud.firestore {
     // Arkadaş listesinde gösterilen türetilmiş, hassas olmayan alanlar.
     // Ham doğum verisi BURAYA YAZILMAZ (alan listesi bunu zorunlu kılar).
     match /publicProfiles/{uid} {
-      allow read: if signedIn();
+      // get: tekil kart (arkadaş listesi + kullanıcı adıyla arama) çalışır.
+      // list KAPALI (H2): eskiden `read` koleksiyon LİSTELEMEyi de açıyor,
+      // isim+burç+lastSeenDaily davranışsal verisiyle tüm dizin
+      // enumerate edilebiliyordu.
+      allow get: if signedIn();
+      allow list: if false;
       allow create, update: if isOwner(uid)
         && request.resource.data.keys().hasOnly([
           'uid', 'displayName', 'photoUrl', 'username', 'sunSign',
@@ -186,7 +219,10 @@ service cloud.firestore {
     // Benzersizlik `create`in var olan dokümanda başarısız olmasıyla sağlanır.
     // Devredilemez: update kapalı, sahibi silip yeniden alabilir.
     match /usernames/{username} {
-      allow read: if signedIn();
+      // get: kullanıcı adından uid çözme (uidForUsername) çalışır.
+      // list KAPALI (H2): tüm kullanıcı adı dizininin çekilmesini önler.
+      allow get: if signedIn();
+      allow list: if false;
       allow create: if signedIn()
         && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid', 'createdAt']);

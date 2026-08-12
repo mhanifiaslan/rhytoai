@@ -131,8 +131,14 @@ SOURCE PASSAGES:
 
 RULES:
 - Warm, flowing, direct address. No fatalism.
-- Collide the sky data with the temperament of {sign}; avoid generic
-  horoscope filler.
+- Meet the sky data with the ARCHETYPE of {sign} (its core quality, ruling
+  planet, element); avoid generic horoscope filler.
+- NO PERSONAL VERDICTS: since there is no individual birth data here, do NOT
+  use TEMPERAMENT (choleric/sanguine/melancholic/phlegmatic, the four
+  humours) or personal elemental balance — concepts that can only be
+  MEASURED from a birth chart. Even if the source passages contain a
+  sign→temperament mapping, do not carry it into this general horoscope;
+  temperament is personal and is only measured in a personal report.
 - Touch at least two of: love, work, inner life. Close with one concrete
   suggestion in a single sentence. No headings, no bullets — plain prose.
 """

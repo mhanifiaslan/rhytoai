@@ -30,14 +30,19 @@ niteliklerini ve asaletlerini eklektik bir sistemle anlatır:
 - **Jüpiter (Müşteri)**: Bereket, hikmet, adalet, din, genişleme. Yay ve Balık.
 - **Satürn (Zühal)**: Zaman, sabır, sınır, yaşlılık, imtihan, derinlik. Oğlak ve Kova.
 
-## Burçların Mizaç Karşılıkları
+## Unsurların Mizaç Karşılıkları (yalnız kişisel harita analizinde)
 
-Klasik sistemde on iki burç, dört unsur ve dört mizaca (ahlat-ı erbaa) bağlanır:
+ÖNEMLİ SINIR: Aşağıdaki eşleme dört UNSUR ile dört mizaç (ahlat-ı erbaa)
+arasındadır; tek bir burçtan mizaç OKUNMAZ. Kişinin mizacı ancak doğum
+haritasının bütününden — bütün gezegenlerin unsur dağılımından — ölçülür.
+Bu yüzden bu eşleme yalnızca kişiye özel harita analizinde geçerlidir;
+GENEL bir burç yorumunda (kişiye özel doğum verisi olmadan) "şu burç şu
+mizaçtandır" demek klasik geleneğe de aykırıdır, bir klişedir.
 
-- **Ateş burçları** (Koç, Aslan, Yay): Safravi mizaç — sıcak/kuru; cesur, atılgan, öncü.
-- **Toprak burçları** (Boğa, Başak, Oğlak): Sevdavi mizaç — soğuk/kuru; sabırlı, derin, pratik.
-- **Hava burçları** (İkizler, Terazi, Kova): Demevi mizaç — sıcak/nemli; sosyal, zeki, iletişimci.
-- **Su burçları** (Yengeç, Akrep, Balık): Balgami mizaç — soğuk/nemli; sezgisel, duygusal, sırlı.
+- **Ateş unsuru** baskınsa: Safravi mizaç — sıcak/kuru; cesur, atılgan, öncü.
+- **Toprak unsuru** baskınsa: Sevdavi mizaç — soğuk/kuru; sabırlı, derin, pratik.
+- **Hava unsuru** baskınsa: Demevi mizaç — sıcak/nemli; sosyal, zeki, iletişimci.
+- **Su unsuru** baskınsa: Balgami mizaç — soğuk/nemli; sezgisel, duygusal, sırlı.
 
 ## El-Bîrûnî ve Mevalid (Doğum Haritası) Analizi
 

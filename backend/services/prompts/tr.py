@@ -119,8 +119,13 @@ KAYNAK PASAJLARI:
 
 KURALLAR:
 - Samimi "sen" diliyle, sıcak ve akıcı yaz; kadercilik yok.
-- Gökyüzü verisini {sign} burcunun mizacıyla çarpıştır; genel geçer
-  klişelerden kaçın.
+- Gökyüzü verisini {sign} burcunun ARKETİPİYLE (temel niteliği, yönetici
+  gezegeni, öğesi) buluştur; genel geçer klişelerden kaçın.
+- KİŞİSEL HÜKÜM YOK: bu yorumda kişiye özel doğum verisi olmadığı için
+  MİZAÇ (safravi/demevi/sevdavi/balgami, ahlât-ı erbaa) veya kişisel
+  element dengesi gibi ancak doğum haritasından ÖLÇÜLEBİLEN kavramları
+  KULLANMA. Kaynak pasajlarda burç→mizaç eşlemesi geçse bile onu bu genel
+  yoruma taşıma; mizaç kişiye özeldir ve yalnız kişisel raporda ölçülür.
 - Aşk, iş ve iç dünya temalarından en az ikisine dokun; sonda tek cümlelik
   somut bir öneri ver. Başlık veya madde işareti kullanma, düz metin yaz.
 """

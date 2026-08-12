@@ -36,19 +36,22 @@ the planets, and their dignities.
 - **Saturn (Zuhal)**: time, patience, limit, old age, trial, depth. Capricorn
   and Aquarius.
 
-## Signs and the Four Temperaments
+## Elements and the Four Temperaments (personal chart analysis only)
 
-The classical system binds the twelve signs to the four elements and through
-them to the four humoural temperaments:
+IMPORTANT LIMIT: The mapping below is between the four ELEMENTS and the four
+humoural temperaments — a temperament is NOT read from a single sign. A
+person's temperament is measured only from the whole birth chart, from the
+elemental distribution of all the planets. This mapping therefore applies
+only in a personal chart analysis; asserting "this sign is of this
+temperament" in a GENERAL horoscope (without individual birth data) is a
+cliché and is contrary to the classical tradition itself.
 
-- **Fire signs** (Aries, Leo, Sagittarius): choleric — hot and dry; bold,
-  initiating, pioneering.
-- **Earth signs** (Taurus, Virgo, Capricorn): melancholic — cold and dry;
-  patient, deep, practical.
-- **Air signs** (Gemini, Libra, Aquarius): sanguine — hot and moist; sociable,
-  quick-minded, communicative.
-- **Water signs** (Cancer, Scorpio, Pisces): phlegmatic — cold and moist;
-  intuitive, feeling, private.
+- **Dominant Fire**: choleric — hot and dry; bold, initiating, pioneering.
+- **Dominant Earth**: melancholic — cold and dry; patient, deep, practical.
+- **Dominant Air**: sanguine — hot and moist; sociable, quick-minded,
+  communicative.
+- **Dominant Water**: phlegmatic — cold and moist; intuitive, feeling,
+  private.
 
 ## Al-Biruni and Nativity Analysis
 

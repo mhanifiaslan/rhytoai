@@ -48,6 +48,10 @@ _TOPIC_SEEDS = {
         "relationship": "Evlilik, ortaklık, bağ, dostluk",
         "mind": "Aklın niteliği, düşünme biçimi, muhakeme",
         "temperament": "Mizaç, bedenin biçimi, dört element dengesi",
+        # Genel burç yorumu (H1): kişiye özel veri yok, mizaç ÇEKİLMEZ —
+        # yalnız burcun arketipi + gökyüzü hareketleri.
+        "horoscope": ("Burç arketipi, yönetici gezegen, gökyüzü hareketleri, "
+                      "gezegen geçişleri, ayın evresi"),
         "physiognomy": ("Firaset, kıyafet ilmi, dış belirtiden mizaca; "
                         "yüz hatları, ses ve duruş"),
         "travel": "Yolculuk, yer değiştirme, kökten uzaklaşma",
@@ -63,6 +67,10 @@ _TOPIC_SEEDS = {
         "relationship": "Marriage, partnership, friendship, bonds",
         "mind": "The quality of the mind, manner of thinking, judgement",
         "temperament": "Temperament, form of the body, balance of elements",
+        # General horoscope (H1): no individual data, temperament is NOT
+        # pulled — only the sign's archetype + sky movements.
+        "horoscope": ("Zodiac archetype, ruling planet, sky movements, "
+                      "planetary transits, phase of the moon"),
         "physiognomy": ("Firasa, the science of physiognomy, from outward "
                         "sign to temperament; facial features, voice, bearing"),
         "travel": "Travelling, journeys, leaving one's own ground",
