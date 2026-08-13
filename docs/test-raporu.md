@@ -68,7 +68,8 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 33 | Zorunlu güncelleme: RYTHO_MIN_BUILD=999 → kapı ekranı + Play düğmesi; 0 → normal açılış (Claude sunucudan açar/kapar) | ⬜ | 1.0.0+6 |
 | 34 | Giriş yöntemleri: Google hesabına şifre ata → çık → e-posta+şifreyle gir; e-posta hesabına Google bağla | ⬜ | 1.0.0+6 |
 | 35 | Genel burç yorumunda mizaç/safravi YOK; arkadaş ekle→kabul et akışı ve kullanıcı adıyla arama hâlâ çalışıyor (kural sıkılaştırması regresyonu) | ⬜ | sunucu (rev 00050) |
-| 36 | Rehber ekranı: Arkadaşlar'da tek kompakt "Rehberinden arkadaş bul" satırı → tam ekran; aktif kişiler üstte / pasifler altta alfabetik; arama süzer; pasifte "Davet et" → paylaş menüsü (WhatsApp/SMS/mail) davet linkiyle; zaten-arkadaş "Arkadaşın" | ⬜ | 1.0.0+7 |
+| 36 | Rehber ekranı: Arkadaşlar'da tek kompakt "Rehberinden arkadaş bul" satırı → tam ekran; aktif kişiler üstte / pasifler altta alfabetik; arama süzer; pasifte "Davet et" → paylaş menüsü (WhatsApp/SMS/mail) davet linkiyle; zaten-arkadaş "Arkadaşın" | ⬜ | 1.0.0+8 |
+| 37 | Rehberde arkadaş sınıflandırması (J): telefonu doğrulu arkadaş (ayarı kapalı olsa da) "Uygulamada → Arkadaşın" görünür, davet çıkmaz; doğrusuz arkadaş "Rytho'da görünmüyor" bölümünde dipnotla | ⬜ | 1.0.0+8 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,
 users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
