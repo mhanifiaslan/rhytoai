@@ -70,6 +70,8 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 35 | Genel burç yorumunda mizaç/safravi YOK; arkadaş ekle→kabul et akışı ve kullanıcı adıyla arama hâlâ çalışıyor (kural sıkılaştırması regresyonu) | ⬜ | sunucu (rev 00050) |
 | 36 | Rehber ekranı: Arkadaşlar'da tek kompakt "Rehberinden arkadaş bul" satırı → tam ekran; aktif kişiler üstte / pasifler altta alfabetik; arama süzer; pasifte "Davet et" → paylaş menüsü (WhatsApp/SMS/mail) davet linkiyle; zaten-arkadaş "Arkadaşın" | ⬜ | 1.0.0+8 |
 | 37 | Rehberde arkadaş sınıflandırması (J): telefonu doğrulu arkadaş (ayarı kapalı olsa da) "Uygulamada → Arkadaşın" görünür, davet çıkmaz; doğrusuz arkadaş "Rytho'da görünmüyor" bölümünde dipnotla | ⬜ | 1.0.0+8 + sunucu |
+| 38 | İlk abonelikte bakiye ANINDA 300 görünür (K2); paywall'da "Sınırsız sohbet" YOK, "Ayda 300 jeton" var (K3) | ⬜ | 1.0.0+9 |
+| 39 | Jeton zorlaması (K5): bakiye 0'a düşünce ücretli iş 402 → jeton mağazası açılır; allowance önce, purchased sonra harcanır | ⬜ | sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,
 users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
