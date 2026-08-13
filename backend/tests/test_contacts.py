@@ -145,6 +145,42 @@ def test_karsi_taraf_kapaliysa_GORUNMEZ(monkeypatch):
 
 
 @uygulama_gerekir
+def test_kapali_ama_ARKADAS_eslesir(monkeypatch):
+    """J-turu: kabul edilmiş arkadaşlık contactMatch'i aşar.
+
+    Arkadaşın ayarı kapalı diye eşleşme dönmeyince istemci onu
+    'uygulamada yok' sanıp DAVET öneriyordu. Kabul edilmiş arkadaşlık
+    daha güçlü rızadır: kişi zaten görünür, numara zaten rehberde."""
+    _dev_kullanici(monkeypatch)
+    veri = _temel_veri()
+    # dev-user <-> u-kapali: ÇİFT taraflı accepted (H2 şartı).
+    veri["users/dev-user/friends/u-kapali"] = {"status": "accepted"}
+    veri["users/u-kapali/friends/dev-user"] = {"status": "accepted"}
+    _depo_kur(monkeypatch, veri)
+    # are_friends AYNI sahte deposu üzerinden okusun.
+    from services import profile_service as ps
+
+    def sahte_status(owner, other):
+        kayit = veri.get(f"users/{owner}/friends/{other}")
+        return (kayit or {}).get("status")
+
+    monkeypatch.setattr(ps, "_friend_status", sahte_status)
+
+    with TestClient(app) as client:
+        yanit = _istek(client, ["h-kapali"])
+
+    kartlar = yanit.json()["matches"]
+    assert len(kartlar) == 1
+    assert kartlar[0]["uid"] == "u-kapali"
+
+    # Tek taraflı accepted (uydurma) YETMEZ — H2 güvencesi burada da.
+    veri["users/u-kapali/friends/dev-user"] = {"status": "incoming"}
+    with TestClient(app) as client:
+        yanit = _istek(client, ["h-kapali"])
+    assert yanit.json()["matches"] == []
+
+
+@uygulama_gerekir
 def test_kendi_ayarim_kapaliysa_403(monkeypatch):
     _dev_kullanici(monkeypatch)
     _depo_kur(monkeypatch, _temel_veri(benim_ayarim=False))

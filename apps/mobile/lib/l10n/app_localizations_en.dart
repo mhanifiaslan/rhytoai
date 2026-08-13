@@ -1630,7 +1630,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get contactsActiveSection => 'On Rytho';
 
   @override
-  String get contactsInviteSection => 'Invite';
+  String get contactsInviteSection => 'Not visible on Rytho';
+
+  @override
+  String get contactsInviteFootnote =>
+      'Friends who haven\'t verified their number may also appear here.';
 
   @override
   String get contactsInvite => 'Invite';

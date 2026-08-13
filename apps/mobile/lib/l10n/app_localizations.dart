@@ -3005,8 +3005,14 @@ abstract class AppLocalizations {
   /// No description provided for @contactsInviteSection.
   ///
   /// In tr, this message translates to:
-  /// **'Davet et'**
+  /// **'Rytho\'da görünmüyor'**
   String get contactsInviteSection;
+
+  /// No description provided for @contactsInviteFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Numarasını doğrulamamış arkadaşların da burada görünebilir.'**
+  String get contactsInviteFootnote;
 
   /// No description provided for @contactsInvite.
   ///

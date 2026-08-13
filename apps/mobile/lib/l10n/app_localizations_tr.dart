@@ -1628,7 +1628,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get contactsActiveSection => 'Uygulamada';
 
   @override
-  String get contactsInviteSection => 'Davet et';
+  String get contactsInviteSection => 'Rytho\'da görünmüyor';
+
+  @override
+  String get contactsInviteFootnote =>
+      'Numarasını doğrulamamış arkadaşların da burada görünebilir.';
 
   @override
   String get contactsInvite => 'Davet et';

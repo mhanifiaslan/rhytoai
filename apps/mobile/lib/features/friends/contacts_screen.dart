@@ -137,6 +137,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
     }
     if (pasif.isNotEmpty) {
       ogeler.add(_baslik(l10n.contactsInviteSection));
+      // Dürüstlük dipnotu (J-turu): telefonu doğrulanmamış bir arkadaş
+      // teknik olarak tespit EDİLEMEZ ve burada görünebilir — ekran "bu
+      // kişi kesin kullanmıyor" iddiasında bulunmaz.
+      ogeler.add(Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Text(l10n.contactsInviteFootnote,
+            style: RythoText.body(11, color: RythoColors.parchmentDim)),
+      ));
       for (final p in pasif) {
         ogeler.add(_PasifSatir(ad: p.name, onDavet: () => _davetEt(username)));
       }

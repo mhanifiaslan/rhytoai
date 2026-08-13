@@ -31,6 +31,7 @@ from core import firestore as firestore_client
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
+from services import profile_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -95,12 +96,21 @@ def match(req: MatchRequest,
         logger.warning("Rehber eşleşmesi dizin okuması düştü: %s", exc)
         raise HTTPException(status_code=500, detail=text("internal", lang))
 
-    # Karşılıklılık + engel süzgeci + herkese açık kart.
+    # Karşılıklılık + herkese açık kart.
+    #
+    # J-turu istisnası: KABUL EDİLMİŞ arkadaşlık, contactMatch'ten daha
+    # güçlü bir karşılıklı rızadır — arkadaşın ayarı kapalı olsa bile
+    # eşleşme döner. Gerekçe: (1) kişi çağırana ZATEN görünür (arkadaş
+    # listesi), (2) numara zaten çağıranın rehberinde, (3) dönmezse
+    # istemci arkadaşı "uygulamada yok" sanıp DAVET öneriyordu (iç test
+    # bulgusu). are_friends çift taraflı doğrular (H2) — tek taraflı
+    # uydurma burada da işlemez.
     kartlar = []
     for uid, eslesen_hash in uid_hash.items():
         karsi = _kullanici(client, uid)
-        if not karsi.get("contactMatch"):
-            continue  # karşı taraf kapalı: görünmez
+        if (not karsi.get("contactMatch")
+                and not profile_service.are_friends(user.uid, uid)):
+            continue  # karşı taraf kapalı ve arkadaş değil: görünmez
         try:
             kart_anlik = client.collection("publicProfiles").document(uid).get()
         except Exception:
