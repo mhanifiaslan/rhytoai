@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
 import 'providers.dart';
+import 'wallet.dart' show walletProvider;
 
 /// Rytho+ aboneliği.
 ///
@@ -254,16 +255,25 @@ Future<void> _waitForServerEntitlement(WidgetRef ref) async {
   for (final gecikme in gecikmeler) {
     if (DateTime.now().isAfter(bitis)) break;
     ref.invalidate(subscriptionProvider);
+    // Cüzdan da tazelenir (K2): aylık 300 jetonluk hak webhook'la aynı
+    // anda yazılıyor; yalnız aboneliği yoklamak, Abonelik ekranının bayat
+    // "0/300" göstermesine yol açıyordu (iç test bulgusu — "ilk alımda
+    // kredi sıfır").
+    ref.invalidate(walletProvider);
     try {
       final durum =
           await ref.read(subscriptionProvider.future).timeout(_kYoklamaSiniri);
-      if (durum.active) return;
+      if (durum.active) {
+        ref.invalidate(walletProvider); // hak yazıldıysa son bir tazeleme
+        return;
+      }
     } catch (_) {
       // Yoklama düşerse beklemeyi sürdür; bu bir satın alma hatası değil.
     }
     await Future<void>.delayed(gecikme);
   }
   ref.invalidate(subscriptionProvider);
+  ref.invalidate(walletProvider);
 }
 
 /// Onboarding sonrası paywall'ın bir kez gösterilip gösterilmediği.
@@ -297,6 +307,7 @@ Future<bool> restorePurchases(WidgetRef ref) async {
     await _waitForServerEntitlement(ref);
   } else {
     ref.invalidate(subscriptionProvider);
+    ref.invalidate(walletProvider);
   }
   return active;
 }

@@ -48,14 +48,15 @@ gcloud run deploy $SERVICE `
     --max-instances 3 `
     --min-instances 1 `
     # DIKKAT: --set-env-vars mevcut degiskenleri TUMUYLE degistirir.
-    # Konsoldan elle verilen RYTHO_FORCE_PLUS / RYTHO_TOKENS_ENFORCE gibi
-    # bayraklar bir sonraki deploy'da SESSIZCE silinir. Jeton zorlamasi
-    # kalici acilacaksa (M4 gozlemi sonrasi) su satira eklenmeli:
-    #   RYTHO_TOKENS_ENFORCE=1
+    # Konsoldan elle verilen bayraklar bir sonraki deploy'da SESSIZCE
+    # silinir — kalici olacak her bayrak BU satira yazilmali.
     # RYTHO_MIN_BUILD (F3): istemci versionCode'u bundan kucukse zorunlu
     # guncelleme ekranina kilitlenir. 0 = kapi kapali. Eski surumleri
     # dislayacak bir yayin yapildiginda buradaki deger artirilir.
-    --set-env-vars "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_MIN_BUILD=0" `
+    # RYTHO_TOKENS_ENFORCE=1 (K5, 2026-08-13): jeton zorlamasi ACIK —
+    # bakiye yetmezse 402 + X-Paywall-Reason: tokens. Kuru calisma bitti;
+    # maliyet tavanlari artik gercekten uygulaniyor.
+    --set-env-vars "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_MIN_BUILD=0,RYTHO_TOKENS_ENFORCE=1" `
     --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest"
 
 # --min-instances 1 BILINCLI VE UCRETLI bir karar.

@@ -644,10 +644,11 @@ class AppLocalizationsTr extends AppLocalizations {
       'Her gün yenilenen ortak okuma. Kalıcı uyum puanı yok.';
 
   @override
-  String get benefitChatTitle => 'Sınırsız sohbet';
+  String get benefitChatTitle => 'Ayda 300 jeton';
 
   @override
-  String get benefitChatBody => 'Rytho seni tanıdıkça konuşma derinleşir.';
+  String get benefitChatBody =>
+      'Sohbette, raporlarda ve çekimlerde dilediğin gibi harca; Rytho seni tanıdıkça konuşma derinleşir.';
 
   @override
   String get benefitBaziTitle => 'BaZi ve sinastri';

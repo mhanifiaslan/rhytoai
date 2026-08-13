@@ -366,8 +366,17 @@ async def revenuecat_webhook(
 
     # Yeni/yenilenen donem aylik token hakkini tazeler. Idempotent: ayni
     # donemin tekrarlanan webhook'u hakki iki kez veremez (isaret esitligi).
+    #
+    # K2 yedegi: webhook `expiration_at_ms` tasimadan gelirse eskiden
+    # reset_allowance HIC yazmiyordu ve ilk alimda bakiye 0 gorunuyordu
+    # (ic test bulgusu). Aktive eden olayda son kullanma yoksa 35 gunluk
+    # emniyet penceresi kullanilir — bir sonraki RENEWAL gercek tarihi
+    # yazar; hak hicbir durumda verilmemis kalmaz.
     if event_type in _ACTIVATING_EVENTS:
-        wallet.reset_allowance(uid, expires_at)
+        wallet.reset_allowance(
+            uid,
+            expires_at
+            or dt.datetime.now(dt.timezone.utc) + dt.timedelta(days=35))
 
     logger.info("Abonelik guncellendi: uid=%s olay=%s aktif=%s", uid, event_type, active)
     return {"status": "ok", "event": event_type, "active": active}

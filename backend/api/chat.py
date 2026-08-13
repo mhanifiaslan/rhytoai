@@ -128,9 +128,12 @@ def chat(request: ChatRequest, background: BackgroundTasks,
     hazir_konu = chat_history.prepare(user.uid, request.conversation_id)
 
     try:
+        # Prompt geçmişi tavanlı (K4): son 12 mesaj × 1.200 karakter —
+        # arşiv kırpması değil, yalnız LLM'e giden girdinin maliyet sınırı.
         history = [
-            {"sender": m.sender, "text": chat_history.clip_message(m.text)}
-            for m in request.history[-20:]
+            {"sender": m.sender,
+             "text": chat_history.clip_for_prompt(m.text)}
+            for m in request.history[-chat_history.PROMPT_HISTORY_MESSAGES:]
         ]
 
         # Profil bir kez okunur, iki yerde kullanılır: haritayı prompt'a

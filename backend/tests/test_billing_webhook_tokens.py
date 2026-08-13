@@ -139,3 +139,28 @@ def test_paket_listesi_sunucu_gercegi():
     assert set(wallet.TOKEN_PACKS) == {
         "rytho_tokens_small", "rytho_tokens_medium", "rytho_tokens_large"}
     assert all(v > 0 for v in wallet.TOKEN_PACKS.values())
+
+
+@uygulama_gerekir
+def test_expiration_olmayan_aktivasyonda_hak_yine_verilir(monkeypatch, sahte):
+    """K2: webhook `expiration_at_ms` tasimasa da aylik hak yazilir.
+
+    Eski davranis: expires None -> reset_allowance hic yazmiyordu ve ilk
+    alimda bakiye 0 gorunuyordu. Artik 35 gunluk emniyet penceresiyle
+    verilir; bir sonraki RENEWAL gercek tarihi yazar."""
+    cagrilar = []
+    monkeypatch.setattr(
+        "api.billing.wallet.reset_allowance",
+        lambda uid, exp: cagrilar.append((uid, exp)))
+
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "INITIAL_PURCHASE", "app_user_id": "u-k2",
+            "product_id": "rytho_plus_monthly", "id": "evt-k2"})
+        # expiration_at_ms YOK.
+
+    assert yanit.status_code == 200
+    assert len(cagrilar) == 1
+    uid, exp = cagrilar[0]
+    assert uid == "u-k2"
+    assert exp is not None  # None gecilmez; emniyet penceresi dolu gelir

@@ -643,10 +643,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'A shared reading that renews each day. No fixed compatibility score.';
 
   @override
-  String get benefitChatTitle => 'Unlimited chat';
+  String get benefitChatTitle => '300 tokens a month';
 
   @override
-  String get benefitChatBody => 'The more Rytho knows you, the deeper it goes.';
+  String get benefitChatBody =>
+      'Spend them freely on chat, reports and castings; the more Rytho knows you, the deeper it goes.';
 
   @override
   String get benefitBaziTitle => 'BaZi and synastry';

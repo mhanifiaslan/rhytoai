@@ -1235,13 +1235,13 @@ abstract class AppLocalizations {
   /// No description provided for @benefitChatTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Sınırsız sohbet'**
+  /// **'Ayda 300 jeton'**
   String get benefitChatTitle;
 
   /// No description provided for @benefitChatBody.
   ///
   /// In tr, this message translates to:
-  /// **'Rytho seni tanıdıkça konuşma derinleşir.'**
+  /// **'Sohbette, raporlarda ve çekimlerde dilediğin gibi harca; Rytho seni tanıdıkça konuşma derinleşir.'**
   String get benefitChatBody;
 
   /// No description provided for @benefitBaziTitle.

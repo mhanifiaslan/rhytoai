@@ -39,6 +39,18 @@ MAX_MESSAGE_CHARS = 2000
 RETENTION_DAYS = 30
 TITLE_CHARS = 60
 
+#: Prompt'a giren geçmişin tavanları (K4 — maliyet üst sınırı).
+#:
+#: Arşiv kırpması (MAX_MESSAGE_CHARS) ile prompt kırpması AYRI işler:
+#: arşivde 2.000 karakter saklanır (kullanıcı kendi mesajını tam görür),
+#: prompt'a ise son 12 mesaj × 1.200 karakter girer. Eski hâlde en kötü
+#: tur girdisi ~18 bin token'a çıkabiliyordu (20 × 2.000 kr geçmiş);
+#: tavanla ~9 bin token'ın altına iner ve tur başına LLM maliyeti her
+#: koşulda yarılanır. 12 mesaj ≈ 6 soru-cevap turu — konuşma bağlamı
+#: için yeterli; daha eski bağlam zaten hafıza özetinden geliyor.
+PROMPT_HISTORY_MESSAGES = 12
+PROMPT_MESSAGE_CHARS = 1200
+
 
 def _conversations(client, uid: str):
     return (client.collection("users").document(uid)
@@ -52,6 +64,11 @@ def _now() -> dt.datetime:
 def clip_message(text: str) -> str:
     """Mesajı üst sınıra kırpar — reddetmek yerine."""
     return text[:MAX_MESSAGE_CHARS]
+
+
+def clip_for_prompt(text: str) -> str:
+    """Prompt'a giren geçmiş mesajını maliyet tavanına kırpar (K4)."""
+    return text[:PROMPT_MESSAGE_CHARS]
 
 
 def title_from(text: str) -> str:
