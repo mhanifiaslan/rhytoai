@@ -8,12 +8,10 @@ import '../../widgets/common.dart';
 import '../../widgets/glass.dart' show SkeletonPanel;
 import 'account_screen.dart';
 import 'birth_record_screen.dart';
-import 'delete_account.dart';
 import 'avatar_editor.dart';
 import 'profile_sections.dart';
 import 'residence_dialog.dart';
 import 'sign_in_methods_screen.dart';
-import 'diary_screen.dart';
 import 'subscription_screen.dart';
 import '../../core/providers.dart';
 import '../../core/subscription.dart';
@@ -216,6 +214,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         //
         // Doğum kaydı ve hesap ayrıca DÜZELTİLEBİLİR oldu; daha önce ikisi
         // de bir kez yazılıp kilitleniyordu.
+        // R3-5: tek uzun liste → BAŞLIKLI GRUPLAR (cihaz bulgusu: "profil
+        // çok kalabalık, benzer işlevler aynı başlık altında toplansın").
+        // Günlüğüm satırı buradan KALKTI — Arkadaşlar'daki SEN kartında.
+        // Hesap silme de Hesap ekranının içine taşındı (mağaza "gömülü
+        // olmamalı" kuralı bozulmaz: Hesap tek dokunuş uzakta ve satır
+        // orada açıkça görünür).
+        _grupBaslik(l10n.profileSectionIdentity),
         Plaque(
           padding: const EdgeInsets.symmetric(vertical: RythoSpace.xs),
           child: Column(children: [
@@ -236,7 +241,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               value: profile['residenceCity'] as String?,
               onTap: () => showResidenceDialog(context, ref),
             ),
-            const Divider(height: 1, indent: RythoSpace.lg),
+          ]),
+        ),
+        _grupBaslik(l10n.profileSectionAccount),
+        Plaque(
+          padding: const EdgeInsets.symmetric(vertical: RythoSpace.xs),
+          child: Column(children: [
             SettingsRow(
               icon: Icons.person_outline_rounded,
               title: l10n.accountSection,
@@ -253,15 +263,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               value: signInMethodsSummary(user, l10n),
               onTap: () => _ac(const SignInMethodsScreen()),
             ),
-            const Divider(height: 1, indent: RythoSpace.lg),
-            // Günlük (R2-G1): tek satırlık kayıtlar; sohbet "son ayda ne
-            // oldu?" sorusunu bunlar + gökyüzüyle cevaplar.
-            SettingsRow(
-              icon: Icons.edit_note_rounded,
-              title: l10n.profileDiaryRow,
-              onTap: () => _ac(const DiaryScreen()),
-            ),
-            const Divider(height: 1, indent: RythoSpace.lg),
+          ]),
+        ),
+        _grupBaslik(l10n.profileSectionPrefs),
+        Plaque(
+          padding: const EdgeInsets.symmetric(vertical: RythoSpace.xs),
+          child: Column(children: [
             SettingsRow(
               icon: Icons.notifications_none_rounded,
               title: l10n.notifications,
@@ -279,10 +286,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: l10n.languageAndSounds,
               onTap: () => _ac(const AppearanceSettingsScreen()),
             ),
-            const Divider(height: 1, indent: RythoSpace.lg),
-            // Abonelik + jeton bilgisi (A1): plan, yenilenme, bakiye —
-            // hepsi tek ekranda. ("Kod kullan" satırı A2'de kaldırıldı;
-            // ortak kodu sistemi şimdilik kullanılmıyor, backend duruyor.)
+          ]),
+        ),
+        _grupBaslik('Rytho+'),
+        Plaque(
+          padding: const EdgeInsets.symmetric(vertical: RythoSpace.xs),
+          child: Column(children: [
+            // Abonelik + kredi bilgisi (A1): plan, yenilenme, bakiye —
+            // hepsi tek ekranda.
             SettingsRow(
               icon: Icons.workspace_premium_outlined,
               title: l10n.profileSubscriptionRow,
@@ -309,19 +320,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             },
           ),
         ),
-        // Hesap silme (Apple 5.1.1(v) / Google Play zorunluluğu).
-        // Çıkış yapmakla karıştırılmaması için ayrı ve sönük duruyor; ama
-        // "gömülü olmamalı" kuralı gereği ana profil ekranında, ek bir
-        // menünün arkasında değil.
-        Center(
-          child: TextButton(
-            onPressed: () => showDeleteAccountSheet(context),
-            child: Text(
-              l10n.deleteAccount,
-              style: RythoText.label(12, color: RythoColors.parchmentDim),
-            ),
-          ),
-        ),
         // "Gönderilerin" bölümü kaldırıldı: kullanıcı üretimi serbest metin
         // v1 kapsamı dışında. Yerine Faz 5'te arkadaş katmanı (seri, hazır
         // tepkiler, günlük ikili dinamik) gelecek.
@@ -332,6 +330,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   void _ac(Widget sayfa) =>
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => sayfa));
+
+  /// Grup başlığı (R3-5): plakaların üstünde küçük mono etiket.
+  Widget _grupBaslik(String metin) => Padding(
+        padding: const EdgeInsets.fromLTRB(24, 10, 24, 2),
+        child: Text(metin.toUpperCase(),
+            style: RythoText.mono(10.5, color: RythoColors.parchmentDim)),
+      );
 
   Future<void> _fotoDegistir() async {
     final l10n = AppLocalizations.of(context);

@@ -93,15 +93,21 @@ class _BasisSheet extends StatelessWidget {
             Text(title ?? l10n.basisSheetTitle,
                 style: RythoText.display(17, w: FontWeight.w600)),
             const SizedBox(height: 6),
-            // Teknik cümle KART YÜZEYİNDEN buraya taşındı (R2-S6): meraklı
-            // kullanıcı tam ölçümü burada bulur, kart yüzeyi gündelik dilde
-            // kalır. Eski sürümlerde alan yoksa kart cümlesine düşülür.
+            // Başlığın altında KARTTAKİ CÜMLE durur (R3-1) — kullanıcı
+            // hangi cümleye "neden" sorduysa onu görür. Eski sürüm burada
+            // teknik satırı basıyordu ve "başka bir cümlenin nedeni
+            // soruluyor" algısı yaratıyordu (cihaz bulgusu). Teknik ölçüm
+            // aşağıda kendi etiketli satırında.
             Text(
-                (signal['technical'] as String?) ??
+                (signal['card_text'] as String?) ??
                     (signal['headline'] as String? ?? ''),
                 style: RythoText.body(13, color: RythoColors.lilac,
                     height: 1.4)),
             const SizedBox(height: RythoSpace.md),
+            if (signal['technical'] is String)
+              _Satir(
+                  etiket: l10n.basisMeasurement,
+                  deger: signal['technical'] as String),
             _Satir(etiket: l10n.basisSky, deger: gokyuzu),
             _Satir(
                 etiket: l10n.basisNatal,

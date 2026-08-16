@@ -17,6 +17,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'delete_account.dart' show showDeleteAccountSheet;
 import 'phone_verify_screen.dart';
 
 import '../../core/friends.dart';
@@ -213,6 +214,21 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               text: l10n.save,
               busy: _mesgul,
               onPressed: _degisti ? _kaydet : null,
+            ),
+            // Hesap silme (R3-5): profil dibinden buraya taşındı — hesapla
+            // ilgili her şey tek başlık altında. Mağaza kuralı ("gömülü
+            // olmamalı") korunur: Profil → Hesap tek dokunuş ve satır
+            // açıkça görünür. Yazarak-onay akışı aynı (DeleteAccountSheet).
+            const SizedBox(height: RythoSpace.lg),
+            Center(
+              child: TextButton(
+                onPressed: () => showDeleteAccountSheet(context),
+                child: Text(
+                  l10n.deleteAccount,
+                  style:
+                      RythoText.label(12, color: RythoColors.parchmentDim),
+                ),
+              ),
             ),
           ],
         ),

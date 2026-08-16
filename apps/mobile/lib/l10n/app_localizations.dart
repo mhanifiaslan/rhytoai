@@ -3590,6 +3590,12 @@ abstract class AppLocalizations {
   /// **'Hareket'**
   String get basisMovement;
 
+  /// No description provided for @basisMeasurement.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ölçüm'**
+  String get basisMeasurement;
+
   /// No description provided for @basisExact.
   ///
   /// In tr, this message translates to:
@@ -3703,6 +3709,84 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu girişi silmek istiyor musun?'**
   String get diaryDeleteTitle;
+
+  /// No description provided for @profileSectionIdentity.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum ve kimlik'**
+  String get profileSectionIdentity;
+
+  /// No description provided for @profileSectionAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesap'**
+  String get profileSectionAccount;
+
+  /// No description provided for @profileSectionPrefs.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tercihler'**
+  String get profileSectionPrefs;
+
+  /// No description provided for @reactionHug.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sarıldım'**
+  String get reactionHug;
+
+  /// No description provided for @reactionLuck.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bol şans'**
+  String get reactionLuck;
+
+  /// No description provided for @reactionCoffee.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kahve içelim'**
+  String get reactionCoffee;
+
+  /// No description provided for @reactionMiss.
+  ///
+  /// In tr, this message translates to:
+  /// **'Özledim'**
+  String get reactionMiss;
+
+  /// No description provided for @reactionSheetTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} için bir tepki seç'**
+  String reactionSheetTitle(String name);
+
+  /// No description provided for @atlasWheelNatal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritam'**
+  String get atlasWheelNatal;
+
+  /// No description provided for @atlasWheelSky.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an gökyüzü'**
+  String get atlasWheelSky;
+
+  /// No description provided for @atlasWheelBiwheel.
+  ///
+  /// In tr, this message translates to:
+  /// **'İkili çark'**
+  String get atlasWheelBiwheel;
+
+  /// No description provided for @atlasSkyWheelNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gökyüzü şu an herkes için aynı; ev ve Yükselen konuma bağlı olduğu için bu görünümde çizilmez.'**
+  String get atlasSkyWheelNote;
+
+  /// No description provided for @atlasBiwheelNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'İçte doğum haritan, dış halkada şu anki gökyüzü — astrologların transit analizinde kullandığı ikili çark (bi-wheel).'**
+  String get atlasBiwheelNote;
 
   /// No description provided for @atlasSectionAbout.
   ///

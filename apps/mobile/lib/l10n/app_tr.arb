@@ -953,6 +953,7 @@
   "basisAspect": "Açı",
   "basisOrb": "Orb (ölçülen)",
   "basisMovement": "Hareket",
+  "basisMeasurement": "Ölçüm",
   "basisExact": "Kesinleşme",
   "basisHouse": "{house}. ev",
   "@basisHouse": {
@@ -986,6 +987,26 @@
   "diaryDeleted": "Giriş silindi.",
   "diaryFootnote": "Girişlerin yalnız sana görünür ve Rytho'nun sohbet hafızasına girer. Hesabını silersen hepsi silinir.",
   "diaryDeleteTitle": "Bu girişi silmek istiyor musun?",
+  "profileSectionIdentity": "Doğum ve kimlik",
+  "profileSectionAccount": "Hesap",
+  "profileSectionPrefs": "Tercihler",
+  "reactionHug": "Sarıldım",
+  "reactionLuck": "Bol şans",
+  "reactionCoffee": "Kahve içelim",
+  "reactionMiss": "Özledim",
+  "reactionSheetTitle": "{name} için bir tepki seç",
+  "@reactionSheetTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "atlasWheelNatal": "Haritam",
+  "atlasWheelSky": "Şu an gökyüzü",
+  "atlasWheelBiwheel": "İkili çark",
+  "atlasSkyWheelNote": "Gökyüzü şu an herkes için aynı; ev ve Yükselen konuma bağlı olduğu için bu görünümde çizilmez.",
+  "atlasBiwheelNote": "İçte doğum haritan, dış halkada şu anki gökyüzü — astrologların transit analizinde kullandığı ikili çark (bi-wheel).",
   "atlasSectionAbout": "Bana dair",
   "atlasSectionTime": "Zaman",
   "atlasSectionOther": "Diğer sistemler",

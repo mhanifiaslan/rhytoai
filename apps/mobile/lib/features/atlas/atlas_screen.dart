@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
+import '../../widgets/atlas_widgets.dart' show AstrolabeSpinner;
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/common.dart';
 import '../../widgets/glass.dart';
@@ -18,6 +19,7 @@ import '../paywall/plus_locked_card.dart';
 import 'atlas_detail_screens.dart';
 import 'inner_calendar_screen.dart';
 import 'solar_return_screen.dart';
+import '../sky/sky_now_screen.dart' show SkyNowSummary;
 import '../../widgets/motion.dart';
 import '../../core/subscription.dart' show subscriptionProvider;
 import '../../core/api.dart' show friendlyError;
@@ -47,6 +49,19 @@ class AtlasScreen extends ConsumerStatefulWidget {
 
 class _AtlasScreenState extends ConsumerState<AtlasScreen> {
   Map<String, dynamic>? _selectedPlanet;
+
+  /// Çark görünümü (R3-3): 0 = Haritam, 1 = Şu an gökyüzü, 2 = İkili çark.
+  int _gorunum = 0;
+
+  /// Anlık gökyüzü gezegenlerini çarkın nokta şemasına çevirir.
+  List<Map<String, dynamic>> _gokyuzuNoktalari(Map<String, dynamic> sky) => [
+        for (final p in (sky['planets'] as List? ?? const []))
+          {
+            'name': (p as Map)['name'],
+            'abs_position': p['longitude'],
+            'retrograde': p['retrograde'] == true,
+          },
+      ];
 
   @override
   Widget build(BuildContext context) {
@@ -121,19 +136,78 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                       style:
                           RythoText.body(11.5, color: RythoColors.copper)),
                 ),
-              // Natal çark
+              // Çark (R3-3): üç görünüm — Haritam / Şu an gökyüzü / İkili
+              // çark (bi-wheel). Gökyüzü görünümü EVSİZ çizilir: ev ve
+              // Yükselen konuma bağlıdır, konumsuz gökyüzüne ev çizmek
+              // veri uydurmak olur (çark altındaki not bunu söyler).
               GlassPanel(
                 padding: const EdgeInsets.all(8),
                 child: Column(children: [
-                  Center(
-                    child: NatalWheel(
-                      points: points,
-                      houses: houses,
-                      aspects: aspects,
-                      size: MediaQuery.of(context).size.width - 72,
-                      onPlanetTap: (p) => setState(() => _selectedPlanet = p),
-                    ),
+                  _WheelSegment(
+                    secili: _gorunum,
+                    etiketler: [
+                      l10n.atlasWheelNatal,
+                      l10n.atlasWheelSky,
+                      l10n.atlasWheelBiwheel,
+                    ],
+                    onChanged: (i) => setState(() {
+                      _gorunum = i;
+                      _selectedPlanet = null;
+                    }),
                   ),
+                  const SizedBox(height: 4),
+                  Builder(builder: (context) {
+                    final boyut = MediaQuery.of(context).size.width - 72;
+                    final sky = ref.watch(skyNowProvider).value;
+                    final gokyuzu =
+                        sky == null ? null : _gokyuzuNoktalari(sky);
+                    final cark = switch (_gorunum) {
+                      1 => gokyuzu == null
+                          ? const Padding(
+                              padding: EdgeInsets.all(RythoSpace.xl),
+                              child: AstrolabeSpinner(),
+                            )
+                          : NatalWheel(
+                              key: const ValueKey('sky'),
+                              points: gokyuzu,
+                              houses: const [],
+                              aspects: List<Map<String, dynamic>>.from(
+                                  sky!['aspects'] ?? const []),
+                              size: boyut,
+                            ),
+                      2 => NatalWheel(
+                          key: const ValueKey('biwheel'),
+                          points: points,
+                          houses: houses,
+                          aspects: aspects,
+                          outerPoints: gokyuzu,
+                          size: boyut,
+                        ),
+                      _ => NatalWheel(
+                          key: const ValueKey('natal'),
+                          points: points,
+                          houses: houses,
+                          aspects: aspects,
+                          size: boyut,
+                          onPlanetTap: (p) =>
+                              setState(() => _selectedPlanet = p),
+                        ),
+                    };
+                    return Column(children: [
+                      Center(child: cark),
+                      if (_gorunum != 0)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(10, 2, 10, 6),
+                          child: Text(
+                              _gorunum == 1
+                                  ? l10n.atlasSkyWheelNote
+                                  : l10n.atlasBiwheelNote,
+                              style: RythoText.body(11,
+                                  color: RythoColors.parchmentDim,
+                                  height: 1.4)),
+                        ),
+                    ]);
+                  }),
                   AnimatedSize(
                     duration: const Duration(milliseconds: 260),
                     curve: Curves.easeOutCubic,
@@ -183,6 +257,27 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                 ]),
               ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
                   begin: 0.06, curve: Curves.easeOutCubic),
+
+              // ---------- ŞU AN GÖKYÜZÜNDE ----------
+              // Gökyüzü'nden buraya taşındı (R3-2): gökyüzü durumu haritanın
+              // yanında yaşar; tek satır özet, dokununca tam sayfa.
+              SectionHeader(l10n.skyNow)
+                  .animate(delay: next())
+                  .fadeIn(duration: 360.ms),
+              ref.watch(skyNowProvider).when(
+                    loading: () => const SizedBox.shrink(),
+                    error: (e, _) => Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: RythoSpace.lg),
+                      child: Text(friendlyError(e, l10n),
+                          style: RythoText.body(12,
+                              color: RythoColors.parchmentDim)),
+                    ),
+                    data: (sky) => SkyNowSummary(sky: sky)
+                        .animate(delay: next())
+                        .fadeIn(duration: 380.ms),
+                  ),
+
               // ---------- DİZİN ----------
               //
               // Kişi kartı BURADAN KALKTI: doğum verisi profile taşındı ve
@@ -360,6 +455,58 @@ String aspectKindLabel(BuildContext context, Map<String, dynamic> a) {
 /// sayfalarına (bkz. atlas_detail_screens.dart). Katlanır bölüm de gitti:
 /// aynı ekranda hem katlanan hem katlanmayan bölümler olması, neyin nereye
 /// açılacağını tahmin edilemez kılıyordu.
+/// Çark görünüm seçici (R3-3): üç hap — Haritam / Şu an / İkili çark.
+class _WheelSegment extends StatelessWidget {
+  const _WheelSegment({
+    required this.secili,
+    required this.etiketler,
+    required this.onChanged,
+  });
+
+  final int secili;
+  final List<String> etiketler;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(6, 4, 6, 2),
+      child: Row(children: [
+        for (var i = 0; i < etiketler.length; i++) ...[
+          if (i > 0) const SizedBox(width: 6),
+          Expanded(
+            child: Pressable(
+              onTap: () => onChanged(i),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 7),
+                decoration: BoxDecoration(
+                  color: secili == i
+                      ? RythoColors.lilac.withValues(alpha: 0.16)
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                      color: secili == i
+                          ? RythoColors.lilac
+                          : RythoColors.glassStroke),
+                ),
+                child: Center(
+                  child: Text(etiketler[i],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: RythoText.label(10.5,
+                          color: secili == i
+                              ? RythoColors.lilac
+                              : RythoColors.parchmentDim)),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ]),
+    );
+  }
+}
+
 /// Dizin satırı (R2-I1): karo ızgarası yerine okunur liste.
 ///
 /// Karolar iki sütunda yan yana durunca başlıklar tek satıra sığmıyor ve

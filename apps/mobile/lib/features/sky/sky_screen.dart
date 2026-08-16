@@ -142,7 +142,6 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final sky = ref.watch(skyNowProvider);
     final daily = ref.watch(dailyReadingProvider);
     final profile = ref.watch(profileProvider).value ?? {};
     if (profile.isNotEmpty) _touchStreak(profile);
@@ -170,9 +169,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
           color: RythoColors.magenta,
           backgroundColor: RythoColors.inkLight,
           onRefresh: () async {
-            ref.invalidate(skyNowProvider);
             ref.invalidate(signalsProvider);
-            ref.invalidate(signHoroscopeProvider(kSignKeys[selected]));
             ref.invalidate(dailyReadingProvider);
             // Abonelik durumu da tazelensin: satın alma sonrası webhook
             // sunucuya islenene kadar kisa bir gecikme olabiliyor.
@@ -248,96 +245,14 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                 ]),
               ).animate(delay: next()).fadeIn(duration: 360.ms),
 
-              // Ücretsiz katman: kullanıcının kendi burcunun günlük yorumu.
-              // Paylaşımlı önbellekten geldiği için her zaman doludur ve
-              // kullanıcı sayısından bağımsız maliyettedir.
+              // Genel burç kartı BURADAN KALKTI (R3-2, cihaz bulgusu):
+              // hikâye halkasındaki metnin aynısıydı — aynı sayfada iki kez
+              // durması "tekrarlı bilgi" şikayetinin kaynağıydı. Genel yorum
+              // artık YALNIZ halkada; içgörü başlığı kişiye özel okumanın.
               //
-              // Spinner → kart geçişi AnimatedSwitcher'da (R12-B2): okumanın
-              // GELİŞİ artık bir an — kart üstünden tek atışlık altın parıltı
-              // geçer ("bugünün okuması yeni geldi" işareti, döngü yok).
-              AnimatedSwitcher(
-                duration:
-                    reduceMotion(context) ? Duration.zero : RythoMotion.slow,
-                switchInCurve: RythoMotion.enter,
-                child:
-                    ref.watch(signHoroscopeProvider(kSignKeys[selected])).when(
-                          loading: () => const Padding(
-                            padding: EdgeInsets.all(RythoSpace.xl),
-                            child: Center(child: AstrolabeSpinner()),
-                          ),
-                          error: (e, _) => Padding(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: RythoSpace.lg),
-                            child: ErrorCard(
-                              message: friendlyError(e, l10n),
-                              onRetry: () => ref.invalidate(
-                                  signHoroscopeProvider(kSignKeys[selected])),
-                            ),
-                          ),
-                          data: (data) {
-                            // Kullanıcı ilk değerini gördü: tanıtım paywall'ı
-                            // buradan tetiklenir (hesap ömründe bir kez).
-                            _maybeShowIntroPaywall();
-                            return ReadingCard(
-                              label: l10n.signToday(
-                                  signDisplayName(l10n, selected)),
-                              title: signDisplayName(l10n, selected),
-                              body: data['reading'] ?? '',
-                              // Kart yalnızca ÖNİZLEME. Tam metin hikâye
-                              // okuyucusunda; iki ayrı "tam metin" yeri
-                              // olmamalı.
-                              onOpen: () => _openStory(
-                                  signOrder, signOrder.indexOf(selected)),
-                            )
-                                .animate(delay: next())
-                                .fadeIn(duration: 380.ms)
-                                .slideY(
-                                    begin: 0.06, curve: Curves.easeOutCubic)
-                                .then()
-                                .shimmer(
-                                    duration: 900.ms,
-                                    color: RythoColors.gold
-                                        .withValues(alpha: 0.12));
-                          },
-                        ),
-              ),
-
               // Rytho+: kişiye özel okuma. Abone değilse istek atılmaz;
               // kilitli kart gösterilir ve paywall ancak dokununca açılır.
               daily.when(
-                loading: () => const SizedBox.shrink(),
-                error: (e, _) => Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
-                  child: ErrorCard(
-                    message: friendlyError(e, l10n),
-                    onRetry: () => ref.invalidate(dailyReadingProvider),
-                  ),
-                ),
-                data: (data) => data == null
-                    ? PlusLockedCard(
-                        title: l10n.personalReadingLocked,
-                        description: userSignIndex < 0
-                            ? l10n.personalReadingLockedBody
-                            : l10n.personalReadingLockedBodyWithSign(
-                                signDisplayName(l10n, userSignIndex)),
-                      )
-                    : ReadingCard(
-                        label:
-                            '☀️ ${data['sun_sign']} · 🌙 ${data['moon_sign']} · ⬆️ ${data['ascendant']}',
-                        title: l10n.personalReadingTitle,
-                        body: data['reading'] ?? '',
-                        glow: true,
-                      ).animate(delay: next()).fadeIn(duration: 380.ms),
-              ),
-
-              // ---------- ŞU AN ----------
-              // Çark ve açı çipleri kendi sayfasına taşındı; akışta tek
-              // satırlık özet duruyor (bkz. sky_now_screen.dart).
-              SectionHeader(l10n.skyNow)
-                  .animate(delay: next())
-                  .fadeIn(duration: 360.ms),
-              sky.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.all(RythoSpace.xl),
                   child: Center(child: AstrolabeSpinner()),
@@ -347,19 +262,43 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                       const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
                   child: ErrorCard(
                     message: friendlyError(e, l10n),
-                    onRetry: () => ref.invalidate(skyNowProvider),
+                    onRetry: () => ref.invalidate(dailyReadingProvider),
                   ),
                 ),
-                data: (data) => SkyNowSummary(sky: data)
-                    .animate(delay: next())
-                    .fadeIn(duration: 380.ms)
-                    .slideY(begin: 0.06, curve: Curves.easeOutCubic),
+                data: (data) {
+                  // Kullanıcı ilk değerini gördü (kilitli kart da değer
+                  // anlatır): tanıtım paywall'ı buradan tetiklenir —
+                  // eskiden genel burç kartındaydı, kart kalktı (R3-2).
+                  _maybeShowIntroPaywall();
+                  return data == null
+                      ? PlusLockedCard(
+                          title: l10n.personalReadingLocked,
+                          description: userSignIndex < 0
+                              ? l10n.personalReadingLockedBody
+                              : l10n.personalReadingLockedBodyWithSign(
+                                  signDisplayName(l10n, userSignIndex)),
+                        )
+                      : ReadingCard(
+                          label:
+                              '☀️ ${data['sun_sign']} · 🌙 ${data['moon_sign']} · ⬆️ ${data['ascendant']}',
+                          title: l10n.personalReadingTitle,
+                          body: data['reading'] ?? '',
+                          glow: true,
+                        )
+                          .animate(delay: next())
+                          .fadeIn(duration: 380.ms)
+                          .slideY(begin: 0.06, curve: Curves.easeOutCubic)
+                          .then()
+                          .shimmer(
+                              duration: 900.ms,
+                              color: RythoColors.gold
+                                  .withValues(alpha: 0.12));
+                },
               ),
 
-              // ARAÇLAR bölümü buradan KALKTI (Revize R6, madde 11):
-              // İching + BaZi artık Atlas'ta, Yüz Okuma ile tek satırda
-              // (atlas_screen.dart → _DivinationRow). Gökyüzü ~140 px
-              // kısaldı ve "bugün" anlatısına odaklandı.
+              // "ŞU AN" bölümü Atlas'a taşındı (R3-2): gökyüzü durumu
+              // haritanın yanında yaşar; bu ekran "bugün senin için"
+              // anlatısına odaklandı.
             ],
           ),
         ),
@@ -565,9 +504,15 @@ class _SignalCard extends StatelessWidget {
 
   void _openBasis(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // Sayfaya karttaki CÜMLE de gider (R3-1): kullanıcı "neye dayanıyor"
+    // sorusunu abone yorumuna sorduysa sayfa o cümleyle açılmalı.
+    final insight = sinyal['insight'] as String?;
+    final kartCumlesi = (insight != null && insight.isNotEmpty)
+        ? insight
+        : (sinyal['headline'] as String? ?? '');
     showSignalBasisSheet(
       context,
-      sinyal,
+      {...sinyal, 'card_text': kartCumlesi},
       onAsk: () {
         Navigator.of(context).pop();
         // Soruya TEKNİK satır gider: kullanıcı dayanağa bakarken soruyor ve

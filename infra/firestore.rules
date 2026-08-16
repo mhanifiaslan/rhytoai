@@ -190,7 +190,10 @@ service cloud.firestore {
           && request.resource.data.keys().hasOnly(['fromUid', 'reaction', 'createdAt'])
           && request.resource.data.reaction in [
                'streak', 'thinking_of_you', 'shine', 'keep_going',
-               'congrats', 'same_frequency', 'good_night', 'check_today'
+               'congrats', 'same_frequency', 'good_night', 'check_today',
+               // R3-4 genişlemesi — mobil kReactions + api/notify.py
+               // REACTION_EMOJIS ile birebir aynı olmak zorunda.
+               'hug', 'luck', 'coffee', 'miss'
              ]
           && get(/databases/$(database)/documents/users/$(uid)/friends/$(request.auth.uid)).data.status == 'accepted';
         allow update: if false;

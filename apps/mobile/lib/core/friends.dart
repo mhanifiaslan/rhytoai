@@ -30,6 +30,11 @@ const Map<String, String> kReactions = {
   'same_frequency': '🛰️',
   'good_night': '🌙',
   'check_today': '👀',
+  // R3-4 genişlemesi (kullanıcı seçimi): sıcak/sosyal tepkiler.
+  'hug': '🤗',
+  'luck': '🍀',
+  'coffee': '☕',
+  'miss': '🫶',
 };
 
 /// Arkadaşlık durumu. `outgoing`: ben davet ettim, `incoming`: bana davet

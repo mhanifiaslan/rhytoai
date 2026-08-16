@@ -54,6 +54,11 @@ REACTION_EMOJIS = {
     "same_frequency": "🌊",
     "good_night": "🌙",
     "check_today": "👀",
+    # R3-4 genişlemesi — mobil kReactions + firestore.rules ile aynı küme.
+    "hug": "🤗",
+    "luck": "🍀",
+    "coffee": "☕",
+    "miss": "🫶",
 }
 
 #: Tepki anahtarı -> dile göre etiket. İstemcideki reactionLabel ile aynı
@@ -68,6 +73,10 @@ REACTION_LABELS = {
         "same_frequency": "Aynı frekans",
         "good_night": "İyi geceler",
         "check_today": "Bugüne bak",
+        "hug": "Sarıldım",
+        "luck": "Bol şans",
+        "coffee": "Kahve içelim",
+        "miss": "Özledim",
     },
     "en": {
         "streak": "Keep the streak",
@@ -78,6 +87,10 @@ REACTION_LABELS = {
         "same_frequency": "Same frequency",
         "good_night": "Good night",
         "check_today": "Check today",
+        "hug": "A hug",
+        "luck": "Good luck",
+        "coffee": "Coffee soon?",
+        "miss": "Miss you",
     },
 }
 

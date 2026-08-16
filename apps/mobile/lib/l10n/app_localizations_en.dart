@@ -1981,6 +1981,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get basisMovement => 'Motion';
 
   @override
+  String get basisMeasurement => 'Measurement';
+
+  @override
   String get basisExact => 'Exact on';
 
   @override
@@ -2045,6 +2048,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get diaryDeleteTitle => 'Delete this entry?';
+
+  @override
+  String get profileSectionIdentity => 'Birth & identity';
+
+  @override
+  String get profileSectionAccount => 'Account';
+
+  @override
+  String get profileSectionPrefs => 'Preferences';
+
+  @override
+  String get reactionHug => 'A hug';
+
+  @override
+  String get reactionLuck => 'Good luck';
+
+  @override
+  String get reactionCoffee => 'Coffee soon?';
+
+  @override
+  String get reactionMiss => 'Miss you';
+
+  @override
+  String reactionSheetTitle(String name) {
+    return 'Pick a reaction for $name';
+  }
+
+  @override
+  String get atlasWheelNatal => 'My chart';
+
+  @override
+  String get atlasWheelSky => 'Sky right now';
+
+  @override
+  String get atlasWheelBiwheel => 'Bi-wheel';
+
+  @override
+  String get atlasSkyWheelNote =>
+      'The sky is the same for everyone right now; houses and the Ascendant depend on location, so they aren\'t drawn in this view.';
+
+  @override
+  String get atlasBiwheelNote =>
+      'Your birth chart inside, the current sky on the outer ring — the bi-wheel astrologers use for transit analysis.';
 
   @override
   String get atlasSectionAbout => 'About you';

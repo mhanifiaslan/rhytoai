@@ -16,8 +16,11 @@ import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../profile/account_screen.dart' show AccountScreen;
+import '../profile/diary_screen.dart' show DiaryScreen;
 import 'contacts_screen.dart' show ContactsScreen;
 import 'friend_detail_screen.dart' show FriendDetailScreen, reactionLabel;
+import 'reaction_sheet.dart' show showReactionSheet;
+import 'relationship_screen.dart' show RelationshipScreen;
 import '../../core/api.dart' show friendlyError;
 import '../../l10n/app_localizations.dart';
 
@@ -85,7 +88,6 @@ class FriendsScreen extends ConsumerWidget {
           _MyCardPanel(
             username: username,
             streakCount: (profile?['streakCount'] as num?)?.toInt() ?? 0,
-            streakVisible: profile?['streakVisible'] == true,
           ),
         _InboxPanel(friends: friendsAsync.value ?? const []),
         // Rehber önerileri (Revize R3 → F1): panel artık HER ZAMAN mount —
@@ -265,69 +267,64 @@ class _ContactsEntry extends ConsumerWidget {
   }
 }
 
+/// SEN kartı — TEK SATIR (R3-4, cihaz bulgusu: "koca koca kartlar var").
+///
+/// @ad + seri rozeti solda; sağda üç küçük ikon: kullanıcı adını düzenle,
+/// davet bağlantısını kopyala, Günlüğüm. Seri görünürlük anahtarı buradan
+/// KALKTI — zaten Profil → Gizlilik'te duruyor (aynı Firestore alanı);
+/// bir gizlilik ayarının sosyal ekranda yer kaplaması gerekmiyor.
 class _MyCardPanel extends StatelessWidget {
   const _MyCardPanel({
     required this.username,
     required this.streakCount,
-    required this.streakVisible,
   });
 
   final String username;
   final int streakCount;
-  final bool streakVisible;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+
+    Widget ikon(String tooltip, IconData icon, VoidCallback onTap) =>
+        IconButton(
+          tooltip: tooltip,
+          visualDensity: VisualDensity.compact,
+          icon: Icon(icon, size: 18, color: RythoColors.lilac),
+          onPressed: onTap,
+        );
+
     return GlassPanel(
-      label: l10n.youLabel,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(
-            child: Text('@$username', style: RythoText.display(19)),
-          ),
-          // Kullanıcı adı bir dönem yalnızca BİR KEZ yazılabiliyordu: kurulum
-          // paneli `username == null` iken gösterildiği için yazım hatası
-          // yapan kullanıcının düzeltme yolu yoktu.
-          IconButton(
-            tooltip: l10n.edit,
-            visualDensity: VisualDensity.compact,
-            icon: const Icon(Icons.edit_outlined,
-                size: 17, color: RythoColors.lilac),
-            onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const AccountScreen())),
-          ),
-          StreakBadge(count: streakCount),
-        ]),
-        const SizedBox(height: 10),
-        Row(children: [
-          Expanded(
-            child: Text(
-              streakVisible
-                  ? l10n.streakVisibleOn
-                  : l10n.streakVisibleOff,
-              style: RythoText.body(12.5, color: RythoColors.parchmentDim),
-            ),
-          ),
-          Switch(
-            value: streakVisible,
-            activeThumbColor: RythoColors.gold,
-            onChanged: (value) => setStreakVisible(value),
-          ),
-        ]),
-        const SizedBox(height: 6),
-        TextButton.icon(
-          onPressed: () async {
-            await Clipboard.setData(
-                ClipboardData(text: inviteLinkFor(username)));
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text(l10n.inviteLinkCopied)));
-            }
-          },
-          icon: const Icon(Icons.link_rounded, size: 18),
-          label: Text(l10n.copyInviteLink, style: RythoText.label(12)),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(children: [
+        Expanded(
+          child: Text('@$username',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: RythoText.display(16, w: FontWeight.w600)),
         ),
+        StreakBadge(count: streakCount),
+        const SizedBox(width: 4),
+        // Kullanıcı adı bir dönem yalnızca BİR KEZ yazılabiliyordu; düzeltme
+        // yolu bu ikon (AccountScreen).
+        ikon(l10n.edit, Icons.edit_outlined, () {
+          Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AccountScreen()));
+        }),
+        ikon(l10n.copyInviteLink, Icons.link_rounded, () async {
+          await Clipboard.setData(
+              ClipboardData(text: inviteLinkFor(username)));
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(l10n.inviteLinkCopied)));
+          }
+        }),
+        // Günlüğüm (R3-4): "kişi kendisiyle ilgili günlükleri kendi
+        // kartından takip edebilsin" — Profil listesinden buraya taşındı.
+        ikon(l10n.profileDiaryRow, Icons.edit_note_rounded, () {
+          Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const DiaryScreen()));
+        }),
       ]),
     );
   }
@@ -443,52 +440,82 @@ class _FriendsList extends StatelessWidget {
       );
 }
 
-class _FriendTile extends StatelessWidget {
+/// Arkadaş satırı — SLİM (R3-4, cihaz bulgusu: "az bilgi çok yer").
+///
+/// Baş harf avatarı + ad + tek satır durum; sağda İKİ eylem ikonu:
+/// ⚡ tepki (KART AÇILMADAN — dokununca tepki sayfası, seçim anında
+/// gider) ve 🪐 ilişki (dört eksenli okuma). Satırın kendisi arkadaş
+/// detayını ("bugün aranızda") açar.
+class _FriendTile extends ConsumerWidget {
   const _FriendTile({required this.friend});
 
   final Friend friend;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final durum = friend.streakVisible
+        ? (friend.readToday ? l10n.readToday : l10n.notReadToday)
+        : l10n.streakHidden;
+    final durumRenk = friend.streakVisible && friend.readToday
+        ? RythoColors.goldBright
+        : RythoColors.parchmentDim;
+
     return GlassPanel(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       onTap: () => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => FriendDetailScreen(friend: friend))),
       child: Row(children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(friend.name, style: RythoText.display(16)),
-            const SizedBox(height: 3),
-            Row(children: [
-              if (friend.sunSign != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Text(friend.sunSign!,
-                      style: RythoText.label(11, color: RythoColors.lilac)),
-                ),
-              if (friend.streakVisible)
-                Text(
-                  friend.readToday
-                      ? l10n.readToday
-                      : l10n.notReadToday,
-                  style: RythoText.body(11.5,
-                      color: friend.readToday
-                          ? RythoColors.goldBright
-                          : RythoColors.parchmentDim),
-                )
-              else
-                Text(l10n.streakHidden,
-                    style: RythoText.body(11.5, color: RythoColors.parchmentDim)),
-            ]),
-          ]),
+        CircleAvatar(
+          radius: 17,
+          backgroundColor: RythoColors.lilac.withValues(alpha: 0.16),
+          child: Text(
+              friend.name.isEmpty ? '?' : friend.name[0].toUpperCase(),
+              style: RythoText.display(14, color: RythoColors.lilac)),
         ),
-        if (friend.streakVisible && (friend.streakCount ?? 0) > 0)
-          StreakBadge(count: friend.streakCount!),
-        const SizedBox(width: 6),
-        const Icon(Icons.chevron_right_rounded,
-            size: 20, color: RythoColors.parchmentDim),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(friend.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: RythoText.body(14.5, w: FontWeight.w600)),
+                const SizedBox(height: 1),
+                Row(children: [
+                  if (friend.sunSign != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: Text(friend.sunSign!,
+                          style: RythoText.label(10.5,
+                              color: RythoColors.lilac)),
+                    ),
+                  Flexible(
+                    child: Text(durum,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: RythoText.body(11, color: durumRenk)),
+                  ),
+                ]),
+              ]),
+        ),
+        // Tepki: kart açılmadan, iki dokunuş (⚡ → seçim).
+        IconButton(
+          tooltip: l10n.sendReaction,
+          visualDensity: VisualDensity.compact,
+          icon: const Text('⚡', style: TextStyle(fontSize: 16)),
+          onPressed: () => showReactionSheet(context, ref, friend),
+        ),
+        // İlişki eksenleri (R2-L1) satırdan tek dokunuş uzakta.
+        IconButton(
+          tooltip: l10n.relationshipOpen,
+          visualDensity: VisualDensity.compact,
+          icon: const Text('🪐', style: TextStyle(fontSize: 15)),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => RelationshipScreen(friend: friend))),
+        ),
       ]),
     );
   }

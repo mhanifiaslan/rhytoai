@@ -257,6 +257,10 @@ String reactionLabel(AppLocalizations l10n, String key) => switch (key) {
       'same_frequency' => l10n.reactionSameFrequency,
       'good_night' => l10n.reactionGoodNight,
       'check_today' => l10n.reactionCheckToday,
+      'hug' => l10n.reactionHug,
+      'luck' => l10n.reactionLuck,
+      'coffee' => l10n.reactionCoffee,
+      'miss' => l10n.reactionMiss,
       _ => key,
     };
 

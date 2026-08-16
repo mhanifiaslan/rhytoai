@@ -8,6 +8,13 @@ import '../theme/rytho_theme.dart';
 /// Dış halka: burç dilimleri + glifler; orta halka: ev çizgileri ve numaraları;
 /// gezegen glifleri mutlak boylamlarına yerleşir; merkezde açı (aspect) ağı.
 /// Sweep animasyonuyla kurulur; gezegene dokununca bilgi geri çağrılır.
+///
+/// R3-3: [outerPoints] verilirse çark İKİLİ ÇARK (bi-wheel) olur —
+/// astrologların transit analizinde kullandığı görünüm: içte natal, en
+/// dışta ikinci bir halkada anlık gökyüzü gezegenleri (lila). [houses]
+/// boş verilirse ev çizgisiz salt-zodyak çarkı çizilir (Koç solda) —
+/// "şu an gökyüzü" görünümü bunu kullanır; konumsuz gökyüzüne ev çizmek
+/// veri uydurmak olurdu.
 class NatalWheel extends StatefulWidget {
   const NatalWheel({
     super.key,
@@ -16,6 +23,7 @@ class NatalWheel extends StatefulWidget {
     required this.aspects,
     this.size = 340,
     this.onPlanetTap,
+    this.outerPoints,
   });
 
   /// [{name, name_tr, abs_position, retrograde, sign_tr, position}, ...]
@@ -26,6 +34,10 @@ class NatalWheel extends StatefulWidget {
 
   /// [{p1, p2, aspect}, ...]
   final List<Map<String, dynamic>> aspects;
+
+  /// İkili çarkın DIŞ halkası: anlık gökyüzü gezegenleri (aynı şema,
+  /// abs_position zorunlu). Null: tek çark.
+  final List<Map<String, dynamic>>? outerPoints;
 
   final double size;
   final ValueChanged<Map<String, dynamic>>? onPlanetTap;
@@ -76,6 +88,7 @@ class _NatalWheelState extends State<NatalWheel>
             points: widget.points,
             houses: widget.houses,
             aspects: widget.aspects,
+            outerPoints: widget.outerPoints,
             progress: Curves.easeOutCubic.transform(_controller.value),
           ),
         ),
@@ -90,11 +103,13 @@ class _NatalWheelPainter extends CustomPainter {
     required this.houses,
     required this.aspects,
     required this.progress,
+    this.outerPoints,
   });
 
   final List<Map<String, dynamic>> points;
   final List<Map<String, dynamic>> houses;
   final List<Map<String, dynamic>> aspects;
+  final List<Map<String, dynamic>>? outerPoints;
   final double progress;
 
   static const _signGlyphs = [
@@ -145,7 +160,11 @@ class _NatalWheelPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    final outer = size.width / 2 - 2;
+    final rimOuter = size.width / 2 - 2;
+    // İkili çarkta en dış 24 px'lik bant transit halkasına ayrılır; iç
+    // çark küçülür ama düzeni değişmez.
+    final outer =
+        outerPoints == null ? rimOuter : rimOuter - 24;
     final signInner = outer - 30; // burç halkası iç sınırı
     final houseInner = signInner - 26; // ev numarası halkası
     final aspectRadius = houseInner - 26; // açı ağı yarıçapı
@@ -258,6 +277,40 @@ class _NatalWheelPainter extends CustomPainter {
       }
     }
 
+    // Dış transit halkası (R3-3, ikili çark): anlık gökyüzü gezegenleri.
+    // Lila glifler — natal (beyaz) ile karışmaz; her glifin iç kenarında
+    // küçük işaretçi çizgisi boylamı gösterir. Açı çizgileri BİLİNÇLİ yok
+    // (v1): natal-transit açı ağı bu boyutta okunmaz hale geliyor.
+    if (outerPoints != null && outerPoints!.isNotEmpty) {
+      canvas.drawArc(Rect.fromCircle(center: center, radius: rimOuter),
+          math.pi, -2 * math.pi * sweep, false, line);
+      final disSirali = [...outerPoints!]..sort((a, b) =>
+          ((a['abs_position'] as num?) ?? 0)
+              .compareTo((b['abs_position'] as num?) ?? 0));
+      double? oncekiLon;
+      var disToggle = 0;
+      for (final p in disSirali) {
+        final lon = (p['abs_position'] as num?)?.toDouble() ?? 0;
+        final rel = ((lon - asc) % 360 + 360) % 360;
+        if (rel / 360 > sweep) continue;
+        if (oncekiLon != null && (lon - oncekiLon).abs() < 7) {
+          disToggle = (disToggle + 1) % 2;
+        } else {
+          disToggle = 0;
+        }
+        oncekiLon = lon;
+        final angle = _screenAngle(lon, asc);
+        final retro = p['retrograde'] == true;
+        final renk = retro ? RythoColors.magenta : RythoColors.lilac;
+        canvas.drawLine(_polar(center, angle, outer),
+            _polar(center, angle, outer + 4),
+            Paint()..color = renk..strokeWidth = 1.1);
+        final pos = _polar(
+            center, angle, (outer + rimOuter) / 2 + (disToggle == 1 ? 6 : 0));
+        _drawText(canvas, _planetGlyphs[p['name']] ?? '•', pos, 13, renk);
+      }
+    }
+
     // Merkez
     _drawText(canvas, '✦', center, 11,
         RythoColors.lilac.withValues(alpha: progress));
@@ -277,5 +330,7 @@ class _NatalWheelPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_NatalWheelPainter old) =>
-      old.progress != progress || old.points != points;
+      old.progress != progress ||
+      old.points != points ||
+      old.outerPoints != outerPoints;
 }

@@ -1978,6 +1978,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get basisMovement => 'Hareket';
 
   @override
+  String get basisMeasurement => 'Ölçüm';
+
+  @override
   String get basisExact => 'Kesinleşme';
 
   @override
@@ -2042,6 +2045,49 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get diaryDeleteTitle => 'Bu girişi silmek istiyor musun?';
+
+  @override
+  String get profileSectionIdentity => 'Doğum ve kimlik';
+
+  @override
+  String get profileSectionAccount => 'Hesap';
+
+  @override
+  String get profileSectionPrefs => 'Tercihler';
+
+  @override
+  String get reactionHug => 'Sarıldım';
+
+  @override
+  String get reactionLuck => 'Bol şans';
+
+  @override
+  String get reactionCoffee => 'Kahve içelim';
+
+  @override
+  String get reactionMiss => 'Özledim';
+
+  @override
+  String reactionSheetTitle(String name) {
+    return '$name için bir tepki seç';
+  }
+
+  @override
+  String get atlasWheelNatal => 'Haritam';
+
+  @override
+  String get atlasWheelSky => 'Şu an gökyüzü';
+
+  @override
+  String get atlasWheelBiwheel => 'İkili çark';
+
+  @override
+  String get atlasSkyWheelNote =>
+      'Gökyüzü şu an herkes için aynı; ev ve Yükselen konuma bağlı olduğu için bu görünümde çizilmez.';
+
+  @override
+  String get atlasBiwheelNote =>
+      'İçte doğum haritan, dış halkada şu anki gökyüzü — astrologların transit analizinde kullandığı ikili çark (bi-wheel).';
 
   @override
   String get atlasSectionAbout => 'Bana dair';
