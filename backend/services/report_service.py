@@ -414,9 +414,63 @@ def relationship_reading(uid: str, friend_uid: str, me_name: str,
         me=me_name, friend=friend_name, axes="\n".join(satirlar))
     fallback = p.RELATIONSHIP_FALLBACK.format(friend=friend_name)
 
-    return _cached_generate(cache_key, prompt, fallback,
-                            ttl_seconds=30 * 24 * 3600, lang=lang,
-                            owner_uid=uid)
+    sonuc = _cached_generate(cache_key, prompt, fallback,
+                             ttl_seconds=30 * 24 * 3600, lang=lang,
+                             owner_uid=uid)
+    return {**sonuc, **parse_relationship_reading(sonuc["text"])}
+
+
+#: Eksen anahtarları model çıktısında AYNEN beklenir — dilden bağımsız
+#: olsun diye İngilizce anahtar, metin isteğin dilinde.
+_OKUMA_ANAHTARLARI = ("communication", "emotional", "attraction", "bond",
+                      "theme")
+
+
+def parse_relationship_reading(text: str) -> dict[str, Any]:
+    """Modelin `anahtar: cümle` çıktısını eksen sözlüğüne çevirir.
+
+    ## Neden eksen bazlı
+
+    İlk sürümde okuma TEK BLOK dönüyordu ve eksen kartlarında hiçbir
+    cümle kalmamıştı: kullanıcı dört boş kart ve dört "Rytho'ya sor"
+    gördü — "neyi soracak!". Kartın işi merak uyandırmak; o yüzden her
+    eksenin kendi tek cümlelik ipucu olmalı. Hazır tablo yine YOK:
+    cümleleri o çift için model yazıyor.
+
+    Ayrıştırma HOŞGÖRÜLÜ: model biçimi tutturamazsa sözlük boş döner ve
+    çağıran katman tam metni tek blok olarak gösterir. Uydurma cümle
+    üretilmez — biçim hatasında eksik kalmak, yanlış şey göstermekten
+    iyidir.
+    """
+    eksenler: dict[str, str] = {}
+    tema = ""
+    aktif: str | None = None
+    for ham in (text or "").split("\n"):
+        satir = ham.strip().lstrip("-*• ").strip()
+        if not satir:
+            aktif = None
+            continue
+        anahtar = None
+        if ":" in satir:
+            aday = satir.split(":", 1)[0].strip().lower()
+            # `**communication**` gibi süslemeleri de tanı.
+            aday = aday.strip("*_# ").strip()
+            if aday in _OKUMA_ANAHTARLARI:
+                anahtar = aday
+        if anahtar:
+            deger = satir.split(":", 1)[1].strip().strip("*_ ").strip()
+            if anahtar == "theme":
+                tema = deger
+            else:
+                eksenler[anahtar] = deger
+            aktif = anahtar
+        elif aktif:
+            # Cümle alt satıra taşmışsa devamını ekle.
+            if aktif == "theme":
+                tema = (tema + " " + satir).strip()
+            else:
+                eksenler[aktif] = (eksenler[aktif] + " " + satir).strip()
+    return {"axis_lines": eksenler, "theme": tema}
 
 
 def natal_report(user_id: str, natal: dict[str, Any],

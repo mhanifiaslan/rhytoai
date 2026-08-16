@@ -128,9 +128,9 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
               .animate(delay: Duration(milliseconds: 70 * stagger++))
               .fadeIn(duration: 360.ms)
               .slideY(begin: 0.06, curve: Curves.easeOutCubic),
-        // AI okuması: eksenlerin ALTINDA tek metin. Kartlar ölçümü
-        // gösterir, bu bölüm o ölçümü yorumlar — ve yorum her çift için
-        // baştan yazılır, tablodan seçilmez.
+        // İlişkinin ANA TEMASI: kartlar ekseni tek tek açar, bu bölüm
+        // hepsini toplar. Model biçimi tutturamadığı ender durumda
+        // sunucu tam metni buraya koyar — kart cümlesi uydurulmaz.
         if (_reading != null && _reading!.trim().isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(RythoSpace.lg,
@@ -249,11 +249,19 @@ class _AxisCardState extends State<_AxisCard> {
             ),
           ),
         ]),
-        // Eksen kartında ARTIK hazır cümle yok (1.6.0): kart ölçümü
-        // gösterir, yorumu AI yazar ve eksenlerin altında tek metin
-        // olarak durur. Eski `line` alanı eksen × ton ile anahtarlı 16
-        // cümlelik bir tablodan geliyordu ve iki arkadaş birebir aynı
-        // dört cümleyi okuyabiliyordu.
+        // Kartın ipucu cümlesi. Kaynağı değişti: eskiden eksen × ton ile
+        // anahtarlı 16 cümlelik hazır tablodan geliyordu ve iki arkadaş
+        // birebir aynı dört cümleyi okuyabiliyordu; artık o çift için
+        // MODEL yazıyor (bkz. report_service.relationship_reading).
+        //
+        // Kartta cümle bulunması şart: bir ara kaldırılmıştı ve geriye
+        // dört boş başlık + dört "Rytho'ya sor" kaldı — kullanıcı neyi
+        // soracağını bilemedi. İpucu merakı açar, detay soruyla gelir.
+        if ((e['line'] as String? ?? '').isNotEmpty) ...[
+          const SizedBox(height: 7),
+          Text(e['line'] as String,
+              style: RythoText.body(13.5, height: 1.45)),
+        ],
         if (dayanak.isNotEmpty) ...[
           const SizedBox(height: 8),
           Pressable(

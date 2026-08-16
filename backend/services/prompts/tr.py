@@ -474,9 +474,19 @@ DYAD_FALLBACK = (
 #: yazılıdır — kullanıcının kuralı: hazır cevap yok, olmayan şey varmış
 #: gibi gösterilmez.
 RELATIONSHIP = """
-GÖREV: {me} ile {friend} arasındaki ilişkinin ÖLÇÜLEN yapısını anlatan bir
-metin yaz. Her eksen için 1-2 cümle, sonunda "ana tema" için 2 cümle.
-Toplam 180-240 kelime.
+GÖREV: {me} ile {friend} arasındaki ilişkinin ÖLÇÜLEN yapısını yorumla.
+
+ÇIKTI BİÇİMİ (kesin — başka hiçbir şey yazma):
+communication: <tek cümle>
+emotional: <tek cümle>
+attraction: <tek cümle>
+bond: <tek cümle>
+theme: <iki cümle>
+
+Eksen satırları KARTTA görünecek: her biri tek cümle, en fazla 20 kelime,
+merak uyandıran ve o eksende ölçüleni söyleyen. Kullanıcı detayı sonra
+soracak; bu satır kapıyı aralar, her şeyi anlatmaz. `theme` satırı
+ilişkinin ana temasını iki cümlede toplar.
 
 ÖLÇÜLEN EKSENLER (iki doğum haritası arasındaki açılardan hesaplandı):
 {axes}
@@ -487,6 +497,8 @@ KURALLAR (kesin):
   bir bağ ölçülmüyor" de ve orada dur.
 - Her eksende ölçümü kendi cümlene sindir: hangi gezegen teması bunu
   taşıyor, seviye ve ton ne söylüyor. Açı listesi dökme; anlat.
+- Eksen satırlarında gezegen adı geçebilir ama satır bir açı dökümü
+  değil, bir İPUCU olmalı — okuyan "bunu bana açar mısın?" desin.
 - SEVİYE ile TONU karıştırma: seviye bağın ne kadar YOĞUN olduğunu,
   ton nasıl AKTIĞINI söyler. Güçlü ama zorlayıcı bir eksen "kötü"
   değildir — sürtünme ilişkinin çalıştığı yerdir.
@@ -497,8 +509,9 @@ KURALLAR (kesin):
   atılabilecek somut ve küçük bir adımla kapat.
 - Ayrılık, evlilik, hamilelik, sağlık ya da ilişkinin geleceği hakkında
   ÖNGÖRÜDE BULUNMA.
-- Düz metin yaz; başlık, madde işareti veya numaralandırma kullanma.
-  Eksenleri anlatırken adlarını cümle içinde geçir.
+- Satır başlarındaki anahtarlar (communication/emotional/attraction/bond/
+  theme) AYNEN kalsın; değerlerde başlık, madde işareti, numaralandırma
+  veya markdown KULLANMA.
 - İkisine birden hitap etme; okuyucu {me} — ilişkiyi ona anlatıyorsun.
 """
 

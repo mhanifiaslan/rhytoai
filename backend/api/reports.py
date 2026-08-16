@@ -555,7 +555,18 @@ def relationship(req: DyadRequest,
                 me.get("displayName") or "?",
                 friend.get("displayName") or friend.get("username") or "?",
                 eksenler, lang=lang)
-            veri = {**veri, "reading": okuma["text"]}
+            # Her eksen KENDİ cümlesini taşır: kart boş kalmamalı, kullanıcı
+            # "neyi soracağım?" durumuna düşmemeli (cihaz turu bulgusu).
+            # Cümleyi model o çift için yazar; hazır tablo yok.
+            satirlar = okuma.get("axis_lines") or {}
+            veri = {**veri, "axes": [
+                {**e, **({"line": satirlar[e["axis"]]}
+                         if satirlar.get(e["axis"]) else {})}
+                for e in veri.get("axes") or []
+            ]}
+            # Ana tema ayrı; biçim tutmadıysa tam metin tek blok döner.
+            veri["reading"] = okuma.get("theme") or (
+                "" if satirlar else okuma["text"])
         else:
             veri = {**veri, "reading_locked": True}
         return {"status": "success", "data": veri}

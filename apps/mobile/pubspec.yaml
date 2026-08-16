@@ -1,8 +1,8 @@
-name: rytho
+﻿name: rytho
 description: "RythoAI - Kisisel Kozmik Zeka Platformu"
 publish_to: 'none'
-# Play yüklemeleri: versionCode (+N) her yüklemede artmalı, benzersizdir.
-version: 1.6.0+20
+# Play yÃ¼klemeleri: versionCode (+N) her yÃ¼klemede artmalÄ±, benzersizdir.
+version: 1.6.1+21
 
 environment:
   sdk: ^3.12.0
@@ -11,14 +11,14 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Çok dillilik (TR + EN)
+  # Ã‡ok dillilik (TR + EN)
   flutter_localizations:
     sdk: flutter
 
-  # Durum yönetimi
+  # Durum yÃ¶netimi
   flutter_riverpod: ^3.0.3
 
-  # Ağ
+  # AÄŸ
   dio: ^5.9.0
 
   # Firebase
@@ -26,9 +26,9 @@ dependencies:
   firebase_auth: ^6.4.0
   cloud_firestore: ^6.1.2
   firebase_messaging: ^16.1.0
-  # Cihazın IANA saat dilimi ("Europe/Istanbul"). Bildirimin kullanıcının
-  # sabahına denk gelmesi için sunucunun buna ihtiyacı var; DateTime'ın
-  # döndürdüğü kısaltmalar ("+03") sunucuda çözülemiyor.
+  # CihazÄ±n IANA saat dilimi ("Europe/Istanbul"). Bildirimin kullanÄ±cÄ±nÄ±n
+  # sabahÄ±na denk gelmesi iÃ§in sunucunun buna ihtiyacÄ± var; DateTime'Ä±n
+  # dÃ¶ndÃ¼rdÃ¼ÄŸÃ¼ kÄ±saltmalar ("+03") sunucuda Ã§Ã¶zÃ¼lemiyor.
   flutter_timezone: ^5.1.0
   firebase_crashlytics: ^5.0.7
   firebase_analytics: ^12.0.4
@@ -41,7 +41,7 @@ dependencies:
   # Abonelik (RevenueCat)
   purchases_flutter: ^9.10.4
 
-  # Yüz okuma — CIHAZ USTU.
+  # YÃ¼z okuma â€” CIHAZ USTU.
   #
   # Fotograf sunucuya GITMEZ ve saklanmaz: kare bellekte islenir, oranlar
   # cikarilir, kare atilir. Sunucuya yalnizca turetilmis sayilar gider.
@@ -49,21 +49,21 @@ dependencies:
   # oturan noktalar gercek tespit sonucudur, animasyon icin uydurulmus
   # degil.
   #
-  # `camera` canli onizleme icin gerekli — `image_picker` sistem kamerasini
+  # `camera` canli onizleme icin gerekli â€” `image_picker` sistem kamerasini
   # aciyor ve uzerine cerceveleme kilavuzu cizilemiyor.
   camera: ^0.11.2
   google_mlkit_face_detection: ^0.13.1
 
-  # Profil fotoğrafı yükleme (U1): avatars/{uid} — kurallar infra/storage.rules.
+  # Profil fotoÄŸrafÄ± yÃ¼kleme (U1): avatars/{uid} â€” kurallar infra/storage.rules.
   firebase_storage: ^13.0.5
 
-  # Araçlar
-  # Zorunlu güncelleme kapısı (F3): buildNumber'ı sunucu eşiğiyle
-  # karşılaştırmak için.
+  # AraÃ§lar
+  # Zorunlu gÃ¼ncelleme kapÄ±sÄ± (F3): buildNumber'Ä± sunucu eÅŸiÄŸiyle
+  # karÅŸÄ±laÅŸtÄ±rmak iÃ§in.
   package_info_plus: ^10.2.1
   image_picker: ^1.2.1
   intl: ^0.20.2
-  # Play abonelik yönetimi sayfası (Abonelik ekranındaki "Aboneliği yönet").
+  # Play abonelik yÃ¶netimi sayfasÄ± (Abonelik ekranÄ±ndaki "AboneliÄŸi yÃ¶net").
   url_launcher: ^6.3.1
   audioplayers: ^6.8.1
   shared_preferences: ^2.5.5
@@ -95,18 +95,18 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  # ARB dosyalarından AppLocalizations üretimi (bkz. l10n.yaml)
+  # ARB dosyalarÄ±ndan AppLocalizations Ã¼retimi (bkz. l10n.yaml)
   generate: true
 
   assets:
     - assets/sounds/
-    # Şehir + ülke dizinleri (O1): GeoNames'ten build_gazetteer.py üretir.
-    # CC-BY 4.0 — atıf hukuk sayfasında.
+    # Åehir + Ã¼lke dizinleri (O1): GeoNames'ten build_gazetteer.py Ã¼retir.
+    # CC-BY 4.0 â€” atÄ±f hukuk sayfasÄ±nda.
     - assets/data/
     # Marka: giris basligindaki logo (Revize R7). SVG kaynak olarak repoda
     # duruyor, pakete yalnizca PNG giriyor.
     - assets/brand/rytho_logo_512.png
-    # MediaPipe Selfie Multiclass — 6 sinif (arka plan, sac, govde-teni,
+    # MediaPipe Selfie Multiclass â€” 6 sinif (arka plan, sac, govde-teni,
     # yuz-teni, giysi, aksesuar). Sac cizgisini bundan cikariyoruz.
     # Lisans: Apache 2.0 (model karti, Google, 10 Mayis 2023).
     - assets/models/selfie_multiclass_256x256.tflite

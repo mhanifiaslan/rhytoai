@@ -195,6 +195,70 @@ class TestIliskiOkumasiPromptu:
         for sizinti in ("1985", "1990", "Ankara", "Istanbul"):
             assert sizinti not in p, f"dogum verisi sizdi: {sizinti}"
 
+    def test_her_eksen_KENDI_cumlesini_alir(self, monkeypatch):
+        """Kart bos kalmamali.
+
+        Ilk surumde okuma TEK BLOK donuyordu; eksen kartlarinda hicbir
+        cumle kalmadi ve kullanici dort bos baslik + dort "Rytho'ya sor"
+        gordu ("neyi soracak!"). Kartin isi meraki acmak.
+        """
+        from services import report_service
+
+        monkeypatch.setattr(report_service.cache, "get", lambda k: None)
+        monkeypatch.setattr(report_service.cache, "set",
+                            lambda k, v, **kw: None)
+        monkeypatch.setattr(
+            report_service.gemini_service, "generate",
+            lambda prompt, lang=None: (
+                "communication: Merkur gerilimi konusmayi keskinlestiriyor.\n"
+                "emotional: Ay-Jupiter temasi duyguyu comert kiliyor.\n"
+                "attraction: Mars-Uranus kivilcimi ani ve dalgali.\n"
+                "bond: Saturn zemini yavas ama tasiyici.\n"
+                "theme: Zihinsel surtusme ile duygusal comertlik arasinda "
+                "bir denge. Kucuk adimlar bu zemini tasir."))
+
+        sonuc = report_service.relationship_reading(
+            "a", "b", "Ben", "Erkan", {"calc_version": "2", "axes": []},
+            lang="tr")
+
+        assert set(sonuc["axis_lines"]) == {
+            "communication", "emotional", "attraction", "bond"}
+        assert all(v for v in sonuc["axis_lines"].values())
+        assert "denge" in sonuc["theme"]
+        assert "theme:" not in sonuc["axis_lines"]["bond"]
+
+    def test_bicim_tutmazsa_UYDURMA_yapilmaz(self, monkeypatch):
+        """Model biçimi kacirirsa eksen cumlesi URETILMEZ; caginan katman
+        tam metni tek blok gosterir. Yanlis cumle gostermektense eksik
+        kalmak yeglenir."""
+        from services import report_service
+
+        monkeypatch.setattr(report_service.cache, "get", lambda k: None)
+        monkeypatch.setattr(report_service.cache, "set",
+                            lambda k, v, **kw: None)
+        monkeypatch.setattr(report_service.gemini_service, "generate",
+                            lambda prompt, lang=None: "Serbest bir paragraf.")
+
+        sonuc = report_service.relationship_reading(
+            "a", "b", "Ben", "Erkan", {"calc_version": "2", "axes": []},
+            lang="tr")
+        assert sonuc["axis_lines"] == {}
+        assert sonuc["text"] == "Serbest bir paragraf."
+
+    def test_ayristirici_suslemeye_dayanikli(self):
+        """Model bazen `**communication**:` ya da `- communication:` yazar."""
+        from services import report_service
+
+        cozum = report_service.parse_relationship_reading(
+            "- **communication**: Ilk cumle\n"
+            "  ikinci satira tasti.\n"
+            "* emotional: Ikinci eksen\n"
+            "theme: Ana tema.")
+        assert cozum["axis_lines"]["communication"] == (
+            "Ilk cumle ikinci satira tasti.")
+        assert cozum["axis_lines"]["emotional"] == "Ikinci eksen"
+        assert cozum["theme"] == "Ana tema."
+
     def test_onbellek_anahtari_cift_bazli_ve_simetrik(self, monkeypatch):
         from services import report_service
 

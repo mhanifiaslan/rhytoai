@@ -491,9 +491,21 @@ DYAD_FALLBACK = (
 #: cast a chart and does not invent placements. "Nothing unmeasured is
 #: claimed" appears here as an explicit prompt constraint.
 RELATIONSHIP = """
-TASK: Write a reading of the MEASURED structure of the relationship
-between {me} and {friend}. One or two sentences per axis, then two
-sentences on the core theme. 180-240 words in total.
+TASK: Interpret the MEASURED structure of the relationship between {me}
+and {friend}.
+
+OUTPUT FORMAT (strict — write nothing else):
+communication: <one sentence>
+emotional: <one sentence>
+attraction: <one sentence>
+bond: <one sentence>
+theme: <two sentences>
+
+The axis lines appear ON A CARD: one sentence each, 20 words at most,
+saying what is measured on that axis in a way that invites a question.
+The reader asks for the detail afterwards; this line opens the door, it
+does not tell everything. The `theme` line sums up the core theme of the
+relationship in two sentences.
 
 MEASURED AXES (computed from the aspects between the two birth charts):
 {axes}
@@ -515,8 +527,11 @@ RULES (strict):
   difficulty with one small, concrete step they can take together.
 - Do NOT predict break-ups, marriage, pregnancy, health, or the future
   of the relationship.
-- Write plain prose: no headings, no bullets, no numbering. Name the
-  axes inside your sentences.
+- An axis line may name a planet, but it is a HINT, not an aspect dump —
+  the reader should want to say "tell me more about that".
+- Keep the line keys (communication/emotional/attraction/bond/theme)
+  exactly as given; use no headings, bullets, numbering or markdown in
+  the values.
 - Do not address the two of them jointly; the reader is {me} — you are
   describing the relationship to them.
 """
