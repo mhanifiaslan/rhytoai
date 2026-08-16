@@ -89,7 +89,12 @@ final apiProvider = Provider<Dio>((ref) {
   // ağ sağlayıcıları (burç yorumu, gökyüzü, günlük okuma...) tazelenir.
   // İzlenmezse başlık yalnızca SONRAKİ isteklerde değişir; ekrandaki yorum
   // eski dilde asılı kalır — dil değiştirmenin en görünür kusuru buydu.
-  final locale = ref.watch(localeProvider);
+  //
+  // İzlenen şey GEÇERLİ dil: kullanıcı tercihi YOKSA sistem dili. Eskiden
+  // yalnız `localeProvider` izleniyordu ve tercih `null` kalan (yani
+  // varsayılan) kullanıcıda sistem dili değişince hiçbir şey tazelenmiyordu
+  // — arayüz İngilizceye geçiyor, önbellekteki yorumlar Türkçe kalıyordu.
+  final locale = ref.watch(effectiveLocaleProvider);
 
   final dio = Dio(BaseOptions(
     baseUrl: kApiBaseUrl,

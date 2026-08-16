@@ -173,11 +173,14 @@ def _takvimi_kilitle(yerel: dict) -> dict:
     Kalan: tarih, olay türü, tema ve ton. Bunlar hesabın kendisi ve
     ürünün kuralı gereği ücretsiz. Giden: yorum cümleleri.
 
-    Olaya `locked: true` eklenir; arayüz kilit satırını buna bakarak
-    çiziyor — alanın YOKLUĞUNA bakmak, sunucu bir gün alanı boş
-    göndermeye başlarsa sessizce yanlış davranırdı.
+    `locked: true` YALNIZCA okuması olan olaya konur. İstasyonların
+    (retro dönüşleri) hiçbir katmanda gündelik cümlesi yok — onları da
+    kilitli işaretlemek "Rytho+ ile açılır" diyip abonelikte de
+    açılmayan bir şey vaat etmek olurdu (cihaz turu, 1.5.1+18).
     """
     def olay(o: dict) -> dict:
+        if not o.get("line"):
+            return o
         temiz = {k: v for k, v in o.items() if k not in _KILITLI_ALANLAR}
         temiz["locked"] = True
         return temiz

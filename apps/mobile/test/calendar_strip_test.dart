@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `Override` riverpod 3'te ana kütüphaneden değil buradan geliyor.
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 import 'package:rytho/core/providers.dart';
 import 'package:rytho/features/sky/calendar_strip.dart';
 import 'package:rytho/l10n/app_localizations.dart';
@@ -50,7 +52,9 @@ Map<String, dynamic> _kilitliOlay({int gunSonra = 2}) {
   return o..['locked'] = true;
 }
 
-Widget _sar(Widget child, {List<Override> overrides = const []}) =>
+Widget _sar(Widget child,
+        {List<Override> overrides = const [],
+        Locale locale = const Locale('tr')}) =>
     ProviderScope(
       overrides: overrides,
       child: MaterialApp(
@@ -61,7 +65,7 @@ Widget _sar(Widget child, {List<Override> overrides = const []}) =>
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        locale: const Locale('tr'),
+        locale: locale,
         home: child,
       ),
     );
@@ -135,6 +139,30 @@ void main() {
     });
   });
 
+  group('tarih dili', () {
+    // Cihaz bulgusu: serit Ingilizce arayuzde de "Agu 27 / Eyl 2" diyordu.
+    //
+    // Sebep `main.dart`teydi: acilista YALNIZ `initializeDateFormatting(
+    // 'tr_TR')` cagriliyordu. `DateFormat('MMM', 'en')` Ingilizce sembol
+    // verisini bulamayinca yuklu olan tek dile dusuyor ve ay adini Turkce
+    // basiyordu. Sessiz bir kusur: istisna atmiyor, yanlis dil yaziyor.
+    setUpAll(() async {
+      await initializeDateFormatting();
+    });
+
+    test('ay kisaltmasi dile gore degisir', () {
+      final gun = DateTime(2026, 8, 30);
+      expect(DateFormat('MMM', 'tr').format(gun), 'Ağu');
+      expect(DateFormat('MMM', 'en').format(gun), 'Aug');
+    });
+
+    test('tam tarih dile gore degisir', () {
+      final gun = DateTime(2026, 8, 30);
+      expect(DateFormat('d MMMM', 'tr').format(gun), '30 Ağustos');
+      expect(DateFormat('d MMMM', 'en').format(gun), '30 August');
+    });
+  });
+
   group('gün kartı', () {
     testWidgets('abonede okuma cümlesi ve dayanak girişi var',
         (tester) async {
@@ -165,6 +193,70 @@ void main() {
 
       expect(find.text('İlişkiler'), findsOneWidget);
       expect(find.text('Kariyer'), findsOneWidget);
+    });
+
+    testWidgets('kilit cümlesi sayfada BİR KEZ görünür', (tester) async {
+      // Cihaz turu (1.5.1+18): iki kilitli olayı olan gün, aynı cümleyi
+      // alt alta iki kez basıyordu. Tekrar bilgi vermiyor, yalnızca kilidi
+      // olduğundan büyük gösteriyordu.
+      final ikinci = Map<String, dynamic>.from(_kilitliOlay())
+        ..['orb'] = 1.2;
+      await _gunKartiniAc(tester, [_kilitliOlay(), ikinci]);
+
+      expect(find.textContaining('Rytho+'), findsOneWidget);
+      expect(find.text('İlişkiler'), findsOneWidget);
+    });
+
+    testWidgets('okuması olmayan olaya KİLİT denmez', (tester) async {
+      // İstasyonun hiçbir katmanda gündelik cümlesi yok; "Rytho+ ile
+      // açılır" demek abonelikte de açılmayan bir şey vaat etmekti.
+      await _gunKartiniAc(tester, [
+        {
+          'type': 'station_retrograde',
+          'date': _bugun(3),
+          'transit_local': 'Merkür',
+          'type_local': 'geri harekete geçiyor',
+        },
+      ]);
+
+      expect(find.textContaining('Rytho+'), findsNothing);
+      expect(find.textContaining('Merkür'), findsOneWidget);
+    });
+
+    testWidgets('İngilizce arayüzde Türkçe metin KALMAZ', (tester) async {
+      // Cihaz bulgusu: "ingilizceye çevirince de türkçe kalıyor". Sunucu
+      // metni (`theme_local`, `line`) isteğin diliyle geliyor; bu test
+      // İSTEMCİ tarafını kilitler — kart kendi dizelerini l10n'den almalı,
+      // hiçbir Türkçe sabit taşımamalı.
+      await tester.pumpWidget(_sar(
+        Builder(builder: (context) {
+          return Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => showDaySheet(context, DateTime.now(), [
+                  // Sunucu İngilizce yanıt verdiğinde gelen biçim.
+                  {
+                    ..._kilitliOlay(),
+                    'theme_local': 'Relationships',
+                    'date_local': 'August 20',
+                  },
+                ]),
+                child: const Text('open'),
+              ),
+            ),
+          );
+        }),
+        locale: const Locale('en'),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(find.text('Relationships'), findsOneWidget);
+      expect(find.textContaining('opens with Rytho+'), findsOneWidget);
+      // Türkçe hiçbir sabit sızmamalı.
+      expect(find.textContaining('açılır'), findsNothing);
+      expect(find.textContaining('Diğer'), findsNothing);
     });
 
     testWidgets('temasız olay da başlıksız kalmaz', (tester) async {

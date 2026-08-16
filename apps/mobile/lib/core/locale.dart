@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart'
-    show StateNotifier, StateNotifierProvider;
+    show StateNotifier, StateNotifierProvider, StateProvider;
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Uygulama dili.
@@ -51,6 +52,68 @@ class LocaleController extends StateNotifier<Locale?> {
 
 final localeProvider =
     StateNotifierProvider<LocaleController, Locale?>((_) => LocaleController());
+
+/// Cihazın **sistem** dili.
+///
+/// Kullanıcı uygulama içinden bir dil seçmediyse (varsayılan durum) gerçek
+/// dil budur — hem arayüz hem `Accept-Language` buna düşer.
+///
+/// Ayrı bir sağlayıcı olmasının sebebi: sistem dili değiştiğinde Flutter
+/// arayüzü yeniden çiziyor ama Riverpod'un ağ sağlayıcılarının haberi
+/// olmuyordu. `apiProvider` yalnız [localeProvider]'ı izliyordu; kullanıcı
+/// tercihi `null` kaldığı için hiçbir şey değişmemiş sayılıyor ve
+/// ÖNBELLEKTEKİ Türkçe yorumlar ekranda kalıyordu. Sonraki istekler doğru
+/// dille gidiyordu — yani hata "bazı kartlar çevrilmiyor" diye görünüyordu.
+///
+/// Değeri [SystemLocaleObserver] güncelliyor.
+final systemLocaleProvider = StateProvider<Locale>((_) =>
+    WidgetsBinding.instance.platformDispatcher.locale);
+
+/// Uygulamanın o an geçerli dili: kullanıcı tercihi, yoksa sistem dili.
+final effectiveLocaleProvider = Provider<Locale>((ref) =>
+    ref.watch(localeProvider) ?? ref.watch(systemLocaleProvider));
+
+/// Sistem dili değişimini [systemLocaleProvider]'a taşır.
+///
+/// Uygulamanın köküne bir kez takılır (bkz. `main.dart`).
+class SystemLocaleObserver extends ConsumerStatefulWidget {
+  const SystemLocaleObserver({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<SystemLocaleObserver> createState() =>
+      _SystemLocaleObserverState();
+}
+
+class _SystemLocaleObserverState extends ConsumerState<SystemLocaleObserver>
+    with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    final yeni = locales?.firstOrNull ??
+        WidgetsBinding.instance.platformDispatcher.locale;
+    final onceki = ref.read(systemLocaleProvider);
+    if (yeni.languageCode == onceki.languageCode) return;
+    // Yalnız dil kodu karşılaştırılır: "en-US" -> "en-GB" geçişi sunucu
+    // için aynı dil, gereksiz yere tüm yorumları yeniden çektirmemeli.
+    ref.read(systemLocaleProvider.notifier).state = yeni;
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
 
 /// `Accept-Language` başlık değeri.
 ///

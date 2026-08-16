@@ -133,9 +133,18 @@ def test_abonede_okuma_AYNEN_kalir(monkeypatch, kullanici, sahte_motor):
 
 
 @uygulama_gerekir
-def test_kilit_temasiz_olayi_da_isaretler(monkeypatch, kullanici,
-                                          sahte_motor):
-    """Istasyon olaylarinin temasi yok; kilit alani yine de yazilmali —
-    arayuz alanin YOKLUGUNA degil bu bayraga bakiyor."""
+def test_okumasi_olmayan_olaya_kilit_KONMAZ(monkeypatch, kullanici,
+                                            sahte_motor):
+    """Istasyonlarin (retro donusleri) hicbir katmanda gundelik cumlesi yok.
+
+    Onlari da kilitli isaretlemek "Rytho+ ile acilir" deyip abonelikte de
+    acilmayan bir sey vaat etmek olurdu; cihaz turunda kullanici gun
+    kartinda tam bunu gordu. Kilit YALNIZCA okumasi olan olaya konur.
+    """
     veri = _cek(monkeypatch, sahte_motor, abone=False)
-    assert all(o["locked"] is True for o in veri["events"])
+    tipler = {o["type"]: o for o in veri["events"]}
+
+    assert tipler["aspect_exact"]["locked"] is True
+    assert "locked" not in tipler["station"]
+    # Istasyonun olcumu ucretsiz katmanda da duruyor.
+    assert tipler["station"]["transit_local"]

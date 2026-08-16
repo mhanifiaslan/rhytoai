@@ -224,6 +224,14 @@ class _GunSayfasi extends StatelessWidget {
     final sirali = gruplar.keys.toList()
       ..sort((a, b) => a.isEmpty ? 1 : (b.isEmpty ? -1 : a.compareTo(b)));
 
+    // Kilit satırı SAYFADA BİR KEZ çizilir. Eskiden her kilitli olay kendi
+    // satırını basıyordu ve iki olaylı bir gün aynı cümleyi alt alta iki kez
+    // gösteriyordu (cihaz turu, 1.5.1+18): tekrar bilgi vermiyor, yalnızca
+    // kilidi olduğundan büyük gösteriyordu. Kaç olayın kilitli olduğu
+    // başlıkların kendisinden zaten görülüyor.
+    final kilitliSayisi =
+        olaylar.where((o) => o['locked'] == true).length;
+
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
@@ -248,8 +256,41 @@ class _GunSayfasi extends StatelessWidget {
               for (final o in gruplar[tema]!) _OlaySatiri(olay: o),
               const SizedBox(height: RythoSpace.md),
             ],
+            if (kilitliSayisi > 0) const _KilitSatiri(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Gün kartının tek kilit satırı — dokunuş paywall'ı açar.
+class _KilitSatiri extends StatelessWidget {
+  const _KilitSatiri();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).pop();
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const PaywallScreen(),
+          fullscreenDialog: true,
+        ));
+      },
+      behavior: HitTestBehavior.opaque,
+      child: GlassPanel(
+        child: Row(children: [
+          const Icon(Icons.lock_outline_rounded,
+              size: 15, color: RythoColors.parchmentDim),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(l10n.calendarLockedReading,
+                style:
+                    RythoText.body(12.5, color: RythoColors.parchmentDim)),
+          ),
+        ]),
       ),
     );
   }
@@ -263,36 +304,23 @@ class _OlaySatiri extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    // Kilit bayrağı sunucudan gelir. Alanın YOKLUĞUNA bakmak, sunucu bir
-    // gün boş cümle göndermeye başlarsa sessizce yanlış davranırdı.
-    final kilitli = olay['locked'] == true;
     final cumle = olay['line'] as String?;
 
-    if (kilitli || cumle == null || cumle.isEmpty) {
+    // Kilitli olay burada HİÇBİR ŞEY çizmez: kilit cümlesi sayfanın
+    // sonunda bir kez duruyor. Okuması olmayan olay (istasyon) ise
+    // ölçümüyle yazılır — ona kilit demek yanlış olurdu, abonelikte de
+    // açılacak bir okuması yok.
+    if (cumle == null || cumle.isEmpty) {
+      if (olay['locked'] == true) return const SizedBox.shrink();
+      final teknik = olay['technical'] as String? ??
+          [olay['transit_local'], olay['type_local']]
+              .whereType<String>()
+              .join(' — ');
+      if (teknik.isEmpty) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.only(bottom: 8),
-        child: GestureDetector(
-          onTap: () {
-            Navigator.of(context).pop();
-            Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => const PaywallScreen(),
-              fullscreenDialog: true,
-            ));
-          },
-          behavior: HitTestBehavior.opaque,
-          child: GlassPanel(
-            child: Row(children: [
-              const Icon(Icons.lock_outline_rounded,
-                  size: 15, color: RythoColors.parchmentDim),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(l10n.calendarLockedReading,
-                    style: RythoText.body(12.5,
-                        color: RythoColors.parchmentDim)),
-              ),
-            ]),
-          ),
-        ),
+        child: Text(teknik,
+            style: RythoText.body(12.5, color: RythoColors.parchmentDim)),
       );
     }
 

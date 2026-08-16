@@ -264,12 +264,20 @@ final innerCalendarProvider =
 /// herkese açık ve ücretsiz kullanıcıya gerçek tarih + tema döndürüyor,
 /// yalnız okuma satırlarını çıkarıp olaya `locked: true` koyuyor
 /// ("hesap bedava, yorum paralı"). Bu yüzden abonelik durumu burada
-/// SORULMAZ — sorulursa ücretsiz kullanıcı şeridi hiç göremez ve
-/// teaser'ın kendisi kaybolur.
+/// KAPI olarak sorulmaz — sorulursa ücretsiz kullanıcı şeridi hiç
+/// göremez ve teaser'ın kendisi kaybolur.
+///
+/// Ama abonelik durumu İZLENİR. Kilit kararını sunucu isteğin geldiği
+/// ANDA veriyor; abonelik sonradan başlarsa istemcideki yanıt bayat
+/// kalıyor ve kullanıcı parasını ödediği hâlde kilidi görmeye devam
+/// ediyordu. Cihaz turunda tam bunu yaşadı: takvim 17:27:26'da
+/// çekilmiş, satın alma 17:27:40'ta düşmüş — 14 saniye. Durum
+/// değiştiğinde bu sağlayıcı yeniden kurulur ve şerit kilitsiz döner.
 final transitCalendarProvider =
     FutureProvider<Map<String, dynamic>?>((ref) async {
   final profile = ref.watch(profileProvider).value;
   if (profile == null || profile['onboardingCompleted'] != true) return null;
+  ref.watch(subscriptionProvider);
   final dio = ref.watch(apiProvider);
   final response = await dio.get('/api/v1/astrology/transit-calendar');
   return Map<String, dynamic>.from(response.data['data']);

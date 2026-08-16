@@ -44,7 +44,12 @@ Future<void> main() async {
     };
   }
 
-  await initializeDateFormatting('tr_TR');
+  // TÜM diller yüklenir. Eskiden yalnız `'tr_TR'` yükleniyordu ve bu sessiz
+  // bir hataydı: `DateFormat('MMM', 'en')` İngilizce sembol verisini
+  // bulamayınca yüklü olan tek dile düşüyor, arayüz İngilizce olsa bile
+  // tarihler Türkçe basılıyordu ("Ağu 27" / "Eyl 2"). Cihaz turunda
+  // "kartlar İngilizceye çevirince de Türkçe kalıyor" diye görüldü.
+  await initializeDateFormatting();
   try {
     await GoogleSignIn.instance.initialize(serverClientId: kServerClientId);
   } catch (_) {
@@ -66,17 +71,19 @@ class RythoApp extends ConsumerWidget {
     // apiProvider aynı sağlayıcıyı izleyerek yapar (bkz. core/api.dart).
     final locale = ref.watch(localeProvider);
 
-    return MaterialApp(
-      title: 'Rytho',
-      debugShowCheckedModeBanner: false,
-      theme: buildRythoTheme(),
-      // Sunucu 402 döndüğünde paywall'ı hangi ekranda olursak olalım
-      // açabilmek için (bkz. core/api.dart).
-      navigatorKey: rythoNavigatorKey,
-      locale: locale,
-      supportedLocales: kSupportedLocales,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      home: const _Gate(),
+    return SystemLocaleObserver(
+      child: MaterialApp(
+        title: 'Rytho',
+        debugShowCheckedModeBanner: false,
+        theme: buildRythoTheme(),
+        // Sunucu 402 döndüğünde paywall'ı hangi ekranda olursak olalım
+        // açabilmek için (bkz. core/api.dart).
+        navigatorKey: rythoNavigatorKey,
+        locale: locale,
+        supportedLocales: kSupportedLocales,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        home: const _Gate(),
+      ),
     );
   }
 }
