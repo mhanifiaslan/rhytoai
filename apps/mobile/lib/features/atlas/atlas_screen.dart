@@ -197,13 +197,15 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                     };
                     return Column(children: [
                       Center(child: cark),
-                      if (_gorunum != 0)
+                      if (_gorunum != 0 || houses.isEmpty)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(10, 2, 10, 6),
                           child: Text(
                               _gorunum == 1
                                   ? l10n.atlasSkyWheelNote
-                                  : l10n.atlasBiwheelNote,
+                                  : _gorunum == 2
+                                      ? l10n.atlasBiwheelNote
+                                      : l10n.atlasHourUnknownWheelNote,
                               style: RythoText.body(11,
                                   color: RythoColors.parchmentDim,
                                   height: 1.4)),

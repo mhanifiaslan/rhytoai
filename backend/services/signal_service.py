@@ -22,7 +22,9 @@ import hashlib
 import logging
 from typing import Any
 
-from services import chart_context, gemini_service, predict_service, prompts
+from services import (
+    astro_service, chart_context, gemini_service, predict_service, prompts,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -155,7 +157,8 @@ def compute_signals(birth: dict[str, Any], hour_known: bool = True,
     tabanlı temaya geri düşülür — sinyal üretimi natal olgulara MUHTAÇ değil.
     """
     cal = predict_service.transit_calendar(
-        **birth, hour_known=hour_known, days=WINDOW_DAYS, start=start)
+        **astro_service.subject_kwargs(birth),
+        hour_known=hour_known, days=WINDOW_DAYS, start=start)
     bugun = dt.date.fromisoformat(cal["start"])
 
     if natal is None:

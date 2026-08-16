@@ -1586,6 +1586,12 @@ abstract class AppLocalizations {
   /// **'YÜKSELEN'**
   String get bigThreeAscendant;
 
+  /// No description provided for @bigThreeAscendantUnknown.
+  ///
+  /// In tr, this message translates to:
+  /// **'saat yok'**
+  String get bigThreeAscendantUnknown;
+
   /// No description provided for @bigThreeStart.
   ///
   /// In tr, this message translates to:
@@ -3823,6 +3829,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Gökyüzü şu an herkes için aynı; ev ve Yükselen konuma bağlı olduğu için bu görünümde çizilmez.'**
   String get atlasSkyWheelNote;
+
+  /// No description provided for @atlasHourUnknownWheelNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum saati bilinmediği için evler ve Yükselen çizilmedi; çark gezegen düzeyinde. Öğle haritası uydurulmadı.'**
+  String get atlasHourUnknownWheelNote;
 
   /// No description provided for @atlasBiwheelNote.
   ///

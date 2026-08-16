@@ -160,6 +160,7 @@ TASK: Write a 150-200 word "daily cosmic reading" for this specific reader.
 
 CALCULATED NATAL DATA:
 - Sun: {sun_sign} | Moon: {moon_sign} | Rising: {ascendant}
+- Placements: {placements}
 
 TODAY'S ACTUAL SKY (Swiss Ephemeris + NASA JPL):
 - Date: {today}
@@ -182,9 +183,9 @@ Give one concrete theme for the day plus one practical suggestion.
 
 DAILY_FALLBACK = (
     "The Moon is moving through its {moon_name} phase today. "
-    "With {sun_sign} at your core and {ascendant} as the door you open to the "
-    "world, this is a strong day to line up what you feel with what you "
-    "actually do. Take one small, deliberate step; the sky rewards patience."
+    "With {sun_sign} at your core (Rising: {ascendant}), this is a strong day "
+    "to line up what you feel with what you actually do. Take one small, "
+    "deliberate step; the sky rewards patience."
 )
 
 MEMORY_BLOCK = (
@@ -223,12 +224,20 @@ WHISPER_RELATIONSHIP = (
 WHISPER_CHART = (
     "THE READER'S CHART (calculated with Swiss Ephemeris — stay faithful to "
     "it; never invent a placement, aspect or transit that is not written "
-    "here. Do not recite the list or hand it over as a block. Your reading "
+    "here. This block is compact: the placements shown and the tightest "
+    "aspects, not the whole chart. Do not fill gaps by guessing houses or "
+    "aspects. Do not recite the list or hand it over as a block. Your reading "
     "must be specific to THIS chart, not a description of their sun sign. "
     "**Name at least one of them explicitly** — a house placement, an aspect, "
     "or a transit happening today — and ground what you say in it. If what "
     "you are saying would fit anyone of that sign, it is not specific "
     "enough):"
+)
+#: Appended when the fact guard catches a placement not in the prompt.
+FACT_GUARD_RETRY = (
+    "CORRECTION: you just claimed placements that are NOT in the chart data "
+    "above: {claims}. Rewrite using only what is written there. Do not invent "
+    "a sign, house or aspect."
 )
 WHISPER_SKY = "TODAY'S ACTUAL SKY (calculated with Swiss Ephemeris):"
 USER_MESSAGE_LABEL = "THE READER'S MESSAGE"
@@ -601,6 +610,10 @@ ASTRO_NOTES = {
         "Because the birth time is unknown, transits to the Ascendant and "
         "MC were left out of the calendar; it stays at the planetary "
         "level."),
+    "natal_hour_unknown": (
+        "The birth time is unknown, so the Ascendant, houses and house "
+        "placements were not computed. The reading stays at the planetary "
+        "level; a noon chart was not invented."),
     # Disclosures carrying a {city} field (D3): filled in by the localize
     # layer with the place the chart was cast for.
     # R5-5: the old text named only the city it was cast for, so a user born
@@ -885,9 +898,10 @@ Write only the numbered lines, nothing else.
 """
 
 NATAL_FALLBACK = (
-    "Your Sun is in {sun_sign}, your Moon in {moon_sign} and your Rising is "
-    "{ascendant}. That trio maps your core identity, your emotional world and "
-    "the face you turn to the world. Check back shortly for the full reading."
+    "Your Sun is in {sun_sign}, your Moon in {moon_sign}. Rising: "
+    "{ascendant}. That is the measured core of the chart — identity, the "
+    "emotional world, and (when the birth time is known) the face you turn "
+    "to the world. Check back shortly for the full reading."
 )
 
 BAZI = """

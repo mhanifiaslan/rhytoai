@@ -21,7 +21,7 @@ Future<void> showBigThreeReveal(
   BuildContext context, {
   required String sun,
   required String moon,
-  required String ascendant,
+  String? ascendant,
 }) {
   return showGeneralDialog(
     context: context,
@@ -45,12 +45,16 @@ class _BigThreeReveal extends StatelessWidget {
 
   final String sun;
   final String moon;
-  final String ascendant;
+  final String? ascendant;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final sabit = reduceMotion(context);
+    final hamYukselen = ascendant ?? '';
+    final yukselenMetni = hamYukselen.isEmpty
+        ? l10n.bigThreeAscendantUnknown
+        : hamYukselen;
 
     // Mühürler sırayla: her biri bir öncekinden 350ms sonra açılır; buton
     // üçü de yerine oturduktan sonra gelir.
@@ -99,7 +103,7 @@ class _BigThreeReveal extends StatelessWidget {
                     const SizedBox(width: 20),
                     muhur(1, l10n.bigThreeMoon, moon),
                     const SizedBox(width: 20),
-                    muhur(2, l10n.bigThreeAscendant, ascendant),
+                    muhur(2, l10n.bigThreeAscendant, yukselenMetni),
                   ],
                 ),
                 const SizedBox(height: 48),

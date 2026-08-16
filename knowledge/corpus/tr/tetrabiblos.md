@@ -99,6 +99,23 @@ Geri hareket (retro) de aynı ailedendir. Gezegen gökyüzünde geriye gidiyormu
 gibi görünürken, taşıdığı iş dışarı değil içeri döner: tamamlanmamış olana
 geri dönülür, bir kez daha bakılır.
 
+## Yılın Mevsimleri
+
+Yıl dört mevsime bölünür ve her mevsim bir niteliğe yaslanır. İlkbahar
+başlıca nemlidir: soğuk dağılır, ısı başlar, sıvılar genişler. Yaz başlıca
+sıcaktır, Güneş zenite en yakınken. Sonbahar başlıca kurudur, çünkü yeni
+geçmiş ısı nemi çekmiştir. Kış başlıca soğuktur, Güneş zenitten en uzakken.
+
+Zodyak bir daire olduğu için başı ve sonu yoktur; yine de bir başlangıç
+alınır ve o **Koç**'tur — ilkbahar ekinoksu. Nem, canlı hayatın ilk çağına
+benzer: yumuşak, taze, henüz biçimlenmemiş. Yaz ikinci çağa, hayatın
+sıcak ve güçlü ortasına denk düşer; sonbahar olgunluğun kuruluğuna, kış
+ise çözülmeye yaklaşan soğuğa.
+
+Bu yüzden Koç yılın kapısıdır ve burçlar mevsim sırasıyla okunur. Bir
+haritada öncü/sabit/değişken dağılımı, kişinin **mevsimle nasıl ilişki
+kurduğunu** da gösterir: başlatmak, sürdürmek, dönüştürmek.
+
 ## Dört Köşe
 
 Haritanın dört köşesi vardır ve gücün toplandığı yer buralardır: **Yükselen**
@@ -131,6 +148,27 @@ Bir haritada bu üçünün dağılımı, kişinin **değişimle nasıl ilişki k
 gösterir. Sabit ağırlıklı bir haritada başlamak kolay değildir ama bırakmak
 daha da zordur; değişken ağırlıklıda tersi geçerlidir.
 
+## Eril ve Dişil Burçlar
+
+On iki burcun altısı eril ve gündüz, altısı dişil ve gece sayılır. Sıra
+almaşıktır: gündüzü gece, erili dişil izler.
+
+Başlangıç yine Koç'tadır. Eril ilke etkin olduğu, edilgenin önünde durduğu
+için Koç ve Terazi eril ve gündüz kabul edilir — ekinoks çemberini onlar
+çizer ve en güçlü değişim oradan geçer. Onları izleyen burçlar dişil ve
+gecedir; gerisi almaşık gider.
+
+Kimileri burçların cinsiyetini Yükselen'den başlatır ve ilk eril burcu
+horoskop yapar; kimileri ilk öncü burcu Ay'ın durduğu yerden okur. Batlamyus
+bunu kaydeder ama kendi düzenini Koç'tan almaşık sıraya bağlar. Haritayı
+okurken önemli olan şudur: **eril burç gündüz işine, dişil burç gece işine
+daha yakındır** — bu bir değer yargısı değil, etkin/edilgen niteliğin
+zodyaktaki ritmidir.
+
+Dört ayaklı, yer, imparatorluk, bereket gibi ek lakaplar burçların
+görünür biçiminden gelir; Batlamyus bunları ikinci derecede tutar.
+Yorumda işe yaradıklarında kullanılırlar, doktrinin omurgası değillerdir.
+
 ## Burçların Karşılıklı Açıları
 
 Burçlar birbirini yalnızca belirli mesafelerden görür. Batlamyus açıyı bir
@@ -157,6 +195,45 @@ durduğuna bakılarak anlaşılır.
 
 Otuz ve yüz elli derecelik uzaklıktaki burçlar birbirini **görmez**;
 aralarında ne uyum ne çatışma vardır, yalnızca ilgisizlik.
+
+## Emreden ve İtaat Eden Burçlar
+
+Aynı ekinoks noktasından eşit uzaklıktaki iki burç emreden ve itaat eden
+sayılır: yükseliş ve iniş süreleri eşittir, aynı paralelleri çizerler.
+
+Yaz yarıküresindeki burçlar emreder, kış yarıküresindekiler itaat eder.
+Güneş birincilerdeyken gün geceden uzundur; ikincilerdeyken tersi. Bu,
+"üstünlük" değil **gün ışığının dağılımıdır**: emreden burç daha uzun
+gündüzü taşır, itaat eden daha uzun geceyi.
+
+Haritada bu çift, iki konumun birbirini eşit sürede gördüğü ama birinin
+gündüz, diğerinin gece ağırlıklı çalıştığı anlamına gelir.
+
+## Bakan Burçlar — Eşit Güç
+
+Aynı dönence burcundan eşit uzaklıktaki iki burç güççe eşittir. Güneş
+birindeyken ürettiği gün, gece ve zaman dilimleri, diğerindeyken ürettiğinin
+aynı süresindedir. Bu yüzden birbirini **bakar** da denir: ikisi de ufkun
+aynı yerinden doğar, aynı yerinden batar.
+
+Koç ile Balık, Boğa ile Kova, İkizler ile Oğlak — dönenceden simetrik
+çiftler. Bakış, açının yerini tutmaz; ama iki burcun **eşit iş gördüğü**
+yerde, birindeki tema diğerinde de aynı güçle okunur.
+
+## Bağlantısız Burçlar
+
+Yukarıdaki tanıdıklıklardan hiçbirini taşımayan burçlar bağlantısız ve
+ayrılmış sayılır: ne emreden/itaat eden, ne bakan, ne de dört açıdan
+birini (karşıt, üçgen, kare, altmışlık) paylaşan.
+
+Aralarında yalnızca bir burç (30°) ya da beş burç (150°) olan konumlar
+da bağlantısızdır. Bir burçluk uzaklık birbirine sırtını dönmüş gibidir;
+beş burçluk uzaklık daireyi eşit parçalara bölmez. Batlamyus'un dört
+açısı dairenin ve on iki burcun **aynı anda** tam bölenleridir; beşlik
+(72°) ve yarı-kare (45°) bu bölünmeye girmez.
+
+Birbirini görmeyen iki konum arasında iş yoktur. Yorumda bu, "yokluk"
+değil **ilgisizliktir**: o iki tema aynı cümlede konuşmaz.
 
 ## Gezegenlerin Evleri
 
@@ -232,6 +309,31 @@ Başak.
 
 Yücelme bir güvence değildir. Gezegen orada kendi doğasını en saf hâliyle
 yaşar — bu, doğası zorlayıcıysa zorlamanın da en saf hâli demektir.
+
+## Yüzler, Arabalar ve Diğer Nitelikler
+
+Gezegenin burçla kurduğu tanıdıklık ev, üçgen ve yücelmeyle bitmez.
+
+**Yüz (face):** bir gezegen Güneş'e veya Ay'a, kendi evinin ışıklara
+durduğu açıya benzer bir açı yapıyorsa kendi yüzündedir. Örnek: Venüs
+kendi ev düzenine uygun olarak Güneş'e altmışlık ve batıda, Ay'a
+altmışlık ve doğuda duruyorsa yüzündedir. Yüz, gezegenin **ışığa göre
+doğru yerde** durmasıdır.
+
+**Araba (chariot / taht):** gezegen bulunduğu yerle iki ya da daha çok
+tanıdıklık kuruyorsa — ev + üçgen, yücelme + yüz gibi — arabasındadır.
+O zaman etkisi güçlenir, çünkü kapsayan burç onunla aynı doğada iş
+görür. Tek bir tanıdıklık yetmez; **üst üste binen** tanıdıklık tahttır.
+
+**Sevinç:** gezegen bulunduğu burçla tanıdıklığı olmasa bile, aynı
+durumdaki başka yıldızlarla bağ kurduğunda sevinir. Uzaktan da olsa
+benzerlik bir sempati taşır. Tersine, kendi doğasına aykırı bir burçta
+durduğunda etkisi dağılır: burcun niteliği onun niteliğine karışır ve
+saf iş göremez.
+
+Yüz, araba ve sevinç hesap motorunda ayrı bir puan olarak üretilmez;
+yorumda "bu gezegen kendi zemininde mi, yoksa yabancı bir zeminde mi"
+sorusunun klasik adlarıdır.
 
 ## Yaklaşma ve Ayrılma
 
@@ -321,6 +423,37 @@ Merkür'ün bağlantı kurduğu gezegen zihnin rengini belirler:
 Batlamyus bu tariflerde ağır ahlaki hükümler kullanır. Buradaki aktarım
 gözlemi korur, hükmü taşımaz: bir konumun "kötü" hâli, o doğanın ölçüyü
 kaçırmış hâlidir — kişinin değeri değil.
+
+## Rütbe Talihi
+
+Rütbe ve görünürlük, iki ışığın duruşu ve onlara eşlik eden gezegenlerle
+okunur. Batlamyus buna doryfori (ışıkların muhafızları) der.
+
+İki ışık da eril burçlarda ve köşelerdeyse, ya da en az biri köşedeyse,
+ve beş gezegen onlara eşlik ediyorsa — Güneş'e doğudakiler, Ay'a
+batıdakiler — doğan kişi yüksek bir yere gelir. Eşlik edenler de köşede
+ya da yer üstü köşeyle açıdaysa bu daha da güçlenir; sağ taraftan
+(doğudan) bakıyorlarsa daha bol.
+
+Yalnız Güneş eril, Ay dişil burçtaysa ve tek ışık köşedeyse, kişi
+hükümran değil ama hayat ve ölüm üzerinde sözü olan bir mertebeye
+erişir. Eşlik edenler köşede değil ve köşeye tanıklık etmiyorsa,
+görünürlük sınırlı kalır: vekil, komutan, rahiplik gibi ara makamlar.
+
+Hiçbir ışık köşede değil ama eşlik edenlerin çoğu köşedeyse, kişi
+sıradan işlerde öne çıkar, büyük rütbeye varmaz. Işıklar köşede değil,
+eşlik yok, yararlı gezegen de yoksa görünürlük doğmaz.
+
+Yararlılar muhafızlığa hükmediyorsa kazanılan yer daha kalıcıdır;
+zararlılar hükmediyorsa yer daha tehlikeli ve geçicidir. Muhafızın
+niteliği rütbenin **cinsini** verir: Satürn servet ve kazanca, Jüpiter
+ile Venüs hediye ve onura, Mars ordu ve zafere, Merkür zihin, eğitim
+ve iş idaresine.
+
+Bu bölümün ürün için sınırı açıktır: uygulama bir "rütbe puanı"
+üretmez. Korpus, ışıkların köşede olup olmadığı ve eşlik eden
+gezegenlerin niteliği konuşulduğunda **uydurma bir hiyerarşi değil,
+klasik okuma eksenini** taşısın diye buradadır.
 
 ## Mesleğin Niteliği
 

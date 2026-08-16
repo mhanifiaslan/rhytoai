@@ -76,6 +76,7 @@ def test_gunluk_okuma_transiti_prompta_koyar(monkeypatch, temiz_onbellek):
     # Yerelleştirilmiş adlarla: "Saturn" değil "Satürn" görünmeli.
     assert prompts.planet_name("tr", "Saturn") in kutu["prompt"]
     assert prompts.aspect_name("tr", "square") in kutu["prompt"]
+    assert "Yerleşimler:" in kutu["prompt"]
 
 
 def test_gunluk_okuma_birthsiz_eski_davranista(monkeypatch, temiz_onbellek):

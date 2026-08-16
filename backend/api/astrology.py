@@ -31,6 +31,7 @@ class BirthData(BaseModel):
     minute: int = Field(default=0, ge=0, le=59)
     city: str = "Istanbul"
     nation: Optional[str] = None
+    hour_known: bool = True
 
 
 class NatalChartRequest(BirthData):
@@ -46,6 +47,7 @@ def _birth_kwargs(d: BirthData) -> dict:
     return dict(
         name=d.name, year=d.year, month=d.month, day=d.day,
         hour=d.hour, minute=d.minute, city=d.city, nation=d.nation,
+        hour_known=d.hour_known,
     )
 
 
@@ -53,7 +55,9 @@ def _birth_kwargs(d: BirthData) -> dict:
 def natal_chart(data: NatalChartRequest, lang: str = Depends(get_language)):
     try:
         chart = astro_service.get_natal_chart(
-            **_birth_kwargs(data), zodiac_type=data.zodiac_type
+            **astro_service.subject_kwargs(_birth_kwargs(data)),
+            zodiac_type=data.zodiac_type,
+            hour_known=data.hour_known,
         )
         return {"status": "success", "data": prompts.localize_chart(lang, chart)}
     except Exception as e:
@@ -67,8 +71,15 @@ def natal_chart_svg(
     lang: str = Depends(get_language),
 ):
     try:
+        # Öğle dolgusuyla çizilen ev çarkını "senin haritan" diye sunmak
+        # veri uydurmaktır. Flutter çarkı JSON'dan çizer; SVG uç eski.
+        if not data.hour_known:
+            raise HTTPException(
+                status_code=422,
+                detail=prompts.get(lang).ASTRO_NOTES["natal_hour_unknown"])
         svg = astro_service.get_natal_chart_svg(
-            **_birth_kwargs(data), zodiac_type=data.zodiac_type, theme=theme
+            **astro_service.subject_kwargs(_birth_kwargs(data)),
+            zodiac_type=data.zodiac_type, theme=theme
         )
         return Response(content=svg, media_type="image/svg+xml")
     except Exception as e:
@@ -78,7 +89,10 @@ def natal_chart_svg(
 @router.post("/transits")
 def transits(data: BirthData, lang: str = Depends(get_language)):
     try:
-        result = astro_service.get_transits(**_birth_kwargs(data))
+        result = astro_service.get_transits(
+            **astro_service.subject_kwargs(_birth_kwargs(data)),
+            hour_known=data.hour_known,
+        )
         return {"status": "success", "data": result}
     except Exception as e:
         raise _internal(e, "transits", lang)
@@ -143,7 +157,8 @@ def transit_calendar(user: AuthUser = Depends(get_current_user),
         cal = cache.get(anahtar)
         if cal is None:
             cal = predict_service.transit_calendar(
-                **birth, hour_known=saat_biliniyor,
+                **astro_service.subject_kwargs(birth),
+                hour_known=saat_biliniyor,
                 days=TRANSIT_CALENDAR_DAYS)
             # Tema/ton: natal olgular önbellekli (chart_facts, 180 gün);
             # üretilemezse olaylar temasız kalır — takvim yine çalışır.

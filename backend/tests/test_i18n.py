@@ -263,6 +263,8 @@ def test_tum_sablonlar_iki_dilde_var():
         "BAZI", "BAZI_FALLBACK", "ICHING", "ICHING_TRANSFORMED",
         "SYNASTRY", "SYNASTRY_FALLBACK", "MEMORY_BLOCK",
         "WHISPER_RAG", "WHISPER_MEMORY", "WHISPER_CHART", "WHISPER_SKY",
+        "FACT_GUARD_RETRY",
+        "SKY_MOON", "SKY_RETROS", "SKY_ASPECTS",
         "SKY_MOON", "SKY_RETROS", "SKY_ASPECTS",
         "USER_MESSAGE_LABEL", "NONE_LABEL", "NO_ASPECTS",
         "SIGN_NAMES", "PERIOD_NAMES", "PERIOD_LENGTHS",
@@ -308,6 +310,56 @@ def test_natal_ve_bazi_onbellegi_dile_gore_ayrisir(monkeypatch):
 
     # İki ayrı üretim olmalı; tek anahtar olsaydı ikincisi önbellekten gelirdi
     assert uretilen == ["tr", "en"]
+
+
+def test_natal_onbellek_ozeti_gunes_yukselen_yetmez():
+    """Saat düzeltilip Güneş+Yükselen aynı kalsa eski rapor servis edilmesin."""
+    a = {
+        "sun_sign": "Leo", "ascendant": "Libra", "hour_known": True,
+        "points": [
+            {"name": "Sun", "abs_position": 120.0, "house_no": 10},
+            {"name": "Moon", "abs_position": 40.0, "house_no": 7},
+        ],
+        "asc": {"sign": "Libra", "position": 12.0},
+    }
+    b = {
+        **a,
+        "points": [
+            {"name": "Sun", "abs_position": 120.0, "house_no": 10},
+            {"name": "Moon", "abs_position": 55.0, "house_no": 8},
+        ],
+    }
+    assert report_service._natal_cache_digest(a) != (
+        report_service._natal_cache_digest(b))
+    a_saat = {**a, "hour_known": False, "asc": None}
+    assert report_service._natal_cache_digest(a) != (
+        report_service._natal_cache_digest(a_saat))
+
+
+def test_uydurma_isaretlenir_ama_UCRETLENDIRMEYI_etkilemez(monkeypatch):
+    """Bekçinin şüphesi önbellek ömrünü KISALTMAZ — bilinçli karar.
+
+    İlk sürüm şüpheli metni hiç önbelleğe yazmıyordu. Ölçüldü: bekçi
+    iddiaları metinden yakınlıkla çıkardığı için DOĞRU natal raporları da
+    her koşuda işaret alıyordu (üç ayrı üretimde 2-3 işaret, küme her
+    seferinde değişti). Sonuç: kullanıcı 5 jeton ödüyor, rapor önbelleğe
+    girmiyor, Atlas'ı her açışında yeniden 5 jeton ödüyordu — üstelik
+    raporda gerçek bir hata olmadan.
+
+    Bekçinin faydası YENİDEN ÜRETİM (hata modele iade edilip düzeltilir).
+    İşaret yanıtta ve logda kalır; ücretlendirmeye karışmaz.
+    """
+    from core import cache
+
+    monkeypatch.setattr(
+        report_service.gemini_service, "generate",
+        lambda prompt, **k: "Satürn senin İkizler burcunda.")
+    anahtar = "natal-fg-ungrounded"
+    sonuc = report_service._cached_generate(
+        anahtar, "Satürn: Oğlak (10. ev)", "fallback", lang="tr")
+    assert sonuc.get("ungrounded") is True, "işaret yanıtta kalmalı"
+    # Kullanıcı ikinci kez ücretlendirilmesin diye metin ÖNBELLEKTE.
+    assert cache.get(anahtar) is not None
 
 
 # --------------------------------------------------------------------------

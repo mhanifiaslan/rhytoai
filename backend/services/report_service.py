@@ -17,6 +17,7 @@ from core import cache, entitlements, i18n
 from services import (
     chart_context,
     chart_query,
+    fact_guard,
     firasa_service,
     gemini_service,
     memory_service,
@@ -44,7 +45,8 @@ def _cached_generate(cache_key: str, prompt: str, fallback: str,
                      lang: str | None = None,
                      owner_uid: str | None = None,
                      spend: Callable[[], None] | None = None,
-                     refund: Callable[[], None] | None = None) -> dict[str, Any]:
+                     refund: Callable[[], None] | None = None,
+                     facts: dict[str, Any] | None = None) -> dict[str, Any]:
     """Üretimi önbellekli çalıştırır.
 
     ``owner_uid`` KİŞİYE ÖZEL üretimlerde verilir (günlük okuma, natal, BaZi,
@@ -71,9 +73,30 @@ def _cached_generate(cache_key: str, prompt: str, fallback: str,
 
     text = gemini_service.generate(prompt, lang=lang)
     if text:
+        def yeniden(duzelti: str) -> str | None:
+            return gemini_service.generate(duzelti, lang=lang)
+        text, grounded = fact_guard.enforce(
+            text, prompt, lang=lang, regenerate=yeniden, facts=facts)
+
+        # Önbellek ÖMRÜ bekçinin hükmüne BAĞLANMAZ — bilerek.
+        #
+        # Bekçi metinden iddia çıkarırken yakınlık kullanıyor, dilbilgisi
+        # değil. Ölçüldü: aynı natal haritasıyla üç ayrı üretimde DOĞRU
+        # raporlar da her seferinde 2-3 "uydurma" işareti aldı ve işaret
+        # kümesi koşudan koşuya değişti (bir kez "Uranüs Yengeç", bir kez
+        # "Ay Boğa"). Yani sinyal, ücretli bir raporun önbelleğini
+        # kısaltacak kadar güvenilir değil.
+        #
+        # Kısa ömür verilirse sonuç şu olurdu: kullanıcı 5 jeton öder,
+        # rapor bir saat sonra düşer, Atlas'ı açar, yine 5 jeton öder —
+        # üstelik raporda gerçek bir hata olmadan. Bekçinin asıl faydası
+        # zaten YENİDEN ÜRETİM: hata varsa modele iade edilip düzeltiliyor.
+        # `ungrounded` yanıtta ve logda kalır (gözlem için), ücretlendirmeyi
+        # etkilemez.
         cache.set(cache_key, text, ttl_seconds=ttl_seconds,
                   owner_uid=owner_uid)
-        return {"text": text, "cached": False}
+        return {"text": text, "cached": False,
+                **({} if grounded else {"ungrounded": True})}
     if refund is not None:
         refund()
     return {"text": fallback, "cached": False, "fallback": True}
@@ -116,7 +139,17 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     yerel_harita = prompts.localize_chart(lang, natal)
     sun_sign = yerel_harita.get("sun_sign_local") or natal.get("sun_sign")
     moon_sign = yerel_harita.get("moon_sign_local") or natal.get("moon_sign")
-    ascendant = yerel_harita.get("ascendant_local") or natal.get("ascendant")
+    ascendant = (yerel_harita.get("ascendant_local")
+                 or natal.get("ascendant") or p.NONE_LABEL)
+
+    placements = " · ".join(
+        f"{pt.get('name_local') or pt.get('name')}: "
+        f"{pt.get('sign_local') or pt.get('sign_tr') or pt.get('sign')}"
+        + (f" {pt['position']}°" if pt.get("position") is not None else "")
+        + (f" ({p.HOUSE_FMT.format(house=pt['house_no'])})"
+           if pt.get("house_no") else "")
+        for pt in yerel_harita.get("points") or natal.get("points") or []
+    ) or "-"
 
     # Bugünün gökyüzünün haritaya değdiği noktalar (Revize R8). Efemeris
     # düşerse okuma düşmez — transitsiz devam edilir; eski davranış buydu.
@@ -155,7 +188,7 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
 
     prompt = p.DAILY.format(
         sun_sign=sun_sign, moon_sign=moon_sign,
-        ascendant=ascendant, today=today,
+        ascendant=ascendant, placements=placements, today=today,
         moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
         illumination=moon.get("illumination"), retros=retros, aspects=aspects,
         transits=transits or "-",
@@ -168,7 +201,7 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
         ascendant=ascendant or "-",
     )
     return _cached_generate(cache_key, prompt, fallback, lang=lang,
-                            owner_uid=user_id)
+                            owner_uid=user_id, facts=natal)
 
 
 #: Dönem -> önbellek TTL'i. Anahtar tarih kovası içerdiği için TTL'in tek
@@ -473,6 +506,24 @@ def parse_relationship_reading(text: str) -> dict[str, Any]:
     return {"axis_lines": eksenler, "theme": tema}
 
 
+#: Natal rapor önbelleği: Güneş+Yükselen yetmez — saat düzeltilip ikisi
+#: aynı kalsa 30 gün eski rapor servis edilirdi (denetim).
+NATAL_REPORT_VERSION = "3"
+
+
+def _natal_cache_digest(natal: dict[str, Any]) -> str:
+    """Hesaplanmış haritanın önbellek özeti — ham doğum verisi yok."""
+    parcalar = [
+        f"{pt.get('name')}:{pt.get('abs_position')}:{pt.get('house_no')}"
+        for pt in natal.get("points") or []
+    ]
+    asc = natal.get("asc") or {}
+    parcalar.append(f"asc:{asc.get('sign')}:{asc.get('position')}")
+    parcalar.append(f"hk:{natal.get('hour_known', True)}")
+    ham = "|".join(parcalar)
+    return hashlib.sha256(ham.encode("utf-8")).hexdigest()[:16]
+
+
 def natal_report(user_id: str, natal: dict[str, Any],
                  lang: str | None = None,
                  spend: Callable[[], None] | None = None,
@@ -480,10 +531,8 @@ def natal_report(user_id: str, natal: dict[str, Any],
     """Derinlemesine doğum haritası raporu (kullanıcı başına bir kez, 30 gün önbellek)."""
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
-    # v2 (T4): prompta denge/deklinasyon blokları girdi — sürümsüz anahtar
-    # 30 gün boyunca eski şekilli raporu servis ederdi.
-    cache_key = (f"natal-report-v2-{user_id}-{natal.get('sun_sign')}"
-                 f"-{natal.get('ascendant')}-{lang}")
+    cache_key = (f"natal-report-v{NATAL_REPORT_VERSION}-{user_id}-"
+                 f"{_natal_cache_digest(natal)}-{lang}")
 
     # İsabette embedding çağrısını atla (bkz. daily_reading'deki gerekçe).
     cached = cache.get(cache_key)
@@ -495,12 +544,15 @@ def natal_report(user_id: str, natal: dict[str, Any],
     yerel = prompts.localize_chart(lang, natal)
     sun_sign = yerel.get("sun_sign_local") or natal.get("sun_sign")
     moon_sign = yerel.get("moon_sign_local") or natal.get("moon_sign")
-    ascendant = yerel.get("ascendant_local") or natal.get("ascendant")
+    ascendant = (yerel.get("ascendant_local") or natal.get("ascendant")
+                 or p.NONE_LABEL)
 
     points = "\n".join(
-        f"- {pt['name_local']}: {pt['sign_local']} {pt['position']}° "
-        f"({p.HOUSE_LABEL} {pt.get('house') or '?'}"
-        f"{', ' + p.RETROGRADE_LABEL if pt.get('retrograde') else ''})"
+        f"- {pt['name_local']}: {pt['sign_local']} {pt['position']}°"
+        + (f" ({p.HOUSE_FMT.format(house=pt.get('house_no') or pt.get('house'))}"
+           f"{', ' + p.RETROGRADE_LABEL if pt.get('retrograde') else ''})"
+           if (pt.get("house_no") or pt.get("house")) else
+           (f" ({p.RETROGRADE_LABEL})" if pt.get("retrograde") else ""))
         for pt in yerel.get("points", [])[:12]
     )
     aspects = "\n".join(
@@ -558,7 +610,8 @@ def natal_report(user_id: str, natal: dict[str, Any],
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang,
-                            owner_uid=user_id, spend=spend, refund=refund)
+                            owner_uid=user_id, spend=spend, refund=refund,
+                            facts=natal)
 
 
 def solar_return_report(user_id: str, sr: dict[str, Any],
@@ -616,7 +669,8 @@ def solar_return_report(user_id: str, sr: dict[str, Any],
         return_at=sr.get("return_at_local"), sr_moon=sr_ay)
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=90 * 24 * 3600, lang=lang,
-                            owner_uid=user_id, spend=spend, refund=refund)
+                            owner_uid=user_id, spend=spend, refund=refund,
+                            facts=sr)
 
 
 def progressions_report(user_id: str, prog: dict[str, Any],

@@ -238,6 +238,24 @@ class TestDagilimSozlesmesi:
         for disarida in ("Chiron", "Mean_Lilith", "True_North_Lunar_Node"):
             assert disarida not in tum_uyeler
 
+    def test_saat_bilinmiyorsa_yukselen_ve_ev_yok(self):
+        """Noon ASC 'senin yükselenin' diye dönmez; evler boştur."""
+        c = astro_service.get_natal_chart(
+            "test", 1990, 5, 12, 12, 0, "Istanbul", hour_known=False)
+        assert c["hour_known"] is False
+        assert c["ascendant"] is None
+        assert c["asc"] is None
+        assert c["houses"] == []
+        assert "natal_hour_unknown" in c["disclosures"]
+        assert "Ascendant" not in c["balance_set"]
+        assert sum(c["element_distribution"].values()) == 7
+        gunes = _nokta(c, "Sun")
+        assert gunes["house_no"] is None
+        assert gunes["house"] is None
+        assert not any(a["p1"] in ("Ascendant", "Medium_Coeli")
+                       or a["p2"] in ("Ascendant", "Medium_Coeli")
+                       for a in c["aspects"])
+
     def test_ev_numarasi_dondurulur(self):
         """R5-2: kerykeion metni ("Fifth_House") her istemcide ayri ayri
         cozulmesin diye sayi olarak da gelir."""

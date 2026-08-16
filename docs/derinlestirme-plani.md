@@ -405,6 +405,8 @@ birbirinin yerine geçebiliyorsa hâlâ jeneriktir. Bir dizi (soru × harita)
 Buna ek olarak korunacak regresyonlar:
 
 - Prompt'ta olmayan bir konum/açı/transit cevapta geçmemeli (uydurma denetimi).
+  Kod: `backend/services/fact_guard.py`, bekçi `tests/test_fact_guard.py`.
+  Uydurma kalan metin önbelleğe yazılmaz.
 - İngilizce cevapta Türkçe kalıntı olmamalı (mevcut bekçi genişletildi).
 - Harita bloğu karakter bütçesini aşmamalı (test var).
 

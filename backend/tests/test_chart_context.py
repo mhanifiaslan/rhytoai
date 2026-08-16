@@ -92,6 +92,16 @@ def olgular():
     return chart_context.natal_facts(DOGUM)
 
 
+def test_dis_gezegenler_ve_derece_yerlesimde(olgular):
+    """Denetim: Uranüs/Neptün/Plüton yalnız transitte kalırsa sohbet sığ kalır."""
+    adlar = [y["planet"] for y in olgular["placements"]]
+    assert adlar == list(chart_context._PLACEMENT_POINTS)
+    assert {"Uranus", "Neptune", "Pluto"} <= set(adlar)
+    assert all(y.get("position") is not None for y in olgular["placements"])
+    blok = chart_context.render(olgular, lang="tr")
+    assert "°" in blok
+
+
 def test_gezegenler_eve_yerlesir(olgular):
     assert olgular["sun"]["house"] in range(1, 13)
     assert olgular["moon"]["house"] in range(1, 13)
@@ -100,6 +110,20 @@ def test_gezegenler_eve_yerlesir(olgular):
     assert [y["planet"] for y in yerlesimler] == list(
         chart_context._PLACEMENT_POINTS)
     assert all(y["house"] in range(1, 13) for y in yerlesimler)
+
+
+def test_saat_yoksa_yukselen_ve_ev_uydurulmaz(temiz_onbellek):
+    """Noon dolgusu 'senin yükselenin' diye fısıltıya girmez."""
+    from services import profile_service
+
+    profil = {k: v for k, v in PROFIL.items() if k != "birthTime"}
+    olgular = chart_context.natal_facts(profile_service.birth_kwargs(profil))
+    assert olgular["ascendant"] is None
+    assert olgular["hour_known"] is False
+    assert all(y.get("house") is None for y in olgular["placements"])
+    blok = chart_context.chart_whisper("u-saat", profil, lang="tr")
+    assert "Yükselen" not in blok
+    assert ". ev" not in blok
 
 
 def test_denge_sayimlari_yedi_gezegen_arti_yukselen(olgular):
@@ -166,7 +190,8 @@ def test_transitler_once_yavas_gezenleri_gosterir():
     finally:
         astro.get_transits = eski
 
-    assert [v["transit"] for v in vurus] == ["Pluto", "Saturn", "Mercury"]
+    assert [v["transit"] for v in vurus] == [
+        "Pluto", "Saturn", "Mercury", "Venus"]
 
 
 def test_genis_orb_transitleri_elenir():
@@ -290,7 +315,7 @@ def test_blok_ev_aci_ve_denge_icerir(temiz_onbellek):
 def test_blok_prompt_butcesini_asmaz(temiz_onbellek):
     """Blok HER sohbet turunda gidiyor; buyumesi dogrudan maliyet demek."""
     blok = chart_context.chart_whisper("u-butce", PROFIL, lang="tr")
-    assert len(blok) < 900, f"Harita blogu {len(blok)} karaktere cikti"
+    assert len(blok) < 1400, f"Harita blogu {len(blok)} karaktere cikti"
 
 
 # --------------------------------------------------------------------------

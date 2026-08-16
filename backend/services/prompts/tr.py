@@ -146,6 +146,7 @@ GÖREV: Kullanıcı için bugüne özel, 150-200 kelimelik bir "günlük kozmik 
 
 HESAPLANMIŞ NATAL VERİ:
 - Güneş: {sun_sign} | Ay: {moon_sign} | Yükselen: {ascendant}
+- Yerleşimler: {placements}
 
 BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris + NASA JPL):
 - Tarih: {today}
@@ -168,9 +169,9 @@ pratik öneri ver.
 
 DAILY_FALLBACK = (
     "Bugün Ay {moon_name} evresinde ilerliyor. "
-    "{sun_sign} özün ve {ascendant} dış dünyaya açılan kapınla, bugün iç "
-    "sesinle dış adımlarını hizalamak için güçlü bir gün. Küçük ama kararlı "
-    "bir adım at; gökyüzü sabırlı olanı ödüllendiriyor."
+    "Özün {sun_sign} (Yükselen: {ascendant}). İç sesinle dış adımlarını "
+    "hizalamak için güçlü bir gün. Küçük ama kararlı bir adım at; gökyüzü "
+    "sabırlı olanı ödüllendiriyor."
 )
 
 MEMORY_BLOCK = (
@@ -207,12 +208,18 @@ WHISPER_RELATIONSHIP = (
 )
 WHISPER_CHART = (
     "KULLANICININ HARİTASI (Swiss Ephemeris ile hesaplandı — buna sadık kal, "
-    "burada YAZMAYAN hiçbir konumu, açıyı veya transiti uydurma. Listeyi "
-    "sayma, blok halinde aktarma. Yorumun burcunun genel tarifi değil, BU "
-    "haritaya özgü olsun. Aşağıdakilerden **en az birini ADIYLA an** — bir "
-    "ev yerleşimi, bir açı ya da bugünkü bir transit — ve söylediğini ona "
-    "dayandır. Aynı şeyi her burçtan biri için söyleyebiliyorsan yeterince "
-    "spesifik değilsin):"
+    "burada YAZMAYAN hiçbir konumu, açıyı veya transiti uydurma. Bu blok "
+    "kompakt: gösterilen yerleşimler ve en sıkı açılar, haritanın tamamı "
+    "değil. Boşluğu ev veya açı uydurarak doldurma. Listeyi sayma, blok "
+    "halinde aktarma. Yorumun burcunun genel tarifi değil, BU haritaya özgü "
+    "olsun. Aşağıdakilerden **en az birini ADIYLA an** — bir ev yerleşimi, "
+    "bir açı ya da bugünkü bir transit — ve söylediğini ona dayandır. Aynı "
+    "şeyi her burçtan biri için söyleyebiliyorsan yeterince spesifik değilsin):"
+)
+#: Olgu bekçisi prompt'ta olmayan bir konum yakalayınca eklenir.
+FACT_GUARD_RETRY = (
+    "DÜZELTME: Az önce harita verisinde YAZMAYAN konumlar uydurdun: {claims}. "
+    "Yalnız orada yazanı kullanarak yeniden yaz. Burç, ev veya açı uydurma."
 )
 WHISPER_SKY = "BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris ile hesaplandı):"
 USER_MESSAGE_LABEL = "KULLANICININ MESAJI"
@@ -574,6 +581,10 @@ ASTRO_NOTES = {
     "transit_hour_unknown": (
         "Doğum saati bilinmediği için Yükselen ve MC'ye yapılan transitler "
         "takvime alınmadı; takvim gezegen düzeyinde kalır."),
+    "natal_hour_unknown": (
+        "Doğum saati bilinmediği için Yükselen, evler ve ev yerleşimleri "
+        "hesaplanmadı. Okuma gezegen düzeyinde kalır; öğle haritası "
+        "uydurulmadı."),
     # {city} biçim alanı taşıyan beyanlar (D3): metin localize katmanında
     # haritanın kurulduğu şehirle doldurulur.
     # R5-5: eski metin yalnız kurulduğu şehri anıyordu ("Bu yıl haritası
@@ -852,9 +863,9 @@ Yalnızca numaralı satırları yaz, başka hiçbir şey yazma.
 """
 
 NATAL_FALLBACK = (
-    "Güneşin {sun_sign}, Ayın {moon_sign} ve yükselenin {ascendant}. Bu üçlü; "
-    "öz kimliğin, duygusal dünyan ve dışa dönük maskenin haritasını çizer. "
-    "Detaylı yorum için lütfen daha sonra tekrar dene."
+    "Güneşin {sun_sign}, Ayın {moon_sign}. Yükselen: {ascendant}. Bu, "
+    "ölçülmüş çekirdektir — öz kimlik, duygusal dünya ve (saat biliniyorsa) "
+    "dışa dönük maske. Detaylı yorum için lütfen daha sonra tekrar dene."
 )
 
 BAZI = """

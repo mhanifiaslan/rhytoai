@@ -832,6 +832,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bigThreeAscendant => 'ASCENDANT';
 
   @override
+  String get bigThreeAscendantUnknown => 'time unknown';
+
+  @override
   String get bigThreeStart => 'Begin the journey';
 
   @override
@@ -2113,6 +2116,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get atlasSkyWheelNote =>
       'The sky is the same for everyone right now; houses and the Ascendant depend on location, so they aren\'t drawn in this view.';
+
+  @override
+  String get atlasHourUnknownWheelNote =>
+      'Birth time is unknown, so houses and the Ascendant were not drawn; the wheel stays at the planetary level. A noon chart was not invented.';
 
   @override
   String get atlasBiwheelNote =>

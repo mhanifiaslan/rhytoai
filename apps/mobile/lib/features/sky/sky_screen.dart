@@ -294,8 +294,18 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                                   signDisplayName(l10n, userSignIndex)),
                         )
                       : ReadingCard(
-                          label:
-                              '☀️ ${data['sun_sign']} · 🌙 ${data['moon_sign']} · ⬆️ ${data['ascendant']}',
+                          label: () {
+                            final gunes = data['sun_sign'];
+                            final ay = data['moon_sign'];
+                            final yukselen = data['ascendant'] as String?;
+                            final parcalar = <String>[
+                              if (gunes != null) '☀️ $gunes',
+                              if (ay != null) '🌙 $ay',
+                              if (yukselen != null && yukselen.isNotEmpty)
+                                '⬆️ $yukselen',
+                            ];
+                            return parcalar.join(' · ');
+                          }(),
                           title: l10n.personalReadingTitle,
                           body: data['reading'] ?? '',
                           glow: true,

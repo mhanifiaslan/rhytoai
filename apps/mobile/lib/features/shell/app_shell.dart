@@ -63,7 +63,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     // kullanıcı verisinin kaydedildiğini ve haritanın sonra çizileceğini
     // duyar; rozetlerin yokluğu açıklanamayan bir davranış olmaktan çıkar.
     if (sonuc == OnboardOutcome.chartMissing ||
-        gunes == null || ay == null || yukselen == null) {
+        gunes == null ||
+        ay == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content:
               Text(AppLocalizations.of(context).birthRecordSavedNoChart)));

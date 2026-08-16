@@ -45,14 +45,14 @@ from services import astro_service, profile_service, prompts
 logger = logging.getLogger(__name__)
 
 #: Sohbete taşınan gezegenler. Geleneksel yedili bilinçli bir seçim: klasik
-#: kaynaklar bu yedisiyle konuşur ve prompt HER mesajda gittiği için satır
-#: sayısı sınırlı tutulmalı. Dış gezegenler yerleşim satırına girmez ama
-#: transit tarafında görünür (yavaş oldukları için asıl dönem işaretçileri
-#: onlardır).
+#: kaynaklar bu yedisiyle konuşur. Dış gezegenler (Uranüs/Neptün/Plüton)
+#: yerleşim satırına da girer — dönem işaretçisi olmaları yalnız transitte
+#: kalırsa sohbet "haritanı biliyor" iddiasını sığ bırakıyordu (denetim R).
 TRADITIONAL = ("Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn")
+OUTER = ("Uranus", "Neptune", "Pluto")
 
 #: Büyük üçlü ayrı satırda verildiği için yerleşim satırında tekrarlanmaz.
-_PLACEMENT_POINTS = ("Mercury", "Venus", "Mars", "Jupiter", "Saturn")
+_PLACEMENT_POINTS = ("Mercury", "Venus", "Mars", "Jupiter", "Saturn") + OUTER
 
 #: Açı sayımına giren noktalar. Yükselen ve MC eklendi: bir açının açıya
 #: değdiği yer kadar, hayatın hangi alanına düştüğü de anlam taşır.
@@ -109,8 +109,9 @@ def _house_number(deger: Any) -> int | None:
     return _HOUSE_NUMBER.get(deger)
 
 #: Prompt'a giren en fazla açı/transit satırı.
-_MAX_NATAL_ASPECTS = 4
-_MAX_TRANSITS = 3
+#: Denetim: 4/3 sığ kalıyordu; 6/4 hâlâ kompakt, sohbet turuna sığar.
+_MAX_NATAL_ASPECTS = 6
+_MAX_TRANSITS = 4
 
 #: Kaç gezegen bir arada olunca "yığılma" denir.
 _STELLIUM_MIN = 3
@@ -163,7 +164,8 @@ def _birth_digest(birth: dict[str, Any]) -> str:
     Özet kullanılıyor çünkü anahtarın kendisi ham doğum verisi taşımamalı.
     """
     ham = "|".join(str(birth.get(k)) for k in (
-        "year", "month", "day", "hour", "minute", "city", "nation"))
+        "year", "month", "day", "hour", "minute", "city", "nation",
+        "hour_known"))
     return hashlib.sha256(ham.encode("utf-8")).hexdigest()[:16]
 
 
@@ -178,7 +180,10 @@ def natal_facts(birth: dict[str, Any]) -> dict[str, Any]:
     ``"square"``); hiçbir görüntülenecek ad içermez. Adlandırma
     `render` aşamasında, isteğin dilinde yapılır.
     """
-    chart = astro_service.get_natal_chart(**birth)
+    chart = astro_service.get_natal_chart(
+        **astro_service.subject_kwargs(birth),
+        hour_known=astro_service.hour_is_known(birth),
+    )
     points = {p.get("name"): p for p in chart.get("points", [])}
 
     def yerlesim(ad: str) -> dict[str, Any] | None:
@@ -188,21 +193,25 @@ def natal_facts(birth: dict[str, Any]) -> dict[str, Any]:
         burc = prompts.sign_key_from_code(p.get("sign"))
         if not burc:
             return None
+        pos = p.get("position")
         return {
             "planet": ad,
             "sign": burc,
             "house": _house_number(p.get("house")),
             "retrograde": bool(p.get("retrograde")),
+            "position": round(float(pos), 1) if pos is not None else None,
         }
 
-    yerlesimler = [y for y in (yerlesim(ad) for ad in TRADITIONAL) if y]
+    yerlesimler = [y for y in (
+        yerlesim(ad) for ad in TRADITIONAL + OUTER) if y]
 
     yukselen = prompts.sign_key_from_code(
         (chart.get("asc") or {}).get("sign"))
 
     # Element/nitelik dengesi geleneksel yedili + Yükselen üzerinden sayılır;
     # Yükselen'i katmak yaygın pratiktir ve eksik elementi daha doğru gösterir.
-    burclar = [y["sign"] for y in yerlesimler]
+    # Dış gezegenler sayıma girmez (R5-1 kanonu).
+    burclar = [y["sign"] for y in yerlesimler if y["planet"] in TRADITIONAL]
     if yukselen:
         burclar.append(yukselen)
 
@@ -242,6 +251,7 @@ def natal_facts(birth: dict[str, Any]) -> dict[str, Any]:
         "sun": next((y for y in yerlesimler if y["planet"] == "Sun"), None),
         "moon": next((y for y in yerlesimler if y["planet"] == "Moon"), None),
         "ascendant": yukselen,
+        "hour_known": astro_service.hour_is_known(birth),
         "placements": [y for y in yerlesimler
                        if y["planet"] in _PLACEMENT_POINTS],
         "elements": elementler,
@@ -258,7 +268,10 @@ def transit_facts(birth: dict[str, Any]) -> dict[str, Any]:
     amaç haritanın tam kopyasını vermek değil, bugün gerçekten baskın olan
     bir-iki teması modele göstermektir.
     """
-    ham = astro_service.get_transits(**birth)
+    ham = astro_service.get_transits(
+        **astro_service.subject_kwargs(birth),
+        hour_known=astro_service.hour_is_known(birth),
+    )
     vurus = []
     for a in ham.get("aspects_to_natal", []):
         if a.get("aspect") not in _MAJOR_ASPECTS:
@@ -282,7 +295,9 @@ def transit_facts(birth: dict[str, Any]) -> dict[str, Any]:
     yaklasan: list[dict[str, Any]] = []
     try:
         from services import predict_service
-        cal = predict_service.transit_calendar(**birth, days=7)
+        cal = predict_service.transit_calendar(
+            **astro_service.subject_kwargs(birth),
+            hour_known=astro_service.hour_is_known(birth), days=7)
         yaklasan = [{"date": o["date"], "transit": o["transit"],
                      "natal": o["natal"], "aspect": o["aspect"]}
                     for o in cal["events"]
@@ -329,7 +344,7 @@ def chart_facts(uid: str, profile: dict[str, Any],
     # v2 (T0): motora declination/speed/movement/disclosures alanları girdi;
     # anahtar sürümlenmezse 180 günlük TTL boyunca eski şekilli kayıtlar
     # servis edilirdi (sky-now-v3 dersi).
-    natal = _cached(f"natal-facts-v2-{uid}-{ozet}", uid,
+    natal = _cached(f"natal-facts-v3-{uid}-{ozet}", uid,
                     NATAL_TTL_SECONDS, lambda: natal_facts(birth))
     if natal is None:
         return None
@@ -415,6 +430,9 @@ def _yerlesim_metni(lang: str | None, y: dict[str, Any]) -> str:
     p = prompts.get(lang)
     ad = prompts.planet_name(lang, y["planet"])
     burc = prompts.sign_name(lang, y["sign"])
+    derece = y.get("position")
+    if isinstance(derece, (int, float)):
+        burc = f"{burc} {derece:.1f}°"
     ekler = [e for e in (_ev(lang, y.get("house")),
                          p.RETROGRADE_LABEL if y.get("retrograde") else "") if e]
     parantez = f" ({', '.join(ekler)})" if ekler else ""
@@ -490,10 +508,9 @@ def render(facts: dict[str, Any], lang: str | None = None) -> str:
                 orb=f"{t['orb']:.1f}") for t in transitler)))
 
     # Not: profildeki `wuXingElement` / `mizac` alanları bilerek YAZILMIYOR.
-    # Tek yazıcıları `face_service` ve o v1 kapsamı dışında, yani alanlar boş.
-    # Dahası değerleri serbest Türkçe metin ("Demevi (sıcak-nemli)"); geri
-    # geldiklerinde İngilizce prompt'a Türkçe sızdırırlar. Face reading v2'de
-    # dönerse bu iki alan da anahtar olarak üretilmeli, ad burada çözülmeli.
+    # Yüz okuma cihaz üstünde; bu anahtarlar sunucu fısıltısına girmez.
+    # Değerleri serbest Türkçe metindi ("Demevi (sıcak-nemli)") — İngilizce
+    # prompt'a sızdırırlardı. Geri gelirlerse anahtar olarak üretilmeli.
     return "\n".join(satirlar)
 
 

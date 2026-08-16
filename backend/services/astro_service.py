@@ -105,6 +105,23 @@ _HOUSE_NO = {ad: i + 1 for i, ad in enumerate((
 #: Deklinasyon paraleli eşiği (derece) — klasik ±0.5°.
 _DECLINATION_ORB = 0.5
 
+#: kerykeion öznesine giden alanlar. `hour_known` gibi ürün bayrakları
+#: buraya girmez — `_build_subject(**birth)` onları görünce TypeError olur.
+_SUBJECT_FIELDS = ("name", "year", "month", "day", "hour", "minute",
+                   "city", "nation")
+
+
+def subject_kwargs(birth: dict[str, Any]) -> dict[str, Any]:
+    """Doğum sözlüğünden kerykeion'un beklediği anahtarları ayıklar."""
+    return {k: birth[k] for k in _SUBJECT_FIELDS if k in birth}
+
+
+def hour_is_known(birth: dict[str, Any]) -> bool:
+    """Saat gerçekten biliniyor mu — noon dolgusu 'biliniyor' sayılmaz."""
+    if "hour_known" in birth:
+        return bool(birth["hour_known"])
+    return True
+
 
 def _declination_aspects(points: list[dict[str, Any]],
                          limit: int = 6) -> list[dict[str, Any]]:
@@ -224,6 +241,7 @@ _ACI_ONEM = {
 #: az bir ucunun kişisel olması beklenir (synastry_service._KISISEL ile aynı).
 _KISISEL_NOKTALAR = {"Sun", "Moon", "Mercury", "Venus", "Mars",
                      "Ascendant", "Medium_Coeli"}
+_ANGLES = frozenset(("Ascendant", "Medium_Coeli"))
 
 #: Kişisel nokta içeren açının önem çarpanı. İki ucu da kişiselse çarpan
 #: iki kez uygulanır — Venüs–Mars teması Jüpiter–Neptün'den önce gelsin.
@@ -316,6 +334,7 @@ def _aspects_list(aspects, limit: int | None = None) -> list[dict[str, Any]]:
 def get_natal_chart(
     name: str, year: int, month: int, day: int, hour: int, minute: int,
     city: str, nation: str | None = None, zodiac_type: ZodiacType = "Tropical",
+    hour_known: bool = True,
 ) -> dict[str, Any]:
     subject, loc = _build_subject(name, year, month, day, hour, minute,
                                   city, nation, zodiac_type)
@@ -326,28 +345,42 @@ def get_natal_chart(
     disclosures: list[str] = []
     if loc.fallback:
         disclosures.append("geo_fallback_city")
+    if not hour_known:
+        # Öğle dolgusuyla hesaplanan Yükselen'i "senin yükselenin" diye
+        # sunmak veri uydurmaktır. Evler, Yükselen, MC ve ev Stellium'u
+        # üretilmez; gezegen burçları (Ay hariç saate duyarsız) kalır.
+        disclosures.append("natal_hour_unknown")
 
     houses = []
-    for i, house_attr in enumerate([
-        "first_house", "second_house", "third_house", "fourth_house",
-        "fifth_house", "sixth_house", "seventh_house", "eighth_house",
-        "ninth_house", "tenth_house", "eleventh_house", "twelfth_house",
-    ], start=1):
-        h = getattr(subject, house_attr)
-        houses.append({
-            "house": i, "sign": h.sign, "sign_tr": SIGN_TR.get(h.sign, h.sign),
-            "position": round(h.position, 2),
-            "abs_position": round(h.abs_pos, 2),
-        })
+    if hour_known:
+        for i, house_attr in enumerate([
+            "first_house", "second_house", "third_house", "fourth_house",
+            "fifth_house", "sixth_house", "seventh_house", "eighth_house",
+            "ninth_house", "tenth_house", "eleventh_house", "twelfth_house",
+        ], start=1):
+            h = getattr(subject, house_attr)
+            houses.append({
+                "house": i, "sign": h.sign, "sign_tr": SIGN_TR.get(h.sign, h.sign),
+                "position": round(h.position, 2),
+                "abs_position": round(h.abs_pos, 2),
+            })
 
     asc = subject.first_house
 
     # Denge sayımı (T4): geleneksel yedili + Yükselen — chart_context'in
     # sohbet fısıltısındaki kanonla aynı; artık API/rapor da görüyor.
+    # Saat bilinmiyorsa Yükselen SAYILMAZ: noon ASC'yi dengeye katmak
+    # uydurma bir element dağılımı üretir.
     puanlar = _subject_points(subject)
+    if not hour_known:
+        for p in puanlar:
+            p["house"] = None
+            p["house_no"] = None
     # (ad, burç kodu) çiftleri: sayım ve ÜYE listesi aynı kaynaktan çıksın.
     sayilacak = [(p["name"], p["sign"]) for p in puanlar
-                 if p["name"] in _BALANCE_PLANETS] + [("Ascendant", asc.sign)]
+                 if p["name"] in _BALANCE_PLANETS]
+    if hour_known:
+        sayilacak.append(("Ascendant", asc.sign))
     elementler = {"fire": 0, "earth": 0, "air": 0, "water": 0}
     nitelikler = {"cardinal": 0, "fixed": 0, "mutable": 0}
     # R5-1: hangi noktanın hangi elemente/niteliğe düştüğü de dönüyor.
@@ -365,29 +398,43 @@ def get_natal_chart(
         nitelik_uyeleri[nitelik].append(ad)
 
     ev_sayimi: dict[int, int] = {}
-    for p in puanlar:
-        if p["name"] not in _BALANCE_PLANETS:
-            continue
-        ev = _HOUSE_NO.get(p.get("house"))
-        if ev:
-            ev_sayimi[ev] = ev_sayimi.get(ev, 0) + 1
-    yigilmalar = sorted(
-        ({"house": ev, "count": adet} for ev, adet in ev_sayimi.items()
-         if adet >= 3),
-        key=lambda y: (-y["count"], y["house"]))
+    yigilmalar: list[dict[str, Any]] = []
+    if hour_known:
+        for p in puanlar:
+            if p["name"] not in _BALANCE_PLANETS:
+                continue
+            ev = _HOUSE_NO.get(p.get("house"))
+            if ev:
+                ev_sayimi[ev] = ev_sayimi.get(ev, 0) + 1
+        yigilmalar = sorted(
+            ({"house": ev, "count": adet} for ev, adet in ev_sayimi.items()
+             if adet >= 3),
+            key=lambda y: (-y["count"], y["house"]))
+
+    aci_listesi = _aspects_list(aspects)
+    if not hour_known:
+        aci_listesi = [a for a in aci_listesi
+                       if a.get("p1") not in _ANGLES
+                       and a.get("p2") not in _ANGLES]
 
     return {
         "zodiac_type": zodiac_type,
+        "hour_known": hour_known,
         # Eski istemci uyumluluğu icin duz alanlar:
         "sun_sign": f"{SIGN_TR.get(subject.sun.sign)} {SIGN_SYMBOL.get(subject.sun.sign, '')}".strip(),
         "moon_sign": f"{SIGN_TR.get(subject.moon.sign)} {SIGN_SYMBOL.get(subject.moon.sign, '')}".strip(),
-        "ascendant": f"{SIGN_TR.get(asc.sign)} {SIGN_SYMBOL.get(asc.sign, '')}".strip(),
+        # Saat yoksa Yükselen YOK — noon değerini "senin yükselenin" diye
+        # yazmak ürün ilkesini çiğner (B1).
+        "ascendant": (
+            f"{SIGN_TR.get(asc.sign)} {SIGN_SYMBOL.get(asc.sign, '')}".strip()
+            if hour_known else None),
         "sun": _point_dict(subject.sun),
         "moon": _point_dict(subject.moon),
-        "asc": {"sign": asc.sign, "sign_tr": SIGN_TR.get(asc.sign), "position": round(asc.position, 2)},
+        "asc": ({"sign": asc.sign, "sign_tr": SIGN_TR.get(asc.sign),
+                 "position": round(asc.position, 2)} if hour_known else None),
         "points": puanlar,
         "houses": houses,
-        "aspects": _aspects_list(aspects),
+        "aspects": aci_listesi,
         "element_distribution": elementler,
         "modality_distribution": nitelikler,
         # Sayımın DAYANAĞI (R5-1): {"fire": ["Sun", "Mars"], ...}
@@ -395,7 +442,8 @@ def get_natal_chart(
         "modality_members": nitelik_uyeleri,
         # Sayıma girenler açıkça beyan edilir: arayüz "geleneksel yedili +
         # Yükselen" diyebilsin, kullanıcı neyin sayıldığını bilsin.
-        "balance_set": list(_BALANCE_PLANETS) + ["Ascendant"],
+        "balance_set": (
+            list(_BALANCE_PLANETS) + (["Ascendant"] if hour_known else [])),
         "stelliums": yigilmalar,
         "declination_aspects": _declination_aspects(puanlar),
         "disclosures": disclosures,
@@ -420,7 +468,7 @@ def get_natal_chart_svg(
 
 def get_transits(
     name: str, year: int, month: int, day: int, hour: int, minute: int,
-    city: str, nation: str | None = None,
+    city: str, nation: str | None = None, hour_known: bool = True,
 ) -> dict[str, Any]:
     """Şu anki gökyüzünün natal haritaya açıları (transit)."""
     natal, _ = _build_subject(name, year, month, day, hour, minute, city, nation)
@@ -430,17 +478,22 @@ def get_transits(
         city="Greenwich", nation="GB", lng=0.0, lat=51.48, online=False,
     )
     cross = _kerykeion().SynastryAspects(transit_subject, natal)
+    acilar = _aspects_list(cross.relevant_aspects, limit=25)
+    if not hour_known:
+        acilar = [a for a in acilar
+                  if a.get("p2") not in _ANGLES]
     return {
         "timestamp_utc": now.isoformat(),
         "transiting_points": _subject_points(transit_subject),
-        "aspects_to_natal": _aspects_list(cross.relevant_aspects, limit=25),
+        "aspects_to_natal": acilar,
+        "hour_known": hour_known,
     }
 
 
 def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, Any]:
     """İki kişi arasındaki sinastri (kozmik uyum) analizi."""
-    s1, _ = _build_subject(**person1)
-    s2, _ = _build_subject(**person2)
+    s1, _ = _build_subject(**subject_kwargs(person1))
+    s2, _ = _build_subject(**subject_kwargs(person2))
     aspects = _kerykeion().SynastryAspects(s1, s2).relevant_aspects
 
     score_data: dict[str, Any] = {}
@@ -469,7 +522,7 @@ def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, 
 
 
 def get_synastry_svg(person1: dict[str, Any], person2: dict[str, Any], theme: str = "dark") -> str:
-    s1, _ = _build_subject(**person1)
-    s2, _ = _build_subject(**person2)
+    s1, _ = _build_subject(**subject_kwargs(person1))
+    s2, _ = _build_subject(**subject_kwargs(person2))
     chart = _kerykeion().KerykeionChartSVG(s1, chart_type="Synastry", second_obj=s2, theme=theme)
     return chart.makeTemplate()

@@ -207,6 +207,15 @@ def chat(request: ChatRequest, background: BackgroundTasks,
             if token_harcandi:
                 refund_spend(user.uid, "chat")
             reply = text("llm_unavailable", lang)
+        else:
+            # Prompt'ta olmayan konum/açı cevapta kalmasın (derinleştirme
+            # planındaki uydurma denetimi). Yeniden üretim aynı turda;
+            # jeton ikinci kez düşülmez.
+            from services import fact_guard
+            def yeniden(duzelti: str) -> str | None:
+                return gemini_service.chat(history, duzelti, lang=lang)
+            reply, _ = fact_guard.enforce(
+                reply, message, lang=lang, regenerate=yeniden)
         # Olgu çıkarımı yanıttan SONRA, arka planda: kullanıcı ikinci bir LLM
         # çağrısını beklemez. Kendi içinde kotalı ve hataya dayanıklı.
         background.add_task(

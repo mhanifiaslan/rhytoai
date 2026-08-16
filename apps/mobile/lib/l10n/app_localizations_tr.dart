@@ -832,6 +832,9 @@ class AppLocalizationsTr extends AppLocalizations {
   String get bigThreeAscendant => 'YÜKSELEN';
 
   @override
+  String get bigThreeAscendantUnknown => 'saat yok';
+
+  @override
   String get bigThreeStart => 'Yolculuğa başla';
 
   @override
@@ -2110,6 +2113,10 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get atlasSkyWheelNote =>
       'Gökyüzü şu an herkes için aynı; ev ve Yükselen konuma bağlı olduğu için bu görünümde çizilmez.';
+
+  @override
+  String get atlasHourUnknownWheelNote =>
+      'Doğum saati bilinmediği için evler ve Yükselen çizilmedi; çark gezegen düzeyinde. Öğle haritası uydurulmadı.';
 
   @override
   String get atlasBiwheelNote =>

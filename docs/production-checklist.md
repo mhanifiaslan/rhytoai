@@ -19,7 +19,8 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [ ] **Swiss Ephemeris ticari lisansı** — kerykeion/pyswisseph AGPLv3.
       Kapalı kaynak mağaza yayını öncesi Astrodienst AG'den ticari lisans
       alınmalı (~750 CHF, tek seferlik): https://www.astro.com/swisseph/
-      **→ Yayından önce zorunlu, uygulama sahibinin işi.**
+      **→ Yayından önce zorunlu, uygulama sahibinin işi. Kod bu kutuyu
+      kapatamaz; lisans satın alınmadan işaretlenmemeli.**
 - [x] Gizlilik politikası ve kullanım şartları **iki dilde, uygulama içinde**
       (`apps/mobile/lib/features/profile/legal_texts.dart`; Profil → Hakkında
       ve satın alma ekranından erişilebilir)

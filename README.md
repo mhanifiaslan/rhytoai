@@ -4,10 +4,11 @@ Kadim kaynakların (İlm-i Nücum, Kıyafetname, Mian Xiang, BaZi, I Ching, Bat�
 AI tarafından öğrenildiği (RAG bilgi tabanı), gerçek astronomik veriyle (Swiss Ephemeris + NASA JPL)
 beslenen, kullanıcıyı zamanla tanıyıp kişiye özel yorum üreten çok platformlu uygulama.
 
-> **v1 kapsamı.** Yüz okuma (biyometrik veri) ve serbest metinli sosyal katman
-> (gönderi akışı, kanallar, DM) ticari v1'de **yoktur**. Sosyal katmanın yerini
-> serbest metin içermeyen arkadaş deneyimi alacak: seri görünürlüğü, kapalı
-> kümeden hazır tepkiler ve günlük ikili dinamik.
+> **v1 kapsamı.** Serbest metinli sosyal katman (gönderi akışı, kanallar, DM)
+> ticari v1'de **yoktur**. Sosyal katmanın yerini serbest metin içermeyen
+> arkadaş deneyimi alır: seri görünürlüğü, kapalı kümeden hazır tepkiler ve
+> günlük ikili dinamik. **Yüz okuma kapsam içindedir** — tamamen cihaz
+> üstünde (MediaPipe); görüntü sunucuya gitmez.
 
 ## Depo Yapısı
 
@@ -41,7 +42,7 @@ astroaiproject/
 | AI yorum | Gemini (gemini-flash-latest) + RAG | knowledge/ korpusundan pasaj çekilir, önbelleklenir |
 | Önbellek | Firestore (üretim) / dosya (lokal) | Instance'lar arası paylaşımlı; burç yorumu dönem başına bir kez üretilir |
 | Veri | Firebase (Auth, Firestore, Storage, FCM) | Profiller, kullanıcı hafızası, bildirim |
-| Yüz analizi | MediaPipe Face Mesh | **v1 dışı** — biyometrik veri; kod v2 referansı olarak `backend/services/face_service.py` altında duruyor |
+| Yüz analizi | MediaPipe Face Mesh | **v1 içinde, cihaz üstünde** — görüntü telefondan çıkmaz; sunucuya yalnız oranlar gider |
 
 ## Geliştirme
 

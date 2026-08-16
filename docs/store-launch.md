@@ -189,6 +189,8 @@ tercihi hiçbir bayrakla atlanmaz.**
 - **Swiss Ephemeris ticari lisansı**: kerykeion/pyswisseph AGPLv3'tür; kapalı
   kaynak mağaza yayını ÖNCESİ Astrodienst AG'den ticari lisans alınmalı
   (~750 CHF, tek seferlik): https://www.astro.com/swisseph/
+  Kod bu maddeyi kapatamaz; lisans satın alınmadan checklist işareti
+  konulmamalı.
 - Hukuki metinler bir web adresinde yayınlanmalı (mağaza formları URL ister).
 - Hukuki metinler **bir hukukçuya baktırılmalı** — mühendislik taslağıdır.
 - `app/build.gradle.kts` release bloğu hâlâ **debug anahtarıyla** imzalıyor;

@@ -56,16 +56,19 @@ ilişkiler için kalıcı "uyum puanı" vermez.
 
 ## 4. Atlas — haritanın katmanı
 
-### Doğum haritası (Rytho+)
+### Doğum haritası
+- **Çark, yerleşimler, evler ve açılar ücretsizdir** (hesap, LLM yok).
+  Kullanıcı ilk dakikada kendi haritasını görür.
 - **14 nokta:** 10 gezegen + Chiron + Lilith + Kuzey/Güney Ay Düğümü.
   Her biri için burç, derece, ev, retro durumu, **deklinasyon** ve hız.
-- **12 ev + Yükselen**, dokunulabilir natal çark.
+- **12 ev + Yükselen**, dokunulabilir natal çark. Doğum saati yoksa evler
+  ve Yükselen **üretilmez** — öğle haritası "senin haritan" diye sunulmaz.
 - **Açılar** — yalnız liste değil, **yaklaşıyor mu ayrılıyor mu** bilgisiyle
   (yaklaşan açı güçlenir, ayrılan söner).
 - **Deklinasyon açıları** (paralel / kontra-paralel, ±0,5° orb) — tüketici
   uygulamalarında nadiren bulunur.
 - Element/nitelik dengesi, **stellium** tespiti.
-- **Tam rapor:** 400-500 kelimelik derin AI okuması.
+- **Tam rapor (Rytho+):** 400-500 kelimelik derin AI okuması.
 
 ### Zaman katmanı (Rytho+)
 - **🌞 Yıl Haritası (Solar Return)** — güneş dönüşü haritası; yılın tonu.
@@ -199,11 +202,11 @@ Sonunda "Büyük Üçlü" perdesi (Güneş/Ay/Yükselen açılışı).
 | Ücretsiz (hep açık) | Rytho+ |
 |---|---|
 | Günlük burç yorumu + hikâye + paylaşım kartı | Kişiye özel günlük okuma |
-| Canlı gökyüzü ("Şu an") | Doğum haritası + tam rapor + 6 detay ekranı |
-| Günlük seri | Yıl Haritası (solar return) |
-| Arkadaşlar katmanının **tamamı** | İç Takvim (progresyon + transit) |
-| Profil, doğum kaydı, avatar, bildirimler, dil | BaZi · İ Ching · Doğum Kapısı · Yüz Okuma |
-| Sohbet (jeton ekonomisiyle) | Arkadaşla günlük ikili okuma |
+| Canlı gökyüzü ("Şu an") | Tam natal rapor (AI okuması) + 6 detay ekranı |
+| Doğum haritası çarkı, yerleşimler, açılar (hesap) | Yıl Haritası (solar return) |
+| Günlük seri | İç Takvim (progresyon + transit) |
+| Arkadaşlar katmanının **tamamı** | BaZi · İ Ching · Doğum Kapısı · Yüz Okuma |
+| Profil, doğum kaydı, avatar, bildirimler, dil, sohbet (jeton) | Arkadaşla günlük ikili okuma |
 
 **Jeton ekonomisi:** Rytho+ ayda **300 jeton** verir (devretmez); satın
 alınan paketler (100/300/1000) **hiç yanmaz**. Bedeller: sohbet 1 · İ Ching
@@ -216,8 +219,8 @@ bile atılmaz** — kart gösterilir, ödeme ekranı ancak dokununca açılır.
 
 Bunlar pazarlama cümlesi değil, kodda çalışan davranışlar:
 
-1. **Doğum saatin yoksa Yıl Haritası'nın Yükseleni hiç üretilmez** —
-   yaklaşık bir değer uydurup göstermek yerine o satır yoktur.
+1. **Doğum saatin yoksa natal Yükselen, evler ve yıl haritası Yükseleni
+   hiç üretilmez** — öğle dolgusu "senin yükselenin" diye sunulmaz.
 2. **Day Master gücünün puan dökümü** API'de döner — "neden güçlü"
    sorusunun cevabı her an gösterilebilir.
 3. **Her Shen Sha bulgusu hangi kuraldan geldiğini taşır** — "model
@@ -250,7 +253,7 @@ Ayrıca motor bir varsayım yaptığında **beyan eder**: şehir çözülemediys
   kerykeion 5.12.9 / pyswisseph 2.10.3.2 — sürümler sabit.
 - **Konum:** offline GeoNames şehir veritabanı (~34 bin şehir) — ağa
   bağımlı değil, deterministik.
-- **AI:** Google Gemini (flash), RAG korpusu **232 parça / ~191 KB**:
+- **AI:** Google Gemini (flash), RAG korpusu **240 parça** (EN 168 / TR 72):
   Ptolemaios *Tetrabiblos* (Ashmand 1822 çevirisi, kamu malı), Erzurumlu
   İbrahim Hakkı *Marifetname* (Rytho aktarımı), Legge'nin 384 yao metni
   (kamu malı) + altı özgün doktrin dosyası.
@@ -271,7 +274,7 @@ ilkesini çiğner:
    test_honesty.py — geri gelemez.)*
 2. **"NASA verisiyle hesaplıyoruz"** — NASA yalnızca gezegen uzaklığı
    göstergesi için; tüm konum/açı hesabı Swiss Ephemeris.
-3. **"Yüzlerce kadim kitap"** — korpus 232 parça; dürüst tarif: *seçilmiş
+3. **"Yüzlerce kadim kitap"** — korpus 240 parça (EN 168 / TR 72); dürüst tarif: *seçilmiş
    kamu malı klasikler + özgün doktrin sentezi*.
 4. **"Gerçek Güneş Zamanı kullanıyoruz"** — yalnız **BaZi** için doğru;
    Batı haritasında standart saat dilimi kullanılıyor.

@@ -84,7 +84,8 @@ class DyadRequest(BaseModel):
 
 def _natal_kwargs(d: BirthData) -> dict:
     return dict(name=d.name, year=d.year, month=d.month, day=d.day,
-                hour=d.hour, minute=d.minute, city=d.city, nation=d.nation)
+                hour=d.hour, minute=d.minute, city=d.city, nation=d.nation,
+                hour_known=d.hour_known)
 
 
 @router.get("/horoscope/{sign}")
@@ -182,7 +183,9 @@ def daily(data: BirthData,
     gerektirir; abonelik siniri tam olarak bu maliyet farkindan geciyor.
     """
     try:
-        natal = astro_service.get_natal_chart(**_natal_kwargs(data))
+        natal = astro_service.get_natal_chart(
+            **astro_service.subject_kwargs(_natal_kwargs(data)),
+            hour_known=data.hour_known)
         sky = prompts.localize_sky(lang, get_sky_now())
         # birth: bugünün transitlerinin haritaya değdiği noktalar da okumaya
         # girsin (Revize R8) — ek LLM çağrısı yok, hesap yerel efemeris.
@@ -208,7 +211,9 @@ def natal(data: BirthData,
           user: AuthUser = Depends(require_plus("natal_report")),
           lang: str = Depends(get_language)):
     try:
-        chart = astro_service.get_natal_chart(**_natal_kwargs(data))
+        chart = astro_service.get_natal_chart(
+            **astro_service.subject_kwargs(_natal_kwargs(data)),
+            hour_known=data.hour_known)
         # Token düşümü önbellek kaçırıldığında, LLM çağrısından hemen önce
         # (bkz. _cached_generate): aynı rapora ikinci bakış ücretsiz.
         report = report_service.natal_report(

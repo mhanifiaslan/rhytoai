@@ -57,12 +57,14 @@ def birth_kwargs(profile: dict[str, Any]) -> dict[str, Any]:
         year, month, day = (int(p) for p in _DEFAULT_DATE.split("-"))
         hour, minute = 12, 0
 
+    hour_known = bool(str(profile.get("birthTime") or "").strip())
     return {
         "name": profile.get("displayName") or "Gezgin",
         "year": year, "month": month, "day": day,
         "hour": hour, "minute": minute,
         "city": profile.get("birthCity") or "Istanbul",
         "nation": profile.get("birthNation"),
+        "hour_known": hour_known,
     }
 
 

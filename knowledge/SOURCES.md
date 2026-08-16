@@ -124,7 +124,10 @@ Neden aktarım, çeviri değil:
 
 **Doktrin birliği korundu.** İngilizce kullanıcı Batlamyus, Türkçe kullanıcı
 Marifetname okusaydı aynı soruya iki farklı gelenekten cevap alırlardı. Her
-iki dil de aynı doktrini taşıyor.
+iki dil de aynı doktrini taşıyor. TR aktarımı EN ile aynı konu başlıklarını
+kapsar: mevsimler, eril/dişil burçlar, emreden/itaat eden, bakan burçlar,
+bağlantısız (inconjunct), yüzler/arabalar, rütbe talihi dahil. Birebir
+çeviri değildir; 1822 düzyazısı yoğunlaştırılmıştır.
 
 **PG başlık/altlığı ayıklandı.** O metin Project Gutenberg'in paketlediği
 e-kitaba ve markasına ait, alttaki 1822 çevirisine değil.
@@ -239,9 +242,10 @@ yalnızca gece yarısı ile gün doğumu arasındaki saatlerde ortaya çıkıyor
 gerekiyor, o da konum istiyor.
 
 > **Hatırlatma:** korpusun hazır olması özelliğin yayınlanabilir olması
-> demek değil. Yüz okumanın v1 dışı bırakılma sebebi kaynak yokluğu değildi,
-> biyometrik veriydi (GDPR Md.9 / KVKK md.6 / BIPA). Açık rıza akışı,
-> saklama politikası ve hukuki metin güncellemesi o turun parçası.
+> demek değil. Yüz okuma bir dönem v1 dışı bırakılmıştı çünkü görüntü
+> sunucuya gidiyordu (GDPR Md.9 / KVKK md.6 / BIPA). Şimdi tamamen cihaz
+> üstünde: görüntü telefondan çıkmaz; açık rıza ve hukuki metinler
+> `docs/store-privacy-labels.md` ve gizlilik politikasında.
 
 ---
 

@@ -97,6 +97,7 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 63 | İlişki okuması AI (R7-3): iki FARKLI arkadaşın ilişki ekranı birbirinden farklı metin gösteriyor; metin o çiftin gerçek açılarını anıyor (ör. "Merkür'ün Jüpiter ile karesi"); puan/yüzde yok; ücretsiz hesapta eksenler+dayanaklar görünür, yorum kilitli | ⬜ | 1.6.0+20 + sunucu |
 | 64 | Açı sıralaması (R7-1): Atlas'ta ve raporlarda anılan açılar en dar orb'lu olanlar; Yükselen temasları görünüyor; ikili okuma artık "Güneş–Satürn orb 6.9°" gibi geniş açılarla açılmıyor | ⬜ | 1.6.0+20 + sunucu |
 | 65 | Eşik kalibrasyonu (R7-2): farklı arkadaşlarda eksen seviyeleri DEĞİŞİYOR — hepsinde "Çekim: Güçlü, İletişim: Hafif" tablosu çıkmıyor | ⬜ | sunucu |
+| 66 | Olgu bekçisi yanlış pozitifi (R8): aynı natal raporunu iki kez aç — ikinci açılışta **jeton düşmüyor** (önbellekten geliyor) ve rapor doğru yerleşimleri anıyor; kasten yanlış bir yerleşim sorulduğunda model onu tekrarlamıyor | ⬜ | 1.6.2+22 + sunucu |
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,
