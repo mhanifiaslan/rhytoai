@@ -5,16 +5,26 @@
 /// Hepsi Atlas akışının içinde, alt alta duruyordu. Ölçülen ekran uzunluğu
 /// ~2000 px'di ve kullanıcının tarifi şuydu:
 ///
-/// > "atlas sayfası da tuhaf, profilimde olan bilgiler de var yüz okuma da
-/// > var, aşağı doğru uzanan uzun metinler de var, kişilik özellikleri,
-/// > gezegen konumları vs... herşey heryerde hissi var. tam bir kaos."
+/// > "atlas sayfası da tuhaf... herşey heryerde hissi var. tam bir kaos."
 ///
-/// Teşhis "çok özellik var" değil, **hepsinin aynı seviyede durması**. Bir
-/// bakışta görülecek çark ile üç dakika incelenecek açı tablosu tek sütunda
-/// yan yanaydı. Artık Atlas bir dizin; her giriş kendi sayfasını açıyor.
+/// Teşhis "çok özellik var" değil, **hepsinin aynı seviyede durması**.
+/// Artık Atlas bir dizin; her giriş kendi sayfasını açıyor.
 ///
-/// Açı listesi burada **kırpılmıyor**. Akışta 14 taneyle sınırlıydı, çünkü
-/// hepsi ekranı boğuyordu; kendi sayfasında böyle bir sebep yok.
+/// ## R5: "bu veri nereden geliyor?"
+///
+/// Cihaz turunda üç ekran da aynı şikâyeti aldı: sayılar görünüyor, ne
+/// oldukları görünmüyor. Üçü de aynı sözleşmeye geçti — **ölçüm görünür,
+/// dayanağı bir dokunuş uzakta**:
+///
+/// * Kişilik: yüzde uydurmak yerine SUNUCUNUN kanonik sayımı (geleneksel
+///   yedili + Yükselen) ve hangi noktadan geldiği. Eski `TraitBars`
+///   formülü (`30 + 10·sayım`) silindi: yalnız sekiz değer üretebiliyordu,
+///   dört elementin toplamı %260 ediyordu, Ay düğümlerini sayıp Yükselen'i
+///   dışarıda bırakıyordu.
+/// * Gezegenler: derece + ev artık görünür (veri hep elimizdeydi),
+///   dokunuşla gündelik dil açıklaması.
+/// * Açılar: en dar orb önce, sert/uyumlu/kavuşum diye gruplu, dokunuşla
+///   açıklama.
 library;
 
 import 'package:flutter/material.dart';
@@ -28,6 +38,26 @@ import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart';
 import 'atlas_screen.dart'
     show aspectKindLabel, aspectPairLabel, planetSignLabel;
+
+/// kerykeion burç kodu -> zodyak indeksi (dilden bağımsız).
+///
+/// Eski kod glifi `kSignNamesTr.indexOf(sign_tr)` ile buluyordu: İngilizce
+/// arayüzde ya da ad değişiminde sessizce boş glif veriyordu.
+const _kSignCodeIndex = {
+  'Ari': 0, 'Tau': 1, 'Gem': 2, 'Can': 3, 'Leo': 4, 'Vir': 5,
+  'Lib': 6, 'Sco': 7, 'Sag': 8, 'Cap': 9, 'Aqu': 10, 'Pis': 11,
+};
+
+String _signGlyph(Map<String, dynamic> p) {
+  final i = _kSignCodeIndex[p['sign']];
+  if (i != null) return kSignGlyphs[i];
+  final tr = kSignNamesTr.indexOf(p['sign_tr'] ?? '');
+  return tr >= 0 ? kSignGlyphs[tr] : '';
+}
+
+/// Noktanın arayüz dilindeki adı — sunucu `name_local`'ı üretiyor.
+String _pointName(Map<String, dynamic> p) =>
+    (p['name_local'] ?? p['name_tr'] ?? p['name'] ?? '') as String;
 
 /// Detay sayfalarının ortak iskeleti.
 class _DetayIskelet extends StatelessWidget {
@@ -56,7 +86,37 @@ class _DetayIskelet extends StatelessWidget {
   }
 }
 
-/// Gezegen konumları — 2 sütunlu çip ızgarası.
+/// Ekranların altındaki dürüstlük dipnotu — ölçümün sınırını söyler.
+class _Dipnot extends StatelessWidget {
+  const _Dipnot(this.metin);
+
+  final String metin;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, RythoSpace.sm, 4, 0),
+        child: Text(metin,
+            style: RythoText.body(11,
+                color: RythoColors.parchmentDim, height: 1.45)),
+      );
+}
+
+// ---------------------------------------------------------------------------
+// Gezegen Konumları
+// ---------------------------------------------------------------------------
+
+/// Klasik yedili + modern gezegenler; ek noktalar ayrı bölümde.
+const _kPlanetEmojis = {
+  'Sun': '☀️', 'Moon': '🌙', 'Mercury': '☿', 'Venus': '♀', 'Mars': '♂',
+  'Jupiter': '♃', 'Saturn': '♄', 'Uranus': '♅', 'Neptune': '♆',
+  'Pluto': '♇',
+};
+
+const _kExtraEmojis = {
+  'Chiron': '⚷', 'Mean_Lilith': '⚸',
+  'True_North_Lunar_Node': '☊', 'True_South_Lunar_Node': '☋',
+};
+
 class AtlasPlanetsScreen extends StatelessWidget {
   const AtlasPlanetsScreen({super.key, required this.points});
 
@@ -64,169 +124,794 @@ class AtlasPlanetsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final klasik = points
+        .where((p) => _kPlanetEmojis.containsKey(p['name']))
+        .toList();
+    // Ek noktalar artık SESSİZCE atılmıyor (eski filtre Kiron, Lilith ve
+    // iki Ay düğümünü listeden düşürüyordu — hesaplanıp saklanan veri).
+    final ek =
+        points.where((p) => _kExtraEmojis.containsKey(p['name'])).toList();
+
     return _DetayIskelet(
-      title: AppLocalizations.of(context).atlasPlanetPositions,
-      children: [GlassPanel(child: PlanetGrid(points: points))],
-    );
-  }
-}
-
-/// Kişilik özellikleri — element/nitelik dağılımından türetilen çubuklar.
-class AtlasTraitsScreen extends StatelessWidget {
-  const AtlasTraitsScreen({super.key, required this.points});
-
-  final List<Map<String, dynamic>> points;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DetayIskelet(
-      title: AppLocalizations.of(context).atlasTraits,
-      children: [GlassPanel(child: TraitBars(points: points))],
-    );
-  }
-}
-
-/// Açılar — **tam** liste.
-class AtlasAspectsScreen extends StatelessWidget {
-  const AtlasAspectsScreen({super.key, required this.aspects});
-
-  final List<Map<String, dynamic>> aspects;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DetayIskelet(
-      title: AppLocalizations.of(context).atlasAspects,
+      title: l10n.atlasPlanetPositions,
       children: [
-        GlassPanel(
-          child: Column(children: [
-            // Kırpma YOK: akışta 14 taneyle sınırlıydı, burada sebebi yok.
-            for (final a in aspects)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 5),
-                child: Row(children: [
-                  Expanded(
-                    child: Text(aspectPairLabel(context, a),
-                        style: RythoType.body),
-                  ),
-                  Text(aspectKindLabel(context, a), style: RythoType.bodyDim),
-                  const SizedBox(width: RythoSpace.md),
-                  Text('${(a['orbit'] as num).toStringAsFixed(1)}°',
-                      style: RythoType.dataSmall),
-                ]),
-              ),
-          ]),
-        ),
+        GlassPanel(child: PlanetGrid(points: klasik)),
+        if (ek.isNotEmpty) ...[
+          const SizedBox(height: RythoSpace.sm),
+          GlassPanel(
+              label: l10n.planetsSectionExtra,
+              child: PlanetGrid(points: ek)),
+        ],
+        _Dipnot(l10n.planetsFootnote),
       ],
     );
   }
 }
 
-/// Gezegen konumları ızgarası (Güneş ☀️ — Aslan ♌ gibi).
+/// Gezegen ızgarası — her hücre: emoji + ad + burç + derece + ev.
 class PlanetGrid extends StatelessWidget {
   const PlanetGrid({super.key, required this.points});
 
   final List<Map<String, dynamic>> points;
 
-  static const _planetEmojis = {
-    'Sun': '☀️', 'Moon': '🌙', 'Mercury': '☿', 'Venus': '♀', 'Mars': '♂',
-    'Jupiter': '♃', 'Saturn': '♄', 'Uranus': '♅', 'Neptune': '♆', 'Pluto': '♇',
-  };
+  @override
+  Widget build(BuildContext context) {
+    return Column(children: [
+      for (final p in points)
+        _PlanetRow(point: p),
+    ]);
+  }
+}
+
+class _PlanetRow extends StatelessWidget {
+  const _PlanetRow({required this.point});
+
+  final Map<String, dynamic> point;
 
   @override
   Widget build(BuildContext context) {
-    final majors =
-        points.where((p) => _planetEmojis.containsKey(p['name'])).toList();
-    return Column(children: [
-      for (var i = 0; i < majors.length; i += 2)
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: RythoSpace.xs),
-          child: Row(children: [
-            Expanded(child: _hucre(context, majors[i])),
-            const SizedBox(width: RythoSpace.sm),
-            Expanded(
-                child: i + 1 < majors.length
-                    ? _hucre(context, majors[i + 1])
-                    : const SizedBox()),
-          ]),
-        ),
-    ]);
-  }
+    final retro = point['retrograde'] == true;
+    final derece = (point['position'] as num?)?.toDouble();
+    final ev = point['house_no'] as int?;
+    final l10n = AppLocalizations.of(context);
 
-  Widget _hucre(BuildContext context, Map<String, dynamic> p) {
-    final signIndex = kSignNamesTr.indexOf(p['sign_tr'] ?? '');
-    final glyph = signIndex >= 0 ? kSignGlyphs[signIndex] : '';
-    final retro = p['retrograde'] == true;
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: RythoSpace.md, vertical: 9),
-      decoration: BoxDecoration(
-        color: RythoColors.inkLighter,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-            color: retro
-                ? RythoColors.magenta.withValues(alpha: 0.4)
-                : RythoColors.glassStroke),
-      ),
-      child: Row(children: [
-        Text(_planetEmojis[p['name']] ?? '•',
-            style: const TextStyle(fontSize: 14)),
-        const SizedBox(width: 7),
-        Expanded(
-          child: Text(
-            '${planetSignLabel(context, p)} $glyph${retro ? ' ℞' : ''}',
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: RythoText.body(12),
-          ),
+    // Alt satır: derece · ev — ikisi de zaten hesaplanıyordu ama hiç
+    // gösterilmiyordu ("bu konumlar ne demek" şikâyetinin yarısı buydu).
+    // Retro başlıkta ℞ ile (klasik sembol); ne demek olduğu detayda.
+    final altSatir = [
+      if (derece != null) '${derece.toStringAsFixed(1)}°',
+      if (ev != null) l10n.houseN(ev),
+    ].join(' · ');
+
+    return Pressable(
+      onTap: () => showPointSheet(context, point),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 3),
+        padding: const EdgeInsets.symmetric(
+            horizontal: RythoSpace.md, vertical: 9),
+        decoration: BoxDecoration(
+          color: RythoColors.inkLighter,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+              color: retro
+                  ? RythoColors.magenta.withValues(alpha: 0.4)
+                  : RythoColors.glassStroke),
         ),
-      ]),
+        child: Row(children: [
+          Text(
+              _kPlanetEmojis[point['name']] ??
+                  _kExtraEmojis[point['name']] ??
+                  '•',
+              style: const TextStyle(fontSize: 15)),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${planetSignLabel(context, point)} '
+                    '${_signGlyph(point)}${retro ? ' ℞' : ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: RythoText.body(13.5, w: FontWeight.w600),
+                  ),
+                  if (altSatir.isNotEmpty)
+                    Text(altSatir,
+                        style: RythoText.mono(10.5,
+                            color: RythoColors.parchmentDim)),
+                ]),
+          ),
+          const Icon(Icons.chevron_right,
+              size: 16, color: RythoColors.parchmentDim),
+        ]),
+      ),
     );
   }
 }
 
-/// Kişilik çubukları — element ve nitelik dağılımından türetilir.
-class TraitBars extends StatelessWidget {
-  const TraitBars({super.key, required this.points});
+/// Gezegen detay sayfası: ölçüm + gündelik dil açıklaması.
+///
+/// Açıklama SABİT TABLODAN gelir (gezegenin doğası × evin alanı) — LLM
+/// yok, jeton yok. Uydurma da yok: iki cümle de ölçülen yerleşimi anlatır.
+Future<void> showPointSheet(
+    BuildContext context, Map<String, dynamic> point) {
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: RythoColors.inkLight,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      side: BorderSide(color: RythoColors.glassStroke),
+    ),
+    builder: (_) => _PointSheet(point: point),
+  );
+}
 
-  final List<Map<String, dynamic>> points;
+class _PointSheet extends StatelessWidget {
+  const _PointSheet({required this.point});
+
+  final Map<String, dynamic> point;
 
   @override
   Widget build(BuildContext context) {
-    var fire = 0, earth = 0, air = 0, water = 0, fixed = 0, total = 0;
-    for (final p in points) {
-      final lon = (p['abs_position'] as num?)?.toDouble();
-      if (lon == null) continue;
-      final sign = (lon ~/ 30) % 12;
-      total++;
-      switch (sign % 4) {
-        case 0: fire++;
-        case 1: earth++;
-        case 2: air++;
-        case 3: water++;
-      }
-      if (sign % 3 == 1) fixed++; // Boğa, Aslan, Akrep, Kova
-    }
-    if (total == 0) total = 1;
-
-    int pct(int count) => (30 + (count / total) * 140).round().clamp(20, 97);
-
     final l10n = AppLocalizations.of(context);
-    final traits = [
-      (l10n.traitEnergy, pct(fire), RythoColors.magenta),
-      (l10n.traitDetermination, pct(fixed), RythoColors.gold),
-      (l10n.traitCommunication, pct(air), RythoColors.lilac),
-      (l10n.traitSensitivity, pct(water), const Color(0xFF5AC8FA)),
-      (l10n.traitPracticality, pct(earth), RythoColors.celadon),
-    ];
+    final ev = point['house_no'] as int?;
+    final derece = (point['position'] as num?)?.toDouble();
+    final hiz = (point['speed'] as num?)?.toDouble();
+    final rol = planetRoleText(l10n, point['name'] as String?);
+    final alan = ev == null ? null : houseAreaText(l10n, ev);
 
-    return Column(children: [
-      for (final (i, t) in traits.indexed)
-        GradientProgressBar(
-          label: t.$1,
-          percent: t.$2,
-          color: t.$3,
-          delay: Duration(milliseconds: 120 * i),
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            RythoSpace.lg, RythoSpace.md, RythoSpace.lg, RythoSpace.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _SheetTutamak(),
+            const SizedBox(height: RythoSpace.md),
+            Text(
+                '${planetSignLabel(context, point)} ${_signGlyph(point)}',
+                style: RythoText.display(17, w: FontWeight.w600)),
+            const SizedBox(height: RythoSpace.md),
+            if (derece != null)
+              _OlcumSatiri(
+                  etiket: l10n.planetDegree,
+                  deger: '${derece.toStringAsFixed(2)}°'),
+            if (ev != null)
+              _OlcumSatiri(etiket: l10n.planetHouse, deger: l10n.houseN(ev)),
+            if (point['retrograde'] == true)
+              _OlcumSatiri(
+                  etiket: l10n.planetMotion,
+                  deger: '℞ ${l10n.planetRetrograde}'),
+            if (hiz != null)
+              _OlcumSatiri(
+                  etiket: l10n.planetSpeed,
+                  deger: '${hiz.toStringAsFixed(3)}°/${l10n.perDay}'),
+            const SizedBox(height: RythoSpace.md),
+            if (rol != null)
+              Text(rol, style: RythoText.body(13.5, height: 1.45)),
+            if (alan != null) ...[
+              const SizedBox(height: 6),
+              Text(alan, style: RythoText.body(13.5, height: 1.45)),
+            ],
+            if (point['retrograde'] == true) ...[
+              const SizedBox(height: 6),
+              Text(l10n.retrogradeMeaning,
+                  style: RythoText.body(13.5,
+                      color: RythoColors.copper, height: 1.45)),
+            ],
+            const SizedBox(height: RythoSpace.md),
+            Text(l10n.pointSheetFootnote,
+                style: RythoText.body(11,
+                    color: RythoColors.parchmentDim, height: 1.4)),
+          ],
         ),
-    ]);
+      ),
+    );
   }
 }
+
+// ---------------------------------------------------------------------------
+// Kişilik Özellikleri — ölçülen dağılım
+// ---------------------------------------------------------------------------
+
+/// Element ve nitelik dağılımı — **sunucunun kanonik sayımı**.
+///
+/// Eski hâli istemcide `30 + (sayım/14)*140` yüzdesi üretiyordu; bu formül
+/// yalnız {30,40,50,60,70,80,90,97} verebiliyor, dört elementin toplamı
+/// %260 ediyor ve sayıma Ay düğümlerini (tanım gereği zıt burçlar) katıp
+/// Yükselen'i dışarıda bırakıyordu. Artık tek doğruluk kaynağı sunucu:
+/// `element_distribution` / `modality_distribution` + üye listeleri.
+class AtlasTraitsScreen extends StatelessWidget {
+  const AtlasTraitsScreen({super.key, required this.chart});
+
+  final Map<String, dynamic> chart;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final elementler = Map<String, dynamic>.from(
+        chart['element_distribution'] as Map? ?? const {});
+    final nitelikler = Map<String, dynamic>.from(
+        chart['modality_distribution'] as Map? ?? const {});
+    final elementUye = Map<String, dynamic>.from(
+        chart['element_members'] as Map? ?? const {});
+    final nitelikUye = Map<String, dynamic>.from(
+        chart['modality_members'] as Map? ?? const {});
+    final points = [
+      for (final p in (chart['points'] as List? ?? const []))
+        Map<String, dynamic>.from(p as Map),
+    ];
+
+    // Eski sunucu yanıtı (dağılımsız) gelirse ekran boş kalmasın.
+    if (elementler.isEmpty) {
+      return _DetayIskelet(
+        title: l10n.atlasTraits,
+        children: [
+          GlassPanel(
+            child: Text(l10n.traitsUnavailable,
+                style: RythoText.body(13, color: RythoColors.parchmentDim)),
+          ),
+        ],
+      );
+    }
+
+    final toplam = elementler.values
+        .fold<int>(0, (a, b) => a + ((b as num?)?.toInt() ?? 0));
+
+    const elementRenk = {
+      'fire': RythoColors.magenta,
+      'earth': RythoColors.celadon,
+      'air': RythoColors.lilac,
+      'water': Color(0xFF5AC8FA),
+    };
+    const nitelikRenk = {
+      'cardinal': RythoColors.gold,
+      'fixed': RythoColors.lilac,
+      'mutable': RythoColors.celadon,
+    };
+
+    // Eksik element: natal prompt'un da anlamlı saydığı bir ifade —
+    // eski çubuklarda %30 gösterilip görünmez oluyordu.
+    final eksikler = [
+      for (final e in const ['fire', 'earth', 'air', 'water'])
+        if (((elementler[e] as num?)?.toInt() ?? 0) == 0) e,
+    ];
+
+    return _DetayIskelet(
+      title: l10n.atlasTraits,
+      children: [
+        GlassPanel(
+          label: l10n.traitsElements,
+          child: Column(children: [
+            for (final e in const ['fire', 'earth', 'air', 'water'])
+              _OranSatiri(
+                ad: elementName(l10n, e),
+                sayi: (elementler[e] as num?)?.toInt() ?? 0,
+                toplam: toplam,
+                renk: elementRenk[e]!,
+                onTap: () => _acDagilim(
+                  context,
+                  baslik: elementName(l10n, e),
+                  aciklama: elementLine(l10n, e),
+                  klasik: temperamentLine(l10n, e),
+                  uyeler: List<String>.from(
+                      (elementUye[e] as List? ?? const [])),
+                  points: points,
+                ),
+              ),
+          ]),
+        ),
+        if (eksikler.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 2, 4, 0),
+            child: Text(
+                l10n.traitsMissingElement(
+                    eksikler.map((e) => elementName(l10n, e)).join(', ')),
+                style: RythoText.body(12, color: RythoColors.copper,
+                    height: 1.45)),
+          ),
+        const SizedBox(height: RythoSpace.sm),
+        GlassPanel(
+          label: l10n.traitsModalities,
+          child: Column(children: [
+            for (final m in const ['cardinal', 'fixed', 'mutable'])
+              _OranSatiri(
+                ad: modalityName(l10n, m),
+                sayi: (nitelikler[m] as num?)?.toInt() ?? 0,
+                toplam: toplam,
+                renk: nitelikRenk[m]!,
+                onTap: () => _acDagilim(
+                  context,
+                  baslik: modalityName(l10n, m),
+                  aciklama: modalityLine(l10n, m),
+                  klasik: null,
+                  uyeler: List<String>.from(
+                      (nitelikUye[m] as List? ?? const [])),
+                  points: points,
+                ),
+              ),
+          ]),
+        ),
+        _Dipnot('${l10n.traitsSetNote}\n${l10n.traitsTapHint}'),
+      ],
+    );
+  }
+
+  void _acDagilim(
+    BuildContext context, {
+    required String baslik,
+    required String aciklama,
+    required String? klasik,
+    required List<String> uyeler,
+    required List<Map<String, dynamic>> points,
+  }) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: RythoColors.inkLight,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        side: BorderSide(color: RythoColors.glassStroke),
+      ),
+      builder: (_) => _DagilimSheet(
+        baslik: baslik,
+        aciklama: aciklama,
+        klasik: klasik,
+        uyeler: uyeler,
+        points: points,
+      ),
+    );
+  }
+}
+
+/// "Bu sayı nereden geliyor?" — dağılımın üyeleri.
+class _DagilimSheet extends StatelessWidget {
+  const _DagilimSheet({
+    required this.baslik,
+    required this.aciklama,
+    required this.klasik,
+    required this.uyeler,
+    required this.points,
+  });
+
+  final String baslik;
+  final String aciklama;
+  final String? klasik;
+  final List<String> uyeler;
+  final List<Map<String, dynamic>> points;
+
+  /// Üye adını ("Sun", "Ascendant") ekranda okunur hâle getirir.
+  String _uyeMetni(AppLocalizations l10n, String ad) {
+    if (ad == 'Ascendant') return l10n.pointAscendant;
+    for (final p in points) {
+      if (p['name'] == ad) {
+        final burc = (p['sign_local'] ?? p['sign_tr'] ?? '') as String;
+        return burc.isEmpty
+            ? _pointName(p)
+            : '${_pointName(p)} · $burc';
+      }
+    }
+    return ad;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            RythoSpace.lg, RythoSpace.md, RythoSpace.lg, RythoSpace.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _SheetTutamak(),
+            const SizedBox(height: RythoSpace.md),
+            Text(l10n.traitsSheetTitle(baslik),
+                style: RythoText.display(17, w: FontWeight.w600)),
+            const SizedBox(height: 6),
+            Text(aciklama, style: RythoText.body(13.5, height: 1.45)),
+            const SizedBox(height: RythoSpace.md),
+            Text(l10n.traitsMembersLabel.toUpperCase(),
+                style: RythoType.dataSmall),
+            const SizedBox(height: 4),
+            if (uyeler.isEmpty)
+              Text(l10n.traitsNoMember,
+                  style: RythoText.body(13, color: RythoColors.copper))
+            else
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final u in uyeler)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: RythoColors.glassFill,
+                        borderRadius: BorderRadius.circular(999),
+                        border:
+                            Border.all(color: RythoColors.glassStroke),
+                      ),
+                      child: Text(_uyeMetni(l10n, u),
+                          style: RythoText.body(12)),
+                    ),
+                ],
+              ),
+            if (klasik != null) ...[
+              const SizedBox(height: RythoSpace.md),
+              Text(klasik!,
+                  style: RythoText.body(12.5,
+                      color: RythoColors.parchmentDim, height: 1.45)),
+            ],
+            const SizedBox(height: RythoSpace.md),
+            Text(l10n.traitsSheetFootnote,
+                style: RythoText.body(11,
+                    color: RythoColors.parchmentDim, height: 1.4)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Oran satırı — "3/8" + orantılı çubuk. Yüzde YOK: dört elementin
+/// yüzdesi toplamda 100 etmez, kesir dürüst olan biçim.
+class _OranSatiri extends StatelessWidget {
+  const _OranSatiri({
+    required this.ad,
+    required this.sayi,
+    required this.toplam,
+    required this.renk,
+    required this.onTap,
+  });
+
+  final String ad;
+  final int sayi;
+  final int toplam;
+  final Color renk;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final oran = toplam == 0 ? 0.0 : sayi / toplam;
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Column(children: [
+          Row(children: [
+            Expanded(
+                child: Text(ad,
+                    style: RythoText.body(14, w: FontWeight.w600))),
+            Text('$sayi/$toplam',
+                style: RythoText.mono(12.5, color: renk)),
+            const SizedBox(width: 6),
+            const Icon(Icons.chevron_right,
+                size: 15, color: RythoColors.parchmentDim),
+          ]),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: oran,
+              minHeight: 7,
+              backgroundColor: RythoColors.inkLighter,
+              valueColor: AlwaysStoppedAnimation(renk),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Açılar
+// ---------------------------------------------------------------------------
+
+/// Açı türü -> grup anahtarı. Sinyal kartlarındaki ton diliyle aynı.
+const _kAspectGroup = {
+  'conjunction': 'focus',
+  'opposition': 'tension',
+  'square': 'tension',
+  'trine': 'flow',
+  'sextile': 'flow',
+};
+
+class AtlasAspectsScreen extends StatelessWidget {
+  const AtlasAspectsScreen({super.key, required this.aspects});
+
+  final List<Map<String, dynamic>> aspects;
+
+  double _orb(Map<String, dynamic> a) =>
+      ((a['orbit'] as num?)?.toDouble() ?? 99).abs();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    // Gruplama + sıralama: eskiden motor sırası aynen basılıyordu.
+    // En dar orb en güçlü açıdır; listenin başında durmalı.
+    final gruplar = <String, List<Map<String, dynamic>>>{
+      'tension': [], 'flow': [], 'focus': [], 'other': [],
+    };
+    for (final a in aspects) {
+      final grup = _kAspectGroup[a['aspect']] ?? 'other';
+      gruplar[grup]!.add(a);
+    }
+    for (final liste in gruplar.values) {
+      liste.sort((x, y) => _orb(x).compareTo(_orb(y)));
+    }
+
+    Widget bolum(String anahtar, String baslik) {
+      final liste = gruplar[anahtar]!;
+      if (liste.isEmpty) return const SizedBox.shrink();
+      return GlassPanel(
+        label: baslik,
+        child: Column(children: [
+          for (final a in liste) _AspectRow(aspect: a),
+        ]),
+      );
+    }
+
+    return _DetayIskelet(
+      title: l10n.atlasAspects,
+      children: [
+        bolum('tension', l10n.aspectsGroupTension),
+        bolum('focus', l10n.aspectsGroupFocus),
+        bolum('flow', l10n.aspectsGroupFlow),
+        bolum('other', l10n.aspectsGroupOther),
+        _Dipnot('${l10n.aspectsSortNote}\n${l10n.traitsTapHint}'),
+      ],
+    );
+  }
+}
+
+class _AspectRow extends StatelessWidget {
+  const _AspectRow({required this.aspect});
+
+  final Map<String, dynamic> aspect;
+
+  @override
+  Widget build(BuildContext context) {
+    // Korumasız `as num` cast'i çöküyordu (orb eksikse ekran kapanıyordu).
+    final orb = (aspect['orbit'] as num?)?.toDouble();
+    final hareket = aspect['movement_local'] as String?;
+
+    return Pressable(
+      onTap: () => showAspectSheet(context, aspect),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(children: [
+          Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(aspectPairLabel(context, aspect),
+                      style: RythoType.body),
+                  if (hareket != null)
+                    Text(hareket,
+                        style: RythoText.body(10.5,
+                            color: RythoColors.parchmentDim)),
+                ]),
+          ),
+          Text(aspectKindLabel(context, aspect), style: RythoType.bodyDim),
+          const SizedBox(width: RythoSpace.md),
+          Text(orb == null ? '—' : '${orb.toStringAsFixed(1)}°',
+              style: RythoType.dataSmall),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right,
+              size: 15, color: RythoColors.parchmentDim),
+        ]),
+      ),
+    );
+  }
+}
+
+Future<void> showAspectSheet(
+    BuildContext context, Map<String, dynamic> aspect) {
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: RythoColors.inkLight,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      side: BorderSide(color: RythoColors.glassStroke),
+    ),
+    builder: (_) => _AspectSheet(aspect: aspect),
+  );
+}
+
+class _AspectSheet extends StatelessWidget {
+  const _AspectSheet({required this.aspect});
+
+  final Map<String, dynamic> aspect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final orb = (aspect['orbit'] as num?)?.toDouble();
+    final aciklama = aspectMeaningText(l10n, aspect['aspect'] as String?);
+    final hareketAciklama =
+        movementMeaningText(l10n, aspect['movement'] as String?);
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            RythoSpace.lg, RythoSpace.md, RythoSpace.lg, RythoSpace.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _SheetTutamak(),
+            const SizedBox(height: RythoSpace.md),
+            Text(aspectPairLabel(context, aspect),
+                style: RythoText.display(17, w: FontWeight.w600)),
+            const SizedBox(height: RythoSpace.md),
+            _OlcumSatiri(
+                etiket: l10n.basisAspect,
+                deger: aspectKindLabel(context, aspect)),
+            if (orb != null)
+              _OlcumSatiri(
+                  etiket: l10n.basisOrb,
+                  deger: '${orb.toStringAsFixed(2)}°'),
+            if (aspect['movement_local'] != null)
+              _OlcumSatiri(
+                  etiket: l10n.basisMovement,
+                  deger: aspect['movement_local'] as String),
+            const SizedBox(height: RythoSpace.md),
+            if (aciklama != null)
+              Text(aciklama, style: RythoText.body(13.5, height: 1.45)),
+            if (hareketAciklama != null) ...[
+              const SizedBox(height: 6),
+              Text(hareketAciklama,
+                  style: RythoText.body(13.5, height: 1.45)),
+            ],
+            const SizedBox(height: RythoSpace.md),
+            Text(l10n.aspectSheetFootnote,
+                style: RythoText.body(11,
+                    color: RythoColors.parchmentDim, height: 1.4)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Ortak küçük parçalar
+// ---------------------------------------------------------------------------
+
+class _SheetTutamak extends StatelessWidget {
+  const _SheetTutamak();
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Container(
+          width: 36,
+          height: 4,
+          decoration: BoxDecoration(
+            color: RythoColors.glassStroke,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      );
+}
+
+/// Etiket + değer satırı (basis_sheet ile aynı görsel dil).
+class _OlcumSatiri extends StatelessWidget {
+  const _OlcumSatiri({required this.etiket, required this.deger});
+
+  final String etiket;
+  final String deger;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 5),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            width: 108,
+            child: Text(etiket.toUpperCase(), style: RythoType.dataSmall),
+          ),
+          const SizedBox(width: RythoSpace.sm),
+          Expanded(child: Text(deger, style: RythoText.body(13.5))),
+        ]),
+      );
+}
+
+// ---------------------------------------------------------------------------
+// Metin tabloları — hepsi SABİT, LLM yok
+// ---------------------------------------------------------------------------
+
+String elementName(AppLocalizations l10n, String key) => switch (key) {
+      'fire' => l10n.elementFire,
+      'earth' => l10n.elementEarth,
+      'air' => l10n.elementAir,
+      'water' => l10n.elementWater,
+      _ => key,
+    };
+
+String elementLine(AppLocalizations l10n, String key) => switch (key) {
+      'fire' => l10n.elementFireLine,
+      'earth' => l10n.elementEarthLine,
+      'air' => l10n.elementAirLine,
+      'water' => l10n.elementWaterLine,
+      _ => '',
+    };
+
+/// Klasik mizaç karşılığı — ölçülen element dağılımının geleneksel adı.
+String temperamentLine(AppLocalizations l10n, String key) => switch (key) {
+      'fire' => l10n.temperamentFire,
+      'earth' => l10n.temperamentEarth,
+      'air' => l10n.temperamentAir,
+      'water' => l10n.temperamentWater,
+      _ => '',
+    };
+
+String modalityName(AppLocalizations l10n, String key) => switch (key) {
+      'cardinal' => l10n.modalityCardinal,
+      'fixed' => l10n.modalityFixed,
+      'mutable' => l10n.modalityMutable,
+      _ => key,
+    };
+
+String modalityLine(AppLocalizations l10n, String key) => switch (key) {
+      'cardinal' => l10n.modalityCardinalLine,
+      'fixed' => l10n.modalityFixedLine,
+      'mutable' => l10n.modalityMutableLine,
+      _ => '',
+    };
+
+String? planetRoleText(AppLocalizations l10n, String? name) =>
+    switch (name) {
+      'Sun' => l10n.roleSun,
+      'Moon' => l10n.roleMoon,
+      'Mercury' => l10n.roleMercury,
+      'Venus' => l10n.roleVenus,
+      'Mars' => l10n.roleMars,
+      'Jupiter' => l10n.roleJupiter,
+      'Saturn' => l10n.roleSaturn,
+      'Uranus' => l10n.roleUranus,
+      'Neptune' => l10n.roleNeptune,
+      'Pluto' => l10n.rolePluto,
+      'Chiron' => l10n.roleChiron,
+      'Mean_Lilith' => l10n.roleLilith,
+      'True_North_Lunar_Node' => l10n.roleNorthNode,
+      'True_South_Lunar_Node' => l10n.roleSouthNode,
+      _ => null,
+    };
+
+String? houseAreaText(AppLocalizations l10n, int house) => switch (house) {
+      1 => l10n.house1,
+      2 => l10n.house2,
+      3 => l10n.house3,
+      4 => l10n.house4,
+      5 => l10n.house5,
+      6 => l10n.house6,
+      7 => l10n.house7,
+      8 => l10n.house8,
+      9 => l10n.house9,
+      10 => l10n.house10,
+      11 => l10n.house11,
+      12 => l10n.house12,
+      _ => null,
+    };
+
+String? aspectMeaningText(AppLocalizations l10n, String? key) =>
+    switch (key) {
+      'conjunction' => l10n.aspectMeaningConjunction,
+      'opposition' => l10n.aspectMeaningOpposition,
+      'square' => l10n.aspectMeaningSquare,
+      'trine' => l10n.aspectMeaningTrine,
+      'sextile' => l10n.aspectMeaningSextile,
+      _ => null,
+    };
+
+String? movementMeaningText(AppLocalizations l10n, String? key) =>
+    switch (key) {
+      'applying' => l10n.movementMeaningApplying,
+      'separating' => l10n.movementMeaningSeparating,
+      _ => null,
+    };

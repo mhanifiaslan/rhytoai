@@ -17,11 +17,13 @@ library;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/rytho_theme.dart';
 import '../theme/rytho_tokens.dart';
 import 'cosmic_scaffold.dart';
 import 'fade_through_route.dart';
 import 'glass.dart';
+import 'markdown_text.dart';
 import 'motion.dart';
 
 /// Uzun metnin akıştaki temsilcisi: başlık + üç satır + "devamı".
@@ -34,6 +36,7 @@ class ReadingCard extends StatelessWidget {
     this.glow = false,
     this.trailing,
     this.onOpen,
+    this.onShare,
   });
 
   /// Okuma sayfasının başlığı.
@@ -52,6 +55,9 @@ class ReadingCard extends StatelessWidget {
 
   /// Varsayılan davranışın yerine geçer. Verilmezse [ReadingScreen] açılır.
   final VoidCallback? onOpen;
+
+  /// Verilirse okuma sayfasının başlığında paylaş düğmesi belirir.
+  final Future<void> Function(BuildContext)? onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -95,6 +101,7 @@ class ReadingCard extends StatelessWidget {
         body: body,
         label: label,
         trailing: trailing,
+        onShare: onShare,
       ),
     ));
   }
@@ -116,6 +123,7 @@ class ReadingScreen extends StatelessWidget {
     required this.body,
     this.label,
     this.trailing,
+    this.onShare,
   });
 
   final String title;
@@ -123,15 +131,30 @@ class ReadingScreen extends StatelessWidget {
   final String? label;
   final Widget? trailing;
 
+  /// Verilirse başlıkta paylaş düğmesi çıkar.
+  final Future<void> Function(BuildContext)? onShare;
+
   @override
   Widget build(BuildContext context) {
-    // Paragraf canlanması (R12-B2): uygulamanın en uzun ve en değerli metni
-    // eskiden tek karede basılıyordu. İlk altı paragraf kademeli belirir;
-    // gerisi ANINDA görünür — ekran dışına stagger borcu bindirilmez,
-    // hızlı kaydıran okur bekletilmez.
-    final paragraflar = body.split('\n\n');
+    // Metin markdown olarak ÇÖZÜLÜR. Eskiden `\n\n` ile bölünüp düz Text
+    // basılıyordu; modelin ürettiği `### Başlık` ve `**vurgu**` ekranda ham
+    // işaret olarak görünüyordu (cihaz turu bulgusu).
+    //
+    // Paragraf canlanması (R12-B2) korunur: ilk altı blok kademeli belirir,
+    // gerisi ANINDA görünür — hızlı kaydıran okur bekletilmez.
+    final bloklar = parseBlocks(body);
     return CosmicScaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(title),
+        actions: [
+          if (onShare != null)
+            IconButton(
+              icon: const Icon(Icons.ios_share_rounded, size: 20),
+              tooltip: AppLocalizations.of(context).shareReading,
+              onPressed: () => onShare!(context),
+            ),
+        ],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(
@@ -142,17 +165,14 @@ class ReadingScreen extends StatelessWidget {
                   slide: 0, child: Text(label!, style: RythoType.label)),
               const SizedBox(height: RythoSpace.md),
             ],
-            for (var i = 0; i < paragraflar.length; i++) ...[
+            for (var i = 0; i < bloklar.length; i++)
               if (i < 6)
                 RythoReveal(
                   index: i + 1,
-                  child: Text(paragraflar[i], style: RythoType.reading),
+                  child: markdownBlockWidget(bloklar[i], RythoType.reading),
                 )
               else
-                Text(paragraflar[i], style: RythoType.reading),
-              if (i != paragraflar.length - 1)
-                const SizedBox(height: RythoSpace.lg),
-            ],
+                markdownBlockWidget(bloklar[i], RythoType.reading),
             if (trailing != null) ...[
               const SizedBox(height: RythoSpace.xl),
               trailing!,

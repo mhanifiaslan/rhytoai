@@ -10,7 +10,9 @@ import '../../widgets/common.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/natal_wheel.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../../widgets/markdown_text.dart' show markdownToPlain;
 import '../../widgets/reading_card.dart';
+import '../share/share_card.dart' show shareReportCard;
 import '../face/face_reading_flow.dart';
 import '../oracle/oracle_screen.dart';
 import '../paywall/paywall_screen.dart';
@@ -298,7 +300,9 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                     emoji: '🎭',
                     title: l10n.atlasTraits,
                     subtitle: l10n.atlasTraitsSubtitle,
-                    onTap: () => ac(AtlasTraitsScreen(points: points)),
+                    // R5-1: ekran artık kendi sayımını yapmıyor; sunucunun
+                    // kanonik dağılımını okuyor (chart'ın tamamı gerekli).
+                    onTap: () => ac(AtlasTraitsScreen(chart: chart)),
                   ),
                   _AtlasRow(
                     emoji: '🪐',
@@ -373,6 +377,12 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
 /// Abone değilse istek ATILMAZ (natalReportProvider zaten null döner);
 /// satır kilit rozetiyle görünür ve dokunuş paywall'ı açar. Abonede rapor
 /// hazır olduğunda okuma sayfasına gider.
+///
+/// R5-0 (hata): eskiden `rapor.value` doğrudan okunuyordu ve `AsyncValue`
+/// YÜKLENİRKEN de null olduğu için ABONE, rapor üretilirken (LLM çağrısı
+/// saniyeler sürer) 🔒 görüyor ve dokununca paywall'a düşüyordu. Artık üç
+/// durum ayrı: yükleniyor → satır bekliyor der ve dokunuş yutulur;
+/// hata → tekrar denenebilir; yalnız gerçekten `null` veri kilittir.
 class _FullReportRow extends ConsumerWidget {
   const _FullReportRow();
 
@@ -380,31 +390,92 @@ class _FullReportRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final rapor = ref.watch(natalReportProvider);
-    final metin = rapor.value?['report'] as String?;
+    final harita = ref.watch(natalChartProvider).value;
 
-    return _AtlasRow(
-      emoji: '📜',
-      title: l10n.atlasFullReport,
-      subtitle: l10n.atlasFullReportSubtitle,
-      locked: metin == null,
-      onTap: () {
-        if (metin == null) {
-          Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => const PaywallScreen(),
-            fullscreenDialog: true,
-          ));
-          return;
+    // Paylaşım kartındaki rozetler: Büyük Üçlü. HESAPLANMIŞ sonuçlar —
+    // doğum tarihi/saati/yeri karta hiçbir koşulda yazılmaz.
+    List<(String, String)> rozetler() {
+      if (harita == null) return const [];
+      final noktalar = List<Map<String, dynamic>>.from(
+          (harita['points'] as List?) ?? const []);
+      String? burc(String ad) {
+        for (final p in noktalar) {
+          if (p['name'] == ad) {
+            final i = signIndexOf(p['sign_tr']);
+            return i >= 0 ? signDisplayName(l10n, i) : null;
+          }
         }
-        Navigator.of(context).push(MaterialPageRoute(
+        return null;
+      }
+
+      // `ascendant` sunucudan "Aslan ♌" biçiminde METİN gelir (Map değil);
+      // `signIndexOf` sembole toleranslı.
+      final asc = signIndexOf(harita['ascendant'] as String?);
+      final gunes = burc('Sun');
+      final ay = burc('Moon');
+      return [
+        if (gunes != null) (l10n.bigThreeSun, gunes),
+        if (ay != null) (l10n.bigThreeMoon, ay),
+        if (asc >= 0) (l10n.bigThreeAscendant, signDisplayName(l10n, asc)),
+      ];
+    }
+
+    void ac(String metin) => Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => ReadingScreen(
             title: l10n.atlasFullReport,
             label: l10n.atlasReadingNote,
             body: metin,
+            onShare: (ctx) => shareReportCard(
+              ctx,
+              title: l10n.atlasFullReport,
+              body: markdownToPlain(metin),
+              dateLabel: bugununEtiketi(),
+              badges: rozetler(),
+              glyph: '✦',
+            ),
           ),
         ));
+
+    void paywall() => Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const PaywallScreen(),
+          fullscreenDialog: true,
+        ));
+
+    return rapor.when(
+      loading: () => _AtlasRow(
+        emoji: '📜',
+        title: l10n.atlasFullReport,
+        subtitle: l10n.atlasReportPreparing,
+        onTap: () {},
+      ),
+      error: (_, _) => _AtlasRow(
+        emoji: '📜',
+        title: l10n.atlasFullReport,
+        subtitle: l10n.atlasReportRetry,
+        onTap: () => ref.invalidate(natalReportProvider),
+      ),
+      data: (veri) {
+        final metin = veri?['report'] as String?;
+        return _AtlasRow(
+          emoji: '📜',
+          title: l10n.atlasFullReport,
+          subtitle: l10n.atlasFullReportSubtitle,
+          locked: metin == null,
+          onTap: () => metin == null ? paywall() : ac(metin),
+        );
       },
     );
   }
+}
+
+/// Paylaşım kartının tarih satırı: raporun ÜRETİM günü.
+///
+/// Doğum tarihi DEĞİL — kartın gizlilik kuralı ham doğum verisini dışarıda
+/// tutar; bu satır yalnız "bu okuma ne zaman alındı"yı söyler.
+String bugununEtiketi() {
+  final t = DateTime.now();
+  return '${t.year}-${t.month.toString().padLeft(2, '0')}-'
+      '${t.day.toString().padLeft(2, '0')}';
 }
 
 /// Gezegen + burç etiketi, arayüz diline göre.

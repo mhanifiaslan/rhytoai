@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../theme/rytho_theme.dart';
 import 'glass.dart';
+import 'markdown_text.dart';
 import 'motion.dart';
 
 /// "Levha" — v2'de cam panele delege eder; eski çağrı yüzeyi korunur.
@@ -199,7 +200,11 @@ class MarginNote extends StatelessWidget {
                       style: RythoText.label(11, color: RythoColors.lilac)),
                   const SizedBox(height: 6),
                 ],
-                Text(text, style: RythoText.body(15, height: 1.65)),
+                // Beş çağıranın beşi de LLM rapor metni basıyor; düz `Text`
+                // modelin `### Başlık` ve `**vurgu**` işaretlerini ham
+                // gösteriyordu (cihaz turu bulgusu).
+                MarkdownText(text,
+                    baseStyle: RythoText.body(15, height: 1.65)),
               ],
             ),
           ),

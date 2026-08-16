@@ -114,7 +114,13 @@ def solar_return(
         "disclosures": disclosures,
         # Haritanın kurulduğu yer — doğum yeri DEĞİL (relocation varsa o).
         # Beyan metni şehri buradan okuyor.
+        #
+        # ``birth_city`` de taşınır (R5-5): cihaz turunda Urfa'da doğup
+        # Ankara'da yaşayan kullanıcı "yıl haritası doğum gününde bulunulan
+        # yere kurulur" beyanını okuyup kendi doğum yeriyle ilişkilendiremedi.
+        # Beyan artık İKİ şehri de adıyla anıyor; ikisi de yükte olmalı.
         "location": {"city": harita_loc.city, "tz": harita_loc.tz_str,
+                     "birth_city": loc.city,
                      "relocated": bool(relocation_city)},
     }
 

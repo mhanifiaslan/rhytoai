@@ -109,36 +109,125 @@ void main() {
       expect(find.textContaining('℞'), findsOneWidget);
     });
 
-    testWidgets('taninmayan nokta sessizce atlanir', (tester) async {
-      // Backend yeni bir nokta eklerse (ör. Chiron) ekran cokmemeli.
+    testWidgets('ek noktalar ARTIK gizlenmez (R5-2)', (tester) async {
+      // Eski filtre Kiron/Lilith/Ay dugumlerini SESSIZCE atiyordu; hesaplanan
+      // veri kullaniciya hic gosterilmiyordu. Artik ayri bolumde duruyorlar.
       await tester.pumpWidget(_sar(AtlasPlanetsScreen(points: [
         ..._gezegenler,
-        {'name': 'Chiron', 'sign_tr': 'Koç', 'abs_position': 10.0},
+        {
+          'name': 'Chiron', 'name_tr': 'Kiron', 'sign': 'Ari',
+          'sign_tr': 'Koç', 'abs_position': 10.0, 'position': 10.0,
+        },
       ])));
       await _bekle(tester);
 
-      expect(find.textContaining('Chiron'), findsNothing);
+      expect(find.textContaining('Kiron'), findsOneWidget);
       expect(find.textContaining('Güneş'), findsOneWidget);
+    });
+
+    testWidgets('derece ve ev gosterilir (R5-2)', (tester) async {
+      await tester.pumpWidget(_sar(AtlasPlanetsScreen(points: [
+        {
+          'name': 'Sun', 'name_tr': 'Güneş', 'sign': 'Leo',
+          'sign_tr': 'Aslan', 'abs_position': 132.3, 'position': 12.3,
+          'house_no': 5,
+        },
+      ])));
+      await _bekle(tester);
+
+      expect(find.textContaining('12.3°'), findsOneWidget);
+      expect(find.textContaining('5. ev'), findsOneWidget);
+    });
+  });
+
+  group('acilar sayfasi — dayaniklilik', () {
+    testWidgets('orb eksikse ekran COKMEZ (R5-0)', (tester) async {
+      // Eski kod `(a['orbit'] as num)` diye korumasiz cast ediyordu.
+      await tester.pumpWidget(_sar(AtlasAspectsScreen(aspects: [
+        {
+          'p1': 'Sun', 'p1_tr': 'Güneş', 'p2': 'Mars', 'p2_tr': 'Mars',
+          'aspect': 'square', 'aspect_tr': 'Kare',
+        },
+      ])));
+      await _bekle(tester);
+
+      expect(tester.takeException(), isNull);
+      expect(find.textContaining('Güneş'), findsOneWidget);
+    });
+
+    testWidgets('en dar orb once gelir (R5-3)', (tester) async {
+      await tester.pumpWidget(_sar(AtlasAspectsScreen(aspects: [
+        {
+          'p1': 'Sun', 'p1_tr': 'Güneş', 'p2': 'Mars', 'p2_tr': 'Mars',
+          'aspect': 'square', 'aspect_tr': 'Kare', 'orbit': 6.0,
+        },
+        {
+          'p1': 'Moon', 'p1_tr': 'Ay', 'p2': 'Venus', 'p2_tr': 'Venüs',
+          'aspect': 'square', 'aspect_tr': 'Kare', 'orbit': 0.4,
+        },
+      ])));
+      await _bekle(tester);
+
+      final dar = tester.getTopLeft(find.text('Ay — Venüs')).dy;
+      final genis = tester.getTopLeft(find.text('Güneş — Mars')).dy;
+      expect(dar, lessThan(genis));
     });
   });
 
   group('kisilik sayfasi', () {
-    testWidgets('bes ozellik cubugu cizilir', (tester) async {
-      await tester.pumpWidget(_sar(AtlasTraitsScreen(points: _gezegenler)));
+    // R5-1: ekran ARTIK kendi sayimini yapmiyor. Eski `TraitBars` formulu
+    // (30 + 10*sayim) yalnizca sekiz deger uretebiliyor, dort elementin
+    // "yuzdesi" toplamda 260 ediyor ve Ay dugumlerini sayip Yukselen'i
+    // disarida birakiyordu. Tek dogruluk kaynagi sunucunun kanonik sayimi.
+    final harita = <String, dynamic>{
+      'element_distribution': {'fire': 3, 'earth': 2, 'air': 2, 'water': 1},
+      'modality_distribution': {'cardinal': 3, 'fixed': 4, 'mutable': 1},
+      'element_members': {
+        'fire': ['Sun', 'Mars', 'Ascendant'],
+        'earth': ['Venus', 'Saturn'],
+        'air': ['Mercury', 'Jupiter'],
+        'water': ['Moon'],
+      },
+      'modality_members': {
+        'cardinal': ['Sun', 'Mars', 'Moon'],
+        'fixed': ['Venus', 'Saturn', 'Mercury', 'Jupiter'],
+        'mutable': ['Ascendant'],
+      },
+      'points': _gezegenler,
+    };
+
+    testWidgets('sunucunun sayimi kesir olarak gosterilir', (tester) async {
+      await tester.pumpWidget(_sar(AtlasTraitsScreen(chart: harita)));
       await _cubuklariBekle(tester);
 
-      expect(find.text('Enerji'), findsOneWidget);
-      expect(find.text('Kararlılık'), findsOneWidget);
-      expect(find.text('İletişim'), findsOneWidget);
-      expect(find.text('Duyarlılık'), findsOneWidget);
-      expect(find.text('Pratiklik'), findsOneWidget);
+      expect(find.text('Ateş'), findsOneWidget);
+      expect(find.text('Su'), findsOneWidget);
+      // Toplam 8 (geleneksel yedili + Yukselen) — kesir, yuzde DEGIL.
+      expect(find.text('3/8'), findsWidgets);
+      expect(find.textContaining('%'), findsNothing);
     });
 
-    testWidgets('nokta yoksa sifira bolme HATASI vermez', (tester) async {
-      await tester.pumpWidget(_sar(const AtlasTraitsScreen(points: [])));
+    testWidgets('eksik element ACIKCA soylenir', (tester) async {
+      final eksik = Map<String, dynamic>.from(harita)
+        ..['element_distribution'] = {
+          'fire': 4, 'earth': 2, 'air': 2, 'water': 0,
+        }
+        ..['element_members'] = {
+          'fire': ['Sun'], 'earth': ['Venus'], 'air': ['Mercury'],
+          'water': <String>[],
+        };
+      await tester.pumpWidget(_sar(AtlasTraitsScreen(chart: eksik)));
       await _cubuklariBekle(tester);
 
-      expect(find.text('Enerji'), findsOneWidget);
+      // Eski cubuklarda sifir sayim %30 gorunuyordu — eksiklik gizleniyordu.
+      expect(find.textContaining('hiç yok'), findsOneWidget);
+    });
+
+    testWidgets('dagilim yoksa COKMEZ', (tester) async {
+      await tester.pumpWidget(_sar(const AtlasTraitsScreen(chart: {})));
+      await _cubuklariBekle(tester);
+
+      expect(tester.takeException(), isNull);
     });
   });
 }

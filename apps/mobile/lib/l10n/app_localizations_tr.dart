@@ -15,10 +15,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get atlasYearChartSubtitle => 'Yıl haritan (güneş dönüşü)';
 
   @override
-  String get atlasInnerCalendar => 'Önündeki günler';
+  String get atlasInnerCalendar => 'İç mevsim';
 
   @override
-  String get atlasInnerCalendarSubtitle => 'İç takvim: transit + progresyon';
+  String get atlasInnerCalendarSubtitle => 'Progres Ay + yaşam yayı';
 
   @override
   String get wizardWelcomeTitle => 'Yolculuk başlıyor';
@@ -196,17 +196,17 @@ class AppLocalizationsTr extends AppLocalizations {
   String get solarReturnNote => 'Rytho\'nun yıl okuması';
 
   @override
-  String get innerCalendarTitle => 'İç Takvim';
+  String get innerCalendarTitle => 'İç mevsim';
 
   @override
   String get innerCalendarWaitStage1 => 'Progres harita ilerletiliyor…';
 
   @override
-  String get innerCalendarWaitStage2 => '90 günün gökyüzü taranıyor…';
+  String get innerCalendarWaitStage2 => 'Progres Ay\'ın mevsimi okunuyor…';
 
   @override
   String get innerCalendarLockedBody =>
-      'Progres Ay\'ın iç mevsimi ve 90 günlük kişisel zaman çizgin Rytho+ ile açılır.';
+      'Progres Ay\'ın iç mevsimi ve yaşam yayın Rytho+ ile açılır.';
 
   @override
   String get innerCalendarProgMoon => 'Progres Ay — iç mevsimin';
@@ -220,7 +220,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get innerCalendarActive => 'Şu an etkin';
 
   @override
-  String get innerCalendarUpcoming => 'Önündeki 90 gün';
+  String get innerCalendarUpcoming => 'Önündeki 30 gün';
 
   @override
   String get innerCalendarQuiet =>
@@ -2132,4 +2132,298 @@ class AppLocalizationsTr extends AppLocalizations {
   String relationshipAskPrefill(String name, String axis) {
     return '$name ile ilişkimizde $axis ekseni hakkında konuşalım.';
   }
+
+  @override
+  String houseN(int n) {
+    return '$n. ev';
+  }
+
+  @override
+  String get perDay => 'gün';
+
+  @override
+  String get planetsSectionExtra => 'Ek noktalar';
+
+  @override
+  String get planetsFootnote =>
+      'Burç, derece ve ev doğum anının gerçek gökyüzünden hesaplanır (Swiss Ephemeris). Bir satıra dokun — o noktanın ne anlattığını gör.';
+
+  @override
+  String get planetDegree => 'Burçtaki derece';
+
+  @override
+  String get planetHouse => 'Ev';
+
+  @override
+  String get planetMotion => 'Hareket';
+
+  @override
+  String get planetSpeed => 'Günlük hız';
+
+  @override
+  String get planetRetrograde => 'retro';
+
+  @override
+  String get pointSheetFootnote =>
+      'Üstteki satırlar ölçümdür. Altındaki iki cümle, o gezegenin klasik anlamı ile bulunduğu ev alanını birleştirir — kişiye özel yorum için Rytho\'ya sorabilirsin.';
+
+  @override
+  String get pointAscendant => 'Yükselen';
+
+  @override
+  String get traitsElements => 'Element dengesi';
+
+  @override
+  String get traitsModalities => 'Nitelik dengesi';
+
+  @override
+  String get traitsSetNote =>
+      'Sayıma geleneksel yedili (Güneş, Ay, Merkür, Venüs, Mars, Jüpiter, Satürn) ve Yükselen girer — sekiz nokta.';
+
+  @override
+  String get traitsTapHint =>
+      'Bir satıra dokun: sayının hangi noktalardan çıktığını gör.';
+
+  @override
+  String traitsMissingElement(String elements) {
+    return '$elements bu haritada hiç yok — eksik element anlamlı bir ifadedir; eksiklik zayıflık değil, bir yön işaretidir.';
+  }
+
+  @override
+  String traitsSheetTitle(String name) {
+    return '$name — bu sayı nereden geliyor?';
+  }
+
+  @override
+  String get traitsMembersLabel => 'Bu gruba düşen noktalar';
+
+  @override
+  String get traitsNoMember => 'Bu gruba düşen nokta yok.';
+
+  @override
+  String get traitsSheetFootnote =>
+      'Sayım geleneksel yedili + Yükselen üzerinden yapılır. Tek bir burçtan mizaç okunmaz; esas olan dağılımın bütünüdür.';
+
+  @override
+  String get traitsUnavailable =>
+      'Dağılım verisi bu sürümde gelmedi. Uygulamayı güncelleyip tekrar dene.';
+
+  @override
+  String get elementFire => 'Ateş';
+
+  @override
+  String get elementEarth => 'Toprak';
+
+  @override
+  String get elementAir => 'Hava';
+
+  @override
+  String get elementWater => 'Su';
+
+  @override
+  String get elementFireLine =>
+      'Ateş: harekete geçme, cesaret, başlatma. Baskınsa hız vardır, sabır azdır.';
+
+  @override
+  String get elementEarthLine =>
+      'Toprak: somutlaştırma, süreklilik, güven. Baskınsa istikrar vardır, esneklik azdır.';
+
+  @override
+  String get elementAirLine =>
+      'Hava: düşünme, konuşma, bağ kurma. Baskınsa fikir boldur, derinleşmek zordur.';
+
+  @override
+  String get elementWaterLine =>
+      'Su: hissetme, sezgi, bağlanma. Baskınsa duygu derindir, sınır incedir.';
+
+  @override
+  String get temperamentFire =>
+      'Klasik gelenekte ateş baskınlığına safravî mizaç denir (sıcak/kuru). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.';
+
+  @override
+  String get temperamentEarth =>
+      'Klasik gelenekte toprak baskınlığına sevdavî mizaç denir (soğuk/kuru). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.';
+
+  @override
+  String get temperamentAir =>
+      'Klasik gelenekte hava baskınlığına demevî mizaç denir (sıcak/nemli). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.';
+
+  @override
+  String get temperamentWater =>
+      'Klasik gelenekte su baskınlığına balgamî mizaç denir (soğuk/nemli). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.';
+
+  @override
+  String get modalityCardinal => 'Öncü';
+
+  @override
+  String get modalityFixed => 'Sabit';
+
+  @override
+  String get modalityMutable => 'Değişken';
+
+  @override
+  String get modalityCardinalLine =>
+      'Öncü: başlatır, yön verir, ilk adımı atar.';
+
+  @override
+  String get modalityFixedLine => 'Sabit: sürdürür, direnir, kolay vazgeçmez.';
+
+  @override
+  String get modalityMutableLine =>
+      'Değişken: uyum sağlar, biçim değiştirir, dağılabilir.';
+
+  @override
+  String get aspectsGroupTension => 'Sert açılar — gerilim';
+
+  @override
+  String get aspectsGroupFlow => 'Uyumlu açılar — akış';
+
+  @override
+  String get aspectsGroupFocus => 'Kavuşumlar — yoğunlaşma';
+
+  @override
+  String get aspectsGroupOther => 'Diğer açılar';
+
+  @override
+  String get aspectsSortNote =>
+      'Her grupta en dar orb önce: orb ne kadar darsa açı o kadar güçlüdür.';
+
+  @override
+  String get aspectMeaningConjunction =>
+      'Kavuşum: iki gezegen aynı noktada birleşir; güçleri ayrışmaz, birlikte davranır.';
+
+  @override
+  String get aspectMeaningOpposition =>
+      'Karşıt: iki gezegen karşı karşıyadır; denge ancak ikisine de yer açınca kurulur.';
+
+  @override
+  String get aspectMeaningSquare =>
+      'Kare: sürtünme açısıdır; zorlar ama hareket ettirir — gelişmenin çoğu buradan çıkar.';
+
+  @override
+  String get aspectMeaningTrine =>
+      'Üçgen: akış açısıdır; kolay geldiği için çoğu zaman fark edilmeden kullanılır.';
+
+  @override
+  String get aspectMeaningSextile =>
+      'Altmışlık: fırsat açısıdır; kendiliğinden olmaz, elini uzatınca çalışır.';
+
+  @override
+  String get movementMeaningApplying =>
+      'Yaklaşıyor: açı tam olmaya gidiyor, etkisi güçleniyor.';
+
+  @override
+  String get movementMeaningSeparating =>
+      'Ayrılıyor: açı tamamlandı, etkisi sönüyor.';
+
+  @override
+  String get aspectSheetFootnote =>
+      'Açı ve orb doğum anının gerçek gökyüzünden ölçülür; açıklama klasik yorum geleneğidir.';
+
+  @override
+  String get house1 =>
+      '1. ev: kendini gösterme biçimin, bedenin, bıraktığın ilk izlenim.';
+
+  @override
+  String get house2 =>
+      '2. ev: sahip olduklarımız, kaynakların ve değer duygun.';
+
+  @override
+  String get house3 => '3. ev: konuşma, öğrenme, kardeşler, yakın çevre.';
+
+  @override
+  String get house4 => '4. ev: kök, ev, aile, içerideki güvenli yer.';
+
+  @override
+  String get house5 => '5. ev: yaratma, oyun, aşk, kendini ifade etme.';
+
+  @override
+  String get house6 => '6. ev: gündelik düzen, iş rutini, bedenin bakımı.';
+
+  @override
+  String get house7 => '7. ev: birebir ilişkiler, ortaklık, karşındaki.';
+
+  @override
+  String get house8 => '8. ev: paylaşılan kaynaklar, dönüşüm, derin bağ.';
+
+  @override
+  String get house9 => '9. ev: anlam arayışı, inanç, uzak yerler, öğretmek.';
+
+  @override
+  String get house10 => '10. ev: kariyer, toplum önündeki duruş, hedef.';
+
+  @override
+  String get house11 => '11. ev: arkadaşlıklar, topluluk, gelecek tasarısı.';
+
+  @override
+  String get house12 => '12. ev: geri çekilme, bilinçdışı, arkada kalan.';
+
+  @override
+  String get roleSun => 'Güneş: öz kimliğin, hayat enerjin, neye yöneldiğin.';
+
+  @override
+  String get roleMoon =>
+      'Ay: duygusal ihtiyacın, alışkanlıkların, kendini güvende hissetme biçimin.';
+
+  @override
+  String get roleMercury => 'Merkür: düşünme ve anlatma biçimin.';
+
+  @override
+  String get roleVenus =>
+      'Venüs: neyi sevdiğin, nasıl bağ kurduğun, neye değer verdiğin.';
+
+  @override
+  String get roleMars => 'Mars: nasıl harekete geçtiğin, öfken ve isteğin.';
+
+  @override
+  String get roleJupiter =>
+      'Jüpiter: büyüme alanın, iyimserliğin, anlam arayışın.';
+
+  @override
+  String get roleSaturn =>
+      'Satürn: sorumluluğun, sınırın, zamanla ustalaştığın yer.';
+
+  @override
+  String get roleUranus =>
+      'Uranüs: kuralı kırdığın, ani değişim getiren yönün.';
+
+  @override
+  String get roleNeptune =>
+      'Neptün: hayalin, sezgin, sınırların inceldiği yer.';
+
+  @override
+  String get rolePluto => 'Plüton: dönüşüm, güç ve yeniden doğuş alanın.';
+
+  @override
+  String get roleChiron =>
+      'Kiron: yaralandığın ve zamanla iyileştirmeyi öğrendiğin yer.';
+
+  @override
+  String get roleLilith => 'Lilith: uzlaşmadığın, evcilleşmeyen yanın.';
+
+  @override
+  String get roleNorthNode => 'Kuzey Ay Düğümü: geliştirmeye çağrıldığın yön.';
+
+  @override
+  String get roleSouthNode =>
+      'Güney Ay Düğümü: elinde hazır olan, geride bırakman gereken.';
+
+  @override
+  String get atlasReportPreparing => 'Rytho okumanı yazıyor…';
+
+  @override
+  String get atlasReportRetry => 'Okuma alınamadı — dokun, tekrar denesin.';
+
+  @override
+  String get retrogradeMeaning =>
+      '℞ retro: gezegen gökyüzünde geri gidiyor görünür. Klasik yorumda o alanda ilerleme dışa değil içe doğrudur — gözden geçirme, toparlama zamanı.';
+
+  @override
+  String get calendarLockedReading => 'Bu günün okuması Rytho+ ile açılır';
+
+  @override
+  String get calendarOtherEvents => 'Diğer hareketler';
+
+  @override
+  String get calendarStripTitle => 'Önündeki 30 gün';
 }

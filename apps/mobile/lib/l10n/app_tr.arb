@@ -2,8 +2,8 @@
   "@@locale": "tr",
   "atlasYearChart": "Doğum gününden doğum gününe",
   "atlasYearChartSubtitle": "Yıl haritan (güneş dönüşü)",
-  "atlasInnerCalendar": "Önündeki günler",
-  "atlasInnerCalendarSubtitle": "İç takvim: transit + progresyon",
+  "atlasInnerCalendar": "İç mevsim",
+  "atlasInnerCalendarSubtitle": "Progres Ay + yaşam yayı",
   "wizardWelcomeTitle": "Yolculuk başlıyor",
   "wizardWelcomeBody": "Birkaç adımda haritanı çizeceğiz: doğduğun an, gökyüzünün o anki hâli. Her adımda bir yıldız yanacak.",
   "wizardConsentLabel": "Kullanım Şartları'nı ve Gizlilik Politikası'nı okudum, kabul ediyorum. 13 yaşından büyüğüm.",
@@ -75,10 +75,10 @@
   },
   "solarReturnMoon": "Yıl Ay'ı",
   "solarReturnNote": "Rytho'nun yıl okuması",
-  "innerCalendarTitle": "İç Takvim",
+  "innerCalendarTitle": "İç mevsim",
   "innerCalendarWaitStage1": "Progres harita ilerletiliyor…",
-  "innerCalendarWaitStage2": "90 günün gökyüzü taranıyor…",
-  "innerCalendarLockedBody": "Progres Ay'ın iç mevsimi ve 90 günlük kişisel zaman çizgin Rytho+ ile açılır.",
+  "innerCalendarWaitStage2": "Progres Ay'ın mevsimi okunuyor…",
+  "innerCalendarLockedBody": "Progres Ay'ın iç mevsimi ve yaşam yayın Rytho+ ile açılır.",
   "innerCalendarProgMoon": "Progres Ay — iç mevsimin",
   "innerCalendarNextSign": "{date} → yeni burca geçiş",
   "@innerCalendarNextSign": {
@@ -89,7 +89,7 @@
     }
   },
   "innerCalendarActive": "Şu an etkin",
-  "innerCalendarUpcoming": "Önündeki 90 gün",
+  "innerCalendarUpcoming": "Önündeki 30 gün",
   "innerCalendarQuiet": "Bu pencerede kesinleşen açı yok — gökyüzü sakin.",
   "innerCalendarArc": "Yaşam yayı (solar arc)",
   "innerCalendarNote": "Rytho'nun iç mevsim okuması",
@@ -811,10 +811,20 @@
   "contactsNoSearchResult": "Aramayla eşleşen kişi yok.",
   "contactsInviteNeedsUsername": "Davet için önce bir kullanıcı adı al.",
   "inviteShareMessage": "Seni Rytho'ya davet ediyorum — kişisel kozmik zekân. Beni buradan ekleyebilirsin: {link}",
-  "@inviteShareMessage": { "placeholders": { "link": {} } },
+  "@inviteShareMessage": {
+    "placeholders": {
+      "link": {}
+    }
+  },
   "contactsFindEntry": "Rehberinden arkadaş bul",
   "contactsFindActive": "{count} kişi uygulamada",
-  "@contactsFindActive": { "placeholders": { "count": { "type": "int" } } },
+  "@contactsFindActive": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "contactsFindEnable": "Rehber eşleşmesini aç",
   "contactsFindVerifyPhone": "Bulmak için numaranı doğrula",
   "phoneSectionLabel": "TELEFON",
@@ -1045,5 +1055,110 @@
         "type": "String"
       }
     }
-  }
+  },
+  "houseN": "{n}. ev",
+  "@houseN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "perDay": "gün",
+  "planetsSectionExtra": "Ek noktalar",
+  "planetsFootnote": "Burç, derece ve ev doğum anının gerçek gökyüzünden hesaplanır (Swiss Ephemeris). Bir satıra dokun — o noktanın ne anlattığını gör.",
+  "planetDegree": "Burçtaki derece",
+  "planetHouse": "Ev",
+  "planetMotion": "Hareket",
+  "planetSpeed": "Günlük hız",
+  "planetRetrograde": "retro",
+  "pointSheetFootnote": "Üstteki satırlar ölçümdür. Altındaki iki cümle, o gezegenin klasik anlamı ile bulunduğu ev alanını birleştirir — kişiye özel yorum için Rytho'ya sorabilirsin.",
+  "pointAscendant": "Yükselen",
+  "traitsElements": "Element dengesi",
+  "traitsModalities": "Nitelik dengesi",
+  "traitsSetNote": "Sayıma geleneksel yedili (Güneş, Ay, Merkür, Venüs, Mars, Jüpiter, Satürn) ve Yükselen girer — sekiz nokta.",
+  "traitsTapHint": "Bir satıra dokun: sayının hangi noktalardan çıktığını gör.",
+  "traitsMissingElement": "{elements} bu haritada hiç yok — eksik element anlamlı bir ifadedir; eksiklik zayıflık değil, bir yön işaretidir.",
+  "@traitsMissingElement": {
+    "placeholders": {
+      "elements": {
+        "type": "String"
+      }
+    }
+  },
+  "traitsSheetTitle": "{name} — bu sayı nereden geliyor?",
+  "@traitsSheetTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "traitsMembersLabel": "Bu gruba düşen noktalar",
+  "traitsNoMember": "Bu gruba düşen nokta yok.",
+  "traitsSheetFootnote": "Sayım geleneksel yedili + Yükselen üzerinden yapılır. Tek bir burçtan mizaç okunmaz; esas olan dağılımın bütünüdür.",
+  "traitsUnavailable": "Dağılım verisi bu sürümde gelmedi. Uygulamayı güncelleyip tekrar dene.",
+  "elementFire": "Ateş",
+  "elementEarth": "Toprak",
+  "elementAir": "Hava",
+  "elementWater": "Su",
+  "elementFireLine": "Ateş: harekete geçme, cesaret, başlatma. Baskınsa hız vardır, sabır azdır.",
+  "elementEarthLine": "Toprak: somutlaştırma, süreklilik, güven. Baskınsa istikrar vardır, esneklik azdır.",
+  "elementAirLine": "Hava: düşünme, konuşma, bağ kurma. Baskınsa fikir boldur, derinleşmek zordur.",
+  "elementWaterLine": "Su: hissetme, sezgi, bağlanma. Baskınsa duygu derindir, sınır incedir.",
+  "temperamentFire": "Klasik gelenekte ateş baskınlığına safravî mizaç denir (sıcak/kuru). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.",
+  "temperamentEarth": "Klasik gelenekte toprak baskınlığına sevdavî mizaç denir (soğuk/kuru). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.",
+  "temperamentAir": "Klasik gelenekte hava baskınlığına demevî mizaç denir (sıcak/nemli). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.",
+  "temperamentWater": "Klasik gelenekte su baskınlığına balgamî mizaç denir (soğuk/nemli). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.",
+  "modalityCardinal": "Öncü",
+  "modalityFixed": "Sabit",
+  "modalityMutable": "Değişken",
+  "modalityCardinalLine": "Öncü: başlatır, yön verir, ilk adımı atar.",
+  "modalityFixedLine": "Sabit: sürdürür, direnir, kolay vazgeçmez.",
+  "modalityMutableLine": "Değişken: uyum sağlar, biçim değiştirir, dağılabilir.",
+  "aspectsGroupTension": "Sert açılar — gerilim",
+  "aspectsGroupFlow": "Uyumlu açılar — akış",
+  "aspectsGroupFocus": "Kavuşumlar — yoğunlaşma",
+  "aspectsGroupOther": "Diğer açılar",
+  "aspectsSortNote": "Her grupta en dar orb önce: orb ne kadar darsa açı o kadar güçlüdür.",
+  "aspectMeaningConjunction": "Kavuşum: iki gezegen aynı noktada birleşir; güçleri ayrışmaz, birlikte davranır.",
+  "aspectMeaningOpposition": "Karşıt: iki gezegen karşı karşıyadır; denge ancak ikisine de yer açınca kurulur.",
+  "aspectMeaningSquare": "Kare: sürtünme açısıdır; zorlar ama hareket ettirir — gelişmenin çoğu buradan çıkar.",
+  "aspectMeaningTrine": "Üçgen: akış açısıdır; kolay geldiği için çoğu zaman fark edilmeden kullanılır.",
+  "aspectMeaningSextile": "Altmışlık: fırsat açısıdır; kendiliğinden olmaz, elini uzatınca çalışır.",
+  "movementMeaningApplying": "Yaklaşıyor: açı tam olmaya gidiyor, etkisi güçleniyor.",
+  "movementMeaningSeparating": "Ayrılıyor: açı tamamlandı, etkisi sönüyor.",
+  "aspectSheetFootnote": "Açı ve orb doğum anının gerçek gökyüzünden ölçülür; açıklama klasik yorum geleneğidir.",
+  "house1": "1. ev: kendini gösterme biçimin, bedenin, bıraktığın ilk izlenim.",
+  "house2": "2. ev: sahip olduklarımız, kaynakların ve değer duygun.",
+  "house3": "3. ev: konuşma, öğrenme, kardeşler, yakın çevre.",
+  "house4": "4. ev: kök, ev, aile, içerideki güvenli yer.",
+  "house5": "5. ev: yaratma, oyun, aşk, kendini ifade etme.",
+  "house6": "6. ev: gündelik düzen, iş rutini, bedenin bakımı.",
+  "house7": "7. ev: birebir ilişkiler, ortaklık, karşındaki.",
+  "house8": "8. ev: paylaşılan kaynaklar, dönüşüm, derin bağ.",
+  "house9": "9. ev: anlam arayışı, inanç, uzak yerler, öğretmek.",
+  "house10": "10. ev: kariyer, toplum önündeki duruş, hedef.",
+  "house11": "11. ev: arkadaşlıklar, topluluk, gelecek tasarısı.",
+  "house12": "12. ev: geri çekilme, bilinçdışı, arkada kalan.",
+  "roleSun": "Güneş: öz kimliğin, hayat enerjin, neye yöneldiğin.",
+  "roleMoon": "Ay: duygusal ihtiyacın, alışkanlıkların, kendini güvende hissetme biçimin.",
+  "roleMercury": "Merkür: düşünme ve anlatma biçimin.",
+  "roleVenus": "Venüs: neyi sevdiğin, nasıl bağ kurduğun, neye değer verdiğin.",
+  "roleMars": "Mars: nasıl harekete geçtiğin, öfken ve isteğin.",
+  "roleJupiter": "Jüpiter: büyüme alanın, iyimserliğin, anlam arayışın.",
+  "roleSaturn": "Satürn: sorumluluğun, sınırın, zamanla ustalaştığın yer.",
+  "roleUranus": "Uranüs: kuralı kırdığın, ani değişim getiren yönün.",
+  "roleNeptune": "Neptün: hayalin, sezgin, sınırların inceldiği yer.",
+  "rolePluto": "Plüton: dönüşüm, güç ve yeniden doğuş alanın.",
+  "roleChiron": "Kiron: yaralandığın ve zamanla iyileştirmeyi öğrendiğin yer.",
+  "roleLilith": "Lilith: uzlaşmadığın, evcilleşmeyen yanın.",
+  "roleNorthNode": "Kuzey Ay Düğümü: geliştirmeye çağrıldığın yön.",
+  "roleSouthNode": "Güney Ay Düğümü: elinde hazır olan, geride bırakman gereken.",
+  "atlasReportPreparing": "Rytho okumanı yazıyor…",
+  "atlasReportRetry": "Okuma alınamadı — dokun, tekrar denesin.",
+  "retrogradeMeaning": "℞ retro: gezegen gökyüzünde geri gidiyor görünür. Klasik yorumda o alanda ilerleme dışa değil içe doğrudur — gözden geçirme, toparlama zamanı.",
+  "calendarLockedReading": "Bu günün okuması Rytho+ ile açılır",
+  "calendarOtherEvents": "Diğer hareketler",
+  "calendarStripTitle": "Önündeki 30 gün"
 }

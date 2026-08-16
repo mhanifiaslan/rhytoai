@@ -15,11 +15,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get atlasYearChartSubtitle => 'Your year chart (solar return)';
 
   @override
-  String get atlasInnerCalendar => 'The days ahead';
+  String get atlasInnerCalendar => 'Inner season';
 
   @override
-  String get atlasInnerCalendarSubtitle =>
-      'Inner calendar: transits + progressions';
+  String get atlasInnerCalendarSubtitle => 'Progressed Moon + life arc';
 
   @override
   String get wizardWelcomeTitle => 'The journey begins';
@@ -196,17 +195,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get solarReturnNote => 'Rytho\'s year reading';
 
   @override
-  String get innerCalendarTitle => 'Inner Calendar';
+  String get innerCalendarTitle => 'Inner season';
 
   @override
   String get innerCalendarWaitStage1 => 'Advancing the progressed chart…';
 
   @override
-  String get innerCalendarWaitStage2 => 'Scanning 90 days of sky…';
+  String get innerCalendarWaitStage2 =>
+      'Reading the progressed Moon\'s season…';
 
   @override
   String get innerCalendarLockedBody =>
-      'The progressed Moon\'s inner season and your 90-day personal timeline open with Rytho+.';
+      'The progressed Moon\'s inner season and your life arc open with Rytho+.';
 
   @override
   String get innerCalendarProgMoon => 'Progressed Moon — your inner season';
@@ -220,7 +220,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get innerCalendarActive => 'Active now';
 
   @override
-  String get innerCalendarUpcoming => 'The next 90 days';
+  String get innerCalendarUpcoming => 'The next 30 days';
 
   @override
   String get innerCalendarQuiet =>
@@ -2135,4 +2135,308 @@ class AppLocalizationsEn extends AppLocalizations {
   String relationshipAskPrefill(String name, String axis) {
     return 'Let\'s talk about the $axis axis in my relationship with $name.';
   }
+
+  @override
+  String houseN(int n) {
+    return 'house $n';
+  }
+
+  @override
+  String get perDay => 'day';
+
+  @override
+  String get planetsSectionExtra => 'Additional points';
+
+  @override
+  String get planetsFootnote =>
+      'Sign, degree and house are computed from the real sky at your birth moment (Swiss Ephemeris). Tap a row to see what that point speaks to.';
+
+  @override
+  String get planetDegree => 'Degree in sign';
+
+  @override
+  String get planetHouse => 'House';
+
+  @override
+  String get planetMotion => 'Motion';
+
+  @override
+  String get planetSpeed => 'Daily speed';
+
+  @override
+  String get planetRetrograde => 'retrograde';
+
+  @override
+  String get pointSheetFootnote =>
+      'The rows above are measurements. The two sentences below combine that planet\'s classical meaning with the house it falls in — ask Rytho for a reading specific to you.';
+
+  @override
+  String get pointAscendant => 'Ascendant';
+
+  @override
+  String get traitsElements => 'Element balance';
+
+  @override
+  String get traitsModalities => 'Modality balance';
+
+  @override
+  String get traitsSetNote =>
+      'The count uses the traditional seven (Sun, Moon, Mercury, Venus, Mars, Jupiter, Saturn) plus the Ascendant — eight points.';
+
+  @override
+  String get traitsTapHint =>
+      'Tap a row to see which points the number comes from.';
+
+  @override
+  String traitsMissingElement(String elements) {
+    return '$elements is entirely absent from this chart — a missing element is a meaningful statement, a direction rather than a weakness.';
+  }
+
+  @override
+  String traitsSheetTitle(String name) {
+    return '$name — where does this number come from?';
+  }
+
+  @override
+  String get traitsMembersLabel => 'Points in this group';
+
+  @override
+  String get traitsNoMember => 'No point falls in this group.';
+
+  @override
+  String get traitsSheetFootnote =>
+      'The count runs over the traditional seven plus the Ascendant. Temperament is never read from a single sign; the whole distribution is what counts.';
+
+  @override
+  String get traitsUnavailable =>
+      'This version did not receive the distribution data. Update the app and try again.';
+
+  @override
+  String get elementFire => 'Fire';
+
+  @override
+  String get elementEarth => 'Earth';
+
+  @override
+  String get elementAir => 'Air';
+
+  @override
+  String get elementWater => 'Water';
+
+  @override
+  String get elementFireLine =>
+      'Fire: moving, daring, starting. Where it dominates there is speed and little patience.';
+
+  @override
+  String get elementEarthLine =>
+      'Earth: making solid, lasting, trustworthy. Where it dominates there is steadiness and little give.';
+
+  @override
+  String get elementAirLine =>
+      'Air: thinking, speaking, connecting. Where it dominates ideas are plentiful and depth is hard.';
+
+  @override
+  String get elementWaterLine =>
+      'Water: feeling, sensing, attaching. Where it dominates emotion runs deep and boundaries run thin.';
+
+  @override
+  String get temperamentFire =>
+      'Classically, a fire emphasis is called a choleric temperament (hot/dry). That name comes from the distribution above, never from a single sign.';
+
+  @override
+  String get temperamentEarth =>
+      'Classically, an earth emphasis is called a melancholic temperament (cold/dry). That name comes from the distribution above, never from a single sign.';
+
+  @override
+  String get temperamentAir =>
+      'Classically, an air emphasis is called a sanguine temperament (hot/moist). That name comes from the distribution above, never from a single sign.';
+
+  @override
+  String get temperamentWater =>
+      'Classically, a water emphasis is called a phlegmatic temperament (cold/moist). That name comes from the distribution above, never from a single sign.';
+
+  @override
+  String get modalityCardinal => 'Cardinal';
+
+  @override
+  String get modalityFixed => 'Fixed';
+
+  @override
+  String get modalityMutable => 'Mutable';
+
+  @override
+  String get modalityCardinalLine =>
+      'Cardinal: begins, sets direction, takes the first step.';
+
+  @override
+  String get modalityFixedLine =>
+      'Fixed: sustains, resists, does not let go easily.';
+
+  @override
+  String get modalityMutableLine =>
+      'Mutable: adapts, changes shape, can scatter.';
+
+  @override
+  String get aspectsGroupTension => 'Hard aspects — tension';
+
+  @override
+  String get aspectsGroupFlow => 'Soft aspects — flow';
+
+  @override
+  String get aspectsGroupFocus => 'Conjunctions — concentration';
+
+  @override
+  String get aspectsGroupOther => 'Other aspects';
+
+  @override
+  String get aspectsSortNote =>
+      'Tightest orb first in each group: the tighter the orb, the stronger the aspect.';
+
+  @override
+  String get aspectMeaningConjunction =>
+      'Conjunction: two planets meet at one point; their forces do not separate, they act together.';
+
+  @override
+  String get aspectMeaningOpposition =>
+      'Opposition: two planets face each other; balance comes only from making room for both.';
+
+  @override
+  String get aspectMeaningSquare =>
+      'Square: the friction aspect; it presses, but it also moves you — most growth comes from here.';
+
+  @override
+  String get aspectMeaningTrine =>
+      'Trine: the flow aspect; it comes easily, which is why it is often used without noticing.';
+
+  @override
+  String get aspectMeaningSextile =>
+      'Sextile: the opportunity aspect; it does not happen by itself, it works when you reach for it.';
+
+  @override
+  String get movementMeaningApplying =>
+      'Applying: the aspect is moving toward exact, its effect is building.';
+
+  @override
+  String get movementMeaningSeparating =>
+      'Separating: the aspect has perfected, its effect is fading.';
+
+  @override
+  String get aspectSheetFootnote =>
+      'Aspect and orb are measured from the real sky at your birth moment; the explanation is classical interpretive tradition.';
+
+  @override
+  String get house1 =>
+      'House 1: how you show up, your body, the first impression you leave.';
+
+  @override
+  String get house2 =>
+      'House 2: what you own, your resources, your sense of worth.';
+
+  @override
+  String get house3 =>
+      'House 3: speaking, learning, siblings, the near circle.';
+
+  @override
+  String get house4 => 'House 4: roots, home, family, the safe place inside.';
+
+  @override
+  String get house5 => 'House 5: creating, play, love, self-expression.';
+
+  @override
+  String get house6 => 'House 6: daily order, work routine, care of the body.';
+
+  @override
+  String get house7 =>
+      'House 7: one-to-one relationships, partnership, the other.';
+
+  @override
+  String get house8 => 'House 8: shared resources, transformation, deep bonds.';
+
+  @override
+  String get house9 =>
+      'House 9: search for meaning, belief, far places, teaching.';
+
+  @override
+  String get house10 => 'House 10: career, public standing, the goal.';
+
+  @override
+  String get house11 =>
+      'House 11: friendships, community, plans for the future.';
+
+  @override
+  String get house12 =>
+      'House 12: withdrawal, the unconscious, what stays behind.';
+
+  @override
+  String get roleSun =>
+      'Sun: your core identity, life energy, what you move toward.';
+
+  @override
+  String get roleMoon =>
+      'Moon: your emotional need, your habits, how you feel safe.';
+
+  @override
+  String get roleMercury =>
+      'Mercury: how you think and how you put it into words.';
+
+  @override
+  String get roleVenus => 'Venus: what you love, how you bond, what you value.';
+
+  @override
+  String get roleMars => 'Mars: how you act, your anger and your wanting.';
+
+  @override
+  String get roleJupiter =>
+      'Jupiter: where you grow, your optimism, your search for meaning.';
+
+  @override
+  String get roleSaturn =>
+      'Saturn: your responsibility, your limit, where you master with time.';
+
+  @override
+  String get roleUranus =>
+      'Uranus: where you break the rule and sudden change enters.';
+
+  @override
+  String get roleNeptune =>
+      'Neptune: your dreaming, your intuition, where boundaries thin out.';
+
+  @override
+  String get rolePluto =>
+      'Pluto: your field of transformation, power and rebirth.';
+
+  @override
+  String get roleChiron =>
+      'Chiron: where you were wounded and learned, in time, to heal.';
+
+  @override
+  String get roleLilith =>
+      'Lilith: the part of you that never settles or tames.';
+
+  @override
+  String get roleNorthNode =>
+      'North Node: the direction you are called to develop.';
+
+  @override
+  String get roleSouthNode =>
+      'South Node: what already comes easily and must be left behind.';
+
+  @override
+  String get atlasReportPreparing => 'Rytho is writing your reading…';
+
+  @override
+  String get atlasReportRetry => 'Couldn\'t load the reading — tap to retry.';
+
+  @override
+  String get retrogradeMeaning =>
+      '℞ retrograde: the planet appears to move backward. Classically, progress in that area turns inward rather than outward — a time to review and gather.';
+
+  @override
+  String get calendarLockedReading => 'This day\'s reading opens with Rytho+';
+
+  @override
+  String get calendarOtherEvents => 'Other movements';
+
+  @override
+  String get calendarStripTitle => 'The next 30 days';
 }

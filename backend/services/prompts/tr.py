@@ -518,9 +518,17 @@ ASTRO_NOTES = {
         "takvime alınmadı; takvim gezegen düzeyinde kalır."),
     # {city} biçim alanı taşıyan beyanlar (D3): metin localize katmanında
     # haritanın kurulduğu şehirle doldurulur.
+    # R5-5: eski metin yalnız kurulduğu şehri anıyordu ("Bu yıl haritası
+    # Ankara için kuruldu") ve Urfa doğumlu kullanıcı bunu kendi doğum
+    # yeriyle ilişkilendiremedi — "yıl haritası doğum yerine kurulmaz mı?"
+    # Hesap doğru, anlatım eksikti: beyan artık İKİ şehri de adıyla anıyor
+    # ve neyin değişip neyin sabit kaldığını söylüyor.
     "sr_relocated": (
-        "Bu yıl haritası {city} için kuruldu — yıl haritası, doğum "
-        "gününde bulunulan yere kurulur."),
+        "Yıl haritan {city} için kuruldu — yaşadığın şehir. Doğum yerin "
+        "{birth_city}; yıl haritası doğum yerine değil, doğum gününde "
+        "bulunduğun yere kurulur. Değişen Yükselen ve evlerdir; "
+        "gezegenlerin burçları aynı kalır. Doğum gününde başka bir "
+        "şehirdeysen Profil → Yaşadığın şehir."),
     "sr_birthplace_fallback": (
         "Yaşadığın şehir kayıtlı olmadığı için yıl haritası doğum şehrine "
         "kuruldu. Doğum gününde başka bir yerdeysen Yükselen ve evler "

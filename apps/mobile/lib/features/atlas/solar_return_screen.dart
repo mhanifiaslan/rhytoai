@@ -8,8 +8,11 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
+import '../../widgets/glass.dart';
+import '../../widgets/markdown_text.dart' show markdownToPlain;
 import '../../widgets/motion.dart';
 import '../paywall/plus_locked_card.dart';
+import '../share/share_card.dart' show shareReportCard;
 
 /// Yıl Haritası (T5): aktif güneş dönüşü — Güneş'in natal boylamına tam
 /// döndüğü ana kurulan harita, bir sonraki doğum gününe kadar geçerli
@@ -67,57 +70,92 @@ class SolarReturnScreen extends ConsumerWidget {
               .fadeIn(duration: 380.ms)
               .slideY(begin: 0.06, curve: Curves.easeOutCubic);
 
+          final ascMetni = asc != null
+              ? '${asc['sign_local'] ?? asc['sign']} ${asc['position']}°'
+              : null;
+          final ayMetni =
+              '${sr['sr_moon_local'] ?? sr['sr_moon_sign'] ?? '-'}';
+          final rapor = (data['report'] ?? '') as String;
+
+          // Paylaşım rozetleri: yılın üç ölçülen işareti. Saat bilinmiyorsa
+          // Yükselen/ev HİÇ hesaplanmıyor — o rozetler de kurulmaz.
+          final rozetler = <(String, String)>[
+            if (ascMetni != null) (l10n.solarReturnAsc, ascMetni),
+            if (gunesEvi != null)
+              (l10n.solarReturnSunHouse, l10n.solarReturnHouseN(gunesEvi)),
+            (l10n.solarReturnMoon, ayMetni),
+          ];
+
           return ListView(
             padding: const EdgeInsets.only(top: 8, bottom: 120),
             children: [
-              // Dönüş anı — dakika hassasiyetinde hesap, mono yazımla.
-              blok(Plaque(
+              // Dönüş anı — yılın açılış anı, ekranın en büyük tipografisi.
+              // Dakika hassasiyetli bir hesap; büyük yazılması hak edilmiş.
+              blok(_DonusKarti(
                 label: l10n.solarReturnMoment,
-                child:
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(_an(sr['return_at_local']),
-                      style: RythoText.mono(22,
-                          color: RythoColors.goldBright)),
-                  const SizedBox(height: 6),
-                  Text(
-                      l10n.solarReturnNext(
-                          _an(sr['next_return_at_local'])),
-                      style: RythoText.body(12,
-                          color: RythoColors.parchmentDim)),
-                ]),
+                tarih: _tarih(sr['return_at_local']),
+                saat: _saat(sr['return_at_local']),
+                altYazi:
+                    l10n.solarReturnNext(_an(sr['next_return_at_local'])),
               )),
-              // Saatsizlik/şehir beyanı — natal ekrandaki bakır dil.
-              if (beyanlar.isNotEmpty)
-                blok(Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                  child: Text(beyanlar.join('\n'),
-                      style:
-                          RythoText.body(11.5, color: RythoColors.copper)),
-                )),
-              // Yılın kimliği: SR Yükseleni (saat biliniyorsa), Güneş'in
-              // yıl evi, yıl Ay'ı. Alan YOKSA satır HİÇ kurulmaz.
-              blok(Plaque(
-                label: l10n.solarReturnIdentity,
-                child: Column(
+              // Yılın kimliği: üç rozet yan yana. Eskiden etiket–değer
+              // satırlarıydı; yılın işaretleri bir bakışta okunmalı.
+              blok(Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: GlassPanel(
+                  label: l10n.solarReturnIdentity,
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (asc != null)
-                        _satir(l10n.solarReturnAsc,
-                            '${asc['sign_local'] ?? asc['sign']} ${asc['position']}°'),
-                      if (gunesEvi != null)
-                        _satir(l10n.solarReturnSunHouse,
-                            l10n.solarReturnHouseN(gunesEvi)),
-                      _satir(l10n.solarReturnMoon,
-                          '${sr['sr_moon_local'] ?? sr['sr_moon_sign'] ?? '-'}'),
-                    ]),
+                      for (final (etiket, deger) in rozetler)
+                        Expanded(child: _Rozet(etiket: etiket, deger: deger)),
+                    ],
+                  ),
+                ),
               )),
+              // Saatsizlik/şehir beyanı — natal ekrandaki bakır dil.
+              // Rozetlerin ALTINDA: hangi şehre kurulduğu, ancak neyin
+              // hesaplandığı görüldükten sonra anlam taşıyor.
+              if (beyanlar.isNotEmpty)
+                blok(Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Padding(
+                          padding: EdgeInsets.only(top: 2, right: 8),
+                          child: Icon(Icons.place_outlined,
+                              size: 14, color: RythoColors.copper),
+                        ),
+                        Expanded(
+                          child: Text(beyanlar.join('\n\n'),
+                              style: RythoText.body(11.5,
+                                  color: RythoColors.copper, height: 1.5)),
+                        ),
+                      ]),
+                )),
               blok(const SectionDivider()),
               blok(Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: MarginNote(
-                    title: l10n.solarReturnNote,
-                    text: data['report'] ?? ''),
+                    title: l10n.solarReturnNote, text: rapor),
               )),
+              if (rapor.trim().isNotEmpty)
+                blok(Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.ios_share_rounded, size: 18),
+                    label: Text(l10n.shareReading),
+                    onPressed: () => shareReportCard(
+                      context,
+                      title: l10n.solarReturnTitle,
+                      body: markdownToPlain(rapor),
+                      dateLabel: _tarih(sr['return_at_local']),
+                      badges: rozetler,
+                      glyph: '🌞',
+                    ),
+                  ),
+                )),
             ],
           );
         },
@@ -132,14 +170,88 @@ class SolarReturnScreen extends ConsumerWidget {
     return s.length >= 16 ? '${s.substring(0, 10)} ${s.substring(11, 16)}' : s;
   }
 
-  static Widget _satir(String etiket, String deger) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 3),
-        child: Row(children: [
-          Expanded(
-              child: Text(etiket,
-                  style: RythoText.body(13,
-                      color: RythoColors.parchmentDim))),
-          Text(deger, style: RythoText.body(13.5, w: FontWeight.w700)),
-        ]),
-      );
+  static String _tarih(Object? iso) {
+    final s = (iso ?? '').toString();
+    return s.length >= 10 ? s.substring(0, 10) : s;
+  }
+
+  static String _saat(Object? iso) {
+    final s = (iso ?? '').toString();
+    return s.length >= 16 ? s.substring(11, 16) : '';
+  }
+}
+
+/// Yılın açılış anı — ekranın taşıyıcı görseli.
+class _DonusKarti extends StatelessWidget {
+  const _DonusKarti({
+    required this.label,
+    required this.tarih,
+    required this.saat,
+    required this.altYazi,
+  });
+
+  final String label;
+  final String tarih;
+  final String saat;
+  final String altYazi;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GlassPanel(
+        label: label,
+        glow: true,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+              const Text('🌞', style: TextStyle(fontSize: 34)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(tarih,
+                        style: RythoText.display(26,
+                            color: RythoColors.goldBright)),
+                    if (saat.isNotEmpty)
+                      Text(saat,
+                          style: RythoText.mono(15,
+                              color: RythoColors.parchmentDim)),
+                  ],
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            Text(altYazi,
+                style: RythoText.body(12, color: RythoColors.parchmentDim)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Yılın kimliğindeki tek rozet: küçük etiket + altın değer.
+class _Rozet extends StatelessWidget {
+  const _Rozet({required this.etiket, required this.deger});
+
+  final String etiket;
+  final String deger;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(etiket.toUpperCase(),
+            style: RythoText.label(9, color: RythoColors.parchmentDim)),
+        const SizedBox(height: 6),
+        Text(deger,
+            style: RythoText.body(14,
+                w: FontWeight.w700, color: RythoColors.goldBright)),
+      ],
+    );
+  }
 }

@@ -332,16 +332,25 @@ def localize_iching(lang: str | None, cast: dict | None) -> dict:
 def _disclosure_texts(lang: str | None, chart: dict) -> list[str]:
     """Beyan anahtarlarını isteğin dilinde cümleye çevirir.
 
-    Bazı beyanlar biçim alanı taşır (``{city}`` — hangi şehre kuruldu):
-    sabit metin yetmez, değeri yükün kendisinden gelir. BaZi'nin
-    `BAZI_TST_NOTE` deseninin aynısı, tablo tarafında.
+    Bazı beyanlar biçim alanı taşır (``{city}`` — hangi şehre kuruldu,
+    ``{birth_city}`` — doğum yeri): sabit metin yetmez, değeri yükün
+    kendisinden gelir. BaZi'nin `BAZI_TST_NOTE` deseninin aynısı, tablo
+    tarafında.
+
+    Doğum şehri yükte yoksa (eski önbellek kayıtları) alan boş kalır ve
+    metin yine kurulur — beyan hiçbir koşulda ``{birth_city}`` diye ham
+    görünmez.
     """
     p = get(lang)
-    sehir = (chart.get("location") or {}).get("city") or ""
+    yer = chart.get("location") or {}
+    alanlar = {"city": yer.get("city") or "",
+               "birth_city": yer.get("birth_city") or ""}
     metinler = []
     for anahtar in chart.get("disclosures") or []:
         ham = p.ASTRO_NOTES.get(anahtar, anahtar)
-        metinler.append(ham.format(city=sehir) if "{city}" in ham else ham)
+        for alan, deger in alanlar.items():
+            ham = ham.replace("{" + alan + "}", deger)
+        metinler.append(ham)
     return metinler
 
 

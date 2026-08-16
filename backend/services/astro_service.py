@@ -192,6 +192,10 @@ def _point_dict(point) -> dict[str, Any]:
         "position": round(point.position, 2),
         "abs_position": round(point.abs_pos, 2),
         "house": getattr(point, "house", None),
+        # R5-2: ev NUMARASI. kerykeion metin döndürüyor ("Fifth_House") ve
+        # her istemci bunu kendi tablosuyla çözmek zorunda kalıyordu —
+        # aynı bilginin iki yerde çözülmesi sapma kaynağı.
+        "house_no": _HOUSE_NO.get(getattr(point, "house", None)),
         "retrograde": bool(getattr(point, "retrograde", False)),
         "element": getattr(point, "element", None),
         "declination": round(dec, 2) if dec is not None else None,
@@ -260,13 +264,24 @@ def get_natal_chart(
     # Denge sayımı (T4): geleneksel yedili + Yükselen — chart_context'in
     # sohbet fısıltısındaki kanonla aynı; artık API/rapor da görüyor.
     puanlar = _subject_points(subject)
-    sayilacak = [p["sign"] for p in puanlar
-                 if p["name"] in _BALANCE_PLANETS] + [asc.sign]
+    # (ad, burç kodu) çiftleri: sayım ve ÜYE listesi aynı kaynaktan çıksın.
+    sayilacak = [(p["name"], p["sign"]) for p in puanlar
+                 if p["name"] in _BALANCE_PLANETS] + [("Ascendant", asc.sign)]
     elementler = {"fire": 0, "earth": 0, "air": 0, "water": 0}
     nitelikler = {"cardinal": 0, "fixed": 0, "mutable": 0}
-    for kod in sayilacak:
-        elementler[_ELEMENT_BY_SIGN[kod]] += 1
-        nitelikler[_MODALITY_BY_SIGN[kod]] += 1
+    # R5-1: hangi noktanın hangi elemente/niteliğe düştüğü de dönüyor.
+    # Arayüz "bu sayı nereden geldi" sorusunu ancak üyeleri göstererek
+    # cevaplayabilir; istemcinin kendi sayımını yapması (eski TraitBars)
+    # kanondan sapan ikinci bir hesap üretiyordu.
+    element_uyeleri: dict[str, list[str]] = {e: [] for e in elementler}
+    nitelik_uyeleri: dict[str, list[str]] = {n: [] for n in nitelikler}
+    for ad, kod in sayilacak:
+        element = _ELEMENT_BY_SIGN[kod]
+        nitelik = _MODALITY_BY_SIGN[kod]
+        elementler[element] += 1
+        nitelikler[nitelik] += 1
+        element_uyeleri[element].append(ad)
+        nitelik_uyeleri[nitelik].append(ad)
 
     ev_sayimi: dict[int, int] = {}
     for p in puanlar:
@@ -294,6 +309,12 @@ def get_natal_chart(
         "aspects": _aspects_list(aspects),
         "element_distribution": elementler,
         "modality_distribution": nitelikler,
+        # Sayımın DAYANAĞI (R5-1): {"fire": ["Sun", "Mars"], ...}
+        "element_members": element_uyeleri,
+        "modality_members": nitelik_uyeleri,
+        # Sayıma girenler açıkça beyan edilir: arayüz "geleneksel yedili +
+        # Yükselen" diyebilsin, kullanıcı neyin sayıldığını bilsin.
+        "balance_set": list(_BALANCE_PLANETS) + ["Ascendant"],
         "stelliums": yigilmalar,
         "declination_aspects": _declination_aspects(puanlar),
         "disclosures": disclosures,

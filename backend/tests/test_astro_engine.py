@@ -202,3 +202,46 @@ class TestSinirDurumlari:
 
     def test_artik_yil_29_subat(self):
         self._yapisal(_harita(2000, 2, 29, 18, 45, city="Ankara"))
+
+
+class TestDagilimSozlesmesi:
+    """R5-1/R5-2: arayuzun dayandigi alanlar.
+
+    Kisilik ekrani eskiden yuzdeleri ISTEMCIDE uretiyordu (30 + 10*sayim) ve
+    Ay dugumlerini sayip Yukselen'i disarida birakiyordu. Artik tek dogruluk
+    kaynagi bu alanlar; sozlesme kirilirsa ekran sessizce bosalir.
+    """
+
+    def _harita(self):
+        return _harita(1990, 5, 12, 14, 30, city="Istanbul")
+
+    def test_uyeler_sayimla_tutarli(self):
+        c = self._harita()
+        for alan, uye_alani in (("element_distribution", "element_members"),
+                                ("modality_distribution", "modality_members")):
+            sayim, uyeler = c[alan], c[uye_alani]
+            assert set(sayim) == set(uyeler)
+            for anahtar, adet in sayim.items():
+                assert len(uyeler[anahtar]) == adet, (alan, anahtar)
+
+    def test_kanonik_kume_sekiz_nokta(self):
+        """Geleneksel yedili + Yukselen — Kiron/Lilith/dugumler GIRMEZ."""
+        c = self._harita()
+        assert c["balance_set"] == [
+            "Sun", "Moon", "Mercury", "Venus", "Mars", "Jupiter", "Saturn",
+            "Ascendant"]
+        assert sum(c["element_distribution"].values()) == 8
+        assert sum(c["modality_distribution"].values()) == 8
+        tum_uyeler = [u for liste in c["element_members"].values()
+                      for u in liste]
+        assert "Ascendant" in tum_uyeler
+        for disarida in ("Chiron", "Mean_Lilith", "True_North_Lunar_Node"):
+            assert disarida not in tum_uyeler
+
+    def test_ev_numarasi_dondurulur(self):
+        """R5-2: kerykeion metni ("Fifth_House") her istemcide ayri ayri
+        cozulmesin diye sayi olarak da gelir."""
+        c = self._harita()
+        gunes = _nokta(c, "Sun")
+        assert isinstance(gunes["house_no"], int)
+        assert 1 <= gunes["house_no"] <= 12

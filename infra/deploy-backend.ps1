@@ -31,33 +31,59 @@ if (Test-Path $pythonExe) {
     Write-Warning "backend\.venv bulunamadi; artefakt kapsamasi DOGRULANMADI."
 }
 
+# gcloud ILERLEMEYI STDERR'E yazar ("Creating temporary archive of 362
+# file(s)...", "Building and deploying..."). PowerShell 5.1 bunu
+# ErrorActionPreference=Stop altinda GERCEK hata sayip deploy'u daha ilk
+# satirda kesiyordu. Native komutun basarisi yalnizca CIKIS KODUNDAN
+# okunur; bu sarmalayici o kurali uygular. (Ayni ders yukaridaki vektor
+# kontrolunde de ogrenilmisti.)
+function Invoke-Gcloud {
+    param([Parameter(Mandatory = $true)][string[]]$Arguments,
+          [Parameter(Mandatory = $true)][string]$Adim)
+    $eskiTercih = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    & gcloud @Arguments
+    $kod = $LASTEXITCODE
+    $ErrorActionPreference = $eskiTercih
+    if ($kod -ne 0) { throw "$Adim basarisiz (gcloud cikis kodu $kod)." }
+}
+
 Write-Host "1/2 Cloud Build ile imaj derleniyor..."
-gcloud builds submit $repoRoot `
-    --project $PROJECT `
-    --config "$PSScriptRoot/cloudbuild.yaml"
+Invoke-Gcloud -Adim "Cloud Build" -Arguments @(
+    "builds", "submit", $repoRoot,
+    "--project", $PROJECT,
+    "--config", "$PSScriptRoot/cloudbuild.yaml")
 
 Write-Host "2/2 Cloud Run'a deploy ediliyor..."
-gcloud run deploy $SERVICE `
-    --project $PROJECT `
-    --region $REGION `
-    --image $IMAGE `
-    --allow-unauthenticated `
-    --memory 2Gi `
-    --cpu 2 `
-    --timeout 300 `
-    --max-instances 3 `
-    --min-instances 1 `
-    # DIKKAT: --set-env-vars mevcut degiskenleri TUMUYLE degistirir.
-    # Konsoldan elle verilen bayraklar bir sonraki deploy'da SESSIZCE
-    # silinir — kalici olacak her bayrak BU satira yazilmali.
-    # RYTHO_MIN_BUILD (F3): istemci versionCode'u bundan kucukse zorunlu
-    # guncelleme ekranina kilitlenir. 0 = kapi kapali. Eski surumleri
-    # dislayacak bir yayin yapildiginda buradaki deger artirilir.
-    # RYTHO_TOKENS_ENFORCE=1 (K5, 2026-08-13): jeton zorlamasi ACIK —
-    # bakiye yetmezse 402 + X-Paywall-Reason: tokens. Kuru calisma bitti;
-    # maliyet tavanlari artik gercekten uygulaniyor.
-    --set-env-vars "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_MIN_BUILD=0,RYTHO_TOKENS_ENFORCE=1" `
-    --set-secrets "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest"
+
+# DIKKAT: --set-env-vars mevcut degiskenleri TUMUYLE degistirir.
+# Konsoldan elle verilen bayraklar bir sonraki deploy'da SESSIZCE
+# silinir - kalici olacak her bayrak asagidaki satira yazilmali.
+# RYTHO_MIN_BUILD (F3): istemci versionCode'u bundan kucukse zorunlu
+# guncelleme ekranina kilitlenir. 0 = kapi kapali. Eski surumleri
+# dislayacak bir yayin yapildiginda buradaki deger artirilir.
+# RYTHO_TOKENS_ENFORCE=1 (K5, 2026-08-13): jeton zorlamasi ACIK -
+# bakiye yetmezse 402 + X-Paywall-Reason: tokens. Kuru calisma bitti;
+# maliyet tavanlari artik gercekten uygulaniyor.
+#
+# NOT (R5-8): bu yorum blogu daha once bayraklarin ARASINDAYDI. Geri
+# tirnakla devam eden bir komut satirinin ardindan yorum gelemez;
+# PowerShell zinciri orada kesip "Missing expression after unary
+# operator '--'" diye dusuyordu ve deploy hic calismiyordu. Yorumlar
+# komutun ustunde durur, bayrak zinciri kesintisiz kalir.
+Invoke-Gcloud -Adim "Cloud Run deploy" -Arguments @(
+    "run", "deploy", $SERVICE,
+    "--project", $PROJECT,
+    "--region", $REGION,
+    "--image", $IMAGE,
+    "--allow-unauthenticated",
+    "--memory", "2Gi",
+    "--cpu", "2",
+    "--timeout", "300",
+    "--max-instances", "3",
+    "--min-instances", "1",
+    "--set-env-vars", "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_MIN_BUILD=0,RYTHO_TOKENS_ENFORCE=1",
+    "--set-secrets", "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest")
 
 # --min-instances 1 BILINCLI VE UCRETLI bir karar.
 #

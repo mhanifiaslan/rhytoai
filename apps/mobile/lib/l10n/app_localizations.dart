@@ -113,13 +113,13 @@ abstract class AppLocalizations {
   /// No description provided for @atlasInnerCalendar.
   ///
   /// In tr, this message translates to:
-  /// **'Önündeki günler'**
+  /// **'İç mevsim'**
   String get atlasInnerCalendar;
 
   /// No description provided for @atlasInnerCalendarSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'İç takvim: transit + progresyon'**
+  /// **'Progres Ay + yaşam yayı'**
   String get atlasInnerCalendarSubtitle;
 
   /// No description provided for @wizardWelcomeTitle.
@@ -425,7 +425,7 @@ abstract class AppLocalizations {
   /// No description provided for @innerCalendarTitle.
   ///
   /// In tr, this message translates to:
-  /// **'İç Takvim'**
+  /// **'İç mevsim'**
   String get innerCalendarTitle;
 
   /// No description provided for @innerCalendarWaitStage1.
@@ -437,13 +437,13 @@ abstract class AppLocalizations {
   /// No description provided for @innerCalendarWaitStage2.
   ///
   /// In tr, this message translates to:
-  /// **'90 günün gökyüzü taranıyor…'**
+  /// **'Progres Ay\'ın mevsimi okunuyor…'**
   String get innerCalendarWaitStage2;
 
   /// No description provided for @innerCalendarLockedBody.
   ///
   /// In tr, this message translates to:
-  /// **'Progres Ay\'ın iç mevsimi ve 90 günlük kişisel zaman çizgin Rytho+ ile açılır.'**
+  /// **'Progres Ay\'ın iç mevsimi ve yaşam yayın Rytho+ ile açılır.'**
   String get innerCalendarLockedBody;
 
   /// No description provided for @innerCalendarProgMoon.
@@ -467,7 +467,7 @@ abstract class AppLocalizations {
   /// No description provided for @innerCalendarUpcoming.
   ///
   /// In tr, this message translates to:
-  /// **'Önündeki 90 gün'**
+  /// **'Önündeki 30 gün'**
   String get innerCalendarUpcoming;
 
   /// No description provided for @innerCalendarQuiet.
@@ -3859,6 +3859,510 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'{name} ile ilişkimizde {axis} ekseni hakkında konuşalım.'**
   String relationshipAskPrefill(String name, String axis);
+
+  /// No description provided for @houseN.
+  ///
+  /// In tr, this message translates to:
+  /// **'{n}. ev'**
+  String houseN(int n);
+
+  /// No description provided for @perDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'gün'**
+  String get perDay;
+
+  /// No description provided for @planetsSectionExtra.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ek noktalar'**
+  String get planetsSectionExtra;
+
+  /// No description provided for @planetsFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Burç, derece ve ev doğum anının gerçek gökyüzünden hesaplanır (Swiss Ephemeris). Bir satıra dokun — o noktanın ne anlattığını gör.'**
+  String get planetsFootnote;
+
+  /// No description provided for @planetDegree.
+  ///
+  /// In tr, this message translates to:
+  /// **'Burçtaki derece'**
+  String get planetDegree;
+
+  /// No description provided for @planetHouse.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ev'**
+  String get planetHouse;
+
+  /// No description provided for @planetMotion.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hareket'**
+  String get planetMotion;
+
+  /// No description provided for @planetSpeed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlük hız'**
+  String get planetSpeed;
+
+  /// No description provided for @planetRetrograde.
+  ///
+  /// In tr, this message translates to:
+  /// **'retro'**
+  String get planetRetrograde;
+
+  /// No description provided for @pointSheetFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üstteki satırlar ölçümdür. Altındaki iki cümle, o gezegenin klasik anlamı ile bulunduğu ev alanını birleştirir — kişiye özel yorum için Rytho\'ya sorabilirsin.'**
+  String get pointSheetFootnote;
+
+  /// No description provided for @pointAscendant.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yükselen'**
+  String get pointAscendant;
+
+  /// No description provided for @traitsElements.
+  ///
+  /// In tr, this message translates to:
+  /// **'Element dengesi'**
+  String get traitsElements;
+
+  /// No description provided for @traitsModalities.
+  ///
+  /// In tr, this message translates to:
+  /// **'Nitelik dengesi'**
+  String get traitsModalities;
+
+  /// No description provided for @traitsSetNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sayıma geleneksel yedili (Güneş, Ay, Merkür, Venüs, Mars, Jüpiter, Satürn) ve Yükselen girer — sekiz nokta.'**
+  String get traitsSetNote;
+
+  /// No description provided for @traitsTapHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bir satıra dokun: sayının hangi noktalardan çıktığını gör.'**
+  String get traitsTapHint;
+
+  /// No description provided for @traitsMissingElement.
+  ///
+  /// In tr, this message translates to:
+  /// **'{elements} bu haritada hiç yok — eksik element anlamlı bir ifadedir; eksiklik zayıflık değil, bir yön işaretidir.'**
+  String traitsMissingElement(String elements);
+
+  /// No description provided for @traitsSheetTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} — bu sayı nereden geliyor?'**
+  String traitsSheetTitle(String name);
+
+  /// No description provided for @traitsMembersLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu gruba düşen noktalar'**
+  String get traitsMembersLabel;
+
+  /// No description provided for @traitsNoMember.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu gruba düşen nokta yok.'**
+  String get traitsNoMember;
+
+  /// No description provided for @traitsSheetFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sayım geleneksel yedili + Yükselen üzerinden yapılır. Tek bir burçtan mizaç okunmaz; esas olan dağılımın bütünüdür.'**
+  String get traitsSheetFootnote;
+
+  /// No description provided for @traitsUnavailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dağılım verisi bu sürümde gelmedi. Uygulamayı güncelleyip tekrar dene.'**
+  String get traitsUnavailable;
+
+  /// No description provided for @elementFire.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ateş'**
+  String get elementFire;
+
+  /// No description provided for @elementEarth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toprak'**
+  String get elementEarth;
+
+  /// No description provided for @elementAir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hava'**
+  String get elementAir;
+
+  /// No description provided for @elementWater.
+  ///
+  /// In tr, this message translates to:
+  /// **'Su'**
+  String get elementWater;
+
+  /// No description provided for @elementFireLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ateş: harekete geçme, cesaret, başlatma. Baskınsa hız vardır, sabır azdır.'**
+  String get elementFireLine;
+
+  /// No description provided for @elementEarthLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Toprak: somutlaştırma, süreklilik, güven. Baskınsa istikrar vardır, esneklik azdır.'**
+  String get elementEarthLine;
+
+  /// No description provided for @elementAirLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hava: düşünme, konuşma, bağ kurma. Baskınsa fikir boldur, derinleşmek zordur.'**
+  String get elementAirLine;
+
+  /// No description provided for @elementWaterLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Su: hissetme, sezgi, bağlanma. Baskınsa duygu derindir, sınır incedir.'**
+  String get elementWaterLine;
+
+  /// No description provided for @temperamentFire.
+  ///
+  /// In tr, this message translates to:
+  /// **'Klasik gelenekte ateş baskınlığına safravî mizaç denir (sıcak/kuru). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.'**
+  String get temperamentFire;
+
+  /// No description provided for @temperamentEarth.
+  ///
+  /// In tr, this message translates to:
+  /// **'Klasik gelenekte toprak baskınlığına sevdavî mizaç denir (soğuk/kuru). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.'**
+  String get temperamentEarth;
+
+  /// No description provided for @temperamentAir.
+  ///
+  /// In tr, this message translates to:
+  /// **'Klasik gelenekte hava baskınlığına demevî mizaç denir (sıcak/nemli). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.'**
+  String get temperamentAir;
+
+  /// No description provided for @temperamentWater.
+  ///
+  /// In tr, this message translates to:
+  /// **'Klasik gelenekte su baskınlığına balgamî mizaç denir (soğuk/nemli). Bu ad tek burçtan değil, yukarıdaki dağılımdan çıkar.'**
+  String get temperamentWater;
+
+  /// No description provided for @modalityCardinal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Öncü'**
+  String get modalityCardinal;
+
+  /// No description provided for @modalityFixed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sabit'**
+  String get modalityFixed;
+
+  /// No description provided for @modalityMutable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değişken'**
+  String get modalityMutable;
+
+  /// No description provided for @modalityCardinalLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Öncü: başlatır, yön verir, ilk adımı atar.'**
+  String get modalityCardinalLine;
+
+  /// No description provided for @modalityFixedLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sabit: sürdürür, direnir, kolay vazgeçmez.'**
+  String get modalityFixedLine;
+
+  /// No description provided for @modalityMutableLine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Değişken: uyum sağlar, biçim değiştirir, dağılabilir.'**
+  String get modalityMutableLine;
+
+  /// No description provided for @aspectsGroupTension.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sert açılar — gerilim'**
+  String get aspectsGroupTension;
+
+  /// No description provided for @aspectsGroupFlow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uyumlu açılar — akış'**
+  String get aspectsGroupFlow;
+
+  /// No description provided for @aspectsGroupFocus.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kavuşumlar — yoğunlaşma'**
+  String get aspectsGroupFocus;
+
+  /// No description provided for @aspectsGroupOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer açılar'**
+  String get aspectsGroupOther;
+
+  /// No description provided for @aspectsSortNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Her grupta en dar orb önce: orb ne kadar darsa açı o kadar güçlüdür.'**
+  String get aspectsSortNote;
+
+  /// No description provided for @aspectMeaningConjunction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kavuşum: iki gezegen aynı noktada birleşir; güçleri ayrışmaz, birlikte davranır.'**
+  String get aspectMeaningConjunction;
+
+  /// No description provided for @aspectMeaningOpposition.
+  ///
+  /// In tr, this message translates to:
+  /// **'Karşıt: iki gezegen karşı karşıyadır; denge ancak ikisine de yer açınca kurulur.'**
+  String get aspectMeaningOpposition;
+
+  /// No description provided for @aspectMeaningSquare.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kare: sürtünme açısıdır; zorlar ama hareket ettirir — gelişmenin çoğu buradan çıkar.'**
+  String get aspectMeaningSquare;
+
+  /// No description provided for @aspectMeaningTrine.
+  ///
+  /// In tr, this message translates to:
+  /// **'Üçgen: akış açısıdır; kolay geldiği için çoğu zaman fark edilmeden kullanılır.'**
+  String get aspectMeaningTrine;
+
+  /// No description provided for @aspectMeaningSextile.
+  ///
+  /// In tr, this message translates to:
+  /// **'Altmışlık: fırsat açısıdır; kendiliğinden olmaz, elini uzatınca çalışır.'**
+  String get aspectMeaningSextile;
+
+  /// No description provided for @movementMeaningApplying.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaklaşıyor: açı tam olmaya gidiyor, etkisi güçleniyor.'**
+  String get movementMeaningApplying;
+
+  /// No description provided for @movementMeaningSeparating.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ayrılıyor: açı tamamlandı, etkisi sönüyor.'**
+  String get movementMeaningSeparating;
+
+  /// No description provided for @aspectSheetFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açı ve orb doğum anının gerçek gökyüzünden ölçülür; açıklama klasik yorum geleneğidir.'**
+  String get aspectSheetFootnote;
+
+  /// No description provided for @house1.
+  ///
+  /// In tr, this message translates to:
+  /// **'1. ev: kendini gösterme biçimin, bedenin, bıraktığın ilk izlenim.'**
+  String get house1;
+
+  /// No description provided for @house2.
+  ///
+  /// In tr, this message translates to:
+  /// **'2. ev: sahip olduklarımız, kaynakların ve değer duygun.'**
+  String get house2;
+
+  /// No description provided for @house3.
+  ///
+  /// In tr, this message translates to:
+  /// **'3. ev: konuşma, öğrenme, kardeşler, yakın çevre.'**
+  String get house3;
+
+  /// No description provided for @house4.
+  ///
+  /// In tr, this message translates to:
+  /// **'4. ev: kök, ev, aile, içerideki güvenli yer.'**
+  String get house4;
+
+  /// No description provided for @house5.
+  ///
+  /// In tr, this message translates to:
+  /// **'5. ev: yaratma, oyun, aşk, kendini ifade etme.'**
+  String get house5;
+
+  /// No description provided for @house6.
+  ///
+  /// In tr, this message translates to:
+  /// **'6. ev: gündelik düzen, iş rutini, bedenin bakımı.'**
+  String get house6;
+
+  /// No description provided for @house7.
+  ///
+  /// In tr, this message translates to:
+  /// **'7. ev: birebir ilişkiler, ortaklık, karşındaki.'**
+  String get house7;
+
+  /// No description provided for @house8.
+  ///
+  /// In tr, this message translates to:
+  /// **'8. ev: paylaşılan kaynaklar, dönüşüm, derin bağ.'**
+  String get house8;
+
+  /// No description provided for @house9.
+  ///
+  /// In tr, this message translates to:
+  /// **'9. ev: anlam arayışı, inanç, uzak yerler, öğretmek.'**
+  String get house9;
+
+  /// No description provided for @house10.
+  ///
+  /// In tr, this message translates to:
+  /// **'10. ev: kariyer, toplum önündeki duruş, hedef.'**
+  String get house10;
+
+  /// No description provided for @house11.
+  ///
+  /// In tr, this message translates to:
+  /// **'11. ev: arkadaşlıklar, topluluk, gelecek tasarısı.'**
+  String get house11;
+
+  /// No description provided for @house12.
+  ///
+  /// In tr, this message translates to:
+  /// **'12. ev: geri çekilme, bilinçdışı, arkada kalan.'**
+  String get house12;
+
+  /// No description provided for @roleSun.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güneş: öz kimliğin, hayat enerjin, neye yöneldiğin.'**
+  String get roleSun;
+
+  /// No description provided for @roleMoon.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ay: duygusal ihtiyacın, alışkanlıkların, kendini güvende hissetme biçimin.'**
+  String get roleMoon;
+
+  /// No description provided for @roleMercury.
+  ///
+  /// In tr, this message translates to:
+  /// **'Merkür: düşünme ve anlatma biçimin.'**
+  String get roleMercury;
+
+  /// No description provided for @roleVenus.
+  ///
+  /// In tr, this message translates to:
+  /// **'Venüs: neyi sevdiğin, nasıl bağ kurduğun, neye değer verdiğin.'**
+  String get roleVenus;
+
+  /// No description provided for @roleMars.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mars: nasıl harekete geçtiğin, öfken ve isteğin.'**
+  String get roleMars;
+
+  /// No description provided for @roleJupiter.
+  ///
+  /// In tr, this message translates to:
+  /// **'Jüpiter: büyüme alanın, iyimserliğin, anlam arayışın.'**
+  String get roleJupiter;
+
+  /// No description provided for @roleSaturn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Satürn: sorumluluğun, sınırın, zamanla ustalaştığın yer.'**
+  String get roleSaturn;
+
+  /// No description provided for @roleUranus.
+  ///
+  /// In tr, this message translates to:
+  /// **'Uranüs: kuralı kırdığın, ani değişim getiren yönün.'**
+  String get roleUranus;
+
+  /// No description provided for @roleNeptune.
+  ///
+  /// In tr, this message translates to:
+  /// **'Neptün: hayalin, sezgin, sınırların inceldiği yer.'**
+  String get roleNeptune;
+
+  /// No description provided for @rolePluto.
+  ///
+  /// In tr, this message translates to:
+  /// **'Plüton: dönüşüm, güç ve yeniden doğuş alanın.'**
+  String get rolePluto;
+
+  /// No description provided for @roleChiron.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kiron: yaralandığın ve zamanla iyileştirmeyi öğrendiğin yer.'**
+  String get roleChiron;
+
+  /// No description provided for @roleLilith.
+  ///
+  /// In tr, this message translates to:
+  /// **'Lilith: uzlaşmadığın, evcilleşmeyen yanın.'**
+  String get roleLilith;
+
+  /// No description provided for @roleNorthNode.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kuzey Ay Düğümü: geliştirmeye çağrıldığın yön.'**
+  String get roleNorthNode;
+
+  /// No description provided for @roleSouthNode.
+  ///
+  /// In tr, this message translates to:
+  /// **'Güney Ay Düğümü: elinde hazır olan, geride bırakman gereken.'**
+  String get roleSouthNode;
+
+  /// No description provided for @atlasReportPreparing.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho okumanı yazıyor…'**
+  String get atlasReportPreparing;
+
+  /// No description provided for @atlasReportRetry.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okuma alınamadı — dokun, tekrar denesin.'**
+  String get atlasReportRetry;
+
+  /// No description provided for @retrogradeMeaning.
+  ///
+  /// In tr, this message translates to:
+  /// **'℞ retro: gezegen gökyüzünde geri gidiyor görünür. Klasik yorumda o alanda ilerleme dışa değil içe doğrudur — gözden geçirme, toparlama zamanı.'**
+  String get retrogradeMeaning;
+
+  /// No description provided for @calendarLockedReading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu günün okuması Rytho+ ile açılır'**
+  String get calendarLockedReading;
+
+  /// No description provided for @calendarOtherEvents.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer hareketler'**
+  String get calendarOtherEvents;
+
+  /// No description provided for @calendarStripTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Önündeki 30 gün'**
+  String get calendarStripTitle;
 }
 
 class _AppLocalizationsDelegate

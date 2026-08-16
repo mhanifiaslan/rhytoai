@@ -7,50 +7,19 @@ import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
-import '../../widgets/basis_sheet.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/motion.dart';
-import '../chat/chat_screen.dart';
 import '../paywall/plus_locked_card.dart';
 
-/// Takvim gününü dayanak sayfasıyla açar (R2-Z1): sinyal kartlarıyla aynı
-/// bileşen, "Bu tarih neden önemli?" başlığıyla. Olay alanları sunucudan
-/// sinyal sözleşmesine eşlenir; "Rytho'ya sor" teknik satırı sohbete taşır.
-void _gunSayfasi(BuildContext context, Map<String, dynamic> o,
-    AppLocalizations l10n) {
-  final sinyal = {
-    'headline': o['line'],
-    'technical': o['technical'],
-    'transit_local': o['transit_local'],
-    'natal_local': o['natal_local'],
-    'aspect_local': o['aspect_local'],
-    'orb': o['orb'],
-    'exact_on_local': o['date_local'] ?? o['date'],
-    if (o['natal_sign_local'] != null)
-      'natal_sign_local': o['natal_sign_local'],
-    'theme_local': o['theme_local'],
-  };
-  showSignalBasisSheet(
-    context,
-    sinyal,
-    title: l10n.calendarWhyDate,
-    onAsk: () {
-      Navigator.of(context).pop();
-      // R4-1: karttaki gündelik cümle + teknik dayanak birlikte gider.
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ChatScreen(
-            initialText: l10n.signalAskPrefill(
-                o['line'] as String? ?? '',
-                o['technical'] as String? ?? '')),
-      ));
-    },
-  );
-}
-
-/// İç Takvim (T5): ikincil progresyon (iç mevsim) + 30 günlük transit
-/// takvimi tek ekranda. Renk dili tahmin doktrininden: kesinleşme günü
-/// ALTIN, yaklaşan (applying) LİLA, ayrılan (separating) soluk. Bütün
-/// adlar sunucudan isteğin dilinde gelir (`*_local`); ekran çeviri yapmaz.
+/// **İç mevsim** (T5, R5-6'da yeniden adlandırıldı): ikincil progresyon.
+///
+/// Progres Ay'ın mevsimi, şu an etkin açılar, yaşam yayı ve okuma. Otuz
+/// günlük olay listesi buradan ÇIKTI — ana ekrandaki takvim şeridine
+/// taşındı; "önündeki günler" bir dizin ekranında aranmamalı.
+///
+/// Renk dili tahmin doktrininden: yaklaşan (applying) LİLA, ayrılan
+/// (separating) soluk. Bütün adlar sunucudan isteğin dilinde gelir
+/// (`*_local`); ekran çeviri yapmaz.
 class InnerCalendarScreen extends ConsumerWidget {
   const InnerCalendarScreen({super.key});
 
@@ -89,8 +58,6 @@ class InnerCalendarScreen extends ConsumerWidget {
           final vurgular = List<Map<String, dynamic>>.from(
               progresyon['solar_arc_hits'] ?? const []);
           final takvim = Map<String, dynamic>.from(data['calendar']);
-          final olaylar = List<Map<String, dynamic>>.from(
-              takvim['events'] ?? const []);
           final aktif = List<Map<String, dynamic>>.from(
               takvim['active_now'] ?? const []);
           final beyanlar = <String>{
@@ -155,38 +122,12 @@ class InnerCalendarScreen extends ConsumerWidget {
                               ))
                           .toList()),
                 )),
-              // 90 günlük çizelge (R2-Z1): kesinleşme günleri tema ikonlu
-              // ve DOKUNULABİLİR — "Bu tarih neden önemli?" sayfası sinyal
-              // kartlarıyla aynı dili konuşur (gündelik cümle + teknik
-              // dayanak). İstasyon satırları eskisi gibi bilgi satırı.
-              blok(Plaque(
-                label: l10n.innerCalendarUpcoming,
-                child: olaylar.isEmpty
-                    ? Text(l10n.innerCalendarQuiet,
-                        style: RythoText.body(13,
-                            color: RythoColors.parchmentDim))
-                    : Column(
-                        children: olaylar.map((o) {
-                          final kesin = o['type'] == 'aspect_exact';
-                          final metin = kesin
-                              ? '${o['transit_local']} '
-                                  '${o['aspect_local']} '
-                                  '${o['natal_local']}'
-                              : '${o['transit_local']} — '
-                                  '${o['type_local']}';
-                          return _OlaySatiri(
-                            tarih: '${o['date']}'.substring(5),
-                            metin: metin,
-                            altin: kesin,
-                            temaIkonu: kesin
-                                ? kThemeIcons[o['theme']]
-                                : null,
-                            onTap: kesin && o['line'] != null
-                                ? () => _gunSayfasi(context, o, l10n)
-                                : null,
-                          );
-                        }).toList()),
-              )),
+              // 30 günlük olay listesi BURADAN KALKTI (R5-6): aynı veri
+              // artık ana ekrandaki yatay takvim şeridinde yaşıyor.
+              // Kullanıcı "önündeki günler"i görmek için bu ekranı
+              // aramak zorunda değil; burası artık YALNIZ iç mevsim —
+              // progres Ay, etkin açılar, yaşam yayı ve okuma.
+              //
               // Yaşam yayı: solar arc kesinleşmeleri (yıl/ay hassasiyeti).
               if (vurgular.isNotEmpty)
                 blok(Plaque(
@@ -237,63 +178,5 @@ class _AcikSatir extends StatelessWidget {
         Text(ek, style: RythoText.mono(11, color: RythoColors.parchmentDim)),
       ]),
     );
-  }
-}
-
-/// Takvim satırı: tarih rozeti + tema ikonu + olay metni; kesinleşme günü
-/// altın. [onTap] verilirse satır dokunulabilir (gün dayanak sayfası) ve
-/// sağda ok işareti belirir.
-class _OlaySatiri extends StatelessWidget {
-  const _OlaySatiri({
-    required this.tarih,
-    required this.metin,
-    required this.altin,
-    this.temaIkonu,
-    this.onTap,
-  });
-
-  final String tarih;
-  final String metin;
-  final bool altin;
-  final String? temaIkonu;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final renk = altin ? RythoColors.goldBright : RythoColors.parchmentDim;
-    final satir = Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(children: [
-        Container(
-          width: 52,
-          padding: const EdgeInsets.symmetric(vertical: 3),
-          decoration: BoxDecoration(
-            color: RythoColors.inkLighter,
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-                color: renk.withValues(alpha: altin ? 0.55 : 0.2)),
-          ),
-          child: Center(
-              child: Text(tarih, style: RythoText.mono(10.5, color: renk))),
-        ),
-        const SizedBox(width: 10),
-        if (temaIkonu != null) ...[
-          Text(temaIkonu!, style: const TextStyle(fontSize: 13)),
-          const SizedBox(width: 6),
-        ],
-        Expanded(
-            child: Text(metin,
-                style: RythoText.body(13,
-                    color: altin
-                        ? RythoColors.parchment
-                        : RythoColors.parchmentDim))),
-        if (onTap != null)
-          const Icon(Icons.chevron_right,
-              size: 15, color: RythoColors.parchmentDim),
-      ]),
-    );
-    if (onTap == null) return satir;
-    return InkWell(
-        onTap: onTap, borderRadius: BorderRadius.circular(10), child: satir);
   }
 }

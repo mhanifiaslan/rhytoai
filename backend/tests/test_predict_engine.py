@@ -96,6 +96,34 @@ class TestSolarReturn:
         metinler = prompts.localize_chart("tr", uzak)["disclosure_texts"]
         assert any("Sydney" in m for m in metinler)
 
+    def test_beyan_iki_sehri_de_anar(self):
+        """R5-5: cihaz turunda Urfa doğumlu / Ankara'da yaşayan kullanıcı
+        "yıl haritası doğum gününde bulunulan yere kurulur" beyanını okuyup
+        kendi doğum yeriyle ilişkilendiremedi. Hesap doğruydu, anlatım
+        eksikti — beyan artık İKİ şehri de adıyla anar."""
+        from services import prompts
+        uzak = predict_service.solar_return(
+            "t", 1990, 5, 12, 14, 30, "Sanliurfa", target_year=2026,
+            relocation_city="Ankara")
+
+        assert uzak["location"]["birth_city"]
+        for dil in ("tr", "en"):
+            metin = " ".join(
+                prompts.localize_chart(dil, uzak)["disclosure_texts"])
+            assert "Ankara" in metin, dil
+            assert uzak["location"]["birth_city"] in metin, dil
+            # Biçim alanı ham kalmamalı.
+            assert "{" not in metin, dil
+
+    def test_beyanda_dogum_sehri_yoksa_ham_alan_kalmaz(self):
+        """Eski önbellek kayıtlarında `birth_city` yok; metin yine kurulur."""
+        from services import prompts
+        eski = {"disclosures": ["sr_relocated"],
+                "location": {"city": "Ankara"}}
+        metin = prompts.localize_chart("tr", eski)["disclosure_texts"][0]
+        assert "{birth_city}" not in metin
+        assert "Ankara" in metin
+
     def test_saatsizlikte_konum_beyani_yok(self):
         """Saat yoksa ASC/ev zaten üretilmiyor; konumu anmak yanıltıcı."""
         sr = predict_service.solar_return(

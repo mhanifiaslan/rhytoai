@@ -232,6 +232,164 @@ class ShareCard extends StatelessWidget {
   }
 }
 
+/// Uzun bir okumanın (tam natal rapor, yıl haritası) paylaşılabilir kartı.
+///
+/// Günlük kartından farkı: raporun BAŞLIĞI ve ölçülen üç rozet üstte durur,
+/// metin bunların altında akar. Rozetler kartın omurgası — paylaşan kişi
+/// "benim haritamdan çıkan şey bu" diyebilsin diye.
+///
+/// **Aynı gizlilik kuralı geçerli: ham doğum verisi karta GİRMEZ.** Rozetler
+/// hesaplanmış sonuçlardır (Güneş burcu, yıl evi, Yükselen); doğum tarihi,
+/// saati ve yeri hiçbir zaman yazılmaz. Tarih satırı raporun ÜRETİM ya da
+/// geçerlilik tarihidir, doğum tarihi değildir.
+class ReportShareCard extends StatelessWidget {
+  const ReportShareCard({
+    super.key,
+    required this.title,
+    required this.body,
+    required this.dateLabel,
+    this.badges = const [],
+    this.glyph,
+  });
+
+  final String title;
+
+  /// Rapor metni — markdown işaretlerinden ARINDIRILMIŞ hâlde verilmeli
+  /// (`markdownToPlain`); karta `###` basmak bu turun düzelttiği kusurun ta
+  /// kendisi olurdu.
+  final String body;
+
+  final String dateLabel;
+
+  /// (etiket, değer) çiftleri — en fazla üçü çizilir.
+  final List<(String, String)> badges;
+
+  /// Başlığın yanındaki büyük sembol (burç glifi, ☀︎ vb.).
+  final String? glyph;
+
+  static const double width = ShareCard.width;
+  static const double height = ShareCard.height;
+
+  static const double _textWidth = width - 96 * 2;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final rozetler = badges.take(3).toList();
+    // Metin alanı rozet sayısına göre daralır; sabit bir yükseklik
+    // varsaymak rozetsiz kartta boşluk, üç rozetlide taşma üretirdi.
+    final metinYuksekligi = 980.0 - (rozetler.isEmpty ? 0 : 190);
+    final metin = _sigdir(body, metinYuksekligi);
+
+    return SizedBox(
+      width: width,
+      height: height,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFF13091F), Color(0xFF241038), Color(0xFF0B0713)],
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(96, 150, 96, 110),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(dateLabel,
+                  style: RythoText.mono(34, color: RythoColors.parchmentDim)),
+              const SizedBox(height: 48),
+              Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                if (glyph != null) ...[
+                  Text(glyph!,
+                      style: const TextStyle(
+                          fontSize: 96, color: RythoColors.goldBright)),
+                  const SizedBox(width: 28),
+                ],
+                Expanded(
+                  child: Text(title.toUpperCase(),
+                      style: RythoText.display(66)),
+                ),
+              ]),
+              if (rozetler.isNotEmpty) ...[
+                const SizedBox(height: 52),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    for (final (etiket, deger) in rozetler)
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(etiket.toUpperCase(),
+                                style: RythoText.label(26,
+                                    color: RythoColors.parchmentDim)),
+                            const SizedBox(height: 12),
+                            Text(deger,
+                                style: RythoText.body(38,
+                                    w: FontWeight.w700,
+                                    color: RythoColors.goldBright)),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 44),
+                Container(height: 1, color: RythoColors.parchmentDim.withValues(alpha: 0.25)),
+              ],
+              const SizedBox(height: 48),
+              Expanded(
+                child: Text(metin,
+                    style: ShareCard.bodyStyle(ShareCard.fittedFontSize(
+                      metin,
+                      maxWidth: _textWidth,
+                      maxHeight: metinYuksekligi,
+                      maxSize: 42,
+                    ))),
+              ),
+              Row(children: [
+                Text('RYTHO',
+                    style: RythoText.label(44, color: RythoColors.gold)),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Text(l10n.shareCardTagline,
+                      style: RythoText.body(32,
+                          color: RythoColors.parchmentDim)),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Rapor günlük yorumdan KAT KAT uzun; en küçük punto bile yetmez. Bu
+  /// yüzden burada kırpma istisna değil KURAL — kart raporun yerine geçmez,
+  /// ona davet eder. Kırpma yine cümle sınırından yapılır.
+  static String _sigdir(String metin, double yukseklik) {
+    final temiz = metin.trim();
+    if (temiz.isEmpty) return temiz;
+
+    bool sigar(String s) => ShareCard.fitsAt(s, 30,
+        maxWidth: _textWidth, maxHeight: yukseklik);
+    if (sigar(temiz)) return temiz;
+
+    var alt = 0;
+    var ust = temiz.length;
+    while (alt < ust) {
+      final orta = (alt + ust + 1) ~/ 2;
+      if (sigar(ShareCard.clampToSentence(temiz, orta))) {
+        alt = orta;
+      } else {
+        ust = orta - 1;
+      }
+    }
+    return ShareCard.clampToSentence(temiz, alt);
+  }
+}
+
 /// Kartı görüntüye çevirip paylaşım sayfasını açar.
 ///
 /// Kart ekranda gösterilmiyor; ekran dışında çizilip PNG'ye alınıyor.
@@ -245,13 +403,9 @@ Future<bool> shareReadingCard(
   required String dateLabel,
   String? moonEmoji,
   String? moonName,
-}) async {
-  final l10n = AppLocalizations.of(context);
-  final mediaQuery = MediaQuery.of(context);
-  final locale = Localizations.localeOf(context);
-
-  try {
-    final bayt = await _renderCard(
+}) =>
+    _paylas(
+      context,
       ShareCard(
         signName: signName,
         signGlyph: signGlyph,
@@ -260,9 +414,39 @@ Future<bool> shareReadingCard(
         moonEmoji: moonEmoji,
         moonName: moonName,
       ),
-      mediaQuery: mediaQuery,
-      locale: locale,
+      const Size(ShareCard.width, ShareCard.height),
     );
+
+/// Rapor/yıl haritası kartını paylaşır. [body] markdown'dan arındırılmış
+/// düz metin olmalı (`markdownToPlain`).
+Future<bool> shareReportCard(
+  BuildContext context, {
+  required String title,
+  required String body,
+  required String dateLabel,
+  List<(String, String)> badges = const [],
+  String? glyph,
+}) =>
+    _paylas(
+      context,
+      ReportShareCard(
+        title: title,
+        body: body,
+        dateLabel: dateLabel,
+        badges: badges,
+        glyph: glyph,
+      ),
+      const Size(ReportShareCard.width, ReportShareCard.height),
+    );
+
+Future<bool> _paylas(BuildContext context, Widget kart, Size boyut) async {
+  final l10n = AppLocalizations.of(context);
+  final mediaQuery = MediaQuery.of(context);
+  final locale = Localizations.localeOf(context);
+
+  try {
+    final bayt = await renderCard(kart,
+        size: boyut, mediaQuery: mediaQuery, locale: locale);
 
     final dizin = await getTemporaryDirectory();
     final dosya = File('${dizin.path}/rytho-${DateTime.now()
@@ -288,8 +472,12 @@ Future<bool> shareReadingCard(
 /// `RepaintBoundary`'yi ekranda gösterip yakalamak, kartı kullanıcıya bir an
 /// için göstermek demek olurdu. Bunun yerine ayrı bir render ağacı kurulup
 /// tek karede çiziliyor.
-Future<Uint8List> _renderCard(
+///
+/// [size] kartın mantıksal boyutu; her kart kendi oranını getirebilsin diye
+/// parametre (eskiden `ShareCard` ölçüleri gömülüydü).
+Future<Uint8List> renderCard(
   Widget card, {
+  required Size size,
   required MediaQueryData mediaQuery,
   required Locale locale,
 }) async {
@@ -303,8 +491,7 @@ Future<Uint8List> _renderCard(
       child: repaintBoundary,
     ),
     configuration: ViewConfiguration(
-      logicalConstraints: BoxConstraints.tight(
-          const Size(ShareCard.width, ShareCard.height)),
+      logicalConstraints: BoxConstraints.tight(size),
       devicePixelRatio: 1.0,
     ),
   );

@@ -542,9 +542,16 @@ ASTRO_NOTES = {
         "level."),
     # Disclosures carrying a {city} field (D3): filled in by the localize
     # layer with the place the chart was cast for.
+    # R5-5: the old text named only the city it was cast for, so a user born
+    # in one place and living in another could not connect it to their birth
+    # chart. The calculation was right; the wording was thin.
     "sr_relocated": (
-        "This year chart was cast for {city} — a solar return is cast for "
-        "wherever you are on your birthday."),
+        "Your year chart was cast for {city} — where you live. You were "
+        "born in {birth_city}; a solar return is cast not for your "
+        "birthplace but for wherever you are on your birthday. What "
+        "changes is the Ascendant and the houses; the planets keep their "
+        "signs. If you will be elsewhere on your birthday, see Profile → "
+        "City you live in."),
     "sr_birthplace_fallback": (
         "No city of residence is on file, so the year chart was cast for "
         "your birth city. If you are elsewhere on your birthday the "

@@ -22,6 +22,7 @@ import '../chat/conversation_list_screen.dart';
 import '../shell/app_shell.dart' show shellTabProvider;
 import '../paywall/paywall_screen.dart';
 import '../paywall/plus_locked_card.dart';
+import 'calendar_strip.dart';
 import 'sign_story_screen.dart';
 import 'sky_now_screen.dart';
 import '../../widgets/basis_sheet.dart';
@@ -175,6 +176,9 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
             // Abonelik durumu da tazelensin: satın alma sonrası webhook
             // sunucuya islenene kadar kisa bir gecikme olabiliyor.
             ref.invalidate(subscriptionProvider);
+            // Takvim şeridi de tazelensin: sunucu penceresi gün dönümünde
+            // kayıyor ve abonelik değişince kilit satırları açılıyor.
+            ref.invalidate(transitCalendarProvider);
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
@@ -216,6 +220,17 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                 ),
               ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
                   begin: 0.08, curve: Curves.easeOutCubic),
+
+              // Takvim şeridi (R5-6) — burç şeridinin HEMEN ALTINDA, aynı
+              // ölçü diliyle. "Önündeki 30 gün" artık Atlas'ın içinde
+              // aranan bir liste değil, ana ekranda duran bir zaman
+              // çizgisi. Ücretsiz hesapta da görünür: tarih ve tema
+              // gerçek, kilitli olan yalnız okuma.
+              const SizedBox(height: RythoSpace.sm),
+              const CalendarStrip()
+                  .animate(delay: next())
+                  .fadeIn(duration: 360.ms)
+                  .slideY(begin: 0.08, curve: Curves.easeOutCubic),
 
               // ---------- SİNYALLER (R2-S3) ----------
               // "Rytho bugün senin için fark etti": sorulmadan konuşan

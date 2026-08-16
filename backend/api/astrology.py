@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 from core import cache
 from core.auth import AuthUser, get_current_user
-from core.entitlements import require_plus
+from core.entitlements import is_subscriber
 from core.i18n import get_language
 from core.messages import text
 from services import astro_service, chart_context, profile_service, prompts
@@ -84,15 +84,16 @@ def transits(data: BirthData, lang: str = Depends(get_language)):
         raise _internal(e, "transits", lang)
 
 
-#: Takvim ufku (R2-Z1): 30 → 90 gün. Analiz kararı — kullanıcı "önündeki
-#: 90 günü" tek bakışta görmeli; hesap LLM'siz, maliyet yalnız CPU.
-TRANSIT_CALENDAR_DAYS = 90
+#: Takvim ufku: 90 → 30 gün (R5-6, kullanıcı kararı). 90 gün bir liste
+#: ekranında anlamlıydı; takvim ana ekranda yatay bir şeride dönüşünce
+#: kaydırılabilir uzunluk 30 güne indi. Hesap LLM'siz, maliyet yalnız CPU.
+TRANSIT_CALENDAR_DAYS = 30
 
 
 @router.get("/transit-calendar")
-def transit_calendar(user: AuthUser = Depends(require_plus("transit_calendar")),
+def transit_calendar(user: AuthUser = Depends(get_current_user),
                      lang: str = Depends(get_language)):
-    """Kişisel transit takvimi (T3/R2-Z1): 90 günün kesinleşmeleri ve
+    """Kişisel transit takvimi (T3/R2-Z1/R5-6): 30 günün kesinleşmeleri ve
     istasyonları, tema + ton etiketiyle.
 
     Jeton YOK — LLM çağrısı olmayan ham hesap. Doğum verisi istekten değil
@@ -102,6 +103,18 @@ def transit_calendar(user: AuthUser = Depends(require_plus("transit_calendar")),
     bilgisine sahip herkes aynı ham takvimi paylaşır, adlar yanıt anında
     isteğin dilinde kurulur. Tema/ton (sinyal kartlarıyla aynı tablolar)
     determinist olduğu için önbelleğe zenginleştirilmiş HALİ girer.
+
+    ## Ücretsiz katman (R5-6)
+
+    Uç artık `require_plus` ARKASINDA DEĞİL. Gerekçe ürünün kendi kuralı:
+    **hesap bedava, yorum paralı.** Takvimin tarihleri ve temaları hesabın
+    kendisi — LLM'siz, zaten 24 saat önbellekli. Ücretsiz kullanıcı gerçek
+    tarihleri ve gerçek temaları görür; kilitli olan tek şey OKUMADIR
+    (`line` gündelik cümlesi ve `technical` dayanak satırı çıkarılır,
+    olaya `locked: true` eklenir).
+
+    Bu, uydurma bir teaser değil: gösterilen tarih doğru, tema doğru;
+    eksik olan yalnızca yorum. Abonede davranış aynen bugünkü gibi.
     """
     try:
         profile = profile_service.get_profile(user.uid)
@@ -138,12 +151,38 @@ def transit_calendar(user: AuthUser = Depends(require_plus("transit_calendar")),
             cal = {**cal, "events": signal_service.enrich_events(
                 cal.get("events") or [], natal)}
             cache.set(anahtar, cal, ttl_seconds=24 * 3600)
-        return {"status": "success",
-                "data": prompts.localize_transit_calendar(lang, cal)}
+
+        yerel = prompts.localize_transit_calendar(lang, cal)
+        if not is_subscriber(user.uid):
+            yerel = _takvimi_kilitle(yerel)
+        return {"status": "success", "data": yerel}
     except HTTPException:
         raise
     except Exception as e:
         raise _internal(e, "transit-calendar", lang)
+
+
+#: Ücretsiz katmanda olaydan ÇIKARILAN alanlar — ikisi de yorumdur:
+#: `line` gündelik cümle, `technical` dayanak satırı.
+_KILITLI_ALANLAR = ("line", "technical")
+
+
+def _takvimi_kilitle(yerel: dict) -> dict:
+    """Ücretsiz kullanıcı için okumayı çıkarır, ÖLÇÜMÜ bırakır.
+
+    Kalan: tarih, olay türü, tema ve ton. Bunlar hesabın kendisi ve
+    ürünün kuralı gereği ücretsiz. Giden: yorum cümleleri.
+
+    Olaya `locked: true` eklenir; arayüz kilit satırını buna bakarak
+    çiziyor — alanın YOKLUĞUNA bakmak, sunucu bir gün alanı boş
+    göndermeye başlarsa sessizce yanlış davranırdı.
+    """
+    def olay(o: dict) -> dict:
+        temiz = {k: v for k, v in o.items() if k not in _KILITLI_ALANLAR}
+        temiz["locked"] = True
+        return temiz
+
+    return {**yerel, "events": [olay(o) for o in (yerel.get("events") or [])]}
 
 
 @router.post("/synastry")

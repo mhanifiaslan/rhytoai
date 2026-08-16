@@ -270,6 +270,15 @@ ilkesini çiğner:
    bunu zaten beyan ediyor).
 7. **"Bilimsel ölçüm"** (firaset için) — eşikler kalibrasyon sabitidir,
    nüfus normu değil.
+8. **"Mizaç hesaplıyoruz"** — bağımsız bir mizaç motoru YOK. Doğrusu:
+   *mizaç ADI, ölçülen element dağılımından türetilir.* Dağılım gerçekten
+   hesaplanıyor (geleneksel yedili + Yükselen; `astro_service`
+   `element_distribution`), klasik ad o dağılımın baskın elementinden
+   okunuyor. İki kısıt bağlayıcı: **(a)** tek burçtan mizaç okunmaz —
+   H-turu'nda genel yorumdaki "safravi" tam da bu yüzden kaldırıldı;
+   **(b)** mizaç yalnız **kişisel raporda** geçer, genel burç yorumunda
+   asla. Uygulamada dayanağı görünür: Kişilik ekranı hangi gezegenin
+   hangi elemente düştüğünü tek tek gösterir (R5-1).
 
 ---
 

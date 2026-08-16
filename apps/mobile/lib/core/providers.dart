@@ -257,3 +257,20 @@ final innerCalendarProvider =
     'calendar': Map<String, dynamic>.from(sonuclar[1].data['data']),
   };
 });
+
+/// 30 günlük transit takvimi — **ücretsiz** (R5-6).
+///
+/// Ana ekrandaki yatay şeridin kaynağı. Rytho+ kapısı YOK: uç artık
+/// herkese açık ve ücretsiz kullanıcıya gerçek tarih + tema döndürüyor,
+/// yalnız okuma satırlarını çıkarıp olaya `locked: true` koyuyor
+/// ("hesap bedava, yorum paralı"). Bu yüzden abonelik durumu burada
+/// SORULMAZ — sorulursa ücretsiz kullanıcı şeridi hiç göremez ve
+/// teaser'ın kendisi kaybolur.
+final transitCalendarProvider =
+    FutureProvider<Map<String, dynamic>?>((ref) async {
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) return null;
+  final dio = ref.watch(apiProvider);
+  final response = await dio.get('/api/v1/astrology/transit-calendar');
+  return Map<String, dynamic>.from(response.data['data']);
+});

@@ -92,10 +92,21 @@ Cormorant/Spectral tamamen kalktı.
 2. **Rytho AI sohbeti**: kullanıcı sağda BEYAZ balon (koyu metin), Rytho solda
    mor degrade balon (beyaz metin); öneri çipleri; "+" ve degrade gönder
    butonu; yazıyor animasyonu; balonlar easeOutBack ile girer.
-3. **Atlas**: natal çark kartı → kişi kartı (ad, tarih, 🕐 saat, 📍 şehir) →
-   "Gezegen Konumları" 2 sütunlu çip grid'i → "Kişilik Özellikleri" 5
-   animasyonlu çubuk (element/nitelik dağılımından deterministik) → açılar
-   (katlanır) → tam AI raporu.
+3. **Atlas**: natal çark kartı (üç görünüm: haritam / şu an / ikili çark) →
+   kişi kartı (ad, tarih, 🕐 saat, 📍 şehir) → detay ekranlarına giden
+   dizin satırları → tam AI raporu.
+   Detay ekranlarının dili (R5): **ölçüleni göster, dokun-açıkla.**
+   - *Kişilik Özellikleri*: sunucunun kanonik element/nitelik sayımı
+     **kesir** olarak (`3/8`) — yüzde DEĞİL. Payda sabittir: geleneksel
+     yedili + Yükselen. Sıfır sayım bakır bir satırla açıkça söylenir
+     ("eksik element anlamlı bir ifadedir"); dokunuş, o sayıyı hangi
+     gezegenlerin ürettiğini listeler. *(Eski tasarım burada beş animasyonlu
+     çubuk çiziyordu; yüzdeler istemcide `30 + 10·sayım` ile üretiliyordu,
+     dört elementin toplamı 260 ediyordu ve sıfır sayım %30 görünüyordu —
+     kaldırıldı.)*
+   - *Gezegen Konumları*: `☉ Güneş — Aslan 12.3° · 5. ev` (+ ℞); dokunuş
+     gezegen doğası × ev alanı açıklamasını açar.
+   - *Açılar*: en dar orb önce, gerilim/kavuşum/akış başlıklarıyla gruplu.
 4. **Kehanet**: ana ekrandan push edilir (`OracleScreen(initialTab: i)`);
    para animasyonu altın→magenta, yüz tarama çizgisi lila.
 5. **Meclis**: kart akışı, ✨ beğeni patlaması + tick sesi, degrade FAB ve

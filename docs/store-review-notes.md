@@ -76,10 +76,18 @@ Bu, App Store 1.2 (UGC) yükümlülüklerini ve DSA moderasyon operasyonunu
 kapsam dışında bırakıyor. **Beyanda "kullanıcı üretimi içerik: hayır"
 işaretlenmelidir.**
 
-### 2.5 Dört ayrı geleneğin tek hesap altyapısında birleşmesi
+### 2.5 Üç ayrı geleneğin tek hesap altyapısında birleşmesi
 
-Batı astrolojisi, BaZi (Dört Sütun), I Ching ve mizaç/temperament okuması.
-Üçü de gerçek hesaba dayanıyor (I Ching çekimi gerçek olasılık dağılımıyla).
+Batı astrolojisi, BaZi (Dört Sütun) ve I Ching. **Üçü de** gerçek hesaba
+dayanıyor: ilk ikisi Swiss Ephemeris efemerisiyle, I Ching çekimi gerçek
+olasılık dağılımıyla (yarrow oranları).
+
+Mizaç/temperament bunlardan **ayrı bir sistem değil**: Batı haritasındaki
+element dağılımının (geleneksel yedili + Yükselen) klasik adlandırması.
+Bağımsız bir mizaç motoru yok; ad, ölçülen dağılımdan türetiliyor ve
+yalnız kişisel raporda geçiyor — genel burç yorumunda asla. (Daha önce
+bu bölüm "dört gelenek" diyor ve "üçü de" diye sayıyordu; ikisi de
+yanlıştı.)
 
 ### 2.6 Yağcılık yapmayan persona
 

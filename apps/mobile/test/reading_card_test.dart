@@ -89,11 +89,25 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
 
       expect(find.byType(ReadingScreen), findsOneWidget);
+
       // Okuma sayfasinda kirpma YOK.
-      final metin = tester.widget<Text>(
-          find.descendant(of: find.byType(ReadingScreen), matching: find.text(_uzun)));
-      expect(metin.maxLines, isNull,
-          reason: 'okuma sayfasinda metin kirpilmamali');
+      //
+      // Metin artik markdown olarak COZULUYOR (R5-4): govde tek `Text`
+      // degil, blok basina bir widget. Bu yuzden tam dizeyi arayan eski
+      // iddia ise yaramaz — korunmasi gereken sey dizenin kimligi degil,
+      // HICBIR govde satirinin kirpilmadigi.
+      final govde = find.descendant(
+          of: find.byType(ReadingScreen), matching: find.byType(Text));
+      expect(govde, findsWidgets);
+      for (final w in tester.widgetList<Text>(govde)) {
+        expect(w.maxLines, isNull,
+            reason: 'okuma sayfasinda metin kirpilmamali');
+      }
+      expect(
+          find.descendant(
+              of: find.byType(ReadingScreen),
+              matching: find.textContaining('kararlarini hizlandirmaya')),
+          findsOneWidget);
     });
 
     testWidgets('onOpen verilirse varsayilan sayfa acilmaz', (tester) async {
