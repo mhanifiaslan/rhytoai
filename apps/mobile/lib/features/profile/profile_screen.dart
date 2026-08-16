@@ -13,6 +13,7 @@ import 'avatar_editor.dart';
 import 'profile_sections.dart';
 import 'residence_dialog.dart';
 import 'sign_in_methods_screen.dart';
+import 'diary_screen.dart';
 import 'subscription_screen.dart';
 import '../../core/providers.dart';
 import '../../core/subscription.dart';
@@ -251,6 +252,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               title: l10n.signInMethodsRow,
               value: signInMethodsSummary(user, l10n),
               onTap: () => _ac(const SignInMethodsScreen()),
+            ),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            // Günlük (R2-G1): tek satırlık kayıtlar; sohbet "son ayda ne
+            // oldu?" sorusunu bunlar + gökyüzüyle cevaplar.
+            SettingsRow(
+              icon: Icons.edit_note_rounded,
+              title: l10n.profileDiaryRow,
+              onTap: () => _ac(const DiaryScreen()),
             ),
             const Divider(height: 1, indent: RythoSpace.lg),
             SettingsRow(

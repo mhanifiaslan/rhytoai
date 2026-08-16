@@ -157,7 +157,23 @@ def _build_subject(
     )
     if zodiac_type == "Sidereal":
         kwargs["sidereal_mode"] = "LAHIRI"
-    subject = _kerykeion().AstrologicalSubjectFactory.from_birth_data(**kwargs)
+    try:
+        subject = _kerykeion().AstrologicalSubjectFactory.from_birth_data(
+            **kwargs)
+    except Exception as exc:
+        # DST bekçisi (R2-D1): kerykeion, DST geçişinde VAR OLMAYAN
+        # (ileri alınan boşluk) ya da BELİRSİZ (geri alınan, iki kez
+        # yaşanan) saatte istisna fırlatıyor — o dakikalarda doğmuş gerçek
+        # kullanıcının HER haritası düşerdi. Nüfus kağıdındaki saat sivil
+        # kayıttır ve geçişten habersizdir; kural olarak DST tarafını
+        # seçip (is_dst=True) hesaplarız. Boşluk saatinde iki seçim de
+        # aynı UTC anının ±30 dk komşuluğundadır — Yükselen'deki etkisi
+        # saat-bilinmiyor belirsizliğinden küçüktür.
+        mesaj = str(exc).lower()
+        if "dst" not in mesaj and "ambiguous" not in mesaj:
+            raise
+        subject = _kerykeion().AstrologicalSubjectFactory.from_birth_data(
+            **kwargs, is_dst=True)
     return subject, loc
 
 

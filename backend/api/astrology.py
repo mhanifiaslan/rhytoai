@@ -84,17 +84,24 @@ def transits(data: BirthData, lang: str = Depends(get_language)):
         raise _internal(e, "transits", lang)
 
 
+#: Takvim ufku (R2-Z1): 30 → 90 gün. Analiz kararı — kullanıcı "önündeki
+#: 90 günü" tek bakışta görmeli; hesap LLM'siz, maliyet yalnız CPU.
+TRANSIT_CALENDAR_DAYS = 90
+
+
 @router.get("/transit-calendar")
 def transit_calendar(user: AuthUser = Depends(require_plus("transit_calendar")),
                      lang: str = Depends(get_language)):
-    """Kişisel transit takvimi (T3): 30 günün kesinleşme ve istasyonları.
+    """Kişisel transit takvimi (T3/R2-Z1): 90 günün kesinleşmeleri ve
+    istasyonları, tema + ton etiketiyle.
 
     Jeton YOK — LLM çağrısı olmayan ham hesap. Doğum verisi istekten değil
     PROFİLDEN gelir: takvim "senin haritan" iddiasında olduğu için yalnızca
     gerçekten girilmiş doğum kaydıyla üretilir (chart_context kuralı).
     Önbellek doğum verisine anahtarlı ve dilden bağımsız: aynı doğum
     bilgisine sahip herkes aynı ham takvimi paylaşır, adlar yanıt anında
-    isteğin dilinde kurulur.
+    isteğin dilinde kurulur. Tema/ton (sinyal kartlarıyla aynı tablolar)
+    determinist olduğu için önbelleğe zenginleştirilmiş HALİ girer.
     """
     try:
         profile = profile_service.get_profile(user.uid)
@@ -104,22 +111,32 @@ def transit_calendar(user: AuthUser = Depends(require_plus("transit_calendar")),
         birth = profile_service.birth_kwargs(profile)
         saat_biliniyor = bool(str(profile.get("birthTime") or "").strip())
 
-        from services import predict_service
+        from services import predict_service, signal_service
         # Anahtarda BUGÜN de var: pencere takvim gününe sabitlenir; yalnız
         # TTL olsaydı gece 23:50'de dolan kayıt ertesi günü dünkü
-        # pencereyle karşılardı.
+        # pencereyle karşılardı. Sinyal sürümü de anahtarda: tema/ton
+        # tabloları değişince 24 saatlik eski kayıt servis edilmesin.
         import datetime as dt
-        anahtar = ("transit-cal-{calc}-{year}{month:02d}{day:02d}"
+        anahtar = ("transit-cal-{calc}-s{sig}-{gun_sayisi}"
+                   "-{year}{month:02d}{day:02d}"
                    "-{hour:02d}{minute:02d}-{city}-{nation}-{hk}"
                    "-{bugun}").format(
-            calc=predict_service.PREDICT_CALC_VERSION, hk=saat_biliniyor,
+            calc=predict_service.PREDICT_CALC_VERSION,
+            sig=signal_service.SIGNAL_CALC_VERSION,
+            gun_sayisi=TRANSIT_CALENDAR_DAYS, hk=saat_biliniyor,
             bugun=dt.datetime.now(dt.timezone.utc).date().isoformat(),
             **{k: birth[k] for k in ("year", "month", "day", "hour",
                                      "minute", "city", "nation")})
         cal = cache.get(anahtar)
         if cal is None:
             cal = predict_service.transit_calendar(
-                **birth, hour_known=saat_biliniyor)
+                **birth, hour_known=saat_biliniyor,
+                days=TRANSIT_CALENDAR_DAYS)
+            # Tema/ton: natal olgular önbellekli (chart_facts, 180 gün);
+            # üretilemezse olaylar temasız kalır — takvim yine çalışır.
+            natal = chart_context.chart_facts(user.uid, profile)
+            cal = {**cal, "events": signal_service.enrich_events(
+                cal.get("events") or [], natal)}
             cache.set(anahtar, cal, ttl_seconds=24 * 3600)
         return {"status": "success",
                 "data": prompts.localize_transit_calendar(lang, cal)}

@@ -255,10 +255,10 @@ Ayrıca motor bir varsayım yaptığında **beyan eder**: şehir çözülemediys
 Bunlar şu an kodda **yok**; yazılırsa yanlış beyan olur ve ürünün kendi
 ilkesini çiğner:
 
-1. **Vedik astroloji / Nakshatra / Dasha** — hesaplanmıyor. *(Not: AI
-   personası ve README bunu söylüyor; düzeltilmesi gereken bir tutarsızlık.
-   Var olan tek şey sidereal zodyak seçeneği ve mobil uygulama onu
-   kullanmıyor.)*
+1. **Vedik astroloji / Nakshatra / Dasha** — hesaplanmıyor. *(✅ R2-D1:
+   persona, README ve korpustaki iddialar temizlendi; persona artık
+   sorulursa "hesaplanmıyor" diye cevap veriyor. Bekçi test:
+   test_honesty.py — geri gelemez.)*
 2. **"NASA verisiyle hesaplıyoruz"** — NASA yalnızca gezegen uzaklığı
    göstergesi için; tüm konum/açı hesabı Swiss Ephemeris.
 3. **"Yüzlerce kadim kitap"** — korpus 232 parça; dürüst tarif: *seçilmiş
@@ -270,6 +270,29 @@ ilkesini çiğner:
    bunu zaten beyan ediyor).
 7. **"Bilimsel ölçüm"** (firaset için) — eşikler kalibrasyon sabitidir,
    nüfus normu değil.
+
+---
+
+## 12b. Pazarlama dil kılavuzu (R2-D1 — bağlayıcı)
+
+Mağaza metni, web sitesi, tanıtım görseli, basın cümlesi — nerede olursa
+olsun:
+
+| ❌ Yazılamaz | ✅ Doğrusu |
+|---|---|
+| "NASA destekli / NASA onaylı astroloji" | "Astronomik efemeris verileriyle hesaplanan gökyüzü konumları" |
+| "NASA verisiyle hesaplıyoruz" | "Konum/açı hesabı Swiss Ephemeris; gezegen uzaklık göstergesi NASA JPL Horizons" |
+| "Uyum puanınız 82" | "İlişkinin nerede kolaylaştığını, nerede emek istediğini ölçer — puan vermez" |
+| "Geleceğinizi söyler" | "Eğilimleri ve zaman pencerelerini gösterir; kesin tarihli kehanet yapmaz" |
+| "Sınırsız AI" | "Ayda 300 AI kredisi" (ölçülü ve dürüst) |
+| "Yüzlerce kadim kitap" | "Seçilmiş kamu malı klasikler + özgün doktrin sentezi" |
+| "Bilimsel yüz analizi" | "Cihaz üstü geometrik ölçüm + firaset geleneği yorumu" |
+
+Gerekçe: NASA verisi kullanmak NASA'nın astrolojiyi doğruladığı anlamına
+gelmez (Co-Star bile aynı veriyi pazarlıyor — fark yaratmaz, risk
+yaratır). Rytho'nun farkı veri kaynağı değil, ZİNCİRİN kendisi: gerçek
+hesap → kişisel harita → ölçülmüş transit → kaynaklı yorum → dayanağını
+gösteren arayüz.
 
 ---
 

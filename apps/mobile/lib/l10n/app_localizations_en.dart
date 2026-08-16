@@ -202,11 +202,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get innerCalendarWaitStage1 => 'Advancing the progressed chart…';
 
   @override
-  String get innerCalendarWaitStage2 => 'Scanning 30 days of sky…';
+  String get innerCalendarWaitStage2 => 'Scanning 90 days of sky…';
 
   @override
   String get innerCalendarLockedBody =>
-      'The progressed Moon\'s inner season and your 30-day personal transit calendar open with Rytho+.';
+      'The progressed Moon\'s inner season and your 90-day personal timeline open with Rytho+.';
 
   @override
   String get innerCalendarProgMoon => 'Progressed Moon — your inner season';
@@ -220,7 +220,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get innerCalendarActive => 'Active now';
 
   @override
-  String get innerCalendarUpcoming => 'The next 30 days';
+  String get innerCalendarUpcoming => 'The next 90 days';
 
   @override
   String get innerCalendarQuiet =>
@@ -2013,6 +2013,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get relationshipBasisTitle => 'What this axis rests on';
+
+  @override
+  String get calendarWhyDate => 'Why does this date matter?';
+
+  @override
+  String get diaryTitle => 'My Journal';
+
+  @override
+  String get profileDiaryRow => 'My journal';
+
+  @override
+  String get profileDiaryRowSubtitle => 'Put what you live next to the sky';
+
+  @override
+  String get diaryHint => 'What happened today? One line is enough.';
+
+  @override
+  String get diarySave => 'Save';
+
+  @override
+  String get diaryEmpty =>
+      'No entries yet. Leave important moments as one-liners — when you ask \"what happened this past month?\" in chat, Rytho puts these records next to the sky of those days.';
+
+  @override
+  String get diaryDeleted => 'Entry deleted.';
+
+  @override
+  String get diaryFootnote =>
+      'Your entries are visible only to you and feed Rytho\'s chat memory. Deleting your account deletes them all.';
+
+  @override
+  String get diaryDeleteTitle => 'Delete this entry?';
 
   @override
   String get atlasSectionAbout => 'About you';

@@ -513,15 +513,6 @@ class _Header extends StatelessWidget {
   }
 }
 
-/// Tema anahtarı -> kart ikonu. Anahtarlar sunucudaki
-/// signal_service.THEMES ile aynı.
-const _kThemeIcons = {
-  'career': '💼',
-  'relationships': '❤️',
-  'inner': '🌙',
-  'finance': '🪙',
-};
-
 /// SİNYALLER bölümü (R2-S3): en fazla 3 kart + en yakın kesinleşme satırı.
 ///
 /// Kendini gizler: yükleniyor / hata / boş liste durumlarında HİÇBİR ŞEY
@@ -614,7 +605,7 @@ class _SignalCard extends StatelessWidget {
         // Tema başlığı: kullanıcı bir bakışta "bu kariyer mi ilişki mi"
         // sorusunu cevaplayabilmeli — ikon + büyük ad, silik değil.
         Row(children: [
-          Text(_kThemeIcons[tema] ?? '✦',
+          Text(kThemeIcons[tema] ?? '✦',
               style: const TextStyle(fontSize: 15)),
           const SizedBox(width: 7),
           Expanded(

@@ -1,21 +1,26 @@
-"""Hesap uçları — şimdilik yalnızca silme.
+"""Hesap uçları — silme, rıza, telefon eşleme, günlük.
 
 Silme mağaza zorunluluğudur (Apple 5.1.1(v), Google Play). İstemci tarafında
 Firestore kurallarıyla yapılamaz: kullanıcı BAŞKA kullanıcıların dokümanlarına
 (karşılıklı arkadaşlık kaydı, gönderdiği tepkiler) ve sunucuya kapalı
 koleksiyonlara (hafıza, abonelik, önbellek) dokunamaz. Bu yüzden sunucuda.
+
+Günlük (R2-G1) de burada: kayıtlar hafıza dokümanında (``private/memory``)
+yaşar — istemci o dokümanı doğrudan okuyamaz, uçlar tek kapıdır. Hesap
+silindiğinde hafızayla birlikte günlük de silinir (mevcut akış).
 """
 from __future__ import annotations
 
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
-from services import account_service, consent_service, phone_service
+from services import (account_service, consent_service, memory_service,
+                      phone_service)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -100,3 +105,62 @@ def sync_phone(user: AuthUser = Depends(get_current_user),
         raise HTTPException(status_code=500, detail=text("internal", lang))
 
     return {"status": "success", **sonuc}
+
+
+# ---------------------------------------------------------------------------
+# Günlük (R2-G1)
+# ---------------------------------------------------------------------------
+
+class DiaryEntryRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=memory_service.MAX_DIARY_CHARS)
+    #: signal_service.THEMES kümesinden; verilmezse temasız kayıt.
+    theme: str | None = Field(default=None, max_length=20)
+
+
+@router.get("/diary")
+def diary(user: AuthUser = Depends(get_current_user),
+          lang: str = Depends(get_language)):
+    """Günlük girişleri, yeniden eskiye. LLM yok, jeton yok."""
+    try:
+        return {"status": "success",
+                "data": {"entries": memory_service.get_diary(user.uid),
+                         "themes": list(memory_service.DIARY_THEMES)}}
+    except Exception as exc:
+        logger.exception("Günlük okunamadı (%s)", user.uid, exc_info=exc)
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+
+
+@router.post("/diary")
+def add_diary(req: DiaryEntryRequest,
+              user: AuthUser = Depends(get_current_user),
+              lang: str = Depends(get_language)):
+    """Tek satırlık giriş ekler; giriş sohbetin hafıza fısıltısına da girer.
+
+    Böylece "son bir ayda ne oldu?" sorusuna Rytho, kullanıcının KENDİ
+    kayıtları + o günlerin gökyüzüyle cevap verebilir — analizdeki
+    "astrolojik günlük" fikrinin çekirdeği.
+    """
+    try:
+        giris = memory_service.add_diary_entry(
+            user.uid, req.text, theme=req.theme)
+    except Exception as exc:
+        logger.exception("Günlük yazılamadı (%s)", user.uid, exc_info=exc)
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+    if giris is None:
+        raise HTTPException(status_code=400, detail=text("internal", lang))
+    return {"status": "success", "data": giris}
+
+
+@router.delete("/diary/{entry_id}")
+def delete_diary(entry_id: str,
+                 user: AuthUser = Depends(get_current_user),
+                 lang: str = Depends(get_language)):
+    """Girişi siler. Günlük kullanıcının kendi sesi — silmek de onun hakkı."""
+    try:
+        silindi = memory_service.delete_diary_entry(user.uid, entry_id)
+    except Exception as exc:
+        logger.exception("Günlük silinemedi (%s)", user.uid, exc_info=exc)
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+    if not silindi:
+        raise HTTPException(status_code=404, detail=text("internal", lang))
+    return {"status": "success"}

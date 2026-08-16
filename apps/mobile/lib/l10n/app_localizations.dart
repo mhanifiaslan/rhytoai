@@ -437,13 +437,13 @@ abstract class AppLocalizations {
   /// No description provided for @innerCalendarWaitStage2.
   ///
   /// In tr, this message translates to:
-  /// **'30 günün gökyüzü taranıyor…'**
+  /// **'90 günün gökyüzü taranıyor…'**
   String get innerCalendarWaitStage2;
 
   /// No description provided for @innerCalendarLockedBody.
   ///
   /// In tr, this message translates to:
-  /// **'Progres Ay\'ın iç mevsimi ve 30 günlük kişisel transit takvimi Rytho+ ile açılır.'**
+  /// **'Progres Ay\'ın iç mevsimi ve 90 günlük kişisel zaman çizgin Rytho+ ile açılır.'**
   String get innerCalendarLockedBody;
 
   /// No description provided for @innerCalendarProgMoon.
@@ -467,7 +467,7 @@ abstract class AppLocalizations {
   /// No description provided for @innerCalendarUpcoming.
   ///
   /// In tr, this message translates to:
-  /// **'Önümüzdeki 30 gün'**
+  /// **'Önündeki 90 gün'**
   String get innerCalendarUpcoming;
 
   /// No description provided for @innerCalendarQuiet.
@@ -3643,6 +3643,66 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Bu eksenin dayanağı'**
   String get relationshipBasisTitle;
+
+  /// No description provided for @calendarWhyDate.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu tarih neden önemli?'**
+  String get calendarWhyDate;
+
+  /// No description provided for @diaryTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlüğüm'**
+  String get diaryTitle;
+
+  /// No description provided for @profileDiaryRow.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlüğüm'**
+  String get profileDiaryRow;
+
+  /// No description provided for @profileDiaryRowSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaşadıklarını gökyüzüyle yan yana koy'**
+  String get profileDiaryRowSubtitle;
+
+  /// No description provided for @diaryHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün ne oldu? Tek cümle yeter.'**
+  String get diaryHint;
+
+  /// No description provided for @diarySave.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydet'**
+  String get diarySave;
+
+  /// No description provided for @diaryEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Henüz giriş yok. Önemli anları tek cümleyle bırak — sohbette \"son ayda ne oldu?\" diye sorduğunda Rytho bu kayıtları o günlerin gökyüzüyle yan yana koyar.'**
+  String get diaryEmpty;
+
+  /// No description provided for @diaryDeleted.
+  ///
+  /// In tr, this message translates to:
+  /// **'Giriş silindi.'**
+  String get diaryDeleted;
+
+  /// No description provided for @diaryFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Girişlerin yalnız sana görünür ve Rytho\'nun sohbet hafızasına girer. Hesabını silersen hepsi silinir.'**
+  String get diaryFootnote;
+
+  /// No description provided for @diaryDeleteTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu girişi silmek istiyor musun?'**
+  String get diaryDeleteTitle;
 
   /// No description provided for @atlasSectionAbout.
   ///

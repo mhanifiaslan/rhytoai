@@ -239,6 +239,28 @@ def compute_signals(birth: dict[str, Any], hour_known: bool = True,
     }
 
 
+def enrich_events(events: list[dict[str, Any]],
+                  natal: dict[str, Any] | None) -> list[dict[str, Any]]:
+    """Takvim olaylarına tema + ton ekler (R2-Z1) — sinyal kartlarıyla AYNI
+    tablolar, aynı dil.
+
+    Yalnız açı kesinleşmeleri tema alır; istasyonlar (retro dönüşleri)
+    kişisel bir natal noktaya bağlanmadığı için temasız kalır — onlara tema
+    uydurmak "ölçülmeyen söylenmez"i ihlal ederdi.
+    """
+    sonuc = []
+    for o in events:
+        if o.get("type") == "aspect_exact" and o.get("natal"):
+            yerlesim = _natal_yerlesim(natal, o["natal"])
+            o = {**o,
+                 "theme": _tema(o["natal"], yerlesim),
+                 "tone": _TON.get(o.get("aspect"), "focus")}
+            if yerlesim and yerlesim.get("sign"):
+                o["natal_sign"] = yerlesim["sign"]
+        sonuc.append(o)
+    return sonuc
+
+
 # ---------------------------------------------------------------------------
 # Önbellekli erişim — uç (api/reports) ve bildirim (api/notify) AYNI kaydı
 # paylaşır; sinyaller günde bir kez / harita başına hesaplanır.

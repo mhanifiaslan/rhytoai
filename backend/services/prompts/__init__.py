@@ -475,6 +475,24 @@ def localize_transit_calendar(lang: str | None, cal: dict | None) -> dict:
             sonuç["natal_local"] = planet_name(lang, o["natal"])
         if o.get("aspect"):
             sonuç["aspect_local"] = aspect_name(lang, o["aspect"])
+        if o.get("date"):
+            sonuç["date_local"] = signal_date(lang, o["date"])
+        # R2-Z1: tema/ton taşıyan kesinleşme olayı "Bu tarih neden önemli?"
+        # sayfasını sinyal kartlarıyla AYNI dille doldurur: gündelik cümle
+        # (tema × ton) + teknik dayanak satırı.
+        if o.get("theme") and o.get("tone"):
+            sonuç["theme_local"] = p.SIGNAL_THEME_NAMES.get(o["theme"],
+                                                            o["theme"])
+            sonuç["line"] = p.SIGNAL_HUMAN_LINES.get(
+                o["theme"], {}).get(o["tone"], "")
+            sonuç["technical"] = p.SIGNAL_LINE_EXACT.format(
+                transit=sonuç["transit_local"],
+                natal=sonuç.get("natal_local", ""),
+                aspect=sonuç.get("aspect_local", ""),
+                orb=o.get("orb"),
+                date=sonuç.get("date_local", o.get("date")))
+            if o.get("natal_sign"):
+                sonuç["natal_sign_local"] = sign_name(lang, o["natal_sign"])
         return sonuç
 
     sonuç = {**cal,

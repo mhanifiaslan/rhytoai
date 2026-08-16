@@ -202,11 +202,11 @@ class AppLocalizationsTr extends AppLocalizations {
   String get innerCalendarWaitStage1 => 'Progres harita ilerletiliyor…';
 
   @override
-  String get innerCalendarWaitStage2 => '30 günün gökyüzü taranıyor…';
+  String get innerCalendarWaitStage2 => '90 günün gökyüzü taranıyor…';
 
   @override
   String get innerCalendarLockedBody =>
-      'Progres Ay\'ın iç mevsimi ve 30 günlük kişisel transit takvimi Rytho+ ile açılır.';
+      'Progres Ay\'ın iç mevsimi ve 90 günlük kişisel zaman çizgin Rytho+ ile açılır.';
 
   @override
   String get innerCalendarProgMoon => 'Progres Ay — iç mevsimin';
@@ -220,7 +220,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get innerCalendarActive => 'Şu an etkin';
 
   @override
-  String get innerCalendarUpcoming => 'Önümüzdeki 30 gün';
+  String get innerCalendarUpcoming => 'Önündeki 90 gün';
 
   @override
   String get innerCalendarQuiet =>
@@ -2010,6 +2010,38 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get relationshipBasisTitle => 'Bu eksenin dayanağı';
+
+  @override
+  String get calendarWhyDate => 'Bu tarih neden önemli?';
+
+  @override
+  String get diaryTitle => 'Günlüğüm';
+
+  @override
+  String get profileDiaryRow => 'Günlüğüm';
+
+  @override
+  String get profileDiaryRowSubtitle => 'Yaşadıklarını gökyüzüyle yan yana koy';
+
+  @override
+  String get diaryHint => 'Bugün ne oldu? Tek cümle yeter.';
+
+  @override
+  String get diarySave => 'Kaydet';
+
+  @override
+  String get diaryEmpty =>
+      'Henüz giriş yok. Önemli anları tek cümleyle bırak — sohbette \"son ayda ne oldu?\" diye sorduğunda Rytho bu kayıtları o günlerin gökyüzüyle yan yana koyar.';
+
+  @override
+  String get diaryDeleted => 'Giriş silindi.';
+
+  @override
+  String get diaryFootnote =>
+      'Girişlerin yalnız sana görünür ve Rytho\'nun sohbet hafızasına girer. Hesabını silersen hepsi silinir.';
+
+  @override
+  String get diaryDeleteTitle => 'Bu girişi silmek istiyor musun?';
 
   @override
   String get atlasSectionAbout => 'Bana dair';

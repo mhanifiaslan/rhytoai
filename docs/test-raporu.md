@@ -77,6 +77,9 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 43 | Ücretsiz temel harita (R2-F1): abone OLMAYAN hesapta Atlas'ta çark + Kişilik + Gezegenler + Açılar açık; yalnız "Tam rapor" satırı 🔒 ve dokununca paywall; altta "çarkın ücretsiz" notu | ⬜ | 1.2.0+13 |
 | 44 | Atlas dili (R2-I1): üç bölüm — Bana dair / Zaman / Diğer sistemler; "Yıl Haritası" yerine "Doğum gününden doğum gününe" (alt satırda teknik ad), "İç Takvim" yerine "Önündeki günler"; karo ızgarası yerine okunur satırlar | ⬜ | 1.2.0+13 |
 | 45 | Kredi dili (R2-F2): "jeton/token" ibaresi arayüzde YOK — "AI kredisi/kredi"; sohbette bakiye çipi her mesajda animasyonla düşmüyor, bakiye 30'un altına inince bakır renge dönüyor; bedeller ve 402→mağaza akışı aynı | ⬜ | 1.2.0+13 |
+| 46 | 90 günlük zaman çizgisi (R2-Z1): İç Takvim "Önündeki 90 gün" başlıklı; kesinleşme satırlarında tema ikonu; satıra dokununca "Bu tarih neden önemli?" sayfası gündelik cümle + teknik dayanak gösterir; retro istasyon satırları bilgi satırı olarak kalır | ⬜ | 1.3.0+14 + sunucu |
+| 47 | Günlüğüm (R2-G1): Profil → Günlüğüm; tek satır giriş + isteğe bağlı tema çipi; kayıt listede tarihle görünür; tek tek silinebilir; sohbette "son ayda ne oldu?" sorusu günlük kayıtlarını hesaba katar | ⬜ | 1.3.0+14 + sunucu |
+| 48 | Dürüstlük (R2-D1): sohbette "benim Nakshatra'm ne?" sorusuna Rytho hesaplamadığını dürüstçe söyler, uydurma Vedik yorum ÜRETMEZ; DST geçiş saatinde doğum kaydı (ör. 28 Mart 2021 01:30 Londra) haritayı düşürmez | ⬜ | sunucu |
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,

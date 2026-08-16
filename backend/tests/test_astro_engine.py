@@ -151,3 +151,54 @@ class TestEfemerisVerisi:
         assert {"sepl_18.se1", "semo_18.se1"} <= adlar
         for p in EPHE_DIR.glob("*.se1"):
             assert p.read_bytes()[:8] == b"SWISSEPH"
+
+class TestSinirDurumlari:
+    """R2-D1: kenar durum bekcileri — analiz maddesi 29 (hesap dogrulugu).
+
+    Bunlar deger vektoru degil YAPISAL bekciler: kenar girdide motor ne
+    coker ne sessizce sacmalar (12 ev, boylam araligi, burc uretimi).
+    Dis capali DEGER vektoru eklemek astro.com'dan ELLE okuma ister (T0
+    kurali: otomatik erisim yasak); o dogrulama kapali test doneminde
+    altin vektor olarak eklenecek.
+    """
+
+    def _yapisal(self, chart):
+        assert len(chart["houses"]) == 12
+        for p in chart["points"]:
+            assert 0.0 <= p["abs_position"] < 360.0
+        assert chart["sun_sign"]
+        return chart
+
+    def test_gece_yarisi_dogumu(self):
+        self._yapisal(_harita(1990, 1, 1, 0, 0))
+
+    def test_ogle_dogumu(self):
+        self._yapisal(_harita(1990, 1, 1, 12, 0))
+
+    def test_dst_ileri_alinan_var_olmayan_saat(self):
+        # Avrupa DST baslangici 2021-03-28: Londra'da 01:00-02:00 arasi
+        # YOKTUR (saat ileri alinir). Motor bu saati cokertmemeli.
+        self._yapisal(_harita(2021, 3, 28, 1, 30))
+
+    def test_dst_geri_alinan_belirsiz_saat(self):
+        # 2021-10-31 01:30 Londra'da IKI KEZ yasanir (belirsiz saat);
+        # motor deterministik bir secim yapip harita uretmeli.
+        self._yapisal(_harita(2021, 10, 31, 1, 30))
+
+    def test_kutup_dairesi_enlemi(self):
+        # Tromso 69.6N: Placidus ev sistemi kutup dairesinin ustunde
+        # tanimsiz kalabilir; motor coker ya da bos ev dondururse bu test
+        # yakalar (kullanici tabaninda Iskandinav dogumlari olacak).
+        self._yapisal(_harita(1985, 12, 21, 12, 0, city="Tromso"))
+
+    def test_kutup_ici_asiri_enlem(self):
+        # Longyearbyen 78.2N — en sert durum: kutup gecesi + Placidus.
+        self._yapisal(_harita(1990, 6, 21, 12, 0, city="Longyearbyen"))
+
+    def test_1900_oncesi_tarih(self):
+        # Efemeris dosyalari 1800'leri kapsamali (se1 paketleme bekcisiyle
+        # birlikte calisir); tarihsel saat dilimi IANA'dan cozulur.
+        self._yapisal(_harita(1885, 7, 14, 6, 30, city="Istanbul"))
+
+    def test_artik_yil_29_subat(self):
+        self._yapisal(_harita(2000, 2, 29, 18, 45, city="Ankara"))

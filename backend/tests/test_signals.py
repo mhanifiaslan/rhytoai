@@ -252,6 +252,45 @@ class TestYorumKatmani:
         assert iz1 != iz2
 
 
+class TestTakvimZenginlestirme:
+    """R2-Z1: 90 günlük takvim olayları sinyallerle aynı tema/ton dilini
+    taşır; istasyonlara tema UYDURULMAZ."""
+
+    OLAYLAR = [
+        {"date": "2026-08-18", "type": "aspect_exact", "transit": "Saturn",
+         "natal": "Moon", "aspect": "square", "orb": 0.1},
+        {"date": "2026-08-20", "type": "station_retrograde",
+         "transit": "Uranus"},
+    ]
+
+    def test_kesinlesme_tema_ton_alir_istasyon_almaz(self):
+        zengin = signal_service.enrich_events(self.OLAYLAR, SAHTE_NATAL)
+        kesin, istasyon = zengin
+        assert kesin["theme"] == "inner" and kesin["tone"] == "tension"
+        assert kesin["natal_sign"] == "cancer"
+        assert "theme" not in istasyon and "tone" not in istasyon
+
+    def test_natal_yoksa_temasiz_ama_cokmez(self):
+        zengin = signal_service.enrich_events(self.OLAYLAR, None)
+        assert zengin[0]["theme"] == "inner"  # nokta tabanlı yedek (Ay)
+        assert "natal_sign" not in zengin[0]
+
+    def test_yerellestirme_gunluk_dil_ve_teknik(self):
+        zengin = signal_service.enrich_events(self.OLAYLAR, SAHTE_NATAL)
+        cal = {"start": "2026-08-16", "days": 90, "events": zengin,
+               "active_now": [], "disclosures": []}
+        yerel = prompts.localize_transit_calendar("tr", cal)
+        kesin = yerel["events"][0]
+        assert kesin["theme_local"] == "İç dünya"
+        assert kesin["line"].startswith("İç dünyanda gerilim")
+        assert "Satürn" in kesin["technical"]
+        assert kesin["date_local"] == "18 Ağustos"
+        # İstasyon satırı eski davranışını korur.
+        istasyon = yerel["events"][1]
+        assert "line" not in istasyon
+        assert istasyon["type_local"] == "retroya dönüş"
+
+
 PROFIL = {"uid": "u1", "birthDate": "1990-05-12", "birthTime": "14:30",
           "birthCity": "Istanbul", "displayName": "t"}
 

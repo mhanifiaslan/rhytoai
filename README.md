@@ -1,6 +1,6 @@
 # RythoAI — Kişisel Kozmik Zeka Platformu
 
-Kadim kaynakların (İlm-i Nücum, Kıyafetname, Mian Xiang, BaZi, I Ching, Batı/Vedik astroloji)
+Kadim kaynakların (İlm-i Nücum, Kıyafetname, Mian Xiang, BaZi, I Ching, Batı astrolojisi)
 AI tarafından öğrenildiği (RAG bilgi tabanı), gerçek astronomik veriyle (Swiss Ephemeris + NASA JPL)
 beslenen, kullanıcıyı zamanla tanıyıp kişiye özel yorum üreten çok platformlu uygulama.
 

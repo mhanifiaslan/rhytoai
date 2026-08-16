@@ -204,3 +204,67 @@ def test_bos_hafiza_bloku_baslik_yazmaz():
     assert _memory_block("") == ""
     assert _memory_block("   ") == ""
     assert "ÖNCEDEN BİLDİKLERİN" in _memory_block("- (goal) maraton koşmak istiyor")
+
+
+# --------------------------------------------------------------------------
+# Günlük (R2-G1)
+# --------------------------------------------------------------------------
+
+def _gunluk_deposu(monkeypatch):
+    """Hafiza depolamasini bellek-ici sahteyle degistirir (Firestore yok)."""
+    depo = {"version": 1, "facts": [], "moodTrail": [],
+            "toneHint": None, "diary": []}
+
+    def oku(uid):
+        return {k: (list(v) if isinstance(v, list) else v)
+                for k, v in depo.items()}
+
+    def yaz(uid, memory):
+        depo.update(memory)
+
+    monkeypatch.setattr(memory_service, "get_memory", oku)
+    monkeypatch.setattr(memory_service, "_write", yaz)
+    return depo
+
+
+def test_gunluk_girisi_eklenir_ve_kimlik_tasir(monkeypatch):
+    _gunluk_deposu(monkeypatch)
+    giris = memory_service.add_diary_entry("u", "Bugun patronumla tartistim",
+                                           theme="career")
+    assert giris is not None
+    assert giris["id"].startswith("d")
+    assert giris["theme"] == "career"
+    assert memory_service.get_diary("u")[0]["text"].startswith("Bugun")
+
+
+def test_gunluk_bos_metin_ve_uydurma_tema_reddedilir(monkeypatch):
+    _gunluk_deposu(monkeypatch)
+    assert memory_service.add_diary_entry("u", "   ") is None
+    assert memory_service.add_diary_entry("u", "x", theme="saglik") is None
+
+
+def test_gunluk_metni_kirpilir_ve_sinir_asilmaz(monkeypatch):
+    depo = _gunluk_deposu(monkeypatch)
+    giris = memory_service.add_diary_entry("u", "a" * 500)
+    assert len(giris["text"]) == memory_service.MAX_DIARY_CHARS
+    for i in range(memory_service.MAX_DIARY_ENTRIES + 5):
+        memory_service.add_diary_entry("u", f"giris {i}")
+    assert len(depo["diary"]) == memory_service.MAX_DIARY_ENTRIES
+
+
+def test_gunluk_silme(monkeypatch):
+    _gunluk_deposu(monkeypatch)
+    giris = memory_service.add_diary_entry("u", "silinecek")
+    assert memory_service.delete_diary_entry("u", giris["id"]) is True
+    assert memory_service.delete_diary_entry("u", "yok") is False
+    assert memory_service.get_diary("u") == []
+
+
+def test_gunluk_sohbet_fisiltisina_girer(monkeypatch):
+    """'Son ayda ne oldu?' sorusunun hammaddesi: girisler baglama akar."""
+    _gunluk_deposu(monkeypatch)
+    memory_service.add_diary_entry("u", "Is gorusmesine gittim",
+                                   theme="career")
+    baglam = memory_service.memory_context("u")
+    assert "Is gorusmesine gittim" in baglam
+    assert "(günlük" in baglam

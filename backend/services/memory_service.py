@@ -61,11 +61,23 @@ MAX_FACT_CHARS = 240
 MAX_MOOD_ENTRIES = 30
 MAX_TONE_CHARS = 200
 
+#: Günlük (R2-G1) sınırları. Girdiler KULLANICININ kendi cümleleridir
+#: ("bugün patronumla tartıştım") — tek satır, tarih damgalı, temalı.
+#: Analizin "astrolojik günlük" fikri: kullanıcı yaşadığını yazar, sohbet
+#: "son bir ayda ne oldu?" sorusunu bu kayıtlar + gökyüzüyle cevaplar.
+MAX_DIARY_ENTRIES = 90
+MAX_DIARY_CHARS = 200
+
+#: Günlük girişinin bağlanabileceği temalar — sinyal temalarıyla AYNI küme
+#: (signal_service.THEMES); tema vermeden de yazılabilir.
+DIARY_THEMES = ("career", "relationships", "inner", "finance")
+
 _EMPTY: dict[str, Any] = {
     "version": SCHEMA_VERSION,
     "facts": [],
     "moodTrail": [],
     "toneHint": None,
+    "diary": [],
 }
 
 
@@ -101,6 +113,7 @@ def get_memory(uid: str) -> dict[str, Any]:
         "facts": data.get("facts", []),
         "moodTrail": data.get("moodTrail", []),
         "toneHint": data.get("toneHint"),
+        "diary": data.get("diary", []),
     }
 
 
@@ -183,6 +196,56 @@ def set_tone_hint(uid: str, hint: str) -> None:
     _write(uid, memory)
 
 
+# ---------------------------------------------------------------------------
+# Günlük (R2-G1)
+# ---------------------------------------------------------------------------
+
+def add_diary_entry(uid: str, text: str, theme: str | None = None,
+                    date: str | None = None) -> dict[str, Any] | None:
+    """Tek satırlık günlük girişi ekler; eklenen girişi döndürür.
+
+    Kimlik zaman damgasından türetilir (silme ucu bununla adresler).
+    Metin boşsa ya da tema tanınmıyorsa None döner — uydurma tema yazılmaz.
+    """
+    text = text.strip()[:MAX_DIARY_CHARS]
+    if not text:
+        return None
+    if theme is not None:
+        theme = str(theme).strip().lower()
+        if theme not in DIARY_THEMES:
+            return None
+
+    simdi = dt.datetime.now(dt.timezone.utc)
+    giris = {
+        "id": f"d{int(simdi.timestamp() * 1000)}",
+        "date": date or simdi.date().isoformat(),
+        "text": text,
+        "theme": theme,
+    }
+    memory = get_memory(uid)
+    memory["diary"] = (memory["diary"] + [giris])[-MAX_DIARY_ENTRIES:]
+    _write(uid, memory)
+    return giris
+
+
+def delete_diary_entry(uid: str, entry_id: str) -> bool:
+    """Girişi kimliğiyle siler; bulunamadıysa False."""
+    memory = get_memory(uid)
+    kalan = [g for g in memory["diary"] if g.get("id") != entry_id]
+    if len(kalan) == len(memory["diary"]):
+        return False
+    memory["diary"] = kalan
+    _write(uid, memory)
+    return True
+
+
+def get_diary(uid: str) -> list[dict[str, Any]]:
+    """Günlük girişleri, yeniden eskiye."""
+    return sorted(get_memory(uid)["diary"],
+                  key=lambda g: (g.get("date") or "", g.get("id") or ""),
+                  reverse=True)
+
+
 def memory_context(uid: str, max_chars: int = 600) -> str:
     """Hafızayı prompt'a iliştirilebilecek kompakt bir özete indirger.
 
@@ -200,6 +263,12 @@ def memory_context(uid: str, max_chars: int = 600) -> str:
     if trail:
         moods = ", ".join(f"{e['date']}: {e['mood']}" for e in trail)
         parts.append(f"- (ruh hali seyri) {moods}")
+
+    # Günlük (R2-G1): son girişler sohbetin gözüne girer — "son ayda ne
+    # oldu?" sorusu bu satırlar + gökyüzü verisiyle cevaplanabilir.
+    gunluk = memory.get("diary") or []
+    for g in gunluk[-6:]:
+        parts.append(f"- (günlük {g.get('date')}) {g.get('text')}")
 
     if memory.get("toneHint"):
         parts.append(f"- (ton tercihi) {memory['toneHint']}")
@@ -236,6 +305,7 @@ def _write(uid: str, memory: dict[str, Any]) -> None:
             "facts": memory["facts"],
             "moodTrail": memory["moodTrail"],
             "toneHint": memory.get("toneHint"),
+            "diary": memory.get("diary", []),
             "updatedAt": dt.datetime.now(dt.timezone.utc),
         })
     except Exception as exc:

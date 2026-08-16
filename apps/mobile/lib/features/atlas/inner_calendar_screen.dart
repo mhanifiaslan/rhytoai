@@ -7,9 +7,43 @@ import '../../core/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/basis_sheet.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/motion.dart';
+import '../chat/chat_screen.dart';
 import '../paywall/plus_locked_card.dart';
+
+/// Takvim gününü dayanak sayfasıyla açar (R2-Z1): sinyal kartlarıyla aynı
+/// bileşen, "Bu tarih neden önemli?" başlığıyla. Olay alanları sunucudan
+/// sinyal sözleşmesine eşlenir; "Rytho'ya sor" teknik satırı sohbete taşır.
+void _gunSayfasi(BuildContext context, Map<String, dynamic> o,
+    AppLocalizations l10n) {
+  final sinyal = {
+    'headline': o['line'],
+    'technical': o['technical'],
+    'transit_local': o['transit_local'],
+    'natal_local': o['natal_local'],
+    'aspect_local': o['aspect_local'],
+    'orb': o['orb'],
+    'exact_on_local': o['date_local'] ?? o['date'],
+    if (o['natal_sign_local'] != null)
+      'natal_sign_local': o['natal_sign_local'],
+    'theme_local': o['theme_local'],
+  };
+  showSignalBasisSheet(
+    context,
+    sinyal,
+    title: l10n.calendarWhyDate,
+    onAsk: () {
+      Navigator.of(context).pop();
+      Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ChatScreen(
+            initialText:
+                l10n.signalAskPrefill(o['technical'] as String? ?? '')),
+      ));
+    },
+  );
+}
 
 /// İç Takvim (T5): ikincil progresyon (iç mevsim) + 30 günlük transit
 /// takvimi tek ekranda. Renk dili tahmin doktrininden: kesinleşme günü
@@ -119,7 +153,10 @@ class InnerCalendarScreen extends ConsumerWidget {
                               ))
                           .toList()),
                 )),
-              // 30 günlük çizelge: kesinleşme günleri altın rozetle.
+              // 90 günlük çizelge (R2-Z1): kesinleşme günleri tema ikonlu
+              // ve DOKUNULABİLİR — "Bu tarih neden önemli?" sayfası sinyal
+              // kartlarıyla aynı dili konuşur (gündelik cümle + teknik
+              // dayanak). İstasyon satırları eskisi gibi bilgi satırı.
               blok(Plaque(
                 label: l10n.innerCalendarUpcoming,
                 child: olaylar.isEmpty
@@ -139,6 +176,12 @@ class InnerCalendarScreen extends ConsumerWidget {
                             tarih: '${o['date']}'.substring(5),
                             metin: metin,
                             altin: kesin,
+                            temaIkonu: kesin
+                                ? kThemeIcons[o['theme']]
+                                : null,
+                            onTap: kesin && o['line'] != null
+                                ? () => _gunSayfasi(context, o, l10n)
+                                : null,
                           );
                         }).toList()),
               )),
@@ -195,19 +238,28 @@ class _AcikSatir extends StatelessWidget {
   }
 }
 
-/// Takvim satırı: tarih rozeti + olay metni; kesinleşme günü altın.
+/// Takvim satırı: tarih rozeti + tema ikonu + olay metni; kesinleşme günü
+/// altın. [onTap] verilirse satır dokunulabilir (gün dayanak sayfası) ve
+/// sağda ok işareti belirir.
 class _OlaySatiri extends StatelessWidget {
-  const _OlaySatiri(
-      {required this.tarih, required this.metin, required this.altin});
+  const _OlaySatiri({
+    required this.tarih,
+    required this.metin,
+    required this.altin,
+    this.temaIkonu,
+    this.onTap,
+  });
 
   final String tarih;
   final String metin;
   final bool altin;
+  final String? temaIkonu;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final renk = altin ? RythoColors.goldBright : RythoColors.parchmentDim;
-    return Padding(
+    final satir = Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(children: [
         Container(
@@ -223,13 +275,23 @@ class _OlaySatiri extends StatelessWidget {
               child: Text(tarih, style: RythoText.mono(10.5, color: renk))),
         ),
         const SizedBox(width: 10),
+        if (temaIkonu != null) ...[
+          Text(temaIkonu!, style: const TextStyle(fontSize: 13)),
+          const SizedBox(width: 6),
+        ],
         Expanded(
             child: Text(metin,
                 style: RythoText.body(13,
                     color: altin
                         ? RythoColors.parchment
                         : RythoColors.parchmentDim))),
+        if (onTap != null)
+          const Icon(Icons.chevron_right,
+              size: 15, color: RythoColors.parchmentDim),
       ]),
     );
+    if (onTap == null) return satir;
+    return InkWell(
+        onTap: onTap, borderRadius: BorderRadius.circular(10), child: satir);
   }
 }

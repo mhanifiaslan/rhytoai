@@ -57,8 +57,3 @@ haritalandırılmış ve element tabanlı bir yüz analizidir:
 4. **Yüz şekli → element**: Uzun=Ahşap, elmas=Ateş, kare=Toprak, oval=Metal,
    yuvarlak=Su. Elementler arası üretim/yıkım döngüsü kişinin iç dinamiklerini verir.
 
-## Vedik (Jyotish) Notları
-
-Vedik astroloji Ay odaklıdır: 27 Nakshatra (Ay konağı) duygusal dokuyu,
-Lagna (yükselen) bedensel yolu, Dasha periyotları zamanlamayı verir. Sidereal
-zodyak kullanılır (Lahiri ayanamsha ile tropikalden ~24 derece geri).

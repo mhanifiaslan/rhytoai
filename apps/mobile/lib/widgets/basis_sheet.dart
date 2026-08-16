@@ -4,6 +4,15 @@ import '../l10n/app_localizations.dart';
 import '../theme/rytho_theme.dart';
 import '../theme/rytho_tokens.dart';
 
+/// Tema anahtarı -> ikon. Anahtarlar sunucudaki signal_service.THEMES ile
+/// aynı; sinyal kartları ve takvim günleri aynı işareti kullanır.
+const kThemeIcons = {
+  'career': '💼',
+  'relationships': '❤️',
+  'inner': '🌙',
+  'finance': '🪙',
+};
+
 /// "Neden?" alt-sayfası (R2-S2): bir sinyalin DAYANAĞI.
 ///
 /// "Ölçülmeyen söylenmez" ilkesinin görünür hâli: kart üstündeki cümlenin
@@ -18,6 +27,7 @@ Future<void> showSignalBasisSheet(
   BuildContext context,
   Map<String, dynamic> signal, {
   VoidCallback? onAsk,
+  String? title,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -27,15 +37,19 @@ Future<void> showSignalBasisSheet(
       borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       side: BorderSide(color: RythoColors.glassStroke),
     ),
-    builder: (_) => _BasisSheet(signal: signal, onAsk: onAsk),
+    builder: (_) => _BasisSheet(signal: signal, onAsk: onAsk, title: title),
   );
 }
 
 class _BasisSheet extends StatelessWidget {
-  const _BasisSheet({required this.signal, this.onAsk});
+  const _BasisSheet({required this.signal, this.onAsk, this.title});
 
   final Map<String, dynamic> signal;
   final VoidCallback? onAsk;
+
+  /// Sayfa başlığı; verilmezse sinyal başlığı. Takvim günü aynı sayfayı
+  /// "Bu tarih neden önemli?" başlığıyla kullanır (R2-Z1).
+  final String? title;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +90,7 @@ class _BasisSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: RythoSpace.md),
-            Text(l10n.basisSheetTitle,
+            Text(title ?? l10n.basisSheetTitle,
                 style: RythoText.display(17, w: FontWeight.w600)),
             const SizedBox(height: 6),
             // Teknik cümle KART YÜZEYİNDEN buraya taşındı (R2-S6): meraklı
