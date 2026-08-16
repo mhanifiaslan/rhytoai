@@ -25,7 +25,13 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 #: Eksen hesabı sürümü — tablolar değişince artar, önbellek tazelenir.
-SYNASTRY_CALC_VERSION = "1"
+#:
+#: "2" (1.6.0): iki şey birden değişti ve ikisi de sonucu oynatıyor —
+#: açılar artık öneme göre sıralanıp öyle kesiliyor (eskiden gezegen
+#: sırasıyla kesiliyordu ve Yükselen temaslarının çoğu düşüyordu), ve
+#: eşikler 200 çiftlik dağılımdan kalibre edildi. Eksenler LLM'siz
+#: hesap olduğu için tazelenme kimseye jeton yazmaz.
+SYNASTRY_CALC_VERSION = "2"
 
 #: Eksen anahtarları — l10n adları prompts katmanında (SYNASTRY_AXIS_NAMES).
 AXES = ("communication", "emotional", "attraction", "bond")
@@ -43,16 +49,31 @@ _ACI_AGIRLIK = {
 _KISISEL = {"Sun", "Moon", "Mercury", "Venus", "Mars", "Ascendant",
             "Medium_Coeli"}
 
-#: Eksen başına eşikler (güçlü, belirgin). Beş gerçek çiftle ölçülen
-#: dağılımdan: iletişim 1.6-3.4, duygu 0.6-1.3, çekim 2.5-4.0, zemin
-#: 0.5-1.8. Ölçek farkı büyük — ortak eşik "her ilişkide çekim güçlü,
-#: duygu sessiz" gibi sahte bir tablo üretiyordu. Örneklem küçüktür;
-#: canlıda dağılım görülünce yeniden kalibre edilir.
+#: Eksen başına eşikler (güçlü, belirgin) — **dağılımdan** kalibre edildi.
+#:
+#: Üretim: `scripts/calibrate_synastry.py --people 40 --pairs 200`
+#: (40 doğum, 200 çift, tohum sabit). Eşikler yüzdelikten verilir:
+#: güçlü = 75. yüzdelik, belirgin = 40. yüzdelik. Ölçülen dağılım:
+#:
+#:     iletişim  min 0.15  medyan 1.46  maks 3.77
+#:     duygu     min 0.13  medyan 1.58  maks 4.16
+#:     çekim     min 1.87  medyan 5.60  maks 11.60
+#:     zemin     min 1.14  medyan 3.20  maks 6.16
+#:
+#: Ölçek farkı neden ortak eşik konamayacağını gösteriyor: çekimin
+#: medyanı iletişimin maksimumunun üstünde.
+#:
+#: Öncekiler beş çiftle ELLE konmuştu ve sahte bir tablo üretiyordu —
+#: 28 çiftte iletişim %78 "hafif" (hiç "güçlü" yok), çekim %53 "güçlü"
+#: (neredeyse hiç "hafif" yok). Yani kullanıcı her arkadaşında aynı
+#: manzarayı görüyordu; "ilişkiler jenerik" şikâyetinin bir ayağı buydu.
+#: Yeni eşiklerle hiçbir eksende tek seviye %50'yi geçmiyor (ölçülen
+#: en baskın oran %40). Bekçi: `--check` + test_relationship_axes.
 _ESIKLER = {
-    "communication": (2.6, 1.4),
-    "emotional": (1.6, 0.8),
-    "attraction": (3.6, 2.2),
-    "bond": (1.7, 0.9),
+    "communication": (1.95, 1.29),
+    "emotional": (2.14, 1.36),
+    "attraction": (6.68, 5.15),
+    "bond": (3.86, 2.89),
 }
 
 #: Ton eşiği: harmonik ağırlığın toplam içindeki payı.

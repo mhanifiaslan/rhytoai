@@ -2439,4 +2439,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get calendarStripTitle => 'The next 30 days';
+
+  @override
+  String get relationshipReadingTitle => 'Rytho\'s reading of this bond';
+
+  @override
+  String get relationshipReadingLocked =>
+      'The measured axes and their supporting aspects are open to everyone. Rytho\'s reading of what they mean for the two of you opens with Rytho+.';
 }

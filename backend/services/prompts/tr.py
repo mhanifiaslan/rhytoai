@@ -441,6 +441,9 @@ BUGÜNÜN GÖKYÜZÜ ({today}):
 ARALARINDAKİ KARŞILIKLI AÇILAR:
 {aspects}
 
+ÖLÇÜLEN İLİŞKİ EKSENLERİ (bu çiftin yapısı — bugünün değil, zemininiz):
+{axes}
+
 KAYNAK PASAJLARI:
 {rag}
 
@@ -461,6 +464,48 @@ DYAD_FALLBACK = (
     "Ay {moon_name} evresindeyken birbirinize ayıracağınız kısa ama bölünmemiş "
     "bir dikkat, günün tonunu belirleyecek. "
     "Detaylı okuma için biraz sonra tekrar dene."
+)
+
+#: İlişki okuması (1.6.0) — hazır cümle tablosunun yerine geçti.
+#:
+#: Girdi ÖLÇÜMDÜR: dört eksenin seviyesi/tonu ve o çifte özgü dayanak
+#: açılar. Model bunları yorumlar; kendisi harita kurmaz, yerleşim
+#: uydurmaz. "Ölçülmeyen söylenmez" ilkesi burada prompt kısıtı olarak
+#: yazılıdır — kullanıcının kuralı: hazır cevap yok, olmayan şey varmış
+#: gibi gösterilmez.
+RELATIONSHIP = """
+GÖREV: {me} ile {friend} arasındaki ilişkinin ÖLÇÜLEN yapısını anlatan bir
+metin yaz. Her eksen için 1-2 cümle, sonunda "ana tema" için 2 cümle.
+Toplam 180-240 kelime.
+
+ÖLÇÜLEN EKSENLER (iki doğum haritası arasındaki açılardan hesaplandı):
+{axes}
+
+KURALLAR (kesin):
+- YALNIZCA yukarıda verilen açılardan konuş. Verilmemiş bir yerleşim,
+  burç veya açı UYDURMA. Bir eksende dayanak yoksa "bu eksende belirgin
+  bir bağ ölçülmüyor" de ve orada dur.
+- Her eksende ölçümü kendi cümlene sindir: hangi gezegen teması bunu
+  taşıyor, seviye ve ton ne söylüyor. Açı listesi dökme; anlat.
+- SEVİYE ile TONU karıştırma: seviye bağın ne kadar YOĞUN olduğunu,
+  ton nasıl AKTIĞINI söyler. Güçlü ama zorlayıcı bir eksen "kötü"
+  değildir — sürtünme ilişkinin çalıştığı yerdir.
+- ASLA puan, yüzde ya da "uyumlusunuz/uyumsuzsunuz" gibi kalıcı bir
+  yargı verme.
+- İki tarafı da eşit ele al; birini haklı diğerini haksız çıkarma.
+- Pohpohlama. Zorlu bir zemin varsa zorlu de, ama her zorluğu birlikte
+  atılabilecek somut ve küçük bir adımla kapat.
+- Ayrılık, evlilik, hamilelik, sağlık ya da ilişkinin geleceği hakkında
+  ÖNGÖRÜDE BULUNMA.
+- Düz metin yaz; başlık, madde işareti veya numaralandırma kullanma.
+  Eksenleri anlatırken adlarını cümle içinde geçir.
+- İkisine birden hitap etme; okuyucu {me} — ilişkiyi ona anlatıyorsun.
+"""
+
+RELATIONSHIP_FALLBACK = (
+    "{friend} ile aranızdaki eksenler hesaplandı ama okuma şu an "
+    "üretilemedi. Ölçülen seviyeler ve dayanak açılar aşağıda duruyor; "
+    "yorum için biraz sonra tekrar dene."
 )
 
 NATAL = """
@@ -725,45 +770,18 @@ SYNASTRY_TONE_NAMES = {
     "quiet": "sessiz",
 }
 
-#: Eksen × ton cümleleri — gündelik dil, hüküm değil eğilim.
-SYNASTRY_AXIS_LINES = {
-    "communication": {
-        "flowing": ("Konuşmak kolay: birbirinizi anlatmak için fazla "
-                    "kelime harcamanız gerekmiyor."),
-        "mixed": ("Çoğu zaman anlaşıyorsunuz ama bazı konularda aynı "
-                  "kelimeler farklı şeyler anlatıyor."),
-        "challenging": ("İletişim emek istiyor: varsaymak yerine açık "
-                        "cümle kurmak bu ilişkide çok işe yarıyor."),
-        "quiet": "İletişim tarafında belirgin bir bağ ölçülmüyor.",
-    },
-    "emotional": {
-        "flowing": ("Duygusal diliniz benziyor; söylenmeyeni anlamak "
-                    "burada kolay."),
-        "mixed": ("Duygusal zemin sağlam ama ritimleriniz hep aynı anda "
-                  "değil; biriniz kapanırken diğeri yaklaşabiliyor."),
-        "challenging": ("Duyguyu farklı taşıyorsunuz; ihtiyacını söylemek "
-                        "beklemekten daha çok işe yarıyor."),
-        "quiet": "Duygusal eksende belirgin bir bağ ölçülmüyor.",
-    },
-    "attraction": {
-        "flowing": ("Aranızdaki çekim rahat akıyor; yakınlık zorlanmadan "
-                    "kuruluyor."),
-        "mixed": ("Çekim güçlü ama düz bir çizgi değil: yaklaşma ve "
-                  "geri çekilme dönüşümlü olabiliyor."),
-        "challenging": ("Çekim var ama gerilimli; ilgi ile sürtünme aynı "
-                        "yerden besleniyor."),
-        "quiet": "Çekim ekseninde belirgin bir bağ ölçülmüyor.",
-    },
-    "bond": {
-        "flowing": ("Uzun vadeli zemin sağlam; birlikte yürümek doğal "
-                    "geliyor."),
-        "mixed": ("Bağ gerçek ama sorumluluk ve özgürlük dengesi zaman "
-                  "zaman ayar istiyor."),
-        "challenging": ("Zemin ağır: bu ilişki sabır ve sınır istiyor, "
-                        "karşılığında da olgunlaştırıyor."),
-        "quiet": "Ortak zemin ekseninde belirgin bir bağ ölçülmüyor.",
-    },
-}
+#: `SYNASTRY_AXIS_LINES` KALDIRILDI (1.6.0).
+#:
+#: Eksen basina hazir cumle tablosuydu ve yalniz eksen x ton ile
+#: anahtarliydi: seviye cumleye hic girmiyor, dayanak aci hic
+#: anilmiyordu. Tum urunde 16 cumle vardi. Olculdu -- 15 ciftin 15'i
+#: FARKLI olcum uretiyordu ama yalniz 12'si farkli metin goruyordu; uc
+#: cift dort cumlenin dordunu de birebir ayni okuyordu. Kullanicinin
+#: "tum arkadaslarla ayni cevaplar var" bulgusunun dogrudan sebebi.
+#:
+#: Yerine RELATIONSHIP promptu geldi: yorumu olculen eksenlerden ve o
+#: cifte ozgu dayanak acilardan AI yaziyor. Urun kurali: hazir cevap
+#: yok.
 
 #: Eksen listesinin altındaki dürüstlük notu.
 SYNASTRY_FOOTNOTE = (

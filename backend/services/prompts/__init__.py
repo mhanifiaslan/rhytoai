@@ -607,8 +607,16 @@ def localize_signals(lang: str | None, data: dict | None) -> dict:
 def localize_relationship_axes(lang: str | None, data: dict | None) -> dict:
     """İlişki eksenlerini (R2-L1) isteğin diline çevirir.
 
-    Sayısal uyum puanı YOK — seviye adı ve gündelik dil cümlesi var; her
-    eksenin dayanağı (gerçek açılar + ölçülen orb) olduğu gibi taşınır.
+    Sayısal uyum puanı YOK: seviye adı, ton adı ve dayanak açılar
+    (gerçek gezegenler + ölçülen orb) taşınır.
+
+    **Hazır cümle YOK** (1.6.0). Eskiden her eksene `SYNASTRY_AXIS_LINES`
+    tablosundan bir cümle iliştiriliyordu; tablo yalnız eksen × ton ile
+    anahtarlıydı ve tüm üründe 16 cümle vardı. Ölçüldü: 15 çiftin 15'i
+    farklı ölçüm üretiyordu ama yalnız 12'si farklı metin görüyordu — üç
+    çift dört cümlenin dördünü de birebir aynı okuyordu. Yorumu artık
+    ölçümden AI yazıyor (`report_service.relationship_reading`); bu
+    fonksiyon yalnız ÖLÇÜMÜ dile çevirir.
     """
     if not data:
         return {}
@@ -618,15 +626,10 @@ def localize_relationship_axes(lang: str | None, data: dict | None) -> dict:
         anahtar = e.get("axis")
         seviye = e.get("level") or "quiet"
         ton = e.get("tone") or "quiet"
-        # Seviye "sessiz"se ton ne olursa olsun sessiz cümle: ölçülmemiş
-        # bir bağa nitelik atfetmeyiz.
-        cumle_tonu = "quiet" if seviye == "quiet" else ton
         return {**e,
                 "axis_local": p.SYNASTRY_AXIS_NAMES.get(anahtar, anahtar),
                 "level_local": p.SYNASTRY_LEVEL_NAMES.get(seviye, seviye),
                 "tone_local": p.SYNASTRY_TONE_NAMES.get(ton, ton),
-                "line": p.SYNASTRY_AXIS_LINES.get(anahtar, {}).get(
-                    cumle_tonu, ""),
                 "basis": [
                     {**b,
                      "p1_local": planet_name(lang, b.get("p1")),

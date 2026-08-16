@@ -301,11 +301,30 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
         return {"text": cached, "cached": True, "generated_for": today.isoformat()}
 
     yerel_sinastri = prompts.localize_synastry(lang, synastry)
+    # İlk 6 artık "en ÖNEMLİ 6": `_aspects_list` kaynakta öneme göre
+    # sıralıyor (1.6.0). Eskiden kerykeion'un gezegen sırasıydı ve modele
+    # her çiftte aynı karakterde bir liste gidiyordu — önce Güneş, sonra
+    # Ay, orb'u 7°'ye varan geniş açılar; dar orb'lu asıl temaslar hiç
+    # ulaşmıyordu.
     aspects = "\n".join(
         f"- {a['p1_local']} ({name_a}) {a['aspect_local']} {a['p2_local']} "
         f"({name_b}) orb {a['orbit']}°"
         for a in yerel_sinastri.get("aspects", [])[:6]
     ) or p.NO_ASPECTS
+
+    # Ölçülen eksenler de prompta girer: ham açı listesi modele "ne
+    # ölçtük" demiyor, yalnız "ne var" diyor. Seviye/ton zemini olmadan
+    # model her çift için kendi genel çerçevesini kuruyordu.
+    eksen_ozeti = ""
+    try:
+        from services import synastry_service
+        eksenler = prompts.localize_relationship_axes(
+            lang, synastry_service.relationship_axes(synastry))
+        eksen_ozeti = "\n".join(
+            f"- {e['axis_local']}: {e['level_local']} · {e['tone_local']}"
+            for e in eksenler.get("axes") or [])
+    except Exception as exc:  # ölçüm çıkmazsa okuma yine üretilir
+        logger.warning("Dyad eksen özeti üretilemedi: %s", exc)
 
     moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
     retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
@@ -319,7 +338,7 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
         name_a=name_a, name_b=name_b, today=today.isoformat(),
         moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
         illumination=moon.get("illumination"), retros=retros,
-        aspects=aspects, rag=rag,
+        aspects=aspects, axes=eksen_ozeti or p.NO_ASPECTS, rag=rag,
     )
     fallback = p.DYAD_FALLBACK.format(
         name_a=name_a, name_b=name_b, moon_name=moon.get("name") or "-")
@@ -330,6 +349,74 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
                               owner_uid=uid_a, spend=spend, refund=refund)
     result["generated_for"] = today.isoformat()
     return result
+
+
+def relationship_reading(uid: str, friend_uid: str, me_name: str,
+                         friend_name: str, axes: dict[str, Any],
+                         lang: str | None = None) -> dict[str, Any]:
+    """İlişkinin ÖLÇÜLEN yapısının AI okuması (1.6.0).
+
+    ## Neden LLM
+
+    Bu metin daha önce `SYNASTRY_AXIS_LINES` tablosundan geliyordu: eksen
+    başına hazır cümle, yalnız eksen × ton ile anahtarlı, tüm üründe 16
+    cümle. Ölçüldü — 15 çiftin 15'i FARKLI ölçüm üretiyor ama yalnız 12'si
+    farklı metin görüyordu; üç çift dört cümlenin dördünü de birebir aynı
+    okuyordu. Kullanıcının bulgusu buydu: "tüm arkadaşlarla aynı cevaplar".
+
+    Ürün kararı (kullanıcı): *"neye dayandığını AI yorumlamalı, asla
+    varyant olarak yazılmış hazır cevaplar olmamalı."*
+
+    ## Girdi ölçümdür
+
+    Modele dört eksenin seviyesi/tonu ve o çifte özgü dayanak açılar
+    (gezegen + açı + orb) verilir. Ham doğum verisi GİRMEZ — arkadaşın
+    doğum tarihi/saati/yeri hiçbir katmanda taşınmaz (dyad kuralı).
+    Prompt "yalnız verilen açılardan konuş" kısıtını taşır.
+
+    ## Önbellek
+
+    Anahtar ÇİFTE özeldir ve simetriktir; girdisi natal veridir, yani
+    doğum bilgisi değişmedikçe sonuç değişmez. 30 gün. Bu paylaşımlı bir
+    kalıp değil, o çiftin kendi okumasıdır — başkasının metni kimseye
+    gösterilmez. Amaç: aynı analizi iki kez ürettirmemek ve ekranın
+    anında açılması.
+
+    Jeton düşülmez: çift başına tek üretim + 30 gün ömür, maliyet ihmal
+    edilebilir. Kapı abonelik (çağıran uçta).
+    """
+    lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
+    p = prompts.get(lang)
+
+    ikili = "-".join(sorted((uid, friend_uid)))
+    cache_key = (f"rel-reading-{axes.get('calc_version')}-{ikili}-{lang}")
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return {"text": cached, "cached": True}
+
+    yerel = prompts.localize_relationship_axes(lang, axes)
+    satirlar = []
+    for e in yerel.get("axes") or []:
+        baslik = (f"- {e['axis_local']}: {e['level_local']} · "
+                  f"{e['tone_local']}")
+        kanitlar = [
+            f"{b['p1_local']} {b['aspect_local']} {b['p2_local']} "
+            f"(orb {b['orb']}°)"
+            for b in (e.get("basis") or [])
+        ]
+        # Dayanak yoksa bunu AÇIKÇA yaz: model "ölçülmedi" diyebilsin diye
+        # bilgi eksikliğinin kendisi de girdidir.
+        satirlar.append(
+            baslik + (" — " + "; ".join(kanitlar) if kanitlar
+                      else f" — {p.NO_ASPECTS}"))
+
+    prompt = p.RELATIONSHIP.format(
+        me=me_name, friend=friend_name, axes="\n".join(satirlar))
+    fallback = p.RELATIONSHIP_FALLBACK.format(friend=friend_name)
+
+    return _cached_generate(cache_key, prompt, fallback,
+                            ttl_seconds=30 * 24 * 3600, lang=lang,
+                            owner_uid=uid)
 
 
 def natal_report(user_id: str, natal: dict[str, Any],
@@ -1023,6 +1110,11 @@ def synastry_report(user_id: str, synastry: dict[str, Any],
     ) or p.NO_ASPECTS
     # Sorgu isteğin dilinde ve İKİ haritadan (Revize R8): ilişki tohumu +
     # iki Güneş + en sıkı sinastri açısı.
+    #
+    # Bu satır adına ancak şimdi uyuyor: liste eskiden SIRASIZDI ve "ilk
+    # eleman" kerykeion'un gezegen sırasındaki ilk açıydı, en sıkısı değil
+    # (1.6.0 turu bulgusu). `_aspects_list` artık kaynakta öneme göre
+    # sıralıyor.
     en_siki = next(iter(yerel.get("aspects", [])), None)
     rag = retrieve_context(
         " ".join(filter(None, [

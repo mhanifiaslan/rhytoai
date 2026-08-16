@@ -94,6 +94,9 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 60 | Yıl Haritası (R5-5): beyan İKİ şehri de adıyla anar ("… Ankara için kuruldu — yaşadığın şehir. Doğum yerin Urfa; yıl haritası doğum gününde bulunduğun yere kurulur"); dönüş anı büyük tarih kartı, yılın kimliği üç rozet; paylaş düğmesi PNG üretir | ⬜ | 1.5.0+17 + sunucu |
 | 61 | Takvim şeridi (R5-6): ana ekranda burç şeridinin HEMEN ALTINDA tek satırlık 30 günlük yatay takvim; bugün altın halkalı; olaylı güne dokunuş gün kartını açar, olaylar TEMA BAŞLIKLARI altında gruplu | ⬜ | 1.5.0+17 + sunucu |
 | 62 | Ücretsiz teaser dürüstlüğü (R5-6): abone OLMAYAN hesapta şerit görünür ve tarih/tema GERÇEK; okuma satırının yerinde "Rytho+ ile açılır" kilidi var ve dokunuş paywall'a gider. Atlas'taki satır artık "İç mevsim" ve o ekranda 30 günlük liste YOK | ⬜ | 1.5.0+17 + sunucu |
+| 63 | İlişki okuması AI (R7-3): iki FARKLI arkadaşın ilişki ekranı birbirinden farklı metin gösteriyor; metin o çiftin gerçek açılarını anıyor (ör. "Merkür'ün Jüpiter ile karesi"); puan/yüzde yok; ücretsiz hesapta eksenler+dayanaklar görünür, yorum kilitli | ⬜ | 1.6.0+20 + sunucu |
+| 64 | Açı sıralaması (R7-1): Atlas'ta ve raporlarda anılan açılar en dar orb'lu olanlar; Yükselen temasları görünüyor; ikili okuma artık "Güneş–Satürn orb 6.9°" gibi geniş açılarla açılmıyor | ⬜ | 1.6.0+20 + sunucu |
+| 65 | Eşik kalibrasyonu (R7-2): farklı arkadaşlarda eksen seviyeleri DEĞİŞİYOR — hepsinde "Çekim: Güçlü, İletişim: Hafif" tablosu çıkmıyor | ⬜ | sunucu |
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,

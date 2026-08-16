@@ -510,9 +510,14 @@ def relationship(req: DyadRequest,
     arkadaşın kimliğini gönderir, iki profili de sunucu okur ve yanıtta ham
     doğum verisi DÖNMEZ: yalnız eksen seviyeleri ve dayanak açılar.
 
-    LLM yok, jeton yok, abonelik yok: bu bir HESAP. Kullanıcı ilişkisinin
-    haritasını görür; derin yorum (``/dyad``) ücretli katmanda kalır —
-    "hesap bedava, yorum paralı" ayrımı (maliyet çalışması, freemium).
+    **Ölçüm ücretsiz, yorum Rytho+** (1.6.0). Eksenler, seviyeler ve
+    dayanak açılar herkese açık — bunlar LLM'siz hesap. Yorum artık hazır
+    cümle tablosundan değil AI'dan geliyor (`relationship_reading`) ve
+    aboneye özel; ücretsiz kullanıcıya `reading_locked: true` döner.
+    Takvim ucundaki kalıbın aynısı: gördüğü ölçüm gerçek, eksik olan
+    yalnızca yorum.
+
+    Jeton düşülmez: okuma çift başına bir kez üretilip 30 gün saklanır.
     """
     if req.friend_uid == user.uid:
         raise HTTPException(status_code=400, detail=text("dyad.self", lang))
@@ -541,8 +546,19 @@ def relationship(req: DyadRequest,
         if eksenler is None:
             return {"status": "success",
                     "data": {"axes": [], "reason": "birth_missing"}}
-        return {"status": "success",
-                "data": prompts.localize_relationship_axes(lang, eksenler)}
+
+        veri = prompts.localize_relationship_axes(lang, eksenler)
+
+        if entitlements.is_subscriber(user.uid):
+            okuma = report_service.relationship_reading(
+                user.uid, req.friend_uid,
+                me.get("displayName") or "?",
+                friend.get("displayName") or friend.get("username") or "?",
+                eksenler, lang=lang)
+            veri = {**veri, "reading": okuma["text"]}
+        else:
+            veri = {**veri, "reading_locked": True}
+        return {"status": "success", "data": veri}
     except HTTPException:
         raise
     except Exception as e:

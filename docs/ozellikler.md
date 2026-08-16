@@ -162,6 +162,16 @@ aşılıyorsa **iki aday da bildirilir**.
   dinamik; iki taraf da aynı metni görür. **Kalıcı uyum puanı bilinçli
   olarak yoktur** — skor hesaplanabiliyor ama kasten gösterilmiyor:
   "geri alınamaz bir damga gerçek ilişkilere zarar verir."
+- **İlişki ekranı (yapısal okuma)** — dört nitel eksen (İletişim,
+  Duygusal dil, Çekim, Ortak zemin): her biri seviye + ton + dayanak
+  açılarıyla. Ölçüm ücretsiz; **yorumu Rytho+ ile AI yazar.**
+
+  1.6.0'a kadar bu yorum 16 cümlelik bir tablodan seçiliyordu (eksen ×
+  ton) ve seviye cümleye hiç girmiyordu. Ölçüldü: 15 çiftin 15'i farklı
+  ölçüm üretiyor ama yalnız 12'si farklı metin görüyordu — üç çift dört
+  cümlenin dördünü de birebir aynı okuyordu. Tablo kaldırıldı; okuma
+  artık o çiftin kendi eksenlerinden ve kendi dayanak açılarından
+  üretiliyor, çift başına bir kez (30 gün önbellek).
 - Seri görünürlüğü kullanıcının kontrolünde; güvenlik menüsünde
   arkadaşlıktan çıkarma, engelleme, şikâyet.
 

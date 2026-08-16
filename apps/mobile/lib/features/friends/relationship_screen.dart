@@ -11,8 +11,10 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/common.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/markdown_text.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../chat/chat_screen.dart';
+import '../paywall/plus_locked_card.dart';
 
 /// İLİŞKİ — iki haritanın dört eksende nitel okuması (R2-L1).
 ///
@@ -41,6 +43,10 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
   String? _error;
   bool _busy = true;
 
+  /// İlişkinin AI okuması (1.6.0). Ölçüm herkese açık; yorum Rytho+.
+  String? _reading;
+  bool _readingLocked = false;
+
   @override
   void initState() {
     super.initState();
@@ -65,6 +71,8 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
         ];
         _footnote = data['footnote'] as String?;
         _reason = data['reason'] as String?;
+        _reading = data['reading'] as String?;
+        _readingLocked = data['reading_locked'] == true;
       });
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
@@ -120,6 +128,30 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
               .animate(delay: Duration(milliseconds: 70 * stagger++))
               .fadeIn(duration: 360.ms)
               .slideY(begin: 0.06, curve: Curves.easeOutCubic),
+        // AI okuması: eksenlerin ALTINDA tek metin. Kartlar ölçümü
+        // gösterir, bu bölüm o ölçümü yorumlar — ve yorum her çift için
+        // baştan yazılır, tablodan seçilmez.
+        if (_reading != null && _reading!.trim().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(RythoSpace.lg,
+                RythoSpace.md, RythoSpace.lg, 0),
+            child: GlassPanel(
+              label: l10n.relationshipReadingTitle,
+              child: MarkdownText(_reading!,
+                  baseStyle: RythoText.body(13.5, height: 1.55)),
+            ),
+          ).animate(delay: Duration(milliseconds: 70 * stagger++))
+              .fadeIn(duration: 380.ms),
+        if (_readingLocked)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(RythoSpace.lg,
+                RythoSpace.md, RythoSpace.lg, 0),
+            child: PlusLockedCard(
+              emoji: '💞',
+              title: l10n.relationshipReadingTitle,
+              description: l10n.relationshipReadingLocked,
+            ),
+          ),
         if (_footnote != null)
           Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -217,9 +249,11 @@ class _AxisCardState extends State<_AxisCard> {
             ),
           ),
         ]),
-        const SizedBox(height: 7),
-        Text(e['line'] as String? ?? '',
-            style: RythoText.body(13.5, height: 1.45)),
+        // Eksen kartında ARTIK hazır cümle yok (1.6.0): kart ölçümü
+        // gösterir, yorumu AI yazar ve eksenlerin altında tek metin
+        // olarak durur. Eski `line` alanı eksen × ton ile anahtarlı 16
+        // cümlelik bir tablodan geliyordu ve iki arkadaş birebir aynı
+        // dört cümleyi okuyabiliyordu.
         if (dayanak.isNotEmpty) ...[
           const SizedBox(height: 8),
           Pressable(

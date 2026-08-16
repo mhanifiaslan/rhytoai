@@ -1160,5 +1160,7 @@
   "retrogradeMeaning": "℞ retro: gezegen gökyüzünde geri gidiyor görünür. Klasik yorumda o alanda ilerleme dışa değil içe doğrudur — gözden geçirme, toparlama zamanı.",
   "calendarLockedReading": "Bu günün okuması Rytho+ ile açılır",
   "calendarOtherEvents": "Diğer hareketler",
-  "calendarStripTitle": "Önündeki 30 gün"
+  "calendarStripTitle": "Önündeki 30 gün",
+  "relationshipReadingTitle": "Rytho'nun ilişki okuması",
+  "relationshipReadingLocked": "Ölçülen eksenler ve dayanak açılar herkese açık. Bu ölçümün sizin ikinize özel yorumu Rytho+ ile açılır."
 }

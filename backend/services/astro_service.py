@@ -212,7 +212,87 @@ def _subject_points(subject) -> list[dict[str, Any]]:
     return points
 
 
+#: Açı türünün taşıdığı ağırlık. `synastry_service._ACI_AGIRLIK` ile aynı
+#: doktrin; buraya kopyalanmasının sebebi bağımlılık yönü (synastry_service
+#: astro_service'i içe aktarıyor, tersi döngü olurdu).
+_ACI_ONEM = {
+    "conjunction": 1.3, "opposition": 1.15, "square": 1.1,
+    "trine": 1.0, "sextile": 0.85,
+}
+
+#: Kişisel noktalar: bir açının "bu kişiye/ilişkiye dair" sayılması için en
+#: az bir ucunun kişisel olması beklenir (synastry_service._KISISEL ile aynı).
+_KISISEL_NOKTALAR = {"Sun", "Moon", "Mercury", "Venus", "Mars",
+                     "Ascendant", "Medium_Coeli"}
+
+#: Kişisel nokta içeren açının önem çarpanı. İki ucu da kişiselse çarpan
+#: iki kez uygulanır — Venüs–Mars teması Jüpiter–Neptün'den önce gelsin.
+_KISISEL_CARPAN = 1.6
+
+#: Güney Ay düğümü: Kuzey'in 180° zıttı olduğu için açıları Kuzey'inkinin
+#: aynadaki kopyasıdır (bkz. rank_aspects).
+_GUNEY_DUGUM = "True_South_Lunar_Node"
+
+
+def aspect_significance(aspect: dict[str, Any]) -> float:
+    """Bir açının ÖNEM puanı: dar orb + güçlü açı + kişisel nokta.
+
+    Doktrin `synastry_service._agirlik` ile aynı: ağırlık orb'la söner
+    (`w / (1 + orb)`). Buna kişisel nokta çarpanı eklenir.
+    """
+    orb = abs(float(aspect.get("orbit") or aspect.get("orb") or 0.0))
+    puan = _ACI_ONEM.get(aspect.get("aspect"), 1.0) / (1.0 + orb)
+    for uc in (aspect.get("p1"), aspect.get("p2")):
+        if uc in _KISISEL_NOKTALAR:
+            puan *= _KISISEL_CARPAN
+    return puan
+
+
+def rank_aspects(aspects: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Açıları ÖNEME göre sıralar — kesmeden önce çağrılması ZORUNLU.
+
+    ## Neden var
+
+    Bu proje açıları uzun süre kerykeion'un döndürdüğü sırayla, yani
+    gezegen yineleme sırasıyla kesti (`[:30]`, `[:10]`, `[:8]`, `[:6]`).
+    O sıra ÖNEM sırası değil. Ölçüldü (1.6.0 turu, dört sinastri çifti):
+    kerykeion 87-122 açı buluyor, prompta 30'u gidiyordu; Yükselen
+    temasları 15 açıdan 1'ine düşüyordu ve `Ascendant–Sun`, `Pluto–Sun`,
+    `Neptune–Moon` gibi en kişisel temaslar hiç ulaşmıyordu.
+
+    Sonuç iki katlıydı: modele her çiftte AYNI karakterde bir liste
+    gidiyordu (önce Güneş, sonra Ay; orb'u 7°'ye varan geniş açılar),
+    dar orb'lu asıl temaslar ise listede aşağıda kalıyordu. Ürünün
+    "arkadaşlarla ilişkiler jenerik, hepsi aynı" şikâyetinin kaynağı
+    buydu; aynı kusur natal, yıl haritası ve sinastri raporlarını da
+    besliyordu.
+
+    Sıralama KARARLI: eşit puanlı açılar özgün bir anahtarla
+    (gezegenler + açı) çözülür, böylece aynı girdi her koşuda aynı
+    listeyi verir ve önbellek/altın vektör testleri oynamaz.
+
+    Güney Ay düğümü açıları ELENİR: düğümler tanım gereği 180° zıttır,
+    yani "Merkür–Kuzey Düğüm kavuşum" ile "Merkür–Güney Düğüm karşıt"
+    TEK bir ölçümdür. İkisini birden listeye koymak modele aynı kanıtı
+    iki kez göstermek olur; sıralama yapılınca ikisi de üste çıkıp altı
+    kişilik prompt penceresini tek bir olguyla dolduruyordu.
+    """
+    süzülmüş = [a for a in aspects
+                if _GUNEY_DUGUM not in (a.get("p1"), a.get("p2"))]
+    return sorted(
+        süzülmüş,
+        key=lambda a: (-aspect_significance(a),
+                       str(a.get("p1")), str(a.get("p2")),
+                       str(a.get("aspect"))),
+    )
+
+
 def _aspects_list(aspects, limit: int | None = None) -> list[dict[str, Any]]:
+    """kerykeion açılarını sözlüğe döker; **öneme göre sıralı** döndürür.
+
+    Kesme sıralamadan SONRA yapılır: `limit` artık "en önemli N açı"
+    demek, "listede ilk gelen N açı" değil.
+    """
     result = []
     for a in aspects:
         # `movement` (T0): yaklaşan açı güçlenir, ayrılan söner — klasik
@@ -227,6 +307,7 @@ def _aspects_list(aspects, limit: int | None = None) -> list[dict[str, Any]]:
             "orbit": round(a.orbit, 2),
             "movement": str(movement).lower() if movement else None,
         })
+    result = rank_aspects(result)
     if limit:
         result = result[:limit]
     return result
@@ -377,7 +458,13 @@ def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, 
         "person1": {"name": s1.name, "sun": _point_dict(s1.sun), "moon": _point_dict(s1.moon)},
         "person2": {"name": s2.name, "sun": _point_dict(s2.sun), "moon": _point_dict(s2.moon)},
         "relationship_score": score_data,
-        "aspects": _aspects_list(aspects, limit=30),
+        # Sıralama artık öneme göre (bkz. rank_aspects), bu yüzden sınır
+        # "en önemli 60 açı" demek. 30'du: kerykeion 87-122 açı buluyor ve
+        # kesme gezegen sırasına göre olduğu için Yükselen temasları
+        # sistematik olarak düşüyordu. 60, ağırlığı ölçülebilir her teması
+        # kapsar (kuyruktaki geniş orb'lu açıların ağırlığı ~0.1'in altında)
+        # ve yanıtı şişirmez.
+        "aspects": _aspects_list(aspects, limit=60),
     }
 
 

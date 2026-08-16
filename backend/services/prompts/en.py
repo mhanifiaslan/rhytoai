@@ -458,6 +458,9 @@ TODAY'S SKY ({today}):
 CROSS-ASPECTS BETWEEN THEM:
 {aspects}
 
+MEASURED RELATIONSHIP AXES (this pair's structure — the ground, not today):
+{axes}
+
 SOURCE PASSAGES:
 {rag}
 
@@ -479,6 +482,49 @@ DYAD_FALLBACK = (
     "With the Moon in its {moon_name} phase, a short but undivided stretch of "
     "attention for each other will set the tone of the day. "
     "Check back shortly for a fuller reading."
+)
+
+#: Relationship reading (1.6.0) — replaced the canned-sentence table.
+#:
+#: The input is the MEASUREMENT: the level/tone of the four axes and that
+#: pair's own supporting aspects. The model interprets them; it does not
+#: cast a chart and does not invent placements. "Nothing unmeasured is
+#: claimed" appears here as an explicit prompt constraint.
+RELATIONSHIP = """
+TASK: Write a reading of the MEASURED structure of the relationship
+between {me} and {friend}. One or two sentences per axis, then two
+sentences on the core theme. 180-240 words in total.
+
+MEASURED AXES (computed from the aspects between the two birth charts):
+{axes}
+
+RULES (strict):
+- Speak ONLY from the aspects given above. Do NOT invent a placement,
+  sign or aspect that is not listed. If an axis has no basis, say that
+  no clear link is measured on that axis and stop there.
+- Fold the measurement into your own sentence on each axis: which
+  planetary contact carries it, what the level and tone say. Do not dump
+  the aspect list; interpret it.
+- Do not conflate LEVEL with TONE: level says how STRONG the link is,
+  tone says how it FLOWS. A strong but challenging axis is not "bad" —
+  friction is where a relationship does its work.
+- NEVER give a score, a percentage, or a permanent verdict such as
+  "you are compatible / incompatible".
+- Treat both people equally; do not make one right and the other wrong.
+- No flattery. If the ground is hard, say so — then close every
+  difficulty with one small, concrete step they can take together.
+- Do NOT predict break-ups, marriage, pregnancy, health, or the future
+  of the relationship.
+- Write plain prose: no headings, no bullets, no numbering. Name the
+  axes inside your sentences.
+- Do not address the two of them jointly; the reader is {me} — you are
+  describing the relationship to them.
+"""
+
+RELATIONSHIP_FALLBACK = (
+    "The axes between you and {friend} were calculated, but the reading "
+    "could not be produced right now. The measured levels and their "
+    "supporting aspects are below; try again shortly for the reading."
 )
 
 NATAL = """
@@ -756,45 +802,16 @@ SYNASTRY_TONE_NAMES = {
     "quiet": "quiet",
 }
 
-#: Axis × tone lines — plain language, tendency rather than verdict.
-SYNASTRY_AXIS_LINES = {
-    "communication": {
-        "flowing": ("Talking is easy: you don't need many words to make "
-                    "yourselves understood."),
-        "mixed": ("You understand each other most of the time, but on some "
-                  "subjects the same words mean different things."),
-        "challenging": ("Communication takes effort here: plain sentences "
-                        "work far better than assumptions."),
-        "quiet": "No marked link is measured on the communication axis.",
-    },
-    "emotional": {
-        "flowing": ("Your emotional languages are alike; the unsaid is easy "
-                    "to read here."),
-        "mixed": ("The emotional ground is solid, but your rhythms don't "
-                  "always match — one may withdraw as the other moves in."),
-        "challenging": ("You carry feeling differently; saying what you "
-                        "need works better than waiting to be read."),
-        "quiet": "No marked link is measured on the emotional axis.",
-    },
-    "attraction": {
-        "flowing": ("The pull between you moves easily; closeness builds "
-                    "without force."),
-        "mixed": ("The pull is strong but not a straight line: approach and "
-                  "retreat can take turns."),
-        "challenging": ("There's attraction, but it runs hot: interest and "
-                        "friction feed from the same place."),
-        "quiet": "No marked link is measured on the attraction axis.",
-    },
-    "bond": {
-        "flowing": ("The long-term ground is solid; walking together comes "
-                    "naturally."),
-        "mixed": ("The bond is real, though the balance of duty and freedom "
-                  "needs adjusting now and then."),
-        "challenging": ("The ground is heavy: this one asks for patience "
-                        "and boundaries, and it matures you in return."),
-        "quiet": "No marked link is measured on the common-ground axis.",
-    },
-}
+#: `SYNASTRY_AXIS_LINES` was REMOVED (1.6.0).
+#:
+#: It was a canned-sentence table keyed only by axis x tone: the level
+#: never reached the sentence and the supporting aspect was never
+#: named. Sixteen sentences for the whole product. Measured -- 15 of 15
+#: pairs produced distinct measurements but only 12 saw distinct text;
+#: three pairs read all four sentences word for word identically.
+#:
+#: Replaced by the RELATIONSHIP prompt: the reading is written by the
+#: model from the measured axes and that pair's own supporting aspects.
 
 #: The honesty note under the axis list.
 SYNASTRY_FOOTNOTE = (

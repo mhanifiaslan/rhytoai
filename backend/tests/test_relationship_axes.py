@@ -120,14 +120,25 @@ class TestEksenHesabi:
 
 
 class TestYerellestirme:
-    def test_tr_ve_en_metinleri(self):
+    """Yerellestirme artik YALNIZ OLCUMU dile cevirir.
+
+    `SYNASTRY_AXIS_LINES` (eksen basina hazir cumle tablosu) 1.6.0'da
+    SILINDI. Yalniz eksen x ton ile anahtarliydi; seviye cumleye hic
+    girmiyor, dayanak aci hic anilmiyordu ve tum urunde 16 cumle vardi.
+    Olculdu: 15 ciftin 15'i FARKLI olcum uretiyordu ama yalniz 12'si
+    farkli metin goruyordu -- uc cift dort cumlenin dordunu de birebir
+    ayni okuyordu. Kullanici bulgusu buydu: "tum arkadaslarla ayni
+    cevaplar var". Yorumu artik AI yaziyor.
+    """
+
+    def test_tr_ve_en_olcum_adlari(self):
         sonuc = synastry_service.relationship_axes(SAHTE_SINASTRI)
         tr = prompts.localize_relationship_axes("tr", sonuc)
         iletisim = next(e for e in tr["axes"]
                         if e["axis"] == "communication")
         assert iletisim["axis_local"] == "İletişim"
-        assert iletisim["level_local"] in ("Belirgin", "Güçlü")
-        assert iletisim["line"]
+        assert iletisim["level_local"] in ("Belirgin", "Güçlü", "Hafif")
+        assert iletisim["tone_local"]
         assert iletisim["basis"][0]["p1_local"] == "Merkür"
         assert iletisim["basis"][0]["aspect_local"] == "Kavuşum"
         assert "puan vermez" in tr["footnote"]
@@ -137,25 +148,31 @@ class TestYerellestirme:
         assert ing["axis_local"] == "Communication"
         assert "does not score" in en["footnote"]
 
-    def test_her_eksen_ton_ciftinin_metni_var(self):
+    def test_HAZIR_CUMLE_KALMADI(self):
+        """Tablo geri gelirse bu test duser.
+
+        Geri gelmesi sessiz bir gerileme olurdu: ekran calismaya devam
+        eder, yalnizca herkes yine ayni metni gorur.
+        """
         for lang in ("tr", "en"):
             p = prompts.get(lang)
-            for eksen in synastry_service.AXES:
-                for ton in ("flowing", "mixed", "challenging", "quiet"):
-                    assert p.SYNASTRY_AXIS_LINES[eksen][ton], (lang, eksen,
-                                                               ton)
+            assert not hasattr(p, "SYNASTRY_AXIS_LINES"), lang
+        sonuc = synastry_service.relationship_axes(SAHTE_SINASTRI)
+        for lang in ("tr", "en"):
+            yerel = prompts.localize_relationship_axes(lang, sonuc)
+            for e in yerel["axes"]:
+                assert "line" not in e, (lang, e["axis"])
 
-    def test_sessiz_seviye_niteliksiz_cumle_alir(self):
-        """Ölçülmemiş bağa 'akıcı/zorlayıcı' denmez."""
+    def test_dayanaksiz_eksen_nitelik_almaz(self):
+        """Olculmemis baga 'akici/zorlayici' denmez: seviye 'sessiz' kalir
+        ve dayanak listesi bostur. Yorumu yazan katman bunu gorup
+        'olculmuyor' diyebilsin diye bilgi eksikligi de veridir."""
         ham = {"axes": [{"axis": "bond", "level": "quiet",
-                         "tone": "flowing", "basis": []}]}
+                         "tone": "quiet", "basis": []}]}
         tr = prompts.localize_relationship_axes("tr", ham)
-        assert "ölçülmüyor" in tr["axes"][0]["line"]
-
-    def test_zorlayici_ton_kotu_demez(self):
-        """Sürtünme 'kötü ilişki' diye sunulmaz — olgunlaştıran yer denir."""
-        tr = prompts.get("tr").SYNASTRY_AXIS_LINES["bond"]["challenging"]
-        assert "olgunlaştırıyor" in tr
+        eksen = tr["axes"][0]
+        assert eksen["level_local"] == "Sessiz"
+        assert eksen["basis"] == []
 
 
 # --------------------------------------------------------------------------

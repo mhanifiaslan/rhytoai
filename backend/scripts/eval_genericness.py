@@ -188,17 +188,99 @@ def _ortalama_benzerlik(m: np.ndarray) -> float:
     return sum(ikililer) / len(ikililer) if ikililer else 0.0
 
 
+#: İlişki modu havuzu (1.6.0). Sohbet modundaki HARITALAR tek kişilik;
+#: ilişki ölçümü ÇİFT gerektiriyor.
+ILISKI_KISILERI = [
+    dict(name="Ada", year=1990, month=5, day=12, hour=14, minute=30,
+         city="Istanbul", nation="TR"),
+    dict(name="Bora", year=1985, month=11, day=3, hour=8, minute=15,
+         city="Ankara", nation="TR"),
+    dict(name="Ceren", year=1996, month=2, day=27, hour=21, minute=45,
+         city="Izmir", nation="TR"),
+    dict(name="Deniz", year=1978, month=7, day=19, hour=3, minute=5,
+         city="Bursa", nation="TR"),
+]
+
+
+def _iliski_modu(cift_sayisi: int) -> int:
+    """İlişki okumalarının çiftten çifte NE KADAR degistigini olcer.
+
+    Kullanici bulgusu: "tum arkadaslarla ayni cevaplar var". O zamanki
+    yapida metin 16 cumlelik hazir tablodan geliyordu ve 15 ciftin 3'u
+    dort cumlenin dordunu de BIREBIR ayni okuyordu (olculdu). Artik
+    yorumu AI yaziyor; bu mod o degisimin sayisini verir.
+
+    Okuma dogrudan uretilir (onbellek atlanir), yoksa ikinci kosuda ayni
+    metinler donup olcum anlamsizlasir.
+    """
+    from services import astro_service, report_service, synastry_service
+
+    ciftler = list(itertools.combinations(range(len(ILISKI_KISILERI)), 2))
+    ciftler = ciftler[:max(2, cift_sayisi)]
+    print(f"{len(ciftler)} cift icin iliski okumasi uretiliyor...\n")
+
+    okumalar, imzalar = [], []
+    for i, j in ciftler:
+        a, b = ILISKI_KISILERI[i], ILISKI_KISILERI[j]
+        eksenler = synastry_service.relationship_axes(
+            astro_service.get_synastry(a, b))
+        imzalar.append(tuple((e["level"], e["tone"])
+                             for e in eksenler["axes"]))
+        # Onbellegi atla: her cift icin gercekten uretilsin.
+        report_service.cache.get = lambda k: None  # type: ignore[assignment]
+        report_service.cache.set = lambda k, v, **kw: None  # type: ignore
+        sonuc = report_service.relationship_reading(
+            f"u{i}", f"u{j}", a["name"], b["name"], eksenler, lang="tr")
+        okumalar.append(sonuc["text"])
+        print(f"  [{a['name']}-{b['name']}] {len(sonuc['text'])} karakter"
+              f"{' (FALLBACK)' if sonuc.get('fallback') else ''}")
+
+    print("\n" + "=" * 66)
+    print("ILISKI OKUMASI — DEGISTIRILEBILIRLIK")
+    print("=" * 66)
+    print(f"farkli OLCUM imzasi : {len(set(imzalar))}/{len(imzalar)}")
+    print(f"farkli METIN        : {len(set(okumalar))}/{len(okumalar)}"
+          "   (hedef: hepsi farkli)")
+
+    m = _vektorle(okumalar)
+    if m is not None:
+        print(f"ciftler arasi benzerlik: {_ortalama_benzerlik(m):.3f}"
+              "   (dusuk = cifte ozel, yuksek = jenerik)")
+
+    yagcilik, yasak = [], []
+    for metin in okumalar:
+        yagcilik += _kalip_sayisi(metin, YAGCILIK)
+        yasak += _kalip_sayisi(metin, YASAK, regex=True)
+    print(f"YAGCILIK kalibi: {len(yagcilik)} (hedef 0) {sorted(set(yagcilik))}")
+    print(f"YASAK alan     : {len(yasak)} (hedef 0) {sorted(set(yasak))}")
+    # Puan sizintisi: urun kalici uyum puani GOSTERMEZ.
+    puanli = [t for t in okumalar
+              if any(x in t for x in ("%", "/100", "10 uzerinden"))]
+    print(f"PUAN sizintisi : {len(puanli)} (hedef 0)")
+
+    return 0 if len(set(okumalar)) == len(okumalar) else 1
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--charts", type=int, default=len(HARITALAR),
                     help="Kac harita kullanilsin (varsayilan: hepsi).")
     ap.add_argument("--repeat", action="store_true",
                     help="Tavan referansi icin ayni haritaya iki kez sor.")
+    ap.add_argument("--mode", choices=("chat", "relationship"),
+                    default="chat",
+                    help="chat: sohbet cevaplari; relationship: iliski "
+                         "okumalari (1.6.0).")
+    ap.add_argument("--pairs", type=int, default=4,
+                    help="relationship modunda kac cift.")
     args = ap.parse_args()
 
     if not config.GEMINI_API_KEY:
         print("GEMINI_API_KEY yok; olcum yapilamaz.", file=sys.stderr)
         return 1
+
+    if args.mode == "relationship":
+        return _iliski_modu(args.pairs)
 
     haritalar = HARITALAR[:max(2, args.charts)]
     print(f"{len(haritalar)} harita x {len(SORULAR)} soru\n")

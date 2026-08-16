@@ -1077,5 +1077,7 @@
   "retrogradeMeaning": "℞ retrograde: the planet appears to move backward. Classically, progress in that area turns inward rather than outward — a time to review and gather.",
   "calendarLockedReading": "This day's reading opens with Rytho+",
   "calendarOtherEvents": "Other movements",
-  "calendarStripTitle": "The next 30 days"
+  "calendarStripTitle": "The next 30 days",
+  "relationshipReadingTitle": "Rytho's reading of this bond",
+  "relationshipReadingLocked": "The measured axes and their supporting aspects are open to everyone. Rytho's reading of what they mean for the two of you opens with Rytho+."
 }

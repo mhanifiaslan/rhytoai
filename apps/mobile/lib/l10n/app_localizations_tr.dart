@@ -2426,4 +2426,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get calendarStripTitle => 'Önündeki 30 gün';
+
+  @override
+  String get relationshipReadingTitle => 'Rytho\'nun ilişki okuması';
+
+  @override
+  String get relationshipReadingLocked =>
+      'Ölçülen eksenler ve dayanak açılar herkese açık. Bu ölçümün sizin ikinize özel yorumu Rytho+ ile açılır.';
 }

@@ -4363,6 +4363,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Önündeki 30 gün'**
   String get calendarStripTitle;
+
+  /// No description provided for @relationshipReadingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun ilişki okuması'**
+  String get relationshipReadingTitle;
+
+  /// No description provided for @relationshipReadingLocked.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ölçülen eksenler ve dayanak açılar herkese açık. Bu ölçümün sizin ikinize özel yorumu Rytho+ ile açılır.'**
+  String get relationshipReadingLocked;
 }
 
 class _AppLocalizationsDelegate
