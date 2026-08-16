@@ -619,6 +619,10 @@ ASTRO_NOTES = {
     # R5-5: the old text named only the city it was cast for, so a user born
     # in one place and living in another could not connect it to their birth
     # chart. The calculation was right; the wording was thin.
+    "synastry_hour_unknown_p1": (
+        "Your birth time is not on file, so your Ascendant and MC contacts were left out of this reading; an Ascendant assumed from noon is not evidence about a relationship."),
+    "synastry_hour_unknown_p2": (
+        "Your friend's birth time is not on file, so their Ascendant and MC contacts were left out."),
     "sr_relocated": (
         "Your year chart was cast for {city} — where you live. You were "
         "born in {birth_city}; a solar return is cast not for your "

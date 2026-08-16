@@ -31,7 +31,11 @@ logger = logging.getLogger(__name__)
 #: sırasıyla kesiliyordu ve Yükselen temaslarının çoğu düşüyordu), ve
 #: eşikler 200 çiftlik dağılımdan kalibre edildi. Eksenler LLM'siz
 #: hesap olduğu için tazelenme kimseye jeton yazmaz.
-SYNASTRY_CALC_VERSION = "2"
+#:
+#: "3" (1.7.0): saatsiz tarafın Yükselen/MC açıları artık sinastriden
+#: de düşüyor (natal ile aynı disiplin). Ölçüldü: uydurma Yükselen
+#: "ortak zemin" eksenini bir seviye şişiriyordu.
+SYNASTRY_CALC_VERSION = "3"
 
 #: Eksen anahtarları — l10n adları prompts katmanında (SYNASTRY_AXIS_NAMES).
 AXES = ("communication", "emotional", "attraction", "bond")
@@ -185,6 +189,9 @@ def relationship_axes(synastry: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "calc_version": SYNASTRY_CALC_VERSION,
+        # Saatsizlik beyanı motordan geliyor; eksen katmanı onu taşır ki
+        # arayüz "bu okumada Yükselen yok" diyebilsin.
+        "disclosures": list(synastry.get("disclosures") or []),
         "axes": eksenler,
         "lead_axis": max(AXES, key=lambda e: (oran(e), -AXES.index(e))),
     }

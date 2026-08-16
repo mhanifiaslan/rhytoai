@@ -2440,4 +2440,23 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get relationshipReadingLocked =>
       'Ölçülen eksenler ve dayanak açılar herkese açık. Bu ölçümün sizin ikinize özel yorumu Rytho+ ile açılır.';
+
+  @override
+  String get moonUncertainNote =>
+      'Doğum saatin kayıtlı olmadığı için Ay\'ın burcu bir burç şaşabilir — Ay günde yaklaşık 13° yol alır.';
+
+  @override
+  String moonUncertainAlt(String alt) {
+    return 'Doğum saatine göre $alt da olabilir.';
+  }
+
+  @override
+  String get birthMissingTitle => 'Doğum kaydın eksik';
+
+  @override
+  String get birthMissingBody =>
+      'Haritanı hesaplayabilmek için doğum tarihin ve şehrin gerekli. Bu bir Rytho+ kilidi değil — kaydı tamamladığında çark, yerleşimler ve açılar ücretsiz açılır.';
+
+  @override
+  String get birthMissingAction => 'Doğum kaydını tamamla';
 }

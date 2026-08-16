@@ -1164,5 +1164,17 @@
   "calendarOtherEvents": "Diğer hareketler",
   "calendarStripTitle": "Önündeki 30 gün",
   "relationshipReadingTitle": "Rytho'nun ilişki okuması",
-  "relationshipReadingLocked": "Ölçülen eksenler ve dayanak açılar herkese açık. Bu ölçümün sizin ikinize özel yorumu Rytho+ ile açılır."
+  "relationshipReadingLocked": "Ölçülen eksenler ve dayanak açılar herkese açık. Bu ölçümün sizin ikinize özel yorumu Rytho+ ile açılır.",
+  "moonUncertainNote": "Doğum saatin kayıtlı olmadığı için Ay'ın burcu bir burç şaşabilir — Ay günde yaklaşık 13° yol alır.",
+  "moonUncertainAlt": "Doğum saatine göre {alt} da olabilir.",
+  "@moonUncertainAlt": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
+  "birthMissingTitle": "Doğum kaydın eksik",
+  "birthMissingBody": "Haritanı hesaplayabilmek için doğum tarihin ve şehrin gerekli. Bu bir Rytho+ kilidi değil — kaydı tamamladığında çark, yerleşimler ve açılar ücretsiz açılır.",
+  "birthMissingAction": "Doğum kaydını tamamla"
 }

@@ -638,9 +638,14 @@ def localize_relationship_axes(lang: str | None, data: dict | None) -> dict:
                     for b in (e.get("basis") or [])
                 ]}
 
-    return {**data,
-            "axes": [eksen(e) for e in (data.get("axes") or [])],
-            "footnote": p.SYNASTRY_FOOTNOTE}
+    sonuc = {**data,
+             "axes": [eksen(e) for e in (data.get("axes") or [])],
+             "footnote": p.SYNASTRY_FOOTNOTE}
+    # Saatsizlik beyanı (1.7.0): taraflardan birinin doğum saati yoksa
+    # Yükselen/MC temasları hesaba girmedi ve bu SÖYLENİR.
+    if data.get("disclosures"):
+        sonuc["disclosure_texts"] = _disclosure_texts(lang, data)
+    return sonuc
 
 
 def localize_synastry(lang: str | None, synastry: dict | None) -> dict:

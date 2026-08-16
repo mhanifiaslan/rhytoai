@@ -14,10 +14,10 @@ import '../../widgets/markdown_text.dart' show markdownToPlain;
 import '../../widgets/reading_card.dart';
 import '../share/share_card.dart' show shareReportCard;
 import '../face/face_reading_flow.dart';
+import '../shell/app_shell.dart' show shellTabProvider;
 import '../oracle/oracle_screen.dart';
 import '../paywall/paywall_screen.dart';
 import 'birth_hexagram_screen.dart';
-import '../paywall/plus_locked_card.dart';
 import 'atlas_detail_screens.dart';
 import 'inner_calendar_screen.dart';
 import 'solar_return_screen.dart';
@@ -102,12 +102,13 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
             data: (data) {
               if (data == null) {
                 // Doğum kaydı yoksa harita hesaplanamaz — bu bir kilit
-                // değil, eksik veri durumu.
-                return PlusLockedCard(
-                  emoji: '🗺️',
-                  title: l10n.natalLockedTitle,
-                  description: l10n.natalLockedBody,
-                  centered: true,
+                // DEĞİL, eksik veri durumu. Uzun süre `PlusLockedCard` +
+                // "derin yorum Rytho+ ile açılır" gösteriliyordu: yorum
+                // "kilit değil" diyor, ekran paywall gibi görünüyordu.
+                // Kullanıcı ücretsiz olan çarkı parayla sanıyordu.
+                return _BirthMissingCard(
+                  onTap: () =>
+                      ref.read(shellTabProvider.notifier).state = 3,
                 );
               }
           final chart = Map<String, dynamic>.from(data);
@@ -466,6 +467,56 @@ class _FullReportRow extends ConsumerWidget {
           onTap: () => metin == null ? paywall() : ac(metin),
         );
       },
+    );
+  }
+}
+
+/// Doğum kaydı eksikken gösterilen kart — **paywall değil**.
+///
+/// Çark, yerleşimler ve açılar ücretsiz; eksik olan tek şey doğum
+/// kaydının kendisi. Bu yüzden kilit rozeti, kilit rengi ve "Rytho+ ile
+/// açılır" dili KULLANILMAZ; kart doğrudan kaydı tamamlamaya götürür.
+class _BirthMissingCard extends StatelessWidget {
+  const _BirthMissingCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.all(RythoSpace.lg),
+      child: GlassPanel(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              const Text('🗺️', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(l10n.birthMissingTitle,
+                    style: RythoText.display(16, w: FontWeight.w700)),
+              ),
+            ]),
+            const SizedBox(height: RythoSpace.sm),
+            Text(l10n.birthMissingBody,
+                style: RythoText.body(13, height: 1.5,
+                    color: RythoColors.parchmentDim)),
+            const SizedBox(height: RythoSpace.md),
+            Pressable(
+              onTap: onTap,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(l10n.birthMissingAction,
+                    style: RythoText.body(13, w: FontWeight.w700,
+                        color: RythoColors.lilac)),
+                const SizedBox(width: 6),
+                const Icon(Icons.arrow_forward_rounded,
+                    size: 15, color: RythoColors.lilac),
+              ]),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

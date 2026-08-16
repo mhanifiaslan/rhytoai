@@ -422,10 +422,23 @@ def relationship_reading(uid: str, friend_uid: str, me_name: str,
     p = prompts.get(lang)
 
     ikili = "-".join(sorted((uid, friend_uid)))
-    cache_key = (f"rel-reading-{axes.get('calc_version')}-{ikili}-{lang}")
+    # v2: önbellekten gelen yanıt ARTIK ayrıştırılıyor (aşağıya bak).
+    # Sürüm artırıldı ki eski kayıtlar — kartları boş bırakanlar —
+    # kendiliğinden düşsün. Bu okuma jetonsuz; tazelenmesi kimseye
+    # ücret yazmaz.
+    cache_key = (f"rel-reading-v2-{axes.get('calc_version')}-{ikili}-{lang}")
     cached = cache.get(cache_key)
     if cached is not None:
-        return {"text": cached, "cached": True}
+        # ÖNBELLEK YOLU DA AYRIŞTIRIR.
+        #
+        # Buradaki erken dönüş eksen cümlelerini taşımıyordu ve kusur tam
+        # olarak şöyle görünüyordu: ilk açılışta kartlar dolu (üretim
+        # yolundan geçiliyor), İKİNCİ açılıştan itibaren boş — üstelik
+        # önbellek 30 gün olduğu için o çift kalıcı olarak boş kalıyordu.
+        # Cihazda "bazı arkadaşlarda önce dolu geldi sonra yine boş geldi"
+        # diye görüldü.
+        return {"text": cached, "cached": True,
+                **parse_relationship_reading(cached)}
 
     yerel = prompts.localize_relationship_axes(lang, axes)
     satirlar = []
@@ -450,7 +463,20 @@ def relationship_reading(uid: str, friend_uid: str, me_name: str,
     sonuc = _cached_generate(cache_key, prompt, fallback,
                              ttl_seconds=30 * 24 * 3600, lang=lang,
                              owner_uid=uid)
-    return {**sonuc, **parse_relationship_reading(sonuc["text"])}
+    cozum = parse_relationship_reading(sonuc["text"])
+
+    # Biçimi tutmayan üretim 30 GÜN KİLİTLENMESİN.
+    #
+    # Model `communication:` gibi anahtarları atlarsa eksen cümlesi
+    # çıkmıyor ve kartlar boş kalıyor. Bunu bir ay boyunca saklamak, tek
+    # bir kötü üretimi o çift için kalıcı hale getirirdi. Kısa ömür verip
+    # bir sonraki açılışta yeniden denemek daha ucuz: bu okuma jetonsuz.
+    if not cozum.get("axis_lines") and not sonuc.get("fallback"):
+        cache.set(cache_key, sonuc["text"], ttl_seconds=3600,
+                  owner_uid=uid)
+        logger.warning("İlişki okuması biçimi tutmadı; kısa ömürle "
+                       "saklandı (%s)", cache_key)
+    return {**sonuc, **cozum}
 
 
 #: Eksen anahtarları model çıktısında AYNEN beklenir — dilden bağımsız

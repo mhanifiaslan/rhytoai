@@ -154,6 +154,46 @@ def _declination_aspects(points: list[dict[str, Any]],
     return çiftler[:limit]
 
 
+def _ay_belirsizligini_isaretle(
+        puanlar: list[dict[str, Any]], year: int, month: int, day: int,
+        city: str, nation: str | None) -> None:
+    """Saat bilinmiyorsa Ay'ı BELİRSİZ işaretler; sınırdaysa ikinci adayı yazar.
+
+    ## Neden
+
+    Saatsiz haritada Yükselen ve evler hiç üretilmiyor (uydurma olurdu) ama
+    Ay öğle dolgusuyla hesaplanıp "senin Ay'ın" diye gösteriliyordu. Ay
+    günde ~13° yol alır: gün başındaki Ay ile gün sonundaki Ay farklı
+    burçta olabilir.
+
+    Ölçüldü (16 tarih, 1993): **7'sinde Ay gün içinde burç değiştiriyor.**
+    Yani saatsiz kullanıcıların azımsanmayacak bir kısmına yanlış Ay burcu
+    gösteriliyordu — hem de Büyük Üçlü'nün içinde, en görünür yerde.
+
+    BaZi saat sütununu bu durumda dürüstçe düşürüyor; Batı tarafı aynı
+    disiplinde değildi. Ürün kararı (kullanıcı): **göster ama beyan et.**
+    Gün başı ve gün sonu farklı burçtaysa ikinci aday da taşınır — Doğum
+    Kapısı'nın saat sınırı desenindeki davranışın aynısı.
+    """
+    ay = next((p for p in puanlar if p["name"] == "Moon"), None)
+    if ay is None:
+        return
+    ay["uncertain"] = True
+    try:
+        gun_basi, _ = _build_subject("t", year, month, day, 0, 1,
+                                     city, nation)
+        gun_sonu, _ = _build_subject("t", year, month, day, 23, 59,
+                                     city, nation)
+    except Exception:
+        # Sınır hesabı düşerse belirsizlik bayrağı yine duruyor; ikinci
+        # aday yazılmaz (üretilmeyen şey söylenmez).
+        return
+    burclar = {gun_basi.moon.sign, gun_sonu.moon.sign}
+    if len(burclar) > 1:
+        ay["sign_alt"] = next(b for b in burclar if b != ay["sign"]) \
+            if ay["sign"] in burclar else sorted(burclar)[0]
+
+
 def _build_subject(
     name: str, year: int, month: int, day: int, hour: int, minute: int,
     city: str, nation: str | None, zodiac_type: ZodiacType = "Tropical",
@@ -376,6 +416,7 @@ def get_natal_chart(
         for p in puanlar:
             p["house"] = None
             p["house_no"] = None
+        _ay_belirsizligini_isaretle(puanlar, year, month, day, city, nation)
     # (ad, burç kodu) çiftleri: sayım ve ÜYE listesi aynı kaynaktan çıksın.
     sayilacak = [(p["name"], p["sign"]) for p in puanlar
                  if p["name"] in _BALANCE_PLANETS]
@@ -491,10 +532,29 @@ def get_transits(
 
 
 def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, Any]:
-    """İki kişi arasındaki sinastri (kozmik uyum) analizi."""
+    """İki kişi arasındaki sinastri (kozmik uyum) analizi.
+
+    Natal ile AYNI saatsizlik disiplini geçerli: taraflardan birinin doğum
+    saati bilinmiyorsa, o kişinin Yükselen/MC açıları listeden düşer.
+
+    Eskiden düşmüyordu ve sonuç sessiz bir uydurmaydı: natal ekranda
+    Yükselen hiç gösterilmezken, aynı kişinin ilişki eksenlerinde
+    "Yükselen'ine kavuşum" bir dayanak olarak görünebiliyordu — üstelik
+    `synastry_service._KISISEL` Yükselen'i kişisel nokta saydığı için
+    eksen puanını da yukarı çekiyordu. Öğle dolgusuyla hesaplanmış bir
+    Yükselen'i ilişkinin kanıtı diye sunmak, ürünün "ölçülmeyen
+    söylenmez" kuralının ihlaliydi.
+    """
     s1, _ = _build_subject(**subject_kwargs(person1))
     s2, _ = _build_subject(**subject_kwargs(person2))
     aspects = _kerykeion().SynastryAspects(s1, s2).relevant_aspects
+
+    saat1, saat2 = hour_is_known(person1), hour_is_known(person2)
+    beyanlar: list[str] = []
+    if not saat1:
+        beyanlar.append("synastry_hour_unknown_p1")
+    if not saat2:
+        beyanlar.append("synastry_hour_unknown_p2")
 
     score_data: dict[str, Any] = {}
     try:
@@ -517,8 +577,25 @@ def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, 
         # sistematik olarak düşüyordu. 60, ağırlığı ölçülebilir her teması
         # kapsar (kuyruktaki geniş orb'lu açıların ağırlığı ~0.1'in altında)
         # ve yanıtı şişirmez.
-        "aspects": _aspects_list(aspects, limit=60),
+        "aspects": _sinastri_acilari(aspects, saat1, saat2),
+        "hour_known": {"p1": saat1, "p2": saat2},
+        "disclosures": beyanlar,
     }
+
+
+def _sinastri_acilari(aspects, saat1: bool, saat2: bool
+                      ) -> list[dict[str, Any]]:
+    """Saatsiz tarafın eksen (Yükselen/MC) açılarını düşürür.
+
+    kerykeion sinastri açılarında `p1` ilk özneye, `p2` ikinciye aittir;
+    hangi tarafın açısının düşeceği bu yüzden uca göre ayrılıyor.
+    """
+    liste = _aspects_list(aspects, limit=60)
+    if saat1 and saat2:
+        return liste
+    return [a for a in liste
+            if not (not saat1 and a.get("p1") in _ANGLES)
+            and not (not saat2 and a.get("p2") in _ANGLES)]
 
 
 def get_synastry_svg(person1: dict[str, Any], person2: dict[str, Any], theme: str = "dark") -> str:

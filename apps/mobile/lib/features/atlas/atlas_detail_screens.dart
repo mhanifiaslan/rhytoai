@@ -179,6 +179,13 @@ class _PlanetRow extends StatelessWidget {
     // Alt satır: derece · ev — ikisi de zaten hesaplanıyordu ama hiç
     // gösterilmiyordu ("bu konumlar ne demek" şikâyetinin yarısı buydu).
     // Retro başlıkta ℞ ile (klasik sembol); ne demek olduğu detayda.
+    // Saatsiz doğumda Ay BELİRSİZ (1.7.0): Yükselen hiç üretilmiyor ama
+    // Ay öğle dolgusuyla hesaplanıyordu ve "senin Ay'ın" diye
+    // duruyordu. Ay günde ~13° yol alır; ölçüldü — 16 tarihin 7'sinde
+    // gün içinde burç değişiyor. Artık sunucu işaretliyor, ekran söylüyor.
+    final belirsiz = point['uncertain'] == true;
+    final altBurc = point['sign_alt'] as String?;
+
     final altSatir = [
       if (derece != null) '${derece.toStringAsFixed(1)}°',
       if (ev != null) l10n.houseN(ev),
@@ -211,7 +218,8 @@ class _PlanetRow extends StatelessWidget {
                 children: [
                   Text(
                     '${planetSignLabel(context, point)} '
-                    '${_signGlyph(point)}${retro ? ' ℞' : ''}',
+                    '${_signGlyph(point)}${retro ? ' ℞' : ''}'
+                    '${belirsiz ? ' ~' : ''}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: RythoText.body(13.5, w: FontWeight.w600),
@@ -220,6 +228,19 @@ class _PlanetRow extends StatelessWidget {
                     Text(altSatir,
                         style: RythoText.mono(10.5,
                             color: RythoColors.parchmentDim)),
+                  // Belirsizlik SATIRDA da görünür: detay sayfasına
+                  // dokunmayan kullanıcı da uyarıyı görmeli.
+                  if (belirsiz)
+                    Text(
+                      // `sign_alt` sunucudan burç KODU olarak gelir
+                      // ("Vir"); dile çeviren tablo `_kSignCodeIndex`.
+                      _kSignCodeIndex[altBurc] != null
+                          ? l10n.moonUncertainAlt(signDisplayName(
+                              l10n, _kSignCodeIndex[altBurc]!))
+                          : l10n.moonUncertainNote,
+                      style: RythoText.body(10.5,
+                          color: RythoColors.copper, height: 1.35),
+                    ),
                 ]),
           ),
           const Icon(Icons.chevron_right,

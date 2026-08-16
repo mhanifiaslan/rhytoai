@@ -98,6 +98,9 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 64 | Açı sıralaması (R7-1): Atlas'ta ve raporlarda anılan açılar en dar orb'lu olanlar; Yükselen temasları görünüyor; ikili okuma artık "Güneş–Satürn orb 6.9°" gibi geniş açılarla açılmıyor | ⬜ | 1.6.0+20 + sunucu |
 | 65 | Eşik kalibrasyonu (R7-2): farklı arkadaşlarda eksen seviyeleri DEĞİŞİYOR — hepsinde "Çekim: Güçlü, İletişim: Hafif" tablosu çıkmıyor | ⬜ | sunucu |
 | 66 | Olgu bekçisi yanlış pozitifi (R8): aynı natal raporunu iki kez aç — ikinci açılışta **jeton düşmüyor** (önbellekten geliyor) ve rapor doğru yerleşimleri anıyor; kasten yanlış bir yerleşim sorulduğunda model onu tekrarlamıyor | ⬜ | 1.6.2+22 + sunucu |
+| 67 | İlişki kartları (R9-1): aynı arkadaşın ilişki ekranı İKİ KEZ açılır — her ikisinde de dört eksende ipucu cümlesi görünür (önceden ilk açılış dolu, sonrakiler boştu) | ⬜ | 1.7.0+23 + sunucu |
+| 68 | Saatsiz Ay (R9-2): doğum saati girilmemiş profilde Ay satırında `~` işareti ve bakır beyan var; sınır tarihlerinde ikinci burç adayı yazılı | ⬜ | 1.7.0+23 + sunucu |
+| 69 | Saatsiz sinastri + Atlas kartı (R9-3/4): saati olmayan arkadaşla ilişki eksenlerinde Yükselen dayanağı YOK ve beyan görünüyor; doğum kaydı eksik hesapta Atlas paywall değil "kaydı tamamla" kartı gösteriyor | ⬜ | 1.7.0+23 + sunucu |
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,

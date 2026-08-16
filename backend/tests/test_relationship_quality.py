@@ -277,3 +277,151 @@ class TestIliskiOkumasiPromptu:
                                             lang="tr")
         assert anahtarlar[0] == anahtarlar[1], "anahtar sıraya bagli"
         assert "a-b" in anahtarlar[0]
+
+
+class TestOnbellekYolu:
+    """Onbellekten gelen okuma da EKSEN CUMLELERINI tasimali.
+
+    Cihaz bulgusu (1.6.2): "ilisikiyi incele"de kartlar bos geliyor, bazi
+    arkadaslarda once dolu gelip sonra bos kaliyor. Sebep: onbellek
+    isabetinde erken donus yapiliyor ve ayristirma atlaniyordu --
+    ilk acilis uretim yolundan gectigi icin doluydu, IKINCI acilistan
+    itibaren bos kaliyordu ve onbellek 30 gun oldugu icin o cift kalici
+    olarak bos kaliyordu.
+    """
+
+    BICIMLI = ("communication: Merkur temasi konusmayi kolaylastiriyor.\n"
+               "emotional: Ay-Saturn zemini olgun.\n"
+               "attraction: Mars kivilcimli.\n"
+               "bond: Jupiter tasiyici.\n"
+               "theme: Ana tema. Ikinci cumle.")
+
+    def _bellek(self, monkeypatch, uretim):
+        from services import report_service as rs
+        kutu: dict = {}
+        monkeypatch.setattr(rs.cache, "get", lambda k: kutu.get(k))
+        monkeypatch.setattr(
+            rs.cache, "set",
+            lambda k, v, **kw: kutu.__setitem__(k, v))
+        monkeypatch.setattr(rs.gemini_service, "generate",
+                            lambda p, lang=None: uretim)
+        return rs, kutu
+
+    def test_ikinci_acilis_da_eksen_cumlesi_tasir(self, monkeypatch):
+        rs, _ = self._bellek(monkeypatch, self.BICIMLI)
+        eks = {"calc_version": "2", "axes": []}
+
+        birinci = rs.relationship_reading("a", "b", "Ben", "F", eks,
+                                          lang="tr")
+        ikinci = rs.relationship_reading("a", "b", "Ben", "F", eks,
+                                         lang="tr")
+
+        assert ikinci["cached"] is True, "ikinci istek uretim yapmamali"
+        assert len(birinci["axis_lines"]) == 4
+        assert ikinci["axis_lines"] == birinci["axis_lines"], (
+            "onbellekten gelen yanit eksen cumlelerini kaybetti — "
+            "kartlar bos kalir")
+        assert ikinci["theme"] == birinci["theme"]
+
+    def test_bicimsiz_uretim_30_GUN_kilitlenmez(self, monkeypatch):
+        """Model anahtarlari atlarsa kartlar bos kalir; bunu bir ay
+        saklamak tek bir kotu uretimi kalicilastirirdi."""
+        rs, kutu = self._bellek(monkeypatch, "Serbest bir paragraf.")
+        omurler: list[int] = []
+        gercek_set = rs.cache.set
+        monkeypatch.setattr(
+            rs.cache, "set",
+            lambda k, v, **kw: (omurler.append(kw.get("ttl_seconds", 0)),
+                                gercek_set(k, v, **kw))[1])
+
+        sonuc = rs.relationship_reading("a", "b", "Ben", "F",
+                                        {"calc_version": "2", "axes": []},
+                                        lang="tr")
+        assert sonuc["axis_lines"] == {}
+        assert min(omurler) <= 3600, f"kisa omur verilmedi: {omurler}"
+
+
+class TestSaatsizDisiplin:
+    """Saatsiz tarafin Yukselen/MC temaslari sinastriden de duser.
+
+    Natal ekranda Yukselen hic gosterilmezken ayni kisinin iliski
+    eksenlerinde "Yukselen'ine kavusum" bir DAYANAK olarak gorunebiliyordu;
+    ustelik `_KISISEL` Yukselen'i kisisel nokta saydigi icin eksen puanini
+    da yukari cekiyordu. Olculdu: uydurma Yukselen "ortak zemin" eksenini
+    bir seviye sisiriyor.
+    """
+
+    A_SAATLI = dict(name="A", year=1990, month=5, day=12, hour=14,
+                    minute=30, city="Istanbul", nation="TR")
+    B = dict(name="B", year=1985, month=11, day=3, hour=8, minute=15,
+             city="Ankara", nation="TR")
+
+    @property
+    def a_saatsiz(self):
+        return {**self.A_SAATLI, "hour": 12, "minute": 0,
+                "hour_known": False}
+
+    def test_saatsiz_tarafin_eksen_acilari_duser(self):
+        ham = astro_service.get_synastry(self.a_saatsiz, self.B)
+        a_ekseni = [x for x in ham["aspects"]
+                    if x["p1"] in ("Ascendant", "Medium_Coeli")]
+        assert a_ekseni == [], "ogle Yukselen'i sinastride durdu"
+
+    def test_saati_bilinen_tarafin_acilari_KORUNUR(self):
+        """Disiplin yalniz saatsiz tarafa uygulanir."""
+        ham = astro_service.get_synastry(self.a_saatsiz, self.B)
+        b_ekseni = [x for x in ham["aspects"]
+                    if x["p2"] in ("Ascendant", "Medium_Coeli")]
+        assert b_ekseni, "saati bilinen tarafin acilari da dustu"
+
+    def test_beyan_uretilir_ve_dile_cevrilir(self):
+        ham = astro_service.get_synastry(self.a_saatsiz, self.B)
+        assert "synastry_hour_unknown_p1" in ham["disclosures"]
+        eksenler = synastry_service.relationship_axes(ham)
+        for dil in ("tr", "en"):
+            yerel = prompts.localize_relationship_axes(dil, eksenler)
+            metin = " ".join(yerel.get("disclosure_texts") or [])
+            assert metin, dil
+            assert "{" not in metin, dil
+
+    def test_eksen_dayanaklarinda_yukselen_YOK(self):
+        eksenler = synastry_service.relationship_axes(
+            astro_service.get_synastry(self.a_saatsiz, self.B))
+        kanit = [b for e in eksenler["axes"] for b in e["basis"]]
+        assert not [k for k in kanit
+                    if "Ascendant" in (k["p1"], k["p2"])]
+
+
+class TestSaatsizAy:
+    """Ay gunde ~13 derece yol alir: saat bilinmiyorsa burc sasabilir.
+
+    Olculdu (16 tarih, 1993): 7'sinde Ay gun icinde burc degistiriyor.
+    Yukselen hic uretilmiyordu ama Ay ogle dolgusuyla "senin Ay'in" diye
+    gosteriliyordu. Karar: goster ama BEYAN ET.
+    """
+
+    def _ay(self, **kw):
+        c = astro_service.get_natal_chart(
+            "t", 1993, 4, 3, 12, 0, "Istanbul", **kw)
+        return next(p for p in c["points"] if p["name"] == "Moon")
+
+    def test_saatsizde_belirsiz_isaretlenir(self):
+        assert self._ay(hour_known=False)["uncertain"] is True
+
+    def test_saat_biliniyorsa_bayrak_YOK(self):
+        ay = self._ay()
+        assert not ay.get("uncertain")
+        assert not ay.get("sign_alt")
+
+    def test_sinirdaysa_ikinci_aday_yazilir(self):
+        """1993-04-03: gun basi Aslan, gun sonu Basak."""
+        ay = self._ay(hour_known=False)
+        assert ay.get("sign_alt"), "sinir tarihinde ikinci aday yok"
+        assert ay["sign_alt"] != ay["sign"]
+
+    def test_sinirda_degilse_ikinci_aday_UYDURULMAZ(self):
+        c = astro_service.get_natal_chart(
+            "t", 1993, 1, 19, 12, 0, "Istanbul", hour_known=False)
+        ay = next(p for p in c["points"] if p["name"] == "Moon")
+        assert ay["uncertain"] is True
+        assert ay.get("sign_alt") is None

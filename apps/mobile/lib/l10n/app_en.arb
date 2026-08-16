@@ -1081,5 +1081,17 @@
   "calendarOtherEvents": "Other movements",
   "calendarStripTitle": "The next 30 days",
   "relationshipReadingTitle": "Rytho's reading of this bond",
-  "relationshipReadingLocked": "The measured axes and their supporting aspects are open to everyone. Rytho's reading of what they mean for the two of you opens with Rytho+."
+  "relationshipReadingLocked": "The measured axes and their supporting aspects are open to everyone. Rytho's reading of what they mean for the two of you opens with Rytho+.",
+  "moonUncertainNote": "Your birth time is not on file, so the Moon's sign may be off by one — the Moon travels about 13° a day.",
+  "moonUncertainAlt": "Depending on the birth time it could also be {alt}.",
+  "@moonUncertainAlt": {
+    "placeholders": {
+      "alt": {
+        "type": "String"
+      }
+    }
+  },
+  "birthMissingTitle": "Your birth record is incomplete",
+  "birthMissingBody": "Your birth date and city are needed to calculate your chart. This is not a Rytho+ lock — once the record is complete, the wheel, placements and aspects open for free.",
+  "birthMissingAction": "Complete your birth record"
 }

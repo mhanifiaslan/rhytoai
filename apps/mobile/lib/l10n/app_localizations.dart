@@ -4387,6 +4387,36 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Ölçülen eksenler ve dayanak açılar herkese açık. Bu ölçümün sizin ikinize özel yorumu Rytho+ ile açılır.'**
   String get relationshipReadingLocked;
+
+  /// No description provided for @moonUncertainNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum saatin kayıtlı olmadığı için Ay\'ın burcu bir burç şaşabilir — Ay günde yaklaşık 13° yol alır.'**
+  String get moonUncertainNote;
+
+  /// No description provided for @moonUncertainAlt.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum saatine göre {alt} da olabilir.'**
+  String moonUncertainAlt(String alt);
+
+  /// No description provided for @birthMissingTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum kaydın eksik'**
+  String get birthMissingTitle;
+
+  /// No description provided for @birthMissingBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritanı hesaplayabilmek için doğum tarihin ve şehrin gerekli. Bu bir Rytho+ kilidi değil — kaydı tamamladığında çark, yerleşimler ve açılar ücretsiz açılır.'**
+  String get birthMissingBody;
+
+  /// No description provided for @birthMissingAction.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum kaydını tamamla'**
+  String get birthMissingAction;
 }
 
 class _AppLocalizationsDelegate

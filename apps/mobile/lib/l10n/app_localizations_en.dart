@@ -2453,4 +2453,23 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get relationshipReadingLocked =>
       'The measured axes and their supporting aspects are open to everyone. Rytho\'s reading of what they mean for the two of you opens with Rytho+.';
+
+  @override
+  String get moonUncertainNote =>
+      'Your birth time is not on file, so the Moon\'s sign may be off by one — the Moon travels about 13° a day.';
+
+  @override
+  String moonUncertainAlt(String alt) {
+    return 'Depending on the birth time it could also be $alt.';
+  }
+
+  @override
+  String get birthMissingTitle => 'Your birth record is incomplete';
+
+  @override
+  String get birthMissingBody =>
+      'Your birth date and city are needed to calculate your chart. This is not a Rytho+ lock — once the record is complete, the wheel, placements and aspects open for free.';
+
+  @override
+  String get birthMissingAction => 'Complete your birth record';
 }

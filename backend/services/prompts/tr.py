@@ -592,6 +592,10 @@ ASTRO_NOTES = {
     # yeriyle ilişkilendiremedi — "yıl haritası doğum yerine kurulmaz mı?"
     # Hesap doğru, anlatım eksikti: beyan artık İKİ şehri de adıyla anıyor
     # ve neyin değişip neyin sabit kaldığını söylüyor.
+    "synastry_hour_unknown_p1": (
+        "Doğum saatin kayıtlı olmadığı için bu ilişki okumasında senin Yükselen ve MC temasların hesaba katılmadı; öğle varsayımıyla kurulmuş bir Yükselen'i ilişkinin kanıtı diye sunmayız."),
+    "synastry_hour_unknown_p2": (
+        "Arkadaşının doğum saati kayıtlı olmadığı için onun Yükselen ve MC temasları hesaba katılmadı."),
     "sr_relocated": (
         "Yıl haritan {city} için kuruldu — yaşadığın şehir. Doğum yerin "
         "{birth_city}; yıl haritası doğum yerine değil, doğum gününde "
