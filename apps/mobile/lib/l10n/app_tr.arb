@@ -931,10 +931,13 @@
   "signalsSection": "Bugün gökyüzünde senin için",
   "signalWhy": "Neye dayanıyor?",
   "signalAsk": "Rytho'ya sor",
-  "signalAskPrefill": "Şu sinyali benim için açar mısın: {headline}",
+  "signalAskPrefill": "Bugün ana ekranımda şu sinyal var: \"{card}\" Dayanağı: {technical} Bunu benim için biraz açar mısın?",
   "@signalAskPrefill": {
     "placeholders": {
-      "headline": {
+      "card": {
+        "type": "String"
+      },
+      "technical": {
         "type": "String"
       }
     }
@@ -990,6 +993,27 @@
   "profileSectionIdentity": "Doğum ve kimlik",
   "profileSectionAccount": "Hesap",
   "profileSectionPrefs": "Tercihler",
+  "askAboutFriend": "{name} hakkında Rytho'ya sor",
+  "@askAboutFriend": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "diaryQuickTitle": "Günlüğüm",
+  "diaryQuickHint": "Bugün ne yaşadın? Tek cümle yeter.",
+  "diaryQuickSaved": "Kaydedildi — Rytho bunu hatırlayacak ✨",
+  "diaryQuickSeeAll": "Tümünü gör",
+  "diaryQuickLast": "Son giriş: {date}",
+  "@diaryQuickLast": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "diaryQuickEmpty": "Yaşadıklarını tek cümleyle bırak; Rytho yorumlarını sana göre derinleştirsin.",
   "reactionHug": "Sarıldım",
   "reactionLuck": "Bol şans",
   "reactionCoffee": "Kahve içelim",

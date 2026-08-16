@@ -77,6 +77,9 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
     final l10n = AppLocalizations.of(context);
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => ChatScreen(
+        // R4-2: bağlam sunucuda kurulur (friendUid) — model bu sohbette
+        // Erkan'la ölçülen eksenleri görür, genel cevaba düşmez.
+        friendUid: widget.friend.uid,
         initialText: l10n.relationshipAskPrefill(
             widget.friend.name, axisLocal.toLowerCase()),
       ),

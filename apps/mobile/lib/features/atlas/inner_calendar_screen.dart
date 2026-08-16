@@ -36,10 +36,12 @@ void _gunSayfasi(BuildContext context, Map<String, dynamic> o,
     title: l10n.calendarWhyDate,
     onAsk: () {
       Navigator.of(context).pop();
+      // R4-1: karttaki gündelik cümle + teknik dayanak birlikte gider.
       Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => ChatScreen(
-            initialText:
-                l10n.signalAskPrefill(o['technical'] as String? ?? '')),
+            initialText: l10n.signalAskPrefill(
+                o['line'] as String? ?? '',
+                o['technical'] as String? ?? '')),
       ));
     },
   );

@@ -156,3 +156,49 @@ class TestYerellestirme:
         """Sürtünme 'kötü ilişki' diye sunulmaz — olgunlaştıran yer denir."""
         tr = prompts.get("tr").SYNASTRY_AXIS_LINES["bond"]["challenging"]
         assert "olgunlaştırıyor" in tr
+
+
+# --------------------------------------------------------------------------
+# Sohbet fısıltısı (R4-2)
+# --------------------------------------------------------------------------
+
+class TestSohbetFisiltisi:
+    """Cihaz bulgusu: arkadas sorusunda model baglamsiz kalip GENEL cevap
+    uyduruyordu. Fisilti olculen eksenleri prompt'a tasir."""
+
+    def test_whisper_eksen_ve_dayanak_tasir(self, monkeypatch):
+        sonuc = synastry_service.relationship_axes(SAHTE_SINASTRI)
+        monkeypatch.setattr(synastry_service, "cached_axes",
+                            lambda uid, fuid: sonuc)
+        import services.profile_service as ps
+        monkeypatch.setattr(ps, "get_profile",
+                            lambda uid: {"displayName": "Erkan",
+                                         "sunSign": "Aslan"})
+        metin = synastry_service.relationship_whisper("a", "b", "tr")
+        assert "Erkan" in metin and "Aslan" in metin
+        assert "İletişim" in metin
+        assert "orb" in metin  # dayanak açısı anılıyor
+        assert "82" not in metin  # puan sızmaz
+
+    def test_whisper_veri_yoksa_bos(self, monkeypatch):
+        monkeypatch.setattr(synastry_service, "cached_axes",
+                            lambda uid, fuid: None)
+        assert synastry_service.relationship_whisper("a", "b", "tr") == ""
+
+    def test_cached_axes_dogum_verisi_yoksa_none(self, monkeypatch):
+        import services.profile_service as ps
+        monkeypatch.setattr(ps, "get_profile",
+                            lambda uid: {"displayName": "X"})
+        assert synastry_service.cached_axes("a", "b") is None
+
+    def test_compose_iliski_blogu(self):
+        from services import prompt_composer, prompts
+        mesaj = prompt_composer.compose_chat_message(
+            "Erkan ile iletişimimiz nasıl?", [],
+            relationship="Arkadaş: Erkan\n- İletişim: Hafif · akıcı",
+            lang="tr")
+        assert prompts.get("tr").WHISPER_RELATIONSHIP in mesaj
+        assert "Arkadaş: Erkan" in mesaj
+        # Bağlamsız çağrı bloğu içermez.
+        sade = prompt_composer.compose_chat_message("selam", [], lang="tr")
+        assert prompts.get("tr").WHISPER_RELATIONSHIP not in sade

@@ -1953,8 +1953,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signalAsk => 'Ask Rytho';
 
   @override
-  String signalAskPrefill(String headline) {
-    return 'Can you unpack this signal for me: $headline';
+  String signalAskPrefill(String card, String technical) {
+    return 'My home screen shows this signal today: \"$card\" Its basis: $technical Can you unpack it for me?';
   }
 
   @override
@@ -2057,6 +2057,32 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileSectionPrefs => 'Preferences';
+
+  @override
+  String askAboutFriend(String name) {
+    return 'Ask Rytho about $name';
+  }
+
+  @override
+  String get diaryQuickTitle => 'My Journal';
+
+  @override
+  String get diaryQuickHint => 'What happened today? One line is enough.';
+
+  @override
+  String get diaryQuickSaved => 'Saved — Rytho will remember this ✨';
+
+  @override
+  String get diaryQuickSeeAll => 'See all';
+
+  @override
+  String diaryQuickLast(String date) {
+    return 'Last entry: $date';
+  }
+
+  @override
+  String get diaryQuickEmpty =>
+      'Leave what you live as one-liners; Rytho deepens its readings around you.';
 
   @override
   String get reactionHug => 'A hug';

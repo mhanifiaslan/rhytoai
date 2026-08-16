@@ -167,3 +167,79 @@ def relationship_axes(synastry: dict[str, Any]) -> dict[str, Any]:
         "axes": eksenler,
         "lead_axis": max(AXES, key=lambda e: (oran(e), -AXES.index(e))),
     }
+
+
+# ---------------------------------------------------------------------------
+# Önbellekli erişim + sohbet fısıltısı (R4-2)
+# ---------------------------------------------------------------------------
+
+def cached_axes(uid: str, friend_uid: str) -> dict[str, Any] | None:
+    """İki arkadaşın ilişki eksenleri, çift bazlı simetrik önbellekle.
+
+    Hem /reports/relationship ucu hem sohbet fısıltısı BUNU kullanır —
+    aynı ikili için tek hesap. İki profilden biri doğum verisiz ise None:
+    varsayılan doğum verisiyle "sizin ilişkiniz" üretilmez
+    (chart_context kuralı). ARKADAŞLIK DOĞRULAMASI ÇAĞIRANIN İŞİDİR —
+    bu fonksiyon yalnız hesaplar.
+    """
+    from core import cache
+    from services import astro_service, chart_context, profile_service
+
+    me = profile_service.get_profile(uid)
+    friend = profile_service.get_profile(friend_uid)
+    if not me or not friend:
+        return None
+    if not (chart_context.has_birth_data(me)
+            and chart_context.has_birth_data(friend)):
+        return None
+
+    ikili = "-".join(sorted((uid, friend_uid)))
+    anahtar = f"rel-axes-{SYNASTRY_CALC_VERSION}-{ikili}"
+    eksenler = cache.get(anahtar)
+    if eksenler is None:
+        ham = astro_service.get_synastry(
+            profile_service.birth_kwargs(me),
+            profile_service.birth_kwargs(friend))
+        eksenler = relationship_axes(ham)
+        # Natal veriye bağlı: doğum verisi değişmedikçe geçerli.
+        cache.set(anahtar, eksenler, ttl_seconds=30 * 24 * 3600,
+                  owner_uid=uid)
+    return eksenler
+
+
+def relationship_whisper(uid: str, friend_uid: str, lang: str,
+                         max_chars: int = 600) -> str:
+    """Sohbet için kompakt ilişki bağlamı (R4-2).
+
+    Cihaz bulgusu: arkadaşla ilgili soruda model bağlamsız kaldığı için
+    kullanıcının KENDİ haritasından genel cevap uyduruyordu. Bu fısıltı,
+    ölçülen eksenleri (seviye · ton + en güçlü dayanak açısı) ve arkadaşın
+    görünen adını modelin önüne koyar. Ham doğum verisi YOKTUR — dyad
+    kuralı: arkadaşın doğum bilgisi hiçbir katmanda karşıya taşınmaz.
+    """
+    from services import profile_service, prompts
+
+    eksenler = cached_axes(uid, friend_uid)
+    if eksenler is None:
+        return ""
+    friend = profile_service.get_profile(friend_uid) or {}
+    ad = friend.get("displayName") or friend.get("username") or "?"
+
+    etiket = "Arkadaş" if lang == "tr" else "Friend"
+    ilk = f"{etiket}: {ad}"
+    if friend.get("sunSign"):
+        ilk += f" ({friend['sunSign']})"
+    satirlar = [ilk]
+
+    yerel = prompts.localize_relationship_axes(lang, eksenler)
+    for e in yerel.get("axes") or []:
+        satir = (f"- {e['axis_local']}: {e['level_local']} · "
+                 f"{e['tone_local']}")
+        kanit = (e.get("basis") or [None])[0]
+        if kanit:
+            satir += (f" ({kanit['p1_local']} {kanit['aspect_local']} "
+                      f"{kanit['p2_local']}, orb {kanit['orb']}°)")
+        satirlar.append(satir)
+
+    metin = "\n".join(satirlar)
+    return metin[:max_chars]

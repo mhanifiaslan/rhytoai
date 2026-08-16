@@ -41,6 +41,10 @@ class ChatRequest(BaseModel):
     message: str
     #: Sürdürülen konunun kimliği; boşsa yeni konu açılır ve yanıtta döner.
     conversation_id: str | None = None
+    #: R4-2: soru bir ARKADAŞ bağlamındaysa arkadaşın kimliği. Sunucu
+    #: arkadaşlığı doğrular ve ölçülen ilişki eksenlerini fısıltı olarak
+    #: prompt'a ekler — istemciye ham doğum verisi HİÇ dönmez.
+    friend_uid: str | None = None
 
 
 def _sky_summary(lang: str, profile: dict | None = None) -> str:
@@ -175,9 +179,27 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.
         sky = _sky_summary(lang, profile)
 
+        # İlişki fısıltısı (R4-2): istemci arkadaş bağlamı gönderdiyse ve
+        # arkadaşlık ÇİFT TARAFLI doğruysa ölçülen eksenler prompt'a girer.
+        # Doğrulanamazsa bağlam SESSİZCE atlanır ve loglanır — sohbet
+        # düşmez, model yalnız kullanıcının kendi haritasıyla cevaplar.
+        relationship = ""
+        if request.friend_uid and request.friend_uid != user.uid:
+            if profile_service.are_friends(user.uid, request.friend_uid):
+                try:
+                    from services import synastry_service
+                    relationship = synastry_service.relationship_whisper(
+                        user.uid, request.friend_uid, lang)
+                except Exception as exc:
+                    logger.warning("İlişki fısıltısı üretilemedi (%s→%s): %s",
+                                   user.uid, request.friend_uid, exc)
+            else:
+                logger.info("Sohbet ilişki bağlamı reddedildi: arkadaş "
+                            "değil (%s→%s)", user.uid, request.friend_uid)
+
         message = compose_chat_message(mesaj_metni, passages,
                                        memory=memory, chart=chart, sky=sky,
-                                       lang=lang)
+                                       relationship=relationship, lang=lang)
 
         reply = gemini_service.chat(history, message, lang=lang)
         if reply is None:

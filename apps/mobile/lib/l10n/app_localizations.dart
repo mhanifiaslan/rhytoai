@@ -3545,8 +3545,8 @@ abstract class AppLocalizations {
   /// No description provided for @signalAskPrefill.
   ///
   /// In tr, this message translates to:
-  /// **'Şu sinyali benim için açar mısın: {headline}'**
-  String signalAskPrefill(String headline);
+  /// **'Bugün ana ekranımda şu sinyal var: \"{card}\" Dayanağı: {technical} Bunu benim için biraz açar mısın?'**
+  String signalAskPrefill(String card, String technical);
 
   /// No description provided for @signalUpcoming.
   ///
@@ -3727,6 +3727,48 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tercihler'**
   String get profileSectionPrefs;
+
+  /// No description provided for @askAboutFriend.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} hakkında Rytho\'ya sor'**
+  String askAboutFriend(String name);
+
+  /// No description provided for @diaryQuickTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günlüğüm'**
+  String get diaryQuickTitle;
+
+  /// No description provided for @diaryQuickHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün ne yaşadın? Tek cümle yeter.'**
+  String get diaryQuickHint;
+
+  /// No description provided for @diaryQuickSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydedildi — Rytho bunu hatırlayacak ✨'**
+  String get diaryQuickSaved;
+
+  /// No description provided for @diaryQuickSeeAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümünü gör'**
+  String get diaryQuickSeeAll;
+
+  /// No description provided for @diaryQuickLast.
+  ///
+  /// In tr, this message translates to:
+  /// **'Son giriş: {date}'**
+  String diaryQuickLast(String date);
+
+  /// No description provided for @diaryQuickEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaşadıklarını tek cümleyle bırak; Rytho yorumlarını sana göre derinleştirsin.'**
+  String get diaryQuickEmpty;
 
   /// No description provided for @reactionHug.
   ///

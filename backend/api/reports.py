@@ -535,19 +535,12 @@ def relationship(req: DyadRequest,
     try:
         from services import synastry_service
 
-        # Önbellek çift bazlı ve simetrik: aynı ikili için tek hesap.
-        ikili = "-".join(sorted((user.uid, req.friend_uid)))
-        anahtar = (f"rel-axes-{synastry_service.SYNASTRY_CALC_VERSION}-"
-                   f"{ikili}")
-        eksenler = cache.get(anahtar)
+        # Hesap + çift bazlı önbellek yardımcıda (R4-2): sohbet fısıltısı
+        # da aynı kaydı kullanır — aynı ikili için tek hesap.
+        eksenler = synastry_service.cached_axes(user.uid, req.friend_uid)
         if eksenler is None:
-            ham = astro_service.get_synastry(
-                profile_service.birth_kwargs(me),
-                profile_service.birth_kwargs(friend))
-            eksenler = synastry_service.relationship_axes(ham)
-            # Natal veriye bağlı: doğum verisi değişmedikçe geçerli.
-            cache.set(anahtar, eksenler, ttl_seconds=30 * 24 * 3600,
-                      owner_uid=user.uid)
+            return {"status": "success",
+                    "data": {"axes": [], "reason": "birth_missing"}}
         return {"status": "success",
                 "data": prompts.localize_relationship_axes(lang, eksenler)}
     except HTTPException:

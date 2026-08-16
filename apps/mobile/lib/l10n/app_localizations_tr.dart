@@ -1950,8 +1950,8 @@ class AppLocalizationsTr extends AppLocalizations {
   String get signalAsk => 'Rytho\'ya sor';
 
   @override
-  String signalAskPrefill(String headline) {
-    return 'Şu sinyali benim için açar mısın: $headline';
+  String signalAskPrefill(String card, String technical) {
+    return 'Bugün ana ekranımda şu sinyal var: \"$card\" Dayanağı: $technical Bunu benim için biraz açar mısın?';
   }
 
   @override
@@ -2054,6 +2054,32 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get profileSectionPrefs => 'Tercihler';
+
+  @override
+  String askAboutFriend(String name) {
+    return '$name hakkında Rytho\'ya sor';
+  }
+
+  @override
+  String get diaryQuickTitle => 'Günlüğüm';
+
+  @override
+  String get diaryQuickHint => 'Bugün ne yaşadın? Tek cümle yeter.';
+
+  @override
+  String get diaryQuickSaved => 'Kaydedildi — Rytho bunu hatırlayacak ✨';
+
+  @override
+  String get diaryQuickSeeAll => 'Tümünü gör';
+
+  @override
+  String diaryQuickLast(String date) {
+    return 'Son giriş: $date';
+  }
+
+  @override
+  String get diaryQuickEmpty =>
+      'Yaşadıklarını tek cümleyle bırak; Rytho yorumlarını sana göre derinleştirsin.';
 
   @override
   String get reactionHug => 'Sarıldım';

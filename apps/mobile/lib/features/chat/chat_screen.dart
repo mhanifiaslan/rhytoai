@@ -26,15 +26,23 @@ import '../../l10n/app_localizations.dart';
 ///
 /// [initialText] giriş alanını ÖN-DOLDURUR, göndermez (R2-S2): sinyal
 /// kartından gelen soru kullanıcının önüne yazılmış gelir, son söz onun.
+///
+/// [friendUid] (R4-2): sohbet bir ARKADAŞ bağlamında açıldıysa arkadaşın
+/// kimliği. Bu konuşmadaki HER mesajla sunucuya gider; sunucu arkadaşlığı
+/// doğrular ve ölçülen ilişki eksenlerini prompt'a fısıldar — takip
+/// soruları da bağlamı korur. Ham doğum verisi hiçbir yönde taşınmaz.
+
 /// Bakiye bu sayının altına inince çip bakır renge döner (R2-F2): aylık
 /// hakkın (300) yaklaşık %10'u — "bitmek üzere" uyarısı, panik değil.
 const int _kDusukBakiye = 30;
 
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, this.conversationId, this.initialText});
+  const ChatScreen(
+      {super.key, this.conversationId, this.initialText, this.friendUid});
 
   final String? conversationId;
   final String? initialText;
+  final String? friendUid;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -133,6 +141,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         'history': son20,
         'message': text,
         'conversation_id': _conversationId,
+        // R4-2: arkadaş bağlamı bu konuşmanın HER mesajıyla gider —
+        // "peki ya tartıştığımızda?" gibi takip soruları da Erkan'la
+        // ölçülen eksenler üzerinden cevaplanır.
+        if (widget.friendUid != null) 'friend_uid': widget.friendUid,
       });
       final veri = response.data as Map;
       setState(() {

@@ -106,6 +106,25 @@ final natalChartProvider =
   return Map<String, dynamic>.from(response.data['data']);
 });
 
+/// Günlük girişleri (R2-G1/R4-3): yeniden eskiye.
+///
+/// Ana ekrandaki hızlı giriş kartı son girişin tarihini göstermek için
+/// izler; tam liste DiaryScreen'de. Kayıt POST sonrası invalidate edilir.
+final diaryProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) {
+    return const [];
+  }
+  final dio = ref.watch(apiProvider);
+  final response = await dio.get('/api/v1/account/diary');
+  final data = Map<String, dynamic>.from(response.data['data']);
+  return [
+    for (final e in (data['entries'] as List? ?? const []))
+      Map<String, dynamic>.from(e as Map),
+  ];
+});
+
 /// Kişisel sinyaller (R2-S1): "Rytho bugün senin için fark etti" kartları.
 ///
 /// HER katmana açık: başlık cümleleri sunucuda ŞABLONLA (LLM'siz) kurulur,

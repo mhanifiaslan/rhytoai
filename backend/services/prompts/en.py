@@ -211,6 +211,15 @@ WHISPER_MEMORY = (
     "just touch on it naturally where it fits. It may be out of date; if it "
     "conflicts with what they just said, the LATEST thing they said wins):"
 )
+WHISPER_RELATIONSHIP = (
+    "MEASURED RELATIONSHIP WITH THE FRIEND THE READER IS ASKING ABOUT "
+    "(computed server-side from the aspects between two birth charts — stay "
+    "faithful to it; invent no axis or aspect not listed here. Build your "
+    "answer on THIS relationship between these two people, not on the "
+    "reader's own chart in general. Name at least one axis or basis aspect. "
+    "Do NOT give a numeric compatibility score — this product does not "
+    "score relationships):"
+)
 WHISPER_CHART = (
     "THE READER'S CHART (calculated with Swiss Ephemeris — stay faithful to "
     "it; never invent a placement, aspect or transit that is not written "

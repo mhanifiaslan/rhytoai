@@ -85,6 +85,9 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 51 | Slim arkadaşlar (R3-4): SEN kartı tek satır (@ad + seri + düzenle/davet/Günlüğüm ikonları, seri anahtarı yalnız Gizlilik'te); arkadaş satırı ince (avatar+ad+durum+⚡+🪐); ⚡ → kart açılmadan tepki sayfası, seçim anında gider + karşı cihazda bildirim; 12 tepki (yeni: 🤗🍀☕🫶) | ⬜ | 1.4.0+15 + rules + sunucu |
 | 52 | Profil grupları (R3-5): Doğum ve kimlik / Hesap / Tercihler / Rytho+ başlıkları; hesap silme Profil dibinde DEĞİL, Hesap ekranının içinde; Günlüğüm satırı profilden kalktı (SEN kartında) | ⬜ | 1.4.0+15 |
 | 53 | "Neye dayanıyor?" tutarlılığı (R3-1): sayfa, KARTTAKİ cümleyle açılır (abone yorumu dahil); teknik cümle "Ölçüm" satırında; takvim günü sayfası aynı düzende | ⬜ | 1.4.0+15 |
+| 54 | Sinyal sorusu (R4-1): sinyal sayfasından "Rytho'ya sor" → sohbete KARTTAKİ cümle + dayanağı birlikte gider; cevap o cümleyi açar, "başka konu" hissi yok | ⬜ | 1.4.1+16 |
+| 55 | İlişki sohbeti (R4-2): eksen kartından ya da arkadaş detayındaki "X hakkında Rytho'ya sor"dan açılan sohbette cevap İKİ KİŞİYE özel — ölçülen eksen/dayanak açı anılır, genel burç cevabı yok; takip sorusunda bağlam korunur; arkadaş olmayan uid ile bağlam sessizce atlanır | ⬜ | 1.4.1+16 + sunucu |
+| 56 | Günlük hızlı girişi (R4-3): Gökyüzü akışının sonunda 📓 kartı; tek cümle yaz → kaydet → "Rytho bunu hatırlayacak" onayı + son giriş tarihi güncellenir; sohbette "dün ne yazmıştım?" hatırlanır | ⬜ | 1.4.1+16 |
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,

@@ -14,6 +14,7 @@ import '../../widgets/glass.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart' show Pressable;
 import '../../widgets/star_burst.dart';
+import '../chat/chat_screen.dart' show ChatScreen;
 import 'friends_screen.dart' show showFriendSafetySheet;
 import 'relationship_screen.dart';
 
@@ -160,6 +161,22 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
           reading: _reading,
           error: _error,
           onRetry: _loadDyad,
+        ),
+        // Bağlamlı sohbet (R4-2): bu arkadaş hakkında soru — sunucu ilişki
+        // eksenlerini fısıldar, cevap İKİ KİŞİYE özel olur.
+        GlassPanel(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => ChatScreen(friendUid: friend.uid))),
+          child: Row(children: [
+            const Text('✦', style: TextStyle(fontSize: 16)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(l10n.askAboutFriend(friend.name),
+                  style: RythoText.body(14, w: FontWeight.w600)),
+            ),
+            const Icon(Icons.chevron_right,
+                size: 18, color: RythoColors.parchmentDim),
+          ]),
         ),
         // İlişki eksenleri (R2-L1): günlük ikili okuma "bugün"ü anlatır,
         // bu giriş ilişkinin KALICI zeminini açar. Skor yok — dört eksende

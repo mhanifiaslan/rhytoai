@@ -237,7 +237,8 @@ def should_use_rag(message: str, lang: str | None = None) -> bool:
 
 def compose_chat_message(message: str, passages: list[dict],
                          memory: str = "", chart: str = "",
-                         sky: str = "", lang: str | None = None) -> str:
+                         sky: str = "", relationship: str = "",
+                         lang: str | None = None) -> str:
     """Bilgi tabanı pasajlarını, kullanıcı hafızasını, haritasını ve bugünün
     gökyüzünü mesaja iliştirir.
 
@@ -245,6 +246,11 @@ def compose_chat_message(message: str, passages: list[dict],
     aktarmaz, en fazla tek bir ilgili ayrıntıyı kendi cümlesine sindirir.
     Hafızayı olduğu gibi döktürmek, kullanıcıya "hakkında tuttuğum notlar"
     okumak gibi olur ve ürkütücüdür.
+
+    ``relationship`` (R4-2): kullanıcı bir ARKADAŞ bağlamında soruyorsa
+    sunucunun ölçtüğü ilişki eksenleri buradan girer. Cihaz bulgusuydu:
+    bağlam olmadan model arkadaşı tanımadan kullanıcının kendi haritasından
+    GENEL cevap uyduruyordu ("ikimiz özelinde cevap vermesi gerekirken").
 
     Hiçbiri yoksa mesaj olduğu gibi döner; API şeması ve model arayüzü değişmez.
     """
@@ -259,13 +265,19 @@ def compose_chat_message(message: str, passages: list[dict],
     memory = (memory or "").strip()
     chart = (chart or "").strip()
     sky = (sky or "").strip()
-    if not whispers and not memory and not chart and not sky:
+    relationship = (relationship or "").strip()
+    if (not whispers and not memory and not chart and not sky
+            and not relationship):
         return message
 
     # Etiketler dile göre gelir: İngilizce sohbette Türkçe başlık görmek modeli
     # dil karıştırmaya iter.
     labels = prompts.get(lang)
     parts = []
+    # İlişki bağlamı EN ÖNDE: soru o arkadaş hakkındaysa modelin merkezi
+    # bu ölçüm olmalı, kullanıcının kendi haritası destekleyici kalmalı.
+    if relationship:
+        parts.append(labels.WHISPER_RELATIONSHIP + "\n" + relationship)
     if chart:
         parts.append(labels.WHISPER_CHART + "\n" + chart)
     if sky:

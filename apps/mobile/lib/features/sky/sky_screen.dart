@@ -26,7 +26,8 @@ import 'sign_story_screen.dart';
 import 'sky_now_screen.dart';
 import '../../widgets/basis_sheet.dart';
 import '../chat/chat_screen.dart';
-import '../../core/api.dart' show friendlyError;
+import '../../core/api.dart' show apiProvider, friendlyError;
+import '../profile/diary_screen.dart' show DiaryScreen;
 import '../../core/notifications.dart'
     show
         markNotificationPromptShown,
@@ -299,6 +300,16 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               // "ŞU AN" bölümü Atlas'a taşındı (R3-2): gökyüzü durumu
               // haritanın yanında yaşar; bu ekran "bugün senin için"
               // anlatısına odaklandı.
+
+              // ---------- GÜNLÜĞÜM (R4-3) ----------
+              // Günlük stratejik: kullanıcı yaşantısını not ettikçe yorumlar
+              // kişiselleşiyor ("son ayda ne oldu?" sorusunun hammaddesi).
+              // Küçük bir ikon yetmiyordu (cihaz bulgusu) — günlük ritüelin
+              // yaşadığı ekranda tek satırlık DAVETKÂR giriş.
+              const _DiaryQuickCard()
+                  .animate(delay: next())
+                  .fadeIn(duration: 360.ms)
+                  .slideY(begin: 0.06, curve: Curves.easeOutCubic),
             ],
           ),
         ),
@@ -452,6 +463,121 @@ class _Header extends StatelessWidget {
   }
 }
 
+/// GÜNLÜĞÜM hızlı girişi (R4-3): tek satır yaz → kaydet → Rytho hatırlar.
+///
+/// Sürtünme bilinçli olarak SIFIRA yakın: ekran değiştirmeden, tek cümle,
+/// tek dokunuş. Kaydedilen giriş sohbetin hafıza fısıltısına akar
+/// (memory_service.diary) — kart altındaki metin bunu söyleyerek kullanıcıyı
+/// günlük tutan kullanıcıya dönüştürmeye çalışır.
+class _DiaryQuickCard extends ConsumerStatefulWidget {
+  const _DiaryQuickCard();
+
+  @override
+  ConsumerState<_DiaryQuickCard> createState() => _DiaryQuickCardState();
+}
+
+class _DiaryQuickCardState extends ConsumerState<_DiaryQuickCard> {
+  final _controller = TextEditingController();
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final l10n = AppLocalizations.of(context);
+    final metin = _controller.text.trim();
+    if (metin.isEmpty || _saving) return;
+    setState(() => _saving = true);
+    try {
+      final dio = ref.read(apiProvider);
+      await dio.post('/api/v1/account/diary', data: {'text': metin});
+      if (!mounted) return;
+      _controller.clear();
+      ref.invalidate(diaryProvider);
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(l10n.diaryQuickSaved)));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  String _tarih(BuildContext context, String iso) {
+    final t = DateTime.tryParse(iso);
+    if (t == null) return iso;
+    return DateFormat(
+            'd MMMM', Localizations.localeOf(context).toLanguageTag())
+        .format(t);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final girisler = ref.watch(diaryProvider).value;
+    final son = (girisler != null && girisler.isNotEmpty)
+        ? girisler.first['date'] as String?
+        : null;
+
+    return GlassPanel(
+      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+        Row(children: [
+          const Text('📓', style: TextStyle(fontSize: 15)),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(l10n.diaryQuickTitle,
+                style: RythoText.display(13.5,
+                    w: FontWeight.w700, color: RythoColors.lilac)),
+          ),
+          Pressable(
+            onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => const DiaryScreen())),
+            child: Text('${l10n.diaryQuickSeeAll} →',
+                style: RythoType.dataSmall),
+          ),
+        ]),
+        const SizedBox(height: 4),
+        Row(children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              maxLength: 200,
+              style: RythoText.body(13.5),
+              decoration: InputDecoration(
+                hintText: l10n.diaryQuickHint,
+                hintStyle:
+                    RythoText.body(13, color: RythoColors.parchmentDim),
+                counterText: '',
+                isDense: true,
+                border: InputBorder.none,
+              ),
+              onSubmitted: (_) => _save(),
+            ),
+          ),
+          IconButton(
+            onPressed: _saving ? null : _save,
+            icon: const Icon(Icons.arrow_upward_rounded,
+                size: 18, color: RythoColors.lilac),
+          ),
+        ]),
+        Text(
+            son != null
+                ? l10n.diaryQuickLast(_tarih(context, son))
+                : l10n.diaryQuickEmpty,
+            style: RythoText.body(11,
+                color: RythoColors.parchmentDim, height: 1.4)),
+      ]),
+    );
+  }
+}
+
 /// SİNYALLER bölümü (R2-S3): en fazla 3 kart + en yakın kesinleşme satırı.
 ///
 /// Kendini gizler: yükleniyor / hata / boş liste durumlarında HİÇBİR ŞEY
@@ -515,12 +641,13 @@ class _SignalCard extends StatelessWidget {
       {...sinyal, 'card_text': kartCumlesi},
       onAsk: () {
         Navigator.of(context).pop();
-        // Soruya TEKNİK satır gider: kullanıcı dayanağa bakarken soruyor ve
-        // sohbetin hangi transit olduğunu bilmesi cevabı keskinleştiriyor.
-        final soru = (sinyal['technical'] as String?) ??
-            (sinyal['headline'] as String? ?? '');
+        // R4-1: soruya KARTTAKİ cümle + dayanağı birlikte gider — model
+        // kullanıcının okuduğu cümleyi açar, "başka konu" hissi biter.
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ChatScreen(initialText: l10n.signalAskPrefill(soru)),
+          builder: (_) => ChatScreen(
+              initialText: l10n.signalAskPrefill(
+                  kartCumlesi,
+                  (sinyal['technical'] as String?) ?? '')),
         ));
       },
     );

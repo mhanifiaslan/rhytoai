@@ -197,6 +197,14 @@ WHISPER_MEMORY = (
     "uygun düştüğünde doğal biçimde dokundur. Bilgi eskimiş olabilir; "
     "çelişirse kullanıcının SON söylediği geçerlidir):"
 )
+WHISPER_RELATIONSHIP = (
+    "KULLANICININ SORDUĞU ARKADAŞLA İLİŞKİ ÖLÇÜMÜ (iki doğum haritası "
+    "arasındaki açılardan sunucuda hesaplandı — buna sadık kal, burada "
+    "yazmayan hiçbir eksen ya da açı uydurma. Cevabını BU İKİ KİŞİNİN "
+    "ilişkisine kur; kullanıcının kendi haritasından genel cevap verme. "
+    "En az bir ekseni ya da dayanak açıyı ADIYLA an. Sayısal uyum puanı "
+    "VERME — ürün ilişkilere puan vermez):"
+)
 WHISPER_CHART = (
     "KULLANICININ HARİTASI (Swiss Ephemeris ile hesaplandı — buna sadık kal, "
     "burada YAZMAYAN hiçbir konumu, açıyı veya transiti uydurma. Listeyi "
