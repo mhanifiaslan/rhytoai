@@ -273,23 +273,29 @@ def daily_push_body(sign: str, sky: dict[str, Any], lang: str,
     return metin
 
 
-def signal_push_body(profile: dict[str, Any], lang: str,
-                     today: dt.date | None = None) -> str | None:
-    """R2-S4: sabah bildirimi için kullanıcının 1 numaralı sinyal cümlesi.
+def signal_push(profile: dict[str, Any], lang: str,
+                today: dt.date | None = None) -> tuple[str, str] | None:
+    """R2-S4: sabah bildirimi kullanıcının 1 numaralı sinyalinden.
 
-    Başlık ŞABLONDUR (LLM'siz) ve /reports/signals ile AYNI paylaşımlı
-    önbellekten gelir — kullanıcı bildirimde gördüğü cümleyi açılışta ana
-    ekran kartında bulur. Üretilemezse (doğum verisi yok / hesap düştü /
-    satır uzun) None döner ve çağıran paylaşımlı burç satırına düşer;
-    bildirim bu yüzden ASLA atlanmaz.
+    ``(başlık, gövde)`` döner: başlık temanın adı ("Bugün: İlişkiler"),
+    gövde kartla AYNI gündelik dil cümlesi — kullanıcı bildirimde okuduğu
+    cümleyi uygulamayı açınca kartta bulur (aynı paylaşımlı önbellek).
+    Metin ŞABLONDUR, LLM çağırmaz.
+
+    Üretilemezse (doğum verisi yok / hesap düştü / satır uzun) None döner
+    ve çağıran paylaşımlı burç satırına düşer; bildirim ASLA atlanmaz.
     """
     try:
         from services import signal_service
         ham = signal_service.cached_signals(profile, today=today)
         if not ham or not ham.get("signals"):
             return None
-        satir = prompts.localize_signals(lang, ham)["signals"][0]["headline"]
-        return satir if 0 < len(satir) <= MAX_PUSH_BODY else None
+        sinyal = prompts.localize_signals(lang, ham)["signals"][0]
+        govde = sinyal["headline"]
+        if not 0 < len(govde) <= MAX_PUSH_BODY:
+            return None
+        p = prompts.get(lang)
+        return p.PUSH_SIGNAL_TITLE.format(theme=sinyal["theme_local"]), govde
     except Exception as exc:
         logger.warning("Sinyal bildirimi uretilemedi (%s): %s",
                        profile.get("uid"), exc)

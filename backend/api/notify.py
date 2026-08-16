@@ -201,15 +201,18 @@ def run(type: Literal["daily", "streak"] = "daily",
                 continue
             if lang not in sky_by_lang:
                 sky_by_lang[lang] = prompts.localize_sky(lang, ham_sky)
-            baslik = prompts.get(lang).PUSH_DAILY_TITLE
-            # R2-S4: sabah bildirimi jenerik değil, kullanıcının 1 numaralı
-            # SİNYALİDİR ("Satürn, natal Ay ile karesini 18 Ağustos günü
-            # kesinleştiriyor"). Üretilemezse paylaşımlı burç satırına
+            # R2-S4/S6: sabah bildirimi jenerik değil, kullanıcının 1
+            # numaralı SİNYALİ — başlık temanın adı, gövde kartla aynı
+            # gündelik dil cümlesi. Üretilemezse paylaşımlı burç satırına
             # geri düşülür; bildirim bu yüzden asla atlanmaz.
-            govde = (notification_service.signal_push_body(
-                        profil, lang, today=yerel.date())
-                     or notification_service.daily_push_body(
-                        sign, sky_by_lang[lang], lang, gun))
+            sinyal_push = notification_service.signal_push(
+                profil, lang, today=yerel.date())
+            if sinyal_push is not None:
+                baslik, govde = sinyal_push
+            else:
+                baslik = prompts.get(lang).PUSH_DAILY_TITLE
+                govde = notification_service.daily_push_body(
+                    sign, sky_by_lang[lang], lang, gun)
             veri = {"type": "daily", "sign": sign}
         else:
             baslik, govde = notification_service.streak_push(profil, lang)

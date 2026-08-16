@@ -1946,7 +1946,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signalsSection => 'In your sky today';
 
   @override
-  String get signalWhy => 'Why?';
+  String get signalWhy => 'What\'s behind this?';
 
   @override
   String get signalAsk => 'Ask Rytho';

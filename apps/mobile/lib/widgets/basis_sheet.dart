@@ -78,9 +78,15 @@ class _BasisSheet extends StatelessWidget {
             const SizedBox(height: RythoSpace.md),
             Text(l10n.basisSheetTitle,
                 style: RythoText.display(17, w: FontWeight.w600)),
-            const SizedBox(height: 4),
-            Text(signal['headline'] as String? ?? '',
-                style: RythoText.body(13, color: RythoColors.parchmentDim)),
+            const SizedBox(height: 6),
+            // Teknik cümle KART YÜZEYİNDEN buraya taşındı (R2-S6): meraklı
+            // kullanıcı tam ölçümü burada bulur, kart yüzeyi gündelik dilde
+            // kalır. Eski sürümlerde alan yoksa kart cümlesine düşülür.
+            Text(
+                (signal['technical'] as String?) ??
+                    (signal['headline'] as String? ?? ''),
+                style: RythoText.body(13, color: RythoColors.lilac,
+                    height: 1.4)),
             const SizedBox(height: RythoSpace.md),
             _Satir(etiket: l10n.basisSky, deger: gokyuzu),
             _Satir(

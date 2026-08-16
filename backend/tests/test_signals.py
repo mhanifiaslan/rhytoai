@@ -68,6 +68,17 @@ class TestSiralamaVeTema:
         assert [s["score"] for s in tekrar["signals"]] == [
             s["score"] for s in sinyaller]
 
+    def test_ayrilan_aci_geri_duser(self, monkeypatch):
+        """Sönen etki, aynı koşuldaki yaklaşan etkinin arkasında kalır."""
+        takvim = {**SAHTE_TAKVIM, "events": [], "active_now": [
+            {"transit": "Saturn", "natal": "Sun", "aspect": "square",
+             "orb": 1.0, "movement": "separating"},
+            {"transit": "Saturn", "natal": "Moon", "aspect": "square",
+             "orb": 1.0, "movement": "applying"},
+        ]}
+        ham = _hesapla(monkeypatch, takvim=takvim)
+        assert [s["natal"] for s in ham["signals"]] == ["Moon", "Sun"]
+
     def test_dugum_sinyal_olmaz(self, monkeypatch):
         ham = _hesapla(monkeypatch)
         assert all(s["natal"] != "True_North_Lunar_Node"
@@ -123,35 +134,81 @@ class TestSiralamaVeTema:
 
 
 class TestYerellestirme:
-    def test_baslik_tr_kesinlesme(self, monkeypatch):
+    """R2-S6: kart yüzeyi GÜNDELİK dil, teknik satır dayanak sayfasında."""
+
+    #: Kart cümlesinde ASLA geçmemesi gereken jargon (kullanıcı geri
+    #: bildirimi: "Kiron natal Venüs ile üçgen açısına yaklaşıyor" —
+    #: anlamsız). Teknik terimler ayrı bir alanda, ayrı bir ekranda.
+    JARGON_TR = ["Kiron", "Satürn", "Venüs", "natal", "Kare", "Üçgen",
+                 "orb", "°"]
+    JARGON_EN = ["Chiron", "Saturn", "Venus", "natal", "Square", "Trine",
+                 "orb", "°"]
+
+    def test_kart_cumlesi_tr_gundelik_dil(self, monkeypatch):
         ham = _hesapla(monkeypatch)
-        yerel = prompts.localize_signals("tr", ham)
-        birinci = yerel["signals"][0]
+        birinci = prompts.localize_signals("tr", ham)["signals"][0]
+        # Ay natal 4. evde + kare → iç dünya / gerilim.
         assert birinci["headline"] == (
+            "İç dünyanda gerilim yükseliyor; kendine fazla yüklenmemek "
+            "bugünün işi.")
+        assert birinci["theme_local"] == "İç dünya"
+        assert birinci["timing_local"] == "18 Ağustos günü netleşiyor"
+        for jargon in self.JARGON_TR:
+            assert jargon not in birinci["headline"], jargon
+
+    def test_kart_cumlesi_en_gundelik_dil(self, monkeypatch):
+        ham = _hesapla(monkeypatch)
+        birinci = prompts.localize_signals("en", ham)["signals"][0]
+        assert birinci["headline"] == (
+            "Inner tension is rising; not overloading yourself is "
+            "today's work.")
+        assert birinci["timing_local"] == "Peaks on August 18"
+        for jargon in self.JARGON_EN:
+            assert jargon not in birinci["headline"], jargon
+
+    def test_teknik_satir_dayanakta_durur(self, monkeypatch):
+        """Teknik bilgi KAYBOLMAZ — 'Neye dayanıyor?' sayfasının ilk satırı."""
+        ham = _hesapla(monkeypatch)
+        birinci = prompts.localize_signals("tr", ham)["signals"][0]
+        assert birinci["technical"] == (
             "Satürn, natal Ay ile Kare açısını 18 Ağustos günü "
             "kesinleştiriyor.")
-        assert birinci["theme_local"] == "İç dünya"
         assert birinci["natal_sign_local"] == "Yengeç"
-
-    def test_baslik_en_kesinlesme(self, monkeypatch):
-        ham = _hesapla(monkeypatch)
-        yerel = prompts.localize_signals("en", ham)
-        assert yerel["signals"][0]["headline"] == (
+        ing = prompts.localize_signals("en", ham)["signals"][0]
+        assert ing["technical"] == (
             "Saturn perfects its Square to your natal Moon on August 18.")
 
-    def test_baslik_bugun_ve_ayrilan(self):
+    def test_her_tema_ton_ciftinin_cumlesi_var(self):
+        """Eksik kombinasyon kartı teknik cümleye düşürürdü — sessiz kusur."""
+        for lang in ("tr", "en"):
+            p = prompts.get(lang)
+            for tema in signal_service.THEMES:
+                for ton in ("support", "tension", "focus"):
+                    cumle = p.SIGNAL_HUMAN_LINES[tema][ton]
+                    assert cumle and len(cumle) <= 110, (lang, tema, ton)
+
+    def test_zamanlama_satirlari(self):
         bugun = {"generated_for": "2026-08-16", "signals": [
             {"transit": "Saturn", "natal": "Moon", "aspect": "square",
              "orb": 0.1, "movement": "applying", "active": True,
              "exact_on": "2026-08-16", "days_to_exact": 0,
-             "theme": "inner"},
+             "theme": "inner", "tone": "tension"},
             {"transit": "Jupiter", "natal": "Sun", "aspect": "trine",
              "orb": 1.4, "movement": "separating", "active": True,
-             "theme": "career"},
+             "theme": "career", "tone": "support"},
         ]}
         yerel = prompts.localize_signals("tr", bugun)
-        assert "bugün kesinleştiriyor" in yerel["signals"][0]["headline"]
-        assert "etkisi sönüyor" in yerel["signals"][1]["headline"]
+        assert yerel["signals"][0]["timing_local"] == "Bugün kesinleşiyor"
+        assert yerel["signals"][1]["timing_local"] == "Etkisi sönüyor"
+        assert "bugün kesinleştiriyor" in yerel["signals"][0]["technical"]
+
+    def test_ton_acidan_turetilir(self, monkeypatch):
+        ham = _hesapla(monkeypatch)
+        tonlar = {(s["transit"], s["aspect"]): s["tone"]
+                  for s in ham["signals"]}
+        assert tonlar[("Saturn", "square")] == "tension"
+        assert tonlar[("Jupiter", "trine")] == "support"
+        assert tonlar[("Uranus", "conjunction")] == "focus"
 
     def test_insight_oldugu_gibi_tasinir(self):
         veri = {"signals": [
@@ -232,25 +289,28 @@ class TestOnbellekVeBildirim:
     def test_cached_signals_dogum_verisi_yoksa_none(self):
         assert signal_service.cached_signals({"uid": "u2"}) is None
 
-    def test_bildirim_govdesi_bir_numarali_sinyal(self, monkeypatch):
+    def test_bildirim_bir_numarali_sinyalden(self, monkeypatch):
+        """Bildirimde de kart cümlesi görünür — jargon telefona düşmez."""
         from services import notification_service
         ham = {"generated_for": "2026-08-16", "signals": [
             {"transit": "Saturn", "natal": "Moon", "aspect": "square",
              "orb": 0.8, "movement": "applying", "active": True,
              "exact_on": "2026-08-18", "days_to_exact": 2,
-             "theme": "inner"}], "disclosures": []}
+             "theme": "inner", "tone": "tension"}], "disclosures": []}
         monkeypatch.setattr(signal_service, "cached_signals",
                             lambda profile, today=None: ham)
-        govde = notification_service.signal_push_body(PROFIL, "tr")
-        assert govde == ("Satürn, natal Ay ile Kare açısını 18 Ağustos "
-                         "günü kesinleştiriyor.")
+        baslik, govde = notification_service.signal_push(PROFIL, "tr")
+        assert baslik == "Bugün: İç dünya"
+        assert govde == ("İç dünyanda gerilim yükseliyor; kendine fazla "
+                         "yüklenmemek bugünün işi.")
+        assert "natal" not in govde and "Satürn" not in govde
 
     def test_bildirim_sinyal_yoksa_none(self, monkeypatch):
         """None dönüşü çağıranı paylaşımlı burç satırına düşürür."""
         from services import notification_service
         monkeypatch.setattr(signal_service, "cached_signals",
                             lambda profile, today=None: None)
-        assert notification_service.signal_push_body(PROFIL, "tr") is None
+        assert notification_service.signal_push(PROFIL, "tr") is None
 
     def test_bildirim_uzun_satiri_reddeder(self, monkeypatch):
         from services import notification_service, prompts
@@ -260,8 +320,9 @@ class TestOnbellekVeBildirim:
                             lambda profile, today=None: ham)
         monkeypatch.setattr(
             prompts, "localize_signals",
-            lambda lang, data: {"signals": [{"headline": "u" * 200}]})
-        assert notification_service.signal_push_body(PROFIL, "tr") is None
+            lambda lang, data: {"signals": [{"headline": "u" * 200,
+                                             "theme_local": "İç dünya"}]})
+        assert notification_service.signal_push(PROFIL, "tr") is None
 
     def test_bildirim_hatada_dusmez(self, monkeypatch):
         """Sinyal hesabı düşerse bildirim düşmez; None ile yedeğe geçilir."""
@@ -269,4 +330,4 @@ class TestOnbellekVeBildirim:
         monkeypatch.setattr(
             signal_service, "cached_signals",
             lambda profile, today=None: (_ for _ in ()).throw(RuntimeError))
-        assert notification_service.signal_push_body(PROFIL, "tr") is None
+        assert notification_service.signal_push(PROFIL, "tr") is None

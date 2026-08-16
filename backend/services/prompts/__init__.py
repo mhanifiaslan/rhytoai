@@ -523,19 +523,40 @@ def localize_signals(lang: str | None, data: dict | None) -> dict:
             "orb": s.get("orb"),
             "date": signal_date(lang, s.get("exact_on")),
         }
+        # TEKNİK satır: dayanak sayfasının ilk cümlesi (kart yüzeyinde DEĞİL).
         if s.get("exact_on") and s.get("days_to_exact") == 0:
-            baslik = p.SIGNAL_LINE_EXACT_TODAY.format(**alanlar)
+            teknik = p.SIGNAL_LINE_EXACT_TODAY.format(**alanlar)
         elif s.get("exact_on"):
-            baslik = p.SIGNAL_LINE_EXACT.format(**alanlar)
+            teknik = p.SIGNAL_LINE_EXACT.format(**alanlar)
         elif s.get("movement") == "applying":
-            baslik = p.SIGNAL_LINE_APPLYING.format(**alanlar)
+            teknik = p.SIGNAL_LINE_APPLYING.format(**alanlar)
         elif s.get("movement") == "separating":
-            baslik = p.SIGNAL_LINE_SEPARATING.format(**alanlar)
+            teknik = p.SIGNAL_LINE_SEPARATING.format(**alanlar)
         else:
-            baslik = p.SIGNAL_LINE_ACTIVE.format(**alanlar)
+            teknik = p.SIGNAL_LINE_ACTIVE.format(**alanlar)
+
+        # KART cümlesi (R2-S6): tema + ton, gündelik dil. Ölçülen iki şeyden
+        # seçilir; gezegen/açı adı geçmez — o bilgi dayanak sayfasında.
+        tema = s.get("theme") or "inner"
+        ton = s.get("tone") or "focus"
+        insan = p.SIGNAL_HUMAN_LINES.get(tema, {}).get(ton) or teknik
+
+        # ZAMANLAMA satırı — kartın altındaki küçük çizgi.
+        if s.get("exact_on") and s.get("days_to_exact") == 0:
+            zaman = p.SIGNAL_TIMING_TODAY
+        elif s.get("exact_on"):
+            zaman = p.SIGNAL_TIMING_FUTURE.format(date=alanlar["date"])
+        elif s.get("movement") == "applying":
+            zaman = p.SIGNAL_TIMING_APPLYING
+        elif s.get("movement") == "separating":
+            zaman = p.SIGNAL_TIMING_SEPARATING
+        else:
+            zaman = p.SIGNAL_TIMING_ACTIVE
 
         sonuç = {**s,
-                 "headline": baslik,
+                 "headline": insan,
+                 "technical": teknik,
+                 "timing_local": zaman,
                  "transit_local": alanlar["transit"],
                  "natal_local": alanlar["natal"],
                  "aspect_local": alanlar["aspect"],

@@ -275,6 +275,9 @@ CHART_BAZI_YEAR_LABEL = "year pillar"
 # is cached per sign — not per user.
 
 PUSH_DAILY_TITLE = "Today's sky is ready"
+#: Signal notification title (R2-S6): says which area of life today is
+#: about, instead of a generic "your sky is ready".
+PUSH_SIGNAL_TITLE = "Today: {theme}"
 #: Used when the generated line is unavailable.
 PUSH_DAILY_FALLBACK = "Your reading for {sign} is waiting."
 
@@ -662,9 +665,55 @@ SIGNAL_DATE_FMT = "{month} {day}"
 
 SIGNAL_EXACT_LABEL = "exact"
 
-# Template headlines — no LLM, available to every tier. Every field is
-# MEASURED data (mover, natal point, aspect, orb, date); the template only
-# builds the sentence.
+# PLAIN LANGUAGE card lines (R2-S6). Nobody wants to read "Chiron trine
+# natal Venus"; they want to read what is happening in their life. The
+# sentence is picked from two measured things: THEME (natal house) and
+# TONE (nature of the aspect). The technical line is not lost — it opens
+# the "What's behind this?" sheet as the first line of the basis.
+SIGNAL_HUMAN_LINES = {
+    "career": {
+        "support": ("The way opens around work and goals; progress meets "
+                    "less resistance today."),
+        "tension": ("A point of resistance shows up around work; steady "
+                    "steps beat quick calls."),
+        "focus": ("Work and direction come forward; a good window to aim "
+                  "your energy at one thing."),
+    },
+    "relationships": {
+        "support": ("Closeness and agreement come easier; a good time to "
+                    "say the unsaid."),
+        "tension": ("Friction surfaces in your relationships; listening "
+                    "beats reacting today."),
+        "focus": ("Relationships intensify; what sits between you and "
+                  "someone moves to the centre."),
+    },
+    "inner": {
+        "support": ("There's a soft opening inside; gathering yourself "
+                    "comes easier today."),
+        "tension": ("Inner tension is rising; not overloading yourself is "
+                    "today's work."),
+        "focus": ("Your inner world comes forward; a window to turn "
+                  "attention inward."),
+    },
+    "finance": {
+        "support": ("Room to widen your material ground; a good time to "
+                    "review your resources."),
+        "tension": ("A tight spot shows up materially; be careful with "
+                    "spending and promises."),
+        "focus": ("Material ground moves to the centre; your bond with "
+                  "what you own gets clearer."),
+    },
+}
+
+#: Timing line — the small gold line under the card.
+SIGNAL_TIMING_TODAY = "Perfects today"
+SIGNAL_TIMING_FUTURE = "Peaks on {date}"
+SIGNAL_TIMING_APPLYING = "Building"
+SIGNAL_TIMING_SEPARATING = "Fading"
+SIGNAL_TIMING_ACTIVE = "Active now"
+
+# TECHNICAL lines — no longer on the card surface, they live in the basis
+# sheet. Every field is MEASURED data (mover, natal point, aspect, orb).
 SIGNAL_LINE_EXACT_TODAY = (
     "{transit} perfects its {aspect} to your natal {natal} today.")
 SIGNAL_LINE_EXACT = (
@@ -695,6 +744,9 @@ RULES (strict):
 - Write EXACTLY {count} lines; each starts with a number like "1." and
   keeps the signal order.
 - Each sentence AT MOST 140 characters; one sentence, end with a period.
+- PLAIN LANGUAGE: never name a planet, aspect, sign, house, degree or orb.
+  People want to read what is happening in their life, not "Saturn square
+  Moon". (The technical basis is shown to them on a separate screen.)
 - Use TENDENCY language: "this theme is becoming visible", "make room
   for" — no dated event prophecy ("you will get the job" is FORBIDDEN).
 - No health/legal/financial advice; no flattery; no emoji.

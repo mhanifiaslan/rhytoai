@@ -262,6 +262,9 @@ CHART_BAZI_YEAR_LABEL = "yıl sütunu"
 # da burç başına önbelleklenir (kullanıcı başına değil).
 
 PUSH_DAILY_TITLE = "Bugünün gökyüzü hazır"
+#: Sinyal bildiriminin başlığı (R2-S6): jenerik "gökyüzü hazır" yerine
+#: bugünün hangi alanı olduğunu söyler.
+PUSH_SIGNAL_TITLE = "Bugün: {theme}"
 #: Günlük bildirimin gövdesi üretilemezse kullanılacak metin.
 PUSH_DAILY_FALLBACK = "{sign} için bugünün okuması seni bekliyor."
 
@@ -633,8 +636,55 @@ SIGNAL_DATE_FMT = "{day} {month}"
 
 SIGNAL_EXACT_LABEL = "kesinleşme"
 
-# Şablon başlıklar — LLM'siz, her katmana açık. Her alan ÖLÇÜLMÜŞ veridir
-# (gezen, natal nokta, açı, orb, tarih); şablon yalnız cümle kurar.
+# İNSAN DİLİ kart cümleleri (R2-S6). Kullanıcı "Kiron natal Venüs ile üçgen"
+# okumak istemiyor; hayatında ne olduğunu okumak istiyor. Cümle ölçülmüş iki
+# şeyden seçilir: TEMA (natal ev) ve TON (açının doğası). Teknik satır
+# kaybolmaz — "Neye dayanıyor?" sayfasında, dayanağın ilk satırı olarak durur.
+# Kesin olay vaadi YOK; eğilim dili (analizdeki 27. madde).
+SIGNAL_HUMAN_LINES = {
+    "career": {
+        "support": ("İş ve hedefler tarafında yol açılıyor; ilerlemek bugün "
+                    "daha az direnç istiyor."),
+        "tension": ("Kariyer tarafında bir direnç noktası beliriyor; acele "
+                    "karardan çok sağlam adım."),
+        "focus": ("Kariyer alanı öne çıkıyor; enerjini tek bir hedefte "
+                  "toplamak için uygun aralık."),
+    },
+    "relationships": {
+        "support": ("Yakınlık ve anlaşma kolaylaşıyor; konuşulmayı bekleyen "
+                    "şeyi konuşmak için iyi zaman."),
+        "tension": ("İlişkilerde bir sürtünme görünür oluyor; tepkiden önce "
+                    "dinlemek işe yarıyor."),
+        "focus": ("İlişkiler yoğunlaşıyor; biriyle aranızdaki mesele merkeze "
+                  "geliyor."),
+    },
+    "inner": {
+        "support": ("İç dünyanda yumuşak bir açıklık var; kendini toparlamak "
+                    "bugün daha kolay."),
+        "tension": ("İç dünyanda gerilim yükseliyor; kendine fazla "
+                    "yüklenmemek bugünün işi."),
+        "focus": ("İç dünyan öne çıkıyor; dikkati dışarıdan içeriye çevirmek "
+                  "için uygun aralık."),
+    },
+    "finance": {
+        "support": ("Maddi düzende genişleme aralığı; kaynaklarını gözden "
+                    "geçirmek elverişli."),
+        "tension": ("Maddi tarafta bir sıkışma beliriyor; harcamada ve söz "
+                    "vermede temkin."),
+        "focus": ("Maddi düzen merkeze geliyor; sahip olduklarınla ilişkin "
+                  "netleşiyor."),
+    },
+}
+
+#: Zamanlama satırı — kartın altındaki küçük altın çizgi.
+SIGNAL_TIMING_TODAY = "Bugün kesinleşiyor"
+SIGNAL_TIMING_FUTURE = "{date} günü netleşiyor"
+SIGNAL_TIMING_APPLYING = "Etkisi güçleniyor"
+SIGNAL_TIMING_SEPARATING = "Etkisi sönüyor"
+SIGNAL_TIMING_ACTIVE = "Şu anda etkin"
+
+# TEKNİK satırlar — artık kart yüzeyinde değil, dayanak sayfasında. Her alan
+# ÖLÇÜLMÜŞ veridir (gezen, natal nokta, açı, orb, tarih).
 SIGNAL_LINE_EXACT_TODAY = (
     "{transit}, natal {natal} ile {aspect} açısını bugün kesinleştiriyor.")
 SIGNAL_LINE_EXACT = (
@@ -664,6 +714,9 @@ KURALLAR (kesin):
 - TAM {count} satır yaz; her satır "1." gibi numarayla başlasın ve sinyal
   sırasını korusun.
 - Her cümle EN FAZLA 140 karakter; tek cümle, nokta ile bitir.
+- GÜNDELİK DİL: gezegen, açı, burç, ev, derece, orb ADI GEÇMESİN. Kullanıcı
+  "Satürn kare Ay" değil, hayatında ne olduğunu okumak istiyor. (Teknik
+  dayanak kullanıcıya ayrı bir ekranda zaten gösteriliyor.)
 - EĞİLİM dili kullan: "bu tema görünürleşiyor", "şuna alan aç" — kesin
   tarihli olay kehaneti YOK ("iş bulacaksın" gibi cümleler YASAK).
 - Sağlık/hukuk/finans tavsiyesi YOK; pohpohlama YOK; emoji YOK.

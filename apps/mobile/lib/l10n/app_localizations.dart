@@ -3533,7 +3533,7 @@ abstract class AppLocalizations {
   /// No description provided for @signalWhy.
   ///
   /// In tr, this message translates to:
-  /// **'Neden?'**
+  /// **'Neye dayanıyor?'**
   String get signalWhy;
 
   /// No description provided for @signalAsk.

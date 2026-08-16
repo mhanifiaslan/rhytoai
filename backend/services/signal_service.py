@@ -28,7 +28,10 @@ logger = logging.getLogger(__name__)
 
 #: Sinyal hesabı sürümü — sıralama/tema tabloları değişince artar,
 #: önbellekler tazelenir (PREDICT_CALC_VERSION disiplini).
-SIGNAL_CALC_VERSION = "1"
+#: v2 (R2-S6): `tone` alanı eklendi ve ayrılan açı puanı düştü; sürüm
+#: artmasaydı eski kayıtlar 24 saat boyunca tonsuz (yanlış cümleli)
+#: servis edilirdi.
+SIGNAL_CALC_VERSION = "2"
 
 #: Pencere: bugün + 7 gün. Daha uzunu "bugün senin için" iddiasını sulandırır.
 WINDOW_DAYS = 8
@@ -62,8 +65,12 @@ _ACI_AGIRLIK = {
     "trine": 1.0, "sextile": 0.85,
 }
 
-#: Yaklaşan açı güçlenir; ayrılan sönmektedir.
+#: Yaklaşan açı güçlenir; ayrılan sönmektedir. Ayrılana CEZA (R2-S6):
+#: sönmekte olan bir etki "bugün fark ettiklerim" listesinde en son sırayı
+#: hak eder — yoksa kartın cümlesi ("kolaylaşıyor") zamanlama satırıyla
+#: ("etkisi sönüyor") çelişir.
 _YAKLASMA_CARPANI = 1.2
+_AYRILMA_CARPANI = 0.7
 
 #: Tema anahtarları — l10n adları prompts katmanında (SIGNAL_THEME_NAMES).
 THEMES = ("career", "relationships", "inner", "finance")
@@ -74,6 +81,15 @@ _EV_TEMASI = {
     1: "inner", 2: "finance", 3: "relationships", 4: "inner",
     5: "relationships", 6: "career", 7: "relationships", 8: "finance",
     9: "inner", 10: "career", 11: "relationships", 12: "inner",
+}
+
+#: Açının TONU (R2-S6): kart yüzeyindeki insan dili cümle bundan seçilir.
+#: Destekleyici açılar akış, sert açılar gerilim, kavuşum yoğunlaşma anlatır
+#: — bu geleneksel astrolojinin kendi ayrımı, uydurma değil.
+_TON = {
+    "trine": "support", "sextile": "support",
+    "square": "tension", "opposition": "tension",
+    "conjunction": "focus",
 }
 
 #: Ev bilinmiyorsa (saat yok / eksen / dış gezegen) noktanın doğasından tema.
@@ -121,6 +137,8 @@ def _puan(aday: dict[str, Any]) -> float:
         p *= 1.5 / (1.0 + float(aday.get("orb") or 0.0))
         if aday.get("movement") == "applying":
             p *= _YAKLASMA_CARPANI
+        elif aday.get("movement") == "separating":
+            p *= _AYRILMA_CARPANI
     else:
         # Henüz orb dışında ama pencere içinde kesinleşecek.
         p *= 1.0 / (1.0 + float(aday.get("days_to_exact") or 0))
@@ -190,6 +208,7 @@ def compute_signals(birth: dict[str, Any], hour_known: bool = True,
     for aday in adaylar.values():
         yerlesim = _natal_yerlesim(natal, aday["natal"])
         aday["theme"] = _tema(aday["natal"], yerlesim)
+        aday["tone"] = _TON.get(aday["aspect"], "focus")
         if yerlesim:
             if yerlesim.get("sign"):
                 aday["natal_sign"] = yerlesim["sign"]
@@ -257,12 +276,17 @@ def cached_signals(profile: dict[str, Any],
 # ---------------------------------------------------------------------------
 
 def signals_fingerprint(ham: dict[str, Any]) -> str:
-    """Sinyal kümesinin özet anahtarı — yorum önbelleği buna bağlanır."""
+    """Sinyal kümesinin özet anahtarı — yorum önbelleği buna bağlanır.
+
+    Hesap sürümü de imzaya girer: prompt kuralları değiştiğinde (S6'da
+    "gezegen adı kullanma") eski yorumlar TTL boyunca servis edilmesin.
+    """
     imza = "|".join(
         f"{s['transit']}-{s['aspect']}-{s['natal']}-{s.get('exact_on')}"
         for s in ham.get("signals") or [])
     return hashlib.sha256(
-        f"{ham.get('generated_for')}|{imza}".encode()).hexdigest()[:20]
+        f"{SIGNAL_CALC_VERSION}|{ham.get('generated_for')}|{imza}"
+        .encode()).hexdigest()[:20]
 
 
 def signal_insights(ham: dict[str, Any], lang: str) -> list[str] | None:

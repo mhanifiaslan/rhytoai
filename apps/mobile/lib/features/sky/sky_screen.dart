@@ -193,16 +193,10 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                   begin: 0.08, curve: Curves.easeOutCubic),
               const SizedBox(height: RythoSpace.lg),
 
-              // ---------- SİNYALLER (R2-S3) ----------
-              // "Rytho bugün senin için fark etti": sorulmadan konuşan
-              // astrolog. Bölüm kendi kendini gizler (veri yok / hata /
-              // doğum kaydı eksik) — ana ekran sinyalsiz de ayakta durur,
-              // sinyal varsa ilk sözü o söyler.
-              const _SignalsSection()
-                  .animate(delay: next())
-                  .fadeIn(duration: 360.ms)
-                  .slideY(begin: 0.06, curve: Curves.easeOutCubic),
               // Burç şeridi — HİKÂYE halkası. Dokunma tam ekran okuyucu açar.
+              // Yeri SABİT: her zaman başlığın hemen altında, sosyal medya
+              // durum çubuğu gibi. Hiçbir bölüm (sinyaller dahil) bunu aşağı
+              // itmez — R2-S6'da bir kez itilmişti, geri alındı.
               //
               // Eskiden bu şerit bir "seçici"ydi: dokunulunca 200 px aşağıdaki
               // bölümün metni değişiyordu, arada da alakasız bir tanıtım bandı
@@ -224,6 +218,15 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                 ),
               ).animate(delay: next()).fadeIn(duration: 360.ms).slideY(
                   begin: 0.08, curve: Curves.easeOutCubic),
+
+              // ---------- SİNYALLER (R2-S3) ----------
+              // "Rytho bugün senin için fark etti": sorulmadan konuşan
+              // astrolog. Bölüm kendi kendini gizler (veri yok / hata /
+              // doğum kaydı eksik) — ana ekran sinyalsiz de ayakta durur.
+              const _SignalsSection()
+                  .animate(delay: next())
+                  .fadeIn(duration: 360.ms)
+                  .slideY(begin: 0.06, curve: Curves.easeOutCubic),
 
               // ---------- BUGÜN SENİN İÇİN ----------
               // Seri rozeti başlıktan buraya indi (R2-S3): motivasyon
@@ -576,10 +579,12 @@ class _SignalCard extends StatelessWidget {
       sinyal,
       onAsk: () {
         Navigator.of(context).pop();
+        // Soruya TEKNİK satır gider: kullanıcı dayanağa bakarken soruyor ve
+        // sohbetin hangi transit olduğunu bilmesi cevabı keskinleştiriyor.
+        final soru = (sinyal['technical'] as String?) ??
+            (sinyal['headline'] as String? ?? '');
         Navigator.of(context).push(MaterialPageRoute(
-          builder: (_) => ChatScreen(
-              initialText: l10n
-                  .signalAskPrefill(sinyal['headline'] as String? ?? '')),
+          builder: (_) => ChatScreen(initialText: l10n.signalAskPrefill(soru)),
         ));
       },
     );
@@ -589,40 +594,45 @@ class _SignalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final tema = sinyal['theme'] as String? ?? 'inner';
+
+    // Kartın metni GÜNDELİK dildedir (R2-S6). Abonede LLM yorumu, ücretsiz
+    // katmanda tema+ton şablonu — ikisi de "hayatında ne oluyor" anlatır.
+    // "Kiron natal Venüs ile üçgen" cümlesi buradan kalktı; teknik dayanak
+    // "Neye dayanıyor?" sayfasında, kendi başlığı altında duruyor.
     final insight = sinyal['insight'] as String?;
+    final metin = (insight != null && insight.isNotEmpty)
+        ? insight
+        : (sinyal['headline'] as String? ?? '');
+    final zaman = sinyal['timing_local'] as String?;
 
     return GlassPanel(
       margin: const EdgeInsets.symmetric(
           horizontal: RythoSpace.lg, vertical: 5),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 11),
       onTap: () => _openBasis(context),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Tema başlığı: kullanıcı bir bakışta "bu kariyer mi ilişki mi"
+        // sorusunu cevaplayabilmeli — ikon + büyük ad, silik değil.
         Row(children: [
           Text(_kThemeIcons[tema] ?? '✦',
-              style: const TextStyle(fontSize: 13)),
-          const SizedBox(width: 6),
-          Text(
-              (sinyal['theme_local'] as String? ?? '').toUpperCase(),
-              style: RythoType.dataSmall),
-          const Spacer(),
-          if (sinyal['exact_on_local'] is String)
-            Text(sinyal['exact_on_local'] as String,
+              style: const TextStyle(fontSize: 15)),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(sinyal['theme_local'] as String? ?? '',
+                style: RythoText.display(13.5,
+                    w: FontWeight.w700, color: RythoColors.lilac)),
+          ),
+          if (zaman != null && zaman.isNotEmpty)
+            Text(zaman,
                 style: RythoType.dataSmall
                     .copyWith(color: RythoColors.gold)),
         ]),
-        const SizedBox(height: 6),
-        Text(sinyal['headline'] as String? ?? '',
-            style: RythoText.body(13.5, w: FontWeight.w600, height: 1.4)),
-        if (insight != null && insight.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Text(insight,
-              style: RythoText.body(12.5,
-                  color: RythoColors.parchmentDim, height: 1.4)),
-        ],
-        const SizedBox(height: 6),
+        const SizedBox(height: 7),
+        Text(metin, style: RythoText.body(13.5, height: 1.45)),
+        const SizedBox(height: 8),
         Text('${l10n.signalWhy} →',
-            style: RythoText.body(12,
-                color: RythoColors.lilac, w: FontWeight.w600)),
+            style: RythoText.body(11.5,
+                color: RythoColors.parchmentDim, w: FontWeight.w600)),
       ]),
     );
   }

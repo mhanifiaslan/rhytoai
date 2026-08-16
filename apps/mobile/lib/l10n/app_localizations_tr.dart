@@ -1944,7 +1944,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get signalsSection => 'Bugün gökyüzünde senin için';
 
   @override
-  String get signalWhy => 'Neden?';
+  String get signalWhy => 'Neye dayanıyor?';
 
   @override
   String get signalAsk => 'Rytho\'ya sor';

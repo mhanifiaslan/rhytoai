@@ -929,7 +929,7 @@
   "usernameChangeNote": "If you change it, your old username is released and someone else can take it.",
   "emailChangeNote": "Your email is the key to your sign-in; contact support to change it.",
   "signalsSection": "In your sky today",
-  "signalWhy": "Why?",
+  "signalWhy": "What's behind this?",
   "signalAsk": "Ask Rytho",
   "signalAskPrefill": "Can you unpack this signal for me: {headline}",
   "signalUpcoming": "Nearest exactness: {date}",
