@@ -927,5 +927,41 @@
   "accountSaved": "Hesap bilgilerin güncellendi.",
   "displayNameEmpty": "Adın boş olamaz.",
   "usernameChangeNote": "Değiştirirsen eski kullanıcı adın serbest kalır ve başkası alabilir.",
-  "emailChangeNote": "E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç."
+  "emailChangeNote": "E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç.",
+  "signalsSection": "Bugün gökyüzünde senin için",
+  "signalWhy": "Neden?",
+  "signalAsk": "Rytho'ya sor",
+  "signalAskPrefill": "Şu sinyali benim için açar mısın: {headline}",
+  "@signalAskPrefill": {
+    "placeholders": {
+      "headline": {
+        "type": "String"
+      }
+    }
+  },
+  "signalUpcoming": "En yakın kesinleşme: {date}",
+  "@signalUpcoming": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "basisSheetTitle": "Bu sinyal nereden geliyor?",
+  "basisSky": "Gökyüzünde",
+  "basisNatal": "Haritanda",
+  "basisAspect": "Açı",
+  "basisOrb": "Orb (ölçülen)",
+  "basisMovement": "Hareket",
+  "basisExact": "Kesinleşme",
+  "basisHouse": "{house}. ev",
+  "@basisHouse": {
+    "placeholders": {
+      "house": {
+        "type": "int"
+      }
+    }
+  },
+  "basisSynthesis": "Rytho'nun yorumu",
+  "basisFootnote": "Buradaki her alan hesaplanmış gökyüzü verisidir: konumlar efemeristen, açı ve orb ölçümden gelir. Rytho'nun yorumu bu ölçümlerin üzerine kurulur — ölçülmeyen söylenmez."
 }

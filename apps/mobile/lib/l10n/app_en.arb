@@ -927,5 +927,20 @@
   "accountSaved": "Your account details are updated.",
   "displayNameEmpty": "Your name can't be empty.",
   "usernameChangeNote": "If you change it, your old username is released and someone else can take it.",
-  "emailChangeNote": "Your email is the key to your sign-in; contact support to change it."
+  "emailChangeNote": "Your email is the key to your sign-in; contact support to change it.",
+  "signalsSection": "In your sky today",
+  "signalWhy": "Why?",
+  "signalAsk": "Ask Rytho",
+  "signalAskPrefill": "Can you unpack this signal for me: {headline}",
+  "signalUpcoming": "Nearest exactness: {date}",
+  "basisSheetTitle": "Where this signal comes from",
+  "basisSky": "In the sky",
+  "basisNatal": "In your chart",
+  "basisAspect": "Aspect",
+  "basisOrb": "Orb (measured)",
+  "basisMovement": "Motion",
+  "basisExact": "Exact on",
+  "basisHouse": "house {house}",
+  "basisSynthesis": "Rytho's reading",
+  "basisFootnote": "Every field here is computed sky data: positions come from the ephemeris, the aspect and orb are measured. Rytho's reading is built on these measurements — nothing unmeasured is claimed."
 }

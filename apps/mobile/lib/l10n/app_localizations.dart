@@ -3523,6 +3523,96 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç.'**
   String get emailChangeNote;
+
+  /// No description provided for @signalsSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün gökyüzünde senin için'**
+  String get signalsSection;
+
+  /// No description provided for @signalWhy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Neden?'**
+  String get signalWhy;
+
+  /// No description provided for @signalAsk.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'ya sor'**
+  String get signalAsk;
+
+  /// No description provided for @signalAskPrefill.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu sinyali benim için açar mısın: {headline}'**
+  String signalAskPrefill(String headline);
+
+  /// No description provided for @signalUpcoming.
+  ///
+  /// In tr, this message translates to:
+  /// **'En yakın kesinleşme: {date}'**
+  String signalUpcoming(String date);
+
+  /// No description provided for @basisSheetTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu sinyal nereden geliyor?'**
+  String get basisSheetTitle;
+
+  /// No description provided for @basisSky.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gökyüzünde'**
+  String get basisSky;
+
+  /// No description provided for @basisNatal.
+  ///
+  /// In tr, this message translates to:
+  /// **'Haritanda'**
+  String get basisNatal;
+
+  /// No description provided for @basisAspect.
+  ///
+  /// In tr, this message translates to:
+  /// **'Açı'**
+  String get basisAspect;
+
+  /// No description provided for @basisOrb.
+  ///
+  /// In tr, this message translates to:
+  /// **'Orb (ölçülen)'**
+  String get basisOrb;
+
+  /// No description provided for @basisMovement.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hareket'**
+  String get basisMovement;
+
+  /// No description provided for @basisExact.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kesinleşme'**
+  String get basisExact;
+
+  /// No description provided for @basisHouse.
+  ///
+  /// In tr, this message translates to:
+  /// **'{house}. ev'**
+  String basisHouse(int house);
+
+  /// No description provided for @basisSynthesis.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'nun yorumu'**
+  String get basisSynthesis;
+
+  /// No description provided for @basisFootnote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Buradaki her alan hesaplanmış gökyüzü verisidir: konumlar efemeristen, açı ve orb ölçümden gelir. Rytho\'nun yorumu bu ölçümlerin üzerine kurulur — ölçülmeyen söylenmez.'**
+  String get basisFootnote;
 }
 
 class _AppLocalizationsDelegate

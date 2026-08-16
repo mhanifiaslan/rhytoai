@@ -640,6 +640,69 @@ MOVEMENT_NAMES = {
     "static": "static",
 }
 
+# ---------------------------------------------------------------------------
+# Signals (R2-S1): the home screen's "Rytho noticed for you today" cards
+# ---------------------------------------------------------------------------
+
+#: Theme names. Keys must match signal_service.THEMES.
+SIGNAL_THEME_NAMES = {
+    "career": "Career",
+    "relationships": "Relationships",
+    "inner": "Inner world",
+    "finance": "Material ground",
+}
+
+#: Month names — for writing signal dates in human language.
+MONTH_NAMES = {
+    1: "January", 2: "February", 3: "March", 4: "April", 5: "May",
+    6: "June", 7: "July", 8: "August", 9: "September", 10: "October",
+    11: "November", 12: "December",
+}
+SIGNAL_DATE_FMT = "{month} {day}"
+
+SIGNAL_EXACT_LABEL = "exact"
+
+# Template headlines — no LLM, available to every tier. Every field is
+# MEASURED data (mover, natal point, aspect, orb, date); the template only
+# builds the sentence.
+SIGNAL_LINE_EXACT_TODAY = (
+    "{transit} perfects its {aspect} to your natal {natal} today.")
+SIGNAL_LINE_EXACT = (
+    "{transit} perfects its {aspect} to your natal {natal} on {date}.")
+SIGNAL_LINE_APPLYING = (
+    "{transit} is applying to a {aspect} with your natal {natal} "
+    "(orb {orb}°).")
+SIGNAL_LINE_SEPARATING = (
+    "{transit} is separating from its {aspect} to your natal {natal} — "
+    "the influence is fading (orb {orb}°).")
+SIGNAL_LINE_ACTIVE = (
+    "{transit} is within {aspect} range of your natal {natal} "
+    "(orb {orb}°).")
+
+#: Per-line ceiling (characters) for the subscriber insight. If the model
+#: overruns, we fall back to the template; no half sentences (push lesson).
+SIGNAL_INSIGHT_MAX = 160
+
+#: One call for all three signals — the unit-economics rule.
+SIGNALS_PROMPT = """
+TASK: Write a one-sentence reading for EACH of the {count} personal transit
+signals below.
+
+SIGNALS (measured sky data):
+{lines}
+
+RULES (strict):
+- Write EXACTLY {count} lines; each starts with a number like "1." and
+  keeps the signal order.
+- Each sentence AT MOST 140 characters; one sentence, end with a period.
+- Use TENDENCY language: "this theme is becoming visible", "make room
+  for" — no dated event prophecy ("you will get the job" is FORBIDDEN).
+- No health/legal/financial advice; no flattery; no emoji.
+- Each sentence must touch the theme at the end of its line.
+
+Write only the numbered lines, nothing else.
+"""
+
 NATAL_FALLBACK = (
     "Your Sun is in {sun_sign}, your Moon in {moon_sign} and your Rising is "
     "{ascendant}. That trio maps your core identity, your emotional world and "

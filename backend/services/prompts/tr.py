@@ -611,6 +611,67 @@ MOVEMENT_NAMES = {
     "static": "durağan",
 }
 
+# ---------------------------------------------------------------------------
+# Sinyaller (R2-S1): ana ekranın "Rytho bugün senin için fark etti" kartları
+# ---------------------------------------------------------------------------
+
+#: Tema adları. Anahtarlar signal_service.THEMES ile aynı olmalı.
+SIGNAL_THEME_NAMES = {
+    "career": "Kariyer",
+    "relationships": "İlişkiler",
+    "inner": "İç dünya",
+    "finance": "Maddi düzen",
+}
+
+#: Ay adları — sinyal tarihlerini insan diliyle yazmak için.
+MONTH_NAMES = {
+    1: "Ocak", 2: "Şubat", 3: "Mart", 4: "Nisan", 5: "Mayıs",
+    6: "Haziran", 7: "Temmuz", 8: "Ağustos", 9: "Eylül", 10: "Ekim",
+    11: "Kasım", 12: "Aralık",
+}
+SIGNAL_DATE_FMT = "{day} {month}"
+
+SIGNAL_EXACT_LABEL = "kesinleşme"
+
+# Şablon başlıklar — LLM'siz, her katmana açık. Her alan ÖLÇÜLMÜŞ veridir
+# (gezen, natal nokta, açı, orb, tarih); şablon yalnız cümle kurar.
+SIGNAL_LINE_EXACT_TODAY = (
+    "{transit}, natal {natal} ile {aspect} açısını bugün kesinleştiriyor.")
+SIGNAL_LINE_EXACT = (
+    "{transit}, natal {natal} ile {aspect} açısını {date} günü "
+    "kesinleştiriyor.")
+SIGNAL_LINE_APPLYING = (
+    "{transit}, natal {natal} ile {aspect} açısına yaklaşıyor (orb {orb}°).")
+SIGNAL_LINE_SEPARATING = (
+    "{transit}, natal {natal} ile {aspect} açısından ayrılıyor — etkisi "
+    "sönüyor (orb {orb}°).")
+SIGNAL_LINE_ACTIVE = (
+    "{transit}, natal {natal} ile {aspect} açısı içinde (orb {orb}°).")
+
+#: Abone yorumu satır başına üst sınır (karakter). Model taşarsa şablona
+#: düşülür; yarım cümle gösterilmez (push satırı dersi).
+SIGNAL_INSIGHT_MAX = 160
+
+#: Üç sinyalin tek çağrılık yorumu — birim ekonomi kuralı.
+SIGNALS_PROMPT = """
+GÖREV: Aşağıdaki {count} kişisel transit sinyalinin HER BİRİ için tek
+cümlelik bir yorum yaz.
+
+SİNYALLER (ölçülmüş gökyüzü verisi):
+{lines}
+
+KURALLAR (kesin):
+- TAM {count} satır yaz; her satır "1." gibi numarayla başlasın ve sinyal
+  sırasını korusun.
+- Her cümle EN FAZLA 140 karakter; tek cümle, nokta ile bitir.
+- EĞİLİM dili kullan: "bu tema görünürleşiyor", "şuna alan aç" — kesin
+  tarihli olay kehaneti YOK ("iş bulacaksın" gibi cümleler YASAK).
+- Sağlık/hukuk/finans tavsiyesi YOK; pohpohlama YOK; emoji YOK.
+- Cümle satırın sonundaki temaya dokunmalı.
+
+Yalnızca numaralı satırları yaz, başka hiçbir şey yazma.
+"""
+
 NATAL_FALLBACK = (
     "Güneşin {sun_sign}, Ayın {moon_sign} ve yükselenin {ascendant}. Bu üçlü; "
     "öz kimliğin, duygusal dünyan ve dışa dönük maskenin haritasını çizer. "

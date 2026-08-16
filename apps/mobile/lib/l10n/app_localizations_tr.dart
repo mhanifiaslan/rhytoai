@@ -1939,4 +1939,56 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get emailChangeNote =>
       'E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç.';
+
+  @override
+  String get signalsSection => 'Bugün gökyüzünde senin için';
+
+  @override
+  String get signalWhy => 'Neden?';
+
+  @override
+  String get signalAsk => 'Rytho\'ya sor';
+
+  @override
+  String signalAskPrefill(String headline) {
+    return 'Şu sinyali benim için açar mısın: $headline';
+  }
+
+  @override
+  String signalUpcoming(String date) {
+    return 'En yakın kesinleşme: $date';
+  }
+
+  @override
+  String get basisSheetTitle => 'Bu sinyal nereden geliyor?';
+
+  @override
+  String get basisSky => 'Gökyüzünde';
+
+  @override
+  String get basisNatal => 'Haritanda';
+
+  @override
+  String get basisAspect => 'Açı';
+
+  @override
+  String get basisOrb => 'Orb (ölçülen)';
+
+  @override
+  String get basisMovement => 'Hareket';
+
+  @override
+  String get basisExact => 'Kesinleşme';
+
+  @override
+  String basisHouse(int house) {
+    return '$house. ev';
+  }
+
+  @override
+  String get basisSynthesis => 'Rytho\'nun yorumu';
+
+  @override
+  String get basisFootnote =>
+      'Buradaki her alan hesaplanmış gökyüzü verisidir: konumlar efemeristen, açı ve orb ölçümden gelir. Rytho\'nun yorumu bu ölçümlerin üzerine kurulur — ölçülmeyen söylenmez.';
 }

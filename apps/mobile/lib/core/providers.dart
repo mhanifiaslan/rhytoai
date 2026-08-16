@@ -90,6 +90,27 @@ final skyNowProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return Map<String, dynamic>.from(response.data['data']);
 });
 
+/// Kişisel sinyaller (R2-S1): "Rytho bugün senin için fark etti" kartları.
+///
+/// HER katmana açık: başlık cümleleri sunucuda ŞABLONLA (LLM'siz) kurulur,
+/// abonede ayrıca tek cümlelik yorum ("insight") gelir. Doğum verisi yoksa
+/// sunucu hata değil boş liste döner; ekran bölümü sessizce gizler — ana
+/// ekran yeni kullanıcıya hata göstermez.
+final signalsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) {
+    return const [];
+  }
+  final dio = ref.watch(apiProvider);
+  final response = await dio.get('/api/v1/reports/signals');
+  final data = Map<String, dynamic>.from(response.data['data']);
+  return [
+    for (final s in (data['signals'] as List? ?? const []))
+      Map<String, dynamic>.from(s as Map),
+  ];
+});
+
 /// Burç bazlı günlük yorum — ÜCRETSİZ katmanın omurgası.
 ///
 /// Kullanıcıdan bağımsızdır ve sunucuda paylaşımlı önbellekten servis edilir:

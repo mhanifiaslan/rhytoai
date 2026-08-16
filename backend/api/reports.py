@@ -10,10 +10,10 @@ from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
 from core.entitlements import require_plus
-from core import entitlements, wallet
+from core import cache, entitlements, wallet
 from services import (astro_service, bazi_service, birth_hexagram_service,
                       chart_context, notification_service, profile_service,
-                      prompts, report_service)
+                      prompts, report_service, signal_service)
 from services.bazi_service import get_bazi_chart
 from services.iching_service import cast_iching, enrich_cast
 from services.sky_service import get_sky_now
@@ -122,6 +122,52 @@ def horoscope(
         "moon_phase": sky["moon_phase"],
         "retrogrades": sky["retrogrades"],
     }}
+
+
+@router.get("/signals")
+def signals(user: AuthUser = Depends(get_current_user),
+            lang: str = Depends(get_language)):
+    """Kişisel sinyaller (R2-S1) — ana ekranın proaktif kartları.
+
+    Jeton YOK. Ham sinyaller LLM'siz hesaptır ve transit takvimi gibi doğum
+    verisine anahtarlı PAYLAŞIMLI önbellekte tutulur (aynı doğum verisi =
+    aynı gökyüzü = aynı sinyaller). Tek cümlelik yorum katmanı ("insight")
+    yalnız abonelere üretilir; üç sinyal TEK LLM çağrısıyla yazılır ve
+    sinyal parmak izine anahtarlı önbelleğe girer — günde en fazla bir
+    çağrı/harita/dil (birim ekonomi kuralı).
+
+    Doğum verisi yoksa 400 DEĞİL boş liste döner: ana ekran yeni kullanıcıya
+    hata değil "haritanı tamamla" kartı göstermeli.
+    """
+    try:
+        profile = profile_service.get_profile(user.uid)
+        ham = signal_service.cached_signals(
+            profile, today=entitlements.user_local_date(user.uid))
+        if ham is None:
+            return {"status": "success",
+                    "data": {"signals": [], "reason": "birth_missing"}}
+
+        if ham.get("signals") and entitlements.is_subscriber(user.uid):
+            iz = signal_service.signals_fingerprint(ham)
+            yorum_anahtari = f"signals-insight-{iz}-{lang}"
+            yorumlar = cache.get(yorum_anahtari)
+            if yorumlar is None:
+                yorumlar = signal_service.signal_insights(ham, lang)
+                # Biçim dışı çıktı da (boş liste olarak) önbelleklenir:
+                # aksi halde her istekte LLM yeniden denenirdi (push dersi).
+                cache.set(yorum_anahtari, yorumlar or [],
+                          ttl_seconds=24 * 3600)
+            if yorumlar:
+                ham = {**ham, "signals": [
+                    {**s, "insight": y}
+                    for s, y in zip(ham["signals"], yorumlar)]}
+
+        return {"status": "success",
+                "data": prompts.localize_signals(lang, ham)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise _internal(e, "signals", lang)
 
 
 @router.post("/daily")

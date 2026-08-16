@@ -23,10 +23,14 @@ import '../../l10n/app_localizations.dart';
 /// yerden sürer; verilmezse ilk mesajla yeni konu açılır (kimliği sunucu
 /// döndürür, buradan izlenir). Mesaj balonu davranışı aynı: kullanıcı
 /// sağda beyaz, Rytho solda mor degrade.
+///
+/// [initialText] giriş alanını ÖN-DOLDURUR, göndermez (R2-S2): sinyal
+/// kartından gelen soru kullanıcının önüne yazılmış gelir, son söz onun.
 class ChatScreen extends ConsumerStatefulWidget {
-  const ChatScreen({super.key, this.conversationId});
+  const ChatScreen({super.key, this.conversationId, this.initialText});
 
   final String? conversationId;
+  final String? initialText;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -49,6 +53,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     super.initState();
     _conversationId = widget.conversationId;
     if (_conversationId != null) _seed();
+    final tohum = widget.initialText;
+    if (tohum != null && tohum.isNotEmpty) _controller.text = tohum;
   }
 
   /// Arşivden TEK SEFERLİK tohum. Stream değil — sunucu her turu saniyeler

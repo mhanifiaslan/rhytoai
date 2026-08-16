@@ -1941,4 +1941,56 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get emailChangeNote =>
       'Your email is the key to your sign-in; contact support to change it.';
+
+  @override
+  String get signalsSection => 'In your sky today';
+
+  @override
+  String get signalWhy => 'Why?';
+
+  @override
+  String get signalAsk => 'Ask Rytho';
+
+  @override
+  String signalAskPrefill(String headline) {
+    return 'Can you unpack this signal for me: $headline';
+  }
+
+  @override
+  String signalUpcoming(String date) {
+    return 'Nearest exactness: $date';
+  }
+
+  @override
+  String get basisSheetTitle => 'Where this signal comes from';
+
+  @override
+  String get basisSky => 'In the sky';
+
+  @override
+  String get basisNatal => 'In your chart';
+
+  @override
+  String get basisAspect => 'Aspect';
+
+  @override
+  String get basisOrb => 'Orb (measured)';
+
+  @override
+  String get basisMovement => 'Motion';
+
+  @override
+  String get basisExact => 'Exact on';
+
+  @override
+  String basisHouse(int house) {
+    return 'house $house';
+  }
+
+  @override
+  String get basisSynthesis => 'Rytho\'s reading';
+
+  @override
+  String get basisFootnote =>
+      'Every field here is computed sky data: positions come from the ephemeris, the aspect and orb are measured. Rytho\'s reading is built on these measurements — nothing unmeasured is claimed.';
 }

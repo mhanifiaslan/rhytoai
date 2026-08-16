@@ -72,6 +72,7 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 37 | Rehberde arkadaş sınıflandırması (J): telefonu doğrulu arkadaş (ayarı kapalı olsa da) "Uygulamada → Arkadaşın" görünür, davet çıkmaz; doğrusuz arkadaş "Rytho'da görünmüyor" bölümünde dipnotla | ⬜ | 1.0.0+8 + sunucu |
 | 38 | İlk abonelikte bakiye ANINDA 300 görünür (K2); paywall'da "Sınırsız sohbet" YOK, "Ayda 300 jeton" var (K3) | ⬜ | 1.0.0+9 |
 | 39 | Jeton zorlaması (K5): bakiye 0'a düşünce ücretli iş 402 → jeton mağazası açılır; allowance önce, purchased sonra harcanır | ⬜ | sunucu |
+| 40 | Sinyaller (R2-S): ana ekranda en fazla 3 sinyal kartı (tema + başlık cümlesi + varsa abone yorumu); karta dokununca "Neden?" alt-sayfası ölçülmüş dayanağı gösterir (gezen, natal nokta+burç+ev, açı, orb, kesinleşme); alt-sayfadaki "Rytho'ya sor" sohbeti ön-dolu soruyla açar; seri rozeti artık "Bugün senin için" başlığında; sabah bildirimi 1 numaralı sinyal cümlesini taşır | ⬜ | 1.1.0+10 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,
 users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.

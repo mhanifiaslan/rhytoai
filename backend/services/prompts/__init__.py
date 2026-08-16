@@ -492,6 +492,70 @@ def localize_transit_calendar(lang: str | None, cal: dict | None) -> dict:
     return sonuç
 
 
+def signal_date(lang: str | None, iso: str | None) -> str:
+    """ISO tarihi insan diliyle yazar ("2026-08-18" -> "18 Ağustos")."""
+    if not iso:
+        return ""
+    p = get(lang)
+    try:
+        yil, ay, gun = (int(x) for x in iso.split("-"))
+    except ValueError:
+        return iso
+    return p.SIGNAL_DATE_FMT.format(day=gun,
+                                    month=p.MONTH_NAMES.get(ay, ay))
+
+
+def localize_signals(lang: str | None, data: dict | None) -> dict:
+    """Sinyalleri (R2-S1) isteğin diline çevirir ve başlık cümlesini kurar.
+
+    Başlık ŞABLONDUR: her alanı ölçülmüş veriden gelir, LLM'siz üretilir ve
+    her katmana açıktır. Abone yorumu (``insight``) varsa olduğu gibi taşınır.
+    """
+    if not data:
+        return {}
+    p = get(lang)
+
+    def sinyal(s: dict) -> dict:
+        alanlar = {
+            "transit": planet_name(lang, s.get("transit")),
+            "natal": planet_name(lang, s.get("natal")),
+            "aspect": aspect_name(lang, s.get("aspect")),
+            "orb": s.get("orb"),
+            "date": signal_date(lang, s.get("exact_on")),
+        }
+        if s.get("exact_on") and s.get("days_to_exact") == 0:
+            baslik = p.SIGNAL_LINE_EXACT_TODAY.format(**alanlar)
+        elif s.get("exact_on"):
+            baslik = p.SIGNAL_LINE_EXACT.format(**alanlar)
+        elif s.get("movement") == "applying":
+            baslik = p.SIGNAL_LINE_APPLYING.format(**alanlar)
+        elif s.get("movement") == "separating":
+            baslik = p.SIGNAL_LINE_SEPARATING.format(**alanlar)
+        else:
+            baslik = p.SIGNAL_LINE_ACTIVE.format(**alanlar)
+
+        sonuç = {**s,
+                 "headline": baslik,
+                 "transit_local": alanlar["transit"],
+                 "natal_local": alanlar["natal"],
+                 "aspect_local": alanlar["aspect"],
+                 "theme_local": p.SIGNAL_THEME_NAMES.get(s.get("theme"),
+                                                         s.get("theme")),
+                 "movement_local": p.MOVEMENT_NAMES.get(s.get("movement"),
+                                                        s.get("movement"))}
+        if s.get("exact_on"):
+            sonuç["exact_on_local"] = alanlar["date"]
+        if s.get("natal_sign"):
+            sonuç["natal_sign_local"] = sign_name(lang, s["natal_sign"])
+        return sonuç
+
+    sonuç = {**data,
+             "signals": [sinyal(s) for s in (data.get("signals") or [])]}
+    if data.get("disclosures"):
+        sonuç["disclosure_texts"] = _disclosure_texts(lang, data)
+    return sonuç
+
+
 def localize_synastry(lang: str | None, synastry: dict | None) -> dict:
     """Sinastri çıktısındaki iki kişinin nokta adlarını ve açıları çevirir."""
     if not synastry:
