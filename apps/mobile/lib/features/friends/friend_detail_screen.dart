@@ -15,6 +15,7 @@ import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart' show Pressable;
 import '../../widgets/star_burst.dart';
 import 'friends_screen.dart' show showFriendSafetySheet;
+import 'relationship_screen.dart';
 
 /// Arkadaş detayı: bugüne özgü ikili dinamik + hazır tepki gönderme.
 ///
@@ -159,6 +160,31 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
           reading: _reading,
           error: _error,
           onRetry: _loadDyad,
+        ),
+        // İlişki eksenleri (R2-L1): günlük ikili okuma "bugün"ü anlatır,
+        // bu giriş ilişkinin KALICI zeminini açar. Skor yok — dört eksende
+        // nitel okuma + dayanağı.
+        GlassPanel(
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => RelationshipScreen(friend: friend))),
+          child: Row(children: [
+            const Text('🪐', style: TextStyle(fontSize: 18)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.relationshipOpen,
+                        style: RythoText.body(14, w: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(l10n.relationshipOpenSubtitle,
+                        style: RythoText.body(11.5,
+                            color: RythoColors.parchmentDim)),
+                  ]),
+            ),
+            const Icon(Icons.chevron_right,
+                size: 18, color: RythoColors.parchmentDim),
+          ]),
         ),
         const SectionDivider(),
         Padding(

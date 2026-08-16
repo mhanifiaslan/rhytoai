@@ -26,6 +26,10 @@ import '../../l10n/app_localizations.dart';
 ///
 /// [initialText] giriş alanını ÖN-DOLDURUR, göndermez (R2-S2): sinyal
 /// kartından gelen soru kullanıcının önüne yazılmış gelir, son söz onun.
+/// Bakiye bu sayının altına inince çip bakır renge döner (R2-F2): aylık
+/// hakkın (300) yaklaşık %10'u — "bitmek üzere" uyarısı, panik değil.
+const int _kDusukBakiye = 30;
+
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen({super.key, this.conversationId, this.initialText});
 
@@ -217,30 +221,21 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                     borderRadius: BorderRadius.circular(RythoRadius.pill),
                     border: Border.all(color: RythoColors.glassStroke),
                   ),
+                  // R2-F2: sayaç SAKİN. Bakiye görünür kalır (sürpriz yok
+                  // ilkesi), ama her mesajda aşağı kayan animasyon sohbeti
+                  // bir oyun ekonomisine çeviriyordu — duygusal güven
+                  // isteyen bir üründe yanlış his. Vurgu yalnız bakiye
+                  // AZALDIĞINDA (<%10) renkle geri geliyor.
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Text('🪙', style: TextStyle(fontSize: 13)),
+                    const Text('✦', style: TextStyle(fontSize: 12)),
                     const SizedBox(width: RythoSpace.xs),
-                    // Her mesajda bakiye düşüyor; sayı yumuşak geçişle
-                    // değişsin ki harcama fark edilsin (madde 12 — ölçülü
-                    // mikro animasyon, süre RythoMotion'dan).
-                    AnimatedSwitcher(
-                      duration: RythoMotion.base,
-                      transitionBuilder: (child, anim) => FadeTransition(
-                        opacity: anim,
-                        child: SlideTransition(
-                          position: Tween(
-                                  begin: const Offset(0, 0.5),
-                                  end: Offset.zero)
-                              .animate(anim),
-                          child: child,
-                        ),
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context)
-                            .tokenBalanceChip(cuzdan.total),
-                        key: ValueKey(cuzdan.total),
-                        style: RythoType.dataSmall,
-                      ),
+                    Text(
+                      AppLocalizations.of(context)
+                          .tokenBalanceChip(cuzdan.total),
+                      style: RythoType.dataSmall.copyWith(
+                          color: cuzdan.total <= _kDusukBakiye
+                              ? RythoColors.copper
+                              : null),
                     ),
                   ]),
                 ),

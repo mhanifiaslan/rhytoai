@@ -51,7 +51,9 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final natal = ref.watch(natalReportProvider);
+    // R2-F1: çark ve dizin ÜCRETSİZ katmandan (LLM maliyeti sıfır olan
+    // hesap). Rytho'nun derin okuması (natalReportProvider) Plus'ta kalır.
+    final natal = ref.watch(natalChartProvider);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -64,15 +66,9 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
       //
       // Madde 11 (Revize R6): İching + BaZi Gökyüzü'nden BURAYA taşındı —
       // Yüz Okuma ile tek satır. Gökyüzü'nden ARAÇLAR bölümü kalktı.
-      body: Column(children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 0),
-          child: _DivinationRow(),
-        ),
-        Expanded(
-          child: natal.when(
-            // Rapor LLM üretimi — bekleyiş uzun. Çıplak kadran yerine sahne
-            // (R12-B3): aşamalar gerçek işi anlatıyor, yüzde çubuğu yok.
+      body: natal.when(
+            // Harita hesabı hızlı ama ilk açılışta ağ turu var; sahne
+            // (R12-B3) yüzde çubuğu olmadan gerçek işi anlatıyor.
             loading: () => StagedWaiting(stages: [
               l10n.atlasWaitStage1,
               l10n.atlasWaitStage2,
@@ -88,6 +84,8 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
             ),
             data: (data) {
               if (data == null) {
+                // Doğum kaydı yoksa harita hesaplanamaz — bu bir kilit
+                // değil, eksik veri durumu.
                 return PlusLockedCard(
                   emoji: '🗺️',
                   title: l10n.natalLockedTitle,
@@ -95,7 +93,7 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                   centered: true,
                 );
               }
-          final chart = Map<String, dynamic>.from(data['chart']);
+          final chart = Map<String, dynamic>.from(data);
           final points = List<Map<String, dynamic>>.from(chart['points'] ?? []);
           final houses = List<Map<String, dynamic>>.from(chart['houses'] ?? []);
           final aspects = List<Map<String, dynamic>>.from(chart['aspects'] ?? []);
@@ -191,89 +189,125 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
               // orada düzenlenebilir oldu. Aynı bilginin iki yerde durması
               // kullanıcının "profilimde olan bilgiler de var" şikayetinin
               // kaynağıydı; üstelik burada salt okunurdu.
-              SectionHeader(l10n.atlasSections)
+              // ---------- BANA DAİR ----------
+              // Ücretsiz katman: harita HESABI (çark, yerleşimler, açılar).
+              // Ücretli olan Rytho'nun bu haritayı OKUMASI.
+              SectionHeader(l10n.atlasSectionAbout)
                   .animate(delay: next())
                   .fadeIn(duration: 360.ms),
               Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: RythoSpace.lg),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
                 child: Column(children: [
-                  Row(children: [
-                    Expanded(
-                      child: _AtlasTile(
-                        emoji: '🎭',
-                        title: l10n.atlasTraits,
-                        subtitle: l10n.atlasTraitsSubtitle,
-                        onTap: () => ac(AtlasTraitsScreen(points: points)),
-                      ),
-                    ),
-                    const SizedBox(width: RythoSpace.md),
-                    Expanded(
-                      child: _AtlasTile(
-                        emoji: '🪐',
-                        title: l10n.atlasPlanetPositions,
-                        subtitle: l10n.atlasPlanetsSubtitle,
-                        onTap: () => ac(AtlasPlanetsScreen(points: points)),
-                      ),
-                    ),
-                  ]),
-                  const SizedBox(height: RythoSpace.md),
-                  Row(children: [
-                    Expanded(
-                      child: _AtlasTile(
-                        emoji: '📐',
-                        title: l10n.atlasAspects,
-                        subtitle: l10n.atlasAspectsCount(aspects.length),
-                        onTap: () => ac(AtlasAspectsScreen(aspects: aspects)),
-                      ),
-                    ),
-                    const SizedBox(width: RythoSpace.md),
-                    Expanded(
-                      child: _AtlasTile(
-                        emoji: '📜',
-                        title: l10n.atlasFullReport,
-                        subtitle: l10n.atlasFullReportSubtitle,
-                        // Tam rapor sınırsız uzunlukta bir metin; akışta
-                        // yeri yok, kendi okuma sayfasında.
-                        onTap: () => ac(ReadingScreen(
-                          title: l10n.atlasFullReport,
-                          label: l10n.atlasReadingNote,
-                          body: data['report'] ?? '',
-                        )),
-                      ),
-                    ),
-                  ]),
-                  const SizedBox(height: RythoSpace.md),
-                  // Zaman katmanı (T5): natal "an"ın haritasıydı; bu ikisi
-                  // yılın ve iç mevsimin haritası.
-                  Row(children: [
-                    Expanded(
-                      child: _AtlasTile(
-                        emoji: '🌞',
-                        title: l10n.atlasYearChart,
-                        subtitle: l10n.atlasYearChartSubtitle,
-                        onTap: () => ac(const SolarReturnScreen()),
-                      ),
-                    ),
-                    const SizedBox(width: RythoSpace.md),
-                    Expanded(
-                      child: _AtlasTile(
-                        emoji: '🌗',
-                        title: l10n.atlasInnerCalendar,
-                        subtitle: l10n.atlasInnerCalendarSubtitle,
-                        onTap: () => ac(const InnerCalendarScreen()),
-                      ),
-                    ),
-                  ]),
+                  _AtlasRow(
+                    emoji: '🎭',
+                    title: l10n.atlasTraits,
+                    subtitle: l10n.atlasTraitsSubtitle,
+                    onTap: () => ac(AtlasTraitsScreen(points: points)),
+                  ),
+                  _AtlasRow(
+                    emoji: '🪐',
+                    title: l10n.atlasPlanetPositions,
+                    subtitle: l10n.atlasPlanetsSubtitle,
+                    onTap: () => ac(AtlasPlanetsScreen(points: points)),
+                  ),
+                  _AtlasRow(
+                    emoji: '📐',
+                    title: l10n.atlasAspects,
+                    subtitle: l10n.atlasAspectsCount(aspects.length),
+                    onTap: () => ac(AtlasAspectsScreen(aspects: aspects)),
+                  ),
+                  // Tam okuma: LLM üretimi → Rytho+ .
+                  const _FullReportRow(),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6, left: 2),
+                    child: Text(l10n.atlasFreeChartNote,
+                        style: RythoText.body(11,
+                            color: RythoColors.parchmentDim, height: 1.4)),
+                  ),
                 ]),
               ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
                   begin: 0.06, curve: Curves.easeOutCubic),
+
+              // ---------- ZAMAN ----------
+              // Natal "an"ın haritasıydı; bunlar yılın ve iç mevsimin.
+              // Başlıklar insan dilinde (R2-I1), teknik ad alt satırda.
+              SectionHeader(l10n.atlasSectionTime)
+                  .animate(delay: next())
+                  .fadeIn(duration: 360.ms),
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
+                child: Column(children: [
+                  _AtlasRow(
+                    emoji: '🌞',
+                    title: l10n.atlasYearChart,
+                    subtitle: l10n.atlasYearChartSubtitle,
+                    onTap: () => ac(const SolarReturnScreen()),
+                  ),
+                  _AtlasRow(
+                    emoji: '🌗',
+                    title: l10n.atlasInnerCalendar,
+                    subtitle: l10n.atlasInnerCalendarSubtitle,
+                    onTap: () => ac(const InnerCalendarScreen()),
+                  ),
+                ]),
+              ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
+                  begin: 0.06, curve: Curves.easeOutCubic),
+
+              // ---------- DİĞER SİSTEMLER ----------
+              // Batı astrolojisi ana vaat; İching/BaZi/firaset onun yanında
+              // duran keşif alanları — aynı seviyede değil, altında.
+              SectionHeader(l10n.atlasSectionOther)
+                  .animate(delay: next())
+                  .fadeIn(duration: 360.ms),
+              const Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 8),
+                child: _DivinationRow(),
+              ),
             ],
           );
             },
           ),
-        ),
-      ]),
+    );
+  }
+}
+
+/// Tam natal okuma satırı — Rytho+ .
+///
+/// Abone değilse istek ATILMAZ (natalReportProvider zaten null döner);
+/// satır kilit rozetiyle görünür ve dokunuş paywall'ı açar. Abonede rapor
+/// hazır olduğunda okuma sayfasına gider.
+class _FullReportRow extends ConsumerWidget {
+  const _FullReportRow();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final rapor = ref.watch(natalReportProvider);
+    final metin = rapor.value?['report'] as String?;
+
+    return _AtlasRow(
+      emoji: '📜',
+      title: l10n.atlasFullReport,
+      subtitle: l10n.atlasFullReportSubtitle,
+      locked: metin == null,
+      onTap: () {
+        if (metin == null) {
+          Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => const PaywallScreen(),
+            fullscreenDialog: true,
+          ));
+          return;
+        }
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ReadingScreen(
+            title: l10n.atlasFullReport,
+            label: l10n.atlasReadingNote,
+            body: metin,
+          ),
+        ));
+      },
     );
   }
 }
@@ -326,12 +360,19 @@ String aspectKindLabel(BuildContext context, Map<String, dynamic> a) {
 /// sayfalarına (bkz. atlas_detail_screens.dart). Katlanır bölüm de gitti:
 /// aynı ekranda hem katlanan hem katlanmayan bölümler olması, neyin nereye
 /// açılacağını tahmin edilemez kılıyordu.
-class _AtlasTile extends StatelessWidget {
-  const _AtlasTile({
+/// Dizin satırı (R2-I1): karo ızgarası yerine okunur liste.
+///
+/// Karolar iki sütunda yan yana durunca başlıklar tek satıra sığmıyor ve
+/// teknik ad ("Solar return") başlığın kendisi oluyordu. Satır düzeninde
+/// başlık İNSAN dilinde, teknik ad altında ikinci satır olarak duruyor:
+/// astroloji bilmeyen ne olduğunu anlıyor, bilen aradığını buluyor.
+class _AtlasRow extends StatelessWidget {
+  const _AtlasRow({
     required this.emoji,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.locked = false,
   });
 
   final String emoji;
@@ -339,34 +380,48 @@ class _AtlasTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
+  /// Rytho+ kilidi — rozet gösterilir, dokunuş paywall'a gider.
+  final bool locked;
+
   @override
   Widget build(BuildContext context) {
     return Pressable(
       onTap: onTap,
       child: Container(
-        height: 104,
-        padding: const EdgeInsets.all(14),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
           color: RythoColors.glassFill,
           borderRadius: BorderRadius.circular(RythoRadius.card),
           border: Border.all(color: RythoColors.glassStroke),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 22)),
-            const Spacer(),
-            Text(title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: RythoType.cardTitle),
-            const SizedBox(height: 2),
-            Text(subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: RythoType.caption),
-          ],
-        ),
+        child: Row(children: [
+          Text(emoji, style: const TextStyle(fontSize: 19)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: RythoType.cardTitle),
+                const SizedBox(height: 2),
+                Text(subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: RythoType.caption),
+              ],
+            ),
+          ),
+          if (locked)
+            const Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: Text('🔒', style: TextStyle(fontSize: 13)),
+            ),
+          const Icon(Icons.chevron_right,
+              size: 18, color: RythoColors.parchmentDim),
+        ]),
       ),
     );
   }

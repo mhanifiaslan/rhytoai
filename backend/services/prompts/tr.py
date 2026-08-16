@@ -676,6 +676,81 @@ SIGNAL_HUMAN_LINES = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# İlişki eksenleri (R2-L1). Sayısal uyum puanı bilinçli olarak YOK.
+# ---------------------------------------------------------------------------
+
+#: Eksen adları. Anahtarlar synastry_service.AXES ile aynı olmalı.
+SYNASTRY_AXIS_NAMES = {
+    "communication": "İletişim",
+    "emotional": "Duygusal dil",
+    "attraction": "Çekim",
+    "bond": "Ortak zemin",
+}
+
+#: Seviye adları — sayısal uyum puanı yerine bunlar gösterilir.
+SYNASTRY_LEVEL_NAMES = {
+    "strong": "Güçlü",
+    "present": "Belirgin",
+    "light": "Hafif",
+    "quiet": "Sessiz",
+}
+
+#: Ton adları — bağın niteliği. "Zorlayıcı" kötü demek değildir; sürtünme
+#: ilişkinin çalıştığı yerdir ve metinler bunu böyle söyler.
+SYNASTRY_TONE_NAMES = {
+    "flowing": "akıcı",
+    "mixed": "karışık",
+    "challenging": "zorlayıcı",
+    "quiet": "sessiz",
+}
+
+#: Eksen × ton cümleleri — gündelik dil, hüküm değil eğilim.
+SYNASTRY_AXIS_LINES = {
+    "communication": {
+        "flowing": ("Konuşmak kolay: birbirinizi anlatmak için fazla "
+                    "kelime harcamanız gerekmiyor."),
+        "mixed": ("Çoğu zaman anlaşıyorsunuz ama bazı konularda aynı "
+                  "kelimeler farklı şeyler anlatıyor."),
+        "challenging": ("İletişim emek istiyor: varsaymak yerine açık "
+                        "cümle kurmak bu ilişkide çok işe yarıyor."),
+        "quiet": "İletişim tarafında belirgin bir bağ ölçülmüyor.",
+    },
+    "emotional": {
+        "flowing": ("Duygusal diliniz benziyor; söylenmeyeni anlamak "
+                    "burada kolay."),
+        "mixed": ("Duygusal zemin sağlam ama ritimleriniz hep aynı anda "
+                  "değil; biriniz kapanırken diğeri yaklaşabiliyor."),
+        "challenging": ("Duyguyu farklı taşıyorsunuz; ihtiyacını söylemek "
+                        "beklemekten daha çok işe yarıyor."),
+        "quiet": "Duygusal eksende belirgin bir bağ ölçülmüyor.",
+    },
+    "attraction": {
+        "flowing": ("Aranızdaki çekim rahat akıyor; yakınlık zorlanmadan "
+                    "kuruluyor."),
+        "mixed": ("Çekim güçlü ama düz bir çizgi değil: yaklaşma ve "
+                  "geri çekilme dönüşümlü olabiliyor."),
+        "challenging": ("Çekim var ama gerilimli; ilgi ile sürtünme aynı "
+                        "yerden besleniyor."),
+        "quiet": "Çekim ekseninde belirgin bir bağ ölçülmüyor.",
+    },
+    "bond": {
+        "flowing": ("Uzun vadeli zemin sağlam; birlikte yürümek doğal "
+                    "geliyor."),
+        "mixed": ("Bağ gerçek ama sorumluluk ve özgürlük dengesi zaman "
+                  "zaman ayar istiyor."),
+        "challenging": ("Zemin ağır: bu ilişki sabır ve sınır istiyor, "
+                        "karşılığında da olgunlaştırıyor."),
+        "quiet": "Ortak zemin ekseninde belirgin bir bağ ölçülmüyor.",
+    },
+}
+
+#: Eksen listesinin altındaki dürüstlük notu.
+SYNASTRY_FOOTNOTE = (
+    "Bu okuma iki doğum haritası arasındaki açılardan hesaplanır. Rytho "
+    "ilişkilere puan vermez: bir ilişki 100 üzerinden ölçülemez, ama "
+    "nerede kolaylaştığı ve nerede emek istediği ölçülebilir.")
+
 #: Zamanlama satırı — kartın altındaki küçük altın çizgi.
 SIGNAL_TIMING_TODAY = "Bugün kesinleşiyor"
 SIGNAL_TIMING_FUTURE = "{date} günü netleşiyor"

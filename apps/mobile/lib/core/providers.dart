@@ -90,6 +90,22 @@ final skyNowProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   return Map<String, dynamic>.from(response.data['data']);
 });
 
+/// Doğum haritası — ÜCRETSİZ katman (R2-F1).
+///
+/// Çark, yerleşimler, evler ve açılar herkese açıktır: bunlar hesaptır,
+/// LLM maliyeti YOKTUR. Kullanıcı ilk dakikada "bu uygulama gerçekten
+/// benim haritamı biliyor" diyebilmeli; ücretli olan, bu haritanın
+/// Rytho tarafından OKUNMASI (natalReportProvider).
+final natalChartProvider =
+    FutureProvider<Map<String, dynamic>?>((ref) async {
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) return null;
+  final dio = ref.watch(apiProvider);
+  final response = await dio.post('/api/v1/astrology/natal-chart',
+      data: birthPayload(profile));
+  return Map<String, dynamic>.from(response.data['data']);
+});
+
 /// Kişisel sinyaller (R2-S1): "Rytho bugün senin için fark etti" kartları.
 ///
 /// HER katmana açık: başlık cümleleri sunucuda ŞABLONLA (LLM'siz) kurulur,

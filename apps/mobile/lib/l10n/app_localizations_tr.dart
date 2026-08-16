@@ -9,16 +9,16 @@ class AppLocalizationsTr extends AppLocalizations {
   AppLocalizationsTr([String locale = 'tr']) : super(locale);
 
   @override
-  String get atlasYearChart => 'Yıl Haritası';
+  String get atlasYearChart => 'Doğum gününden doğum gününe';
 
   @override
-  String get atlasYearChartSubtitle => 'Güneş dönüşü';
+  String get atlasYearChartSubtitle => 'Yıl haritan (güneş dönüşü)';
 
   @override
-  String get atlasInnerCalendar => 'İç Takvim';
+  String get atlasInnerCalendar => 'Önündeki günler';
 
   @override
-  String get atlasInnerCalendarSubtitle => 'Progresyon + transit';
+  String get atlasInnerCalendarSubtitle => 'İç takvim: transit + progresyon';
 
   @override
   String get wizardWelcomeTitle => 'Yolculuk başlıyor';
@@ -644,7 +644,7 @@ class AppLocalizationsTr extends AppLocalizations {
       'Her gün yenilenen ortak okuma. Kalıcı uyum puanı yok.';
 
   @override
-  String get benefitChatTitle => 'Ayda 300 jeton';
+  String get benefitChatTitle => 'Ayda 300 AI kredisi';
 
   @override
   String get benefitChatBody =>
@@ -835,10 +835,10 @@ class AppLocalizationsTr extends AppLocalizations {
   String get bigThreeStart => 'Yolculuğa başla';
 
   @override
-  String get profileSubscriptionRow => 'Abonelik ve jetonlar';
+  String get profileSubscriptionRow => 'Abonelik ve krediler';
 
   @override
-  String get subscriptionScreenTitle => 'Abonelik ve Jetonlar';
+  String get subscriptionScreenTitle => 'Abonelik ve Krediler';
 
   @override
   String get subPlanLabel => 'PLAN';
@@ -884,7 +884,7 @@ class AppLocalizationsTr extends AppLocalizations {
   String get subAllowanceResetsRow => 'Hak tazelenir';
 
   @override
-  String get subBuyTokens => 'Jeton paketi al';
+  String get subBuyTokens => 'Kredi paketi al';
 
   @override
   String get atlasWaitStage1 => 'Gezegenler yerleşiyor';
@@ -1108,7 +1108,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String iChingQuotaTokens(int n) {
-    return 'Çekim bedeli: $n token';
+    return 'Çekim bedeli: $n kredi';
   }
 
   @override
@@ -1819,13 +1819,13 @@ class AppLocalizationsTr extends AppLocalizations {
       'Google Play şu an satın almayı tamamlayamadı. Birkaç dakika sonra tekrar dene.';
 
   @override
-  String get tokenStoreTitle => 'Token Mağazası';
+  String get tokenStoreTitle => 'Kredi Mağazası';
 
   @override
   String get tokenBalanceLabel => 'BAKİYEN';
 
   @override
-  String get tokenUnit => 'token';
+  String get tokenUnit => 'kredi';
 
   @override
   String get tokenAllowanceRow => 'Aylık hak (dönem sonunda yenilenir)';
@@ -1835,14 +1835,14 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tokenRolloverNote =>
-      'Aylık hak dönem sonunda yenilenir ve devretmez; satın aldığın tokenlar hiç yanmaz.';
+      'Aylık hakkın dönem sonunda yenilenir ve devretmez; satın aldığın krediler hiç yanmaz.';
 
   @override
   String get tokenPacksHeader => 'Paketler';
 
   @override
   String tokenPackAmount(int count) {
-    return '$count token';
+    return '$count kredi';
   }
 
   @override
@@ -1860,11 +1860,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get tokenCostsNote =>
-      'Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 token. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.';
+      'Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 kredi. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.';
 
   @override
   String tokenBalanceChip(int count) {
-    return '$count token';
+    return '$count kredi';
   }
 
   @override
@@ -1991,4 +1991,41 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get basisFootnote =>
       'Buradaki her alan hesaplanmış gökyüzü verisidir: konumlar efemeristen, açı ve orb ölçümden gelir. Rytho\'nun yorumu bu ölçümlerin üzerine kurulur — ölçülmeyen söylenmez.';
+
+  @override
+  String get relationshipOpen => 'İlişkiyi incele';
+
+  @override
+  String get relationshipOpenSubtitle =>
+      'İki haritanız nerede kolaylaşıyor, nerede emek istiyor';
+
+  @override
+  String relationshipTitle(String name) {
+    return 'Sen & $name';
+  }
+
+  @override
+  String get relationshipBirthMissing =>
+      'Bu okuma için ikinizin de doğum kaydı gerekiyor. Arkadaşın kaydını tamamladığında burası dolacak.';
+
+  @override
+  String get relationshipBasisTitle => 'Bu eksenin dayanağı';
+
+  @override
+  String get atlasSectionAbout => 'Bana dair';
+
+  @override
+  String get atlasSectionTime => 'Zaman';
+
+  @override
+  String get atlasSectionOther => 'Diğer sistemler';
+
+  @override
+  String get atlasFreeChartNote =>
+      'Çarkın, yerleşimlerin ve açıların ücretsiz. Rytho\'nun derin okuması Rytho+ ile açılır.';
+
+  @override
+  String relationshipAskPrefill(String name, String axis) {
+    return '$name ile ilişkimizde $axis ekseni hakkında konuşalım.';
+  }
 }

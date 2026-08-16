@@ -101,25 +101,25 @@ abstract class AppLocalizations {
   /// No description provided for @atlasYearChart.
   ///
   /// In tr, this message translates to:
-  /// **'Yıl Haritası'**
+  /// **'Doğum gününden doğum gününe'**
   String get atlasYearChart;
 
   /// No description provided for @atlasYearChartSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Güneş dönüşü'**
+  /// **'Yıl haritan (güneş dönüşü)'**
   String get atlasYearChartSubtitle;
 
   /// No description provided for @atlasInnerCalendar.
   ///
   /// In tr, this message translates to:
-  /// **'İç Takvim'**
+  /// **'Önündeki günler'**
   String get atlasInnerCalendar;
 
   /// No description provided for @atlasInnerCalendarSubtitle.
   ///
   /// In tr, this message translates to:
-  /// **'Progresyon + transit'**
+  /// **'İç takvim: transit + progresyon'**
   String get atlasInnerCalendarSubtitle;
 
   /// No description provided for @wizardWelcomeTitle.
@@ -1235,7 +1235,7 @@ abstract class AppLocalizations {
   /// No description provided for @benefitChatTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Ayda 300 jeton'**
+  /// **'Ayda 300 AI kredisi'**
   String get benefitChatTitle;
 
   /// No description provided for @benefitChatBody.
@@ -1595,13 +1595,13 @@ abstract class AppLocalizations {
   /// No description provided for @profileSubscriptionRow.
   ///
   /// In tr, this message translates to:
-  /// **'Abonelik ve jetonlar'**
+  /// **'Abonelik ve krediler'**
   String get profileSubscriptionRow;
 
   /// No description provided for @subscriptionScreenTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Abonelik ve Jetonlar'**
+  /// **'Abonelik ve Krediler'**
   String get subscriptionScreenTitle;
 
   /// No description provided for @subPlanLabel.
@@ -1691,7 +1691,7 @@ abstract class AppLocalizations {
   /// No description provided for @subBuyTokens.
   ///
   /// In tr, this message translates to:
-  /// **'Jeton paketi al'**
+  /// **'Kredi paketi al'**
   String get subBuyTokens;
 
   /// No description provided for @atlasWaitStage1.
@@ -2105,7 +2105,7 @@ abstract class AppLocalizations {
   /// No description provided for @iChingQuotaTokens.
   ///
   /// In tr, this message translates to:
-  /// **'Çekim bedeli: {n} token'**
+  /// **'Çekim bedeli: {n} kredi'**
   String iChingQuotaTokens(int n);
 
   /// No description provided for @iChingJudgmentTitle.
@@ -3341,7 +3341,7 @@ abstract class AppLocalizations {
   /// No description provided for @tokenStoreTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Token Mağazası'**
+  /// **'Kredi Mağazası'**
   String get tokenStoreTitle;
 
   /// No description provided for @tokenBalanceLabel.
@@ -3353,7 +3353,7 @@ abstract class AppLocalizations {
   /// No description provided for @tokenUnit.
   ///
   /// In tr, this message translates to:
-  /// **'token'**
+  /// **'kredi'**
   String get tokenUnit;
 
   /// No description provided for @tokenAllowanceRow.
@@ -3371,7 +3371,7 @@ abstract class AppLocalizations {
   /// No description provided for @tokenRolloverNote.
   ///
   /// In tr, this message translates to:
-  /// **'Aylık hak dönem sonunda yenilenir ve devretmez; satın aldığın tokenlar hiç yanmaz.'**
+  /// **'Aylık hakkın dönem sonunda yenilenir ve devretmez; satın aldığın krediler hiç yanmaz.'**
   String get tokenRolloverNote;
 
   /// No description provided for @tokenPacksHeader.
@@ -3383,7 +3383,7 @@ abstract class AppLocalizations {
   /// No description provided for @tokenPackAmount.
   ///
   /// In tr, this message translates to:
-  /// **'{count} token'**
+  /// **'{count} kredi'**
   String tokenPackAmount(int count);
 
   /// No description provided for @tokenBuy.
@@ -3413,13 +3413,13 @@ abstract class AppLocalizations {
   /// No description provided for @tokenCostsNote.
   ///
   /// In tr, this message translates to:
-  /// **'Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 token. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.'**
+  /// **'Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 kredi. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.'**
   String get tokenCostsNote;
 
   /// No description provided for @tokenBalanceChip.
   ///
   /// In tr, this message translates to:
-  /// **'{count} token'**
+  /// **'{count} kredi'**
   String tokenBalanceChip(int count);
 
   /// No description provided for @atlasSections.
@@ -3613,6 +3613,66 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Buradaki her alan hesaplanmış gökyüzü verisidir: konumlar efemeristen, açı ve orb ölçümden gelir. Rytho\'nun yorumu bu ölçümlerin üzerine kurulur — ölçülmeyen söylenmez.'**
   String get basisFootnote;
+
+  /// No description provided for @relationshipOpen.
+  ///
+  /// In tr, this message translates to:
+  /// **'İlişkiyi incele'**
+  String get relationshipOpen;
+
+  /// No description provided for @relationshipOpenSubtitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'İki haritanız nerede kolaylaşıyor, nerede emek istiyor'**
+  String get relationshipOpenSubtitle;
+
+  /// No description provided for @relationshipTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sen & {name}'**
+  String relationshipTitle(String name);
+
+  /// No description provided for @relationshipBirthMissing.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu okuma için ikinizin de doğum kaydı gerekiyor. Arkadaşın kaydını tamamladığında burası dolacak.'**
+  String get relationshipBirthMissing;
+
+  /// No description provided for @relationshipBasisTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu eksenin dayanağı'**
+  String get relationshipBasisTitle;
+
+  /// No description provided for @atlasSectionAbout.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bana dair'**
+  String get atlasSectionAbout;
+
+  /// No description provided for @atlasSectionTime.
+  ///
+  /// In tr, this message translates to:
+  /// **'Zaman'**
+  String get atlasSectionTime;
+
+  /// No description provided for @atlasSectionOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer sistemler'**
+  String get atlasSectionOther;
+
+  /// No description provided for @atlasFreeChartNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çarkın, yerleşimlerin ve açıların ücretsiz. Rytho\'nun derin okuması Rytho+ ile açılır.'**
+  String get atlasFreeChartNote;
+
+  /// No description provided for @relationshipAskPrefill.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} ile ilişkimizde {axis} ekseni hakkında konuşalım.'**
+  String relationshipAskPrefill(String name, String axis);
 }
 
 class _AppLocalizationsDelegate

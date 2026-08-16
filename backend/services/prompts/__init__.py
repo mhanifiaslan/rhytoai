@@ -577,6 +577,42 @@ def localize_signals(lang: str | None, data: dict | None) -> dict:
     return sonuç
 
 
+def localize_relationship_axes(lang: str | None, data: dict | None) -> dict:
+    """İlişki eksenlerini (R2-L1) isteğin diline çevirir.
+
+    Sayısal uyum puanı YOK — seviye adı ve gündelik dil cümlesi var; her
+    eksenin dayanağı (gerçek açılar + ölçülen orb) olduğu gibi taşınır.
+    """
+    if not data:
+        return {}
+    p = get(lang)
+
+    def eksen(e: dict) -> dict:
+        anahtar = e.get("axis")
+        seviye = e.get("level") or "quiet"
+        ton = e.get("tone") or "quiet"
+        # Seviye "sessiz"se ton ne olursa olsun sessiz cümle: ölçülmemiş
+        # bir bağa nitelik atfetmeyiz.
+        cumle_tonu = "quiet" if seviye == "quiet" else ton
+        return {**e,
+                "axis_local": p.SYNASTRY_AXIS_NAMES.get(anahtar, anahtar),
+                "level_local": p.SYNASTRY_LEVEL_NAMES.get(seviye, seviye),
+                "tone_local": p.SYNASTRY_TONE_NAMES.get(ton, ton),
+                "line": p.SYNASTRY_AXIS_LINES.get(anahtar, {}).get(
+                    cumle_tonu, ""),
+                "basis": [
+                    {**b,
+                     "p1_local": planet_name(lang, b.get("p1")),
+                     "p2_local": planet_name(lang, b.get("p2")),
+                     "aspect_local": aspect_name(lang, b.get("aspect"))}
+                    for b in (e.get("basis") or [])
+                ]}
+
+    return {**data,
+            "axes": [eksen(e) for e in (data.get("axes") or [])],
+            "footnote": p.SYNASTRY_FOOTNOTE}
+
+
 def localize_synastry(lang: str | None, synastry: dict | None) -> dict:
     """Sinastri çıktısındaki iki kişinin nokta adlarını ve açıları çevirir."""
     if not synastry:

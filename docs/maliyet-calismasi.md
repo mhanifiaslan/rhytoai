@@ -109,6 +109,22 @@ Fiyat merdiveni (ileri adımlar, şimdi uygulanmaz):
 | Önbellek kaçağı çifte harcama | ✅ (mevcut) harcama yalnız cache-miss'te; üretim hatasında iade |
 | Fiyat KDV sürprizi | ✅ (B3) alıcı KDV dahil fiyatı görür; tablolar buna göre |
 
+## 6b. R2 programının maliyet etkisi (2026-08-16)
+
+| Yenilik | LLM maliyeti | Not |
+|---|---|---|
+| Sinyaller — şablon başlık (her katman) | **$0** | tema × ton tablosu, LLM yok |
+| Sinyaller — abone yorumu | ~$0,0009/gün/abone | 3 sinyal TEK çağrı, 24s önbellek → ~$0,027/ay |
+| Sabah bildirimi (sinyalden) | **$0** | şablon; eski paylaşımlı LLM satırı yalnız yedek |
+| İlişki eksenleri (sinastri) | **$0** | efemeris hesabı, 30 gün önbellek |
+| Ücretsiz temel harita (R2-F1) | **$0** | çark/yerleşim/açı hesabı zaten LLM'siz uçta |
+
+**Sonuç: marj matematiği değişmedi.** Abone başına aylık LLM maliyeti en
+kötü senaryoda ~$0,70'ten ~$0,73'e çıkıyor (%77 → %76 marj). Ücretsiz
+katmana açılan harita, LLM maliyeti olmadığı için ücretsiz kullanıcı
+maliyetini artırmaz; karşılığında ilk-değer ve dönüşüm beklentisi yükselir
+(analiz: "kullanıcı önce 'bu uygulama bana bir şey söylüyor' demeli").
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

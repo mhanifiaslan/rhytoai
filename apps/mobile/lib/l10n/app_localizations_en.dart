@@ -9,16 +9,17 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get atlasYearChart => 'Year Chart';
+  String get atlasYearChart => 'Birthday to birthday';
 
   @override
-  String get atlasYearChartSubtitle => 'Solar return';
+  String get atlasYearChartSubtitle => 'Your year chart (solar return)';
 
   @override
-  String get atlasInnerCalendar => 'Inner Calendar';
+  String get atlasInnerCalendar => 'The days ahead';
 
   @override
-  String get atlasInnerCalendarSubtitle => 'Progressions + transits';
+  String get atlasInnerCalendarSubtitle =>
+      'Inner calendar: transits + progressions';
 
   @override
   String get wizardWelcomeTitle => 'The journey begins';
@@ -643,7 +644,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'A shared reading that renews each day. No fixed compatibility score.';
 
   @override
-  String get benefitChatTitle => '300 tokens a month';
+  String get benefitChatTitle => '300 AI credits a month';
 
   @override
   String get benefitChatBody =>
@@ -834,10 +835,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bigThreeStart => 'Begin the journey';
 
   @override
-  String get profileSubscriptionRow => 'Subscription & tokens';
+  String get profileSubscriptionRow => 'Subscription & credits';
 
   @override
-  String get subscriptionScreenTitle => 'Subscription & Tokens';
+  String get subscriptionScreenTitle => 'Subscription & Credits';
 
   @override
   String get subPlanLabel => 'PLAN';
@@ -883,7 +884,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get subAllowanceResetsRow => 'Refreshes on';
 
   @override
-  String get subBuyTokens => 'Buy a token pack';
+  String get subBuyTokens => 'Buy a credit pack';
 
   @override
   String get atlasWaitStage1 => 'Placing the planets';
@@ -1108,7 +1109,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String iChingQuotaTokens(int n) {
-    return 'Cast cost: $n tokens';
+    return 'Cast cost: $n credits';
   }
 
   @override
@@ -1821,13 +1822,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google Play couldn\'t complete the purchase right now. Please try again in a few minutes.';
 
   @override
-  String get tokenStoreTitle => 'Token Store';
+  String get tokenStoreTitle => 'Credit Store';
 
   @override
   String get tokenBalanceLabel => 'YOUR BALANCE';
 
   @override
-  String get tokenUnit => 'tokens';
+  String get tokenUnit => 'credits';
 
   @override
   String get tokenAllowanceRow => 'Monthly allowance (renews each period)';
@@ -1837,14 +1838,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tokenRolloverNote =>
-      'Your monthly allowance renews each period and doesn\'t roll over; purchased tokens never expire.';
+      'Your monthly allowance renews each period and doesn\'t roll over; purchased credits never expire.';
 
   @override
   String get tokenPacksHeader => 'Packs';
 
   @override
   String tokenPackAmount(int count) {
-    return '$count tokens';
+    return '$count credits';
   }
 
   @override
@@ -1862,11 +1863,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tokenCostsNote =>
-      'Chat message 1 · I Ching 2 · daily dyad 3 · deep reports and face reading 5 tokens. Revisiting a report you\'ve already generated is free.';
+      'Chat message 1 · I Ching 2 · daily dyad 3 · deep reports and face reading 5 credits. Revisiting a report you\'ve already generated is free.';
 
   @override
   String tokenBalanceChip(int count) {
-    return '$count tokens';
+    return '$count credits';
   }
 
   @override
@@ -1993,4 +1994,41 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get basisFootnote =>
       'Every field here is computed sky data: positions come from the ephemeris, the aspect and orb are measured. Rytho\'s reading is built on these measurements — nothing unmeasured is claimed.';
+
+  @override
+  String get relationshipOpen => 'Explore the relationship';
+
+  @override
+  String get relationshipOpenSubtitle =>
+      'Where your two charts flow, and where they take work';
+
+  @override
+  String relationshipTitle(String name) {
+    return 'You & $name';
+  }
+
+  @override
+  String get relationshipBirthMissing =>
+      'This reading needs both birth records. Once your friend completes theirs, this fills in.';
+
+  @override
+  String get relationshipBasisTitle => 'What this axis rests on';
+
+  @override
+  String get atlasSectionAbout => 'About you';
+
+  @override
+  String get atlasSectionTime => 'Time';
+
+  @override
+  String get atlasSectionOther => 'Other systems';
+
+  @override
+  String get atlasFreeChartNote =>
+      'Your wheel, placements and aspects are free. Rytho\'s deep reading unlocks with Rytho+.';
+
+  @override
+  String relationshipAskPrefill(String name, String axis) {
+    return 'Let\'s talk about the $axis axis in my relationship with $name.';
+  }
 }

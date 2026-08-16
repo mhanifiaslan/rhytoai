@@ -498,6 +498,64 @@ def dyad(req: DyadRequest,
     }}
 
 
+@router.post("/relationship")
+def relationship(req: DyadRequest,
+                 user: AuthUser = Depends(get_current_user),
+                 lang: str = Depends(get_language)):
+    """Arkadaşla ilişki eksenleri (R2-L1) — nitel okuma, sayısal puan YOK.
+
+    Mevcut ``/synastry`` ucu iki kişinin doğum verisini İSTEMCİDEN alıyor;
+    arkadaş için kullanılamaz — arkadaşın doğum tarihi/saati/yeri istemciye
+    hiçbir zaman gitmemeli (dyad ucundaki kural). Burada istemci yalnız
+    arkadaşın kimliğini gönderir, iki profili de sunucu okur ve yanıtta ham
+    doğum verisi DÖNMEZ: yalnız eksen seviyeleri ve dayanak açılar.
+
+    LLM yok, jeton yok, abonelik yok: bu bir HESAP. Kullanıcı ilişkisinin
+    haritasını görür; derin yorum (``/dyad``) ücretli katmanda kalır —
+    "hesap bedava, yorum paralı" ayrımı (maliyet çalışması, freemium).
+    """
+    if req.friend_uid == user.uid:
+        raise HTTPException(status_code=400, detail=text("dyad.self", lang))
+    if not profile_service.are_friends(user.uid, req.friend_uid):
+        raise HTTPException(status_code=403,
+                            detail=text("dyad.not_friends", lang))
+
+    me = profile_service.get_profile(user.uid)
+    friend = profile_service.get_profile(req.friend_uid)
+    if not me or not friend:
+        raise HTTPException(status_code=404,
+                            detail=text("dyad.profile_missing", lang))
+    if not (chart_context.has_birth_data(me)
+            and chart_context.has_birth_data(friend)):
+        # Varsayılan doğum verisiyle hesaplanan ilişkiyi "sizin haritanız"
+        # diye sunmak veri uydurmaktır (chart_context kuralı).
+        return {"status": "success",
+                "data": {"axes": [], "reason": "birth_missing"}}
+
+    try:
+        from services import synastry_service
+
+        # Önbellek çift bazlı ve simetrik: aynı ikili için tek hesap.
+        ikili = "-".join(sorted((user.uid, req.friend_uid)))
+        anahtar = (f"rel-axes-{synastry_service.SYNASTRY_CALC_VERSION}-"
+                   f"{ikili}")
+        eksenler = cache.get(anahtar)
+        if eksenler is None:
+            ham = astro_service.get_synastry(
+                profile_service.birth_kwargs(me),
+                profile_service.birth_kwargs(friend))
+            eksenler = synastry_service.relationship_axes(ham)
+            # Natal veriye bağlı: doğum verisi değişmedikçe geçerli.
+            cache.set(anahtar, eksenler, ttl_seconds=30 * 24 * 3600,
+                      owner_uid=user.uid)
+        return {"status": "success",
+                "data": prompts.localize_relationship_axes(lang, eksenler)}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise _internal(e, "relationship", lang)
+
+
 @router.post("/synastry")
 def synastry(req: SynastryReportRequest,
              user: AuthUser = Depends(require_plus("synastry")),

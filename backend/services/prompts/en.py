@@ -705,6 +705,82 @@ SIGNAL_HUMAN_LINES = {
     },
 }
 
+# ---------------------------------------------------------------------------
+# Relationship axes (R2-L1). A numeric compatibility score is deliberately
+# absent.
+# ---------------------------------------------------------------------------
+
+#: Axis names. Keys must match synastry_service.AXES.
+SYNASTRY_AXIS_NAMES = {
+    "communication": "Communication",
+    "emotional": "Emotional language",
+    "attraction": "Attraction",
+    "bond": "Common ground",
+}
+
+#: Level names — shown instead of a compatibility number.
+SYNASTRY_LEVEL_NAMES = {
+    "strong": "Strong",
+    "present": "Clear",
+    "light": "Light",
+    "quiet": "Quiet",
+}
+
+#: Tone names — the quality of the link. "Challenging" does not mean bad;
+#: friction is where a relationship does its work, and the lines say so.
+SYNASTRY_TONE_NAMES = {
+    "flowing": "flowing",
+    "mixed": "mixed",
+    "challenging": "challenging",
+    "quiet": "quiet",
+}
+
+#: Axis × tone lines — plain language, tendency rather than verdict.
+SYNASTRY_AXIS_LINES = {
+    "communication": {
+        "flowing": ("Talking is easy: you don't need many words to make "
+                    "yourselves understood."),
+        "mixed": ("You understand each other most of the time, but on some "
+                  "subjects the same words mean different things."),
+        "challenging": ("Communication takes effort here: plain sentences "
+                        "work far better than assumptions."),
+        "quiet": "No marked link is measured on the communication axis.",
+    },
+    "emotional": {
+        "flowing": ("Your emotional languages are alike; the unsaid is easy "
+                    "to read here."),
+        "mixed": ("The emotional ground is solid, but your rhythms don't "
+                  "always match — one may withdraw as the other moves in."),
+        "challenging": ("You carry feeling differently; saying what you "
+                        "need works better than waiting to be read."),
+        "quiet": "No marked link is measured on the emotional axis.",
+    },
+    "attraction": {
+        "flowing": ("The pull between you moves easily; closeness builds "
+                    "without force."),
+        "mixed": ("The pull is strong but not a straight line: approach and "
+                  "retreat can take turns."),
+        "challenging": ("There's attraction, but it runs hot: interest and "
+                        "friction feed from the same place."),
+        "quiet": "No marked link is measured on the attraction axis.",
+    },
+    "bond": {
+        "flowing": ("The long-term ground is solid; walking together comes "
+                    "naturally."),
+        "mixed": ("The bond is real, though the balance of duty and freedom "
+                  "needs adjusting now and then."),
+        "challenging": ("The ground is heavy: this one asks for patience "
+                        "and boundaries, and it matures you in return."),
+        "quiet": "No marked link is measured on the common-ground axis.",
+    },
+}
+
+#: The honesty note under the axis list.
+SYNASTRY_FOOTNOTE = (
+    "This reading is computed from the aspects between two birth charts. "
+    "Rytho does not score relationships: a relationship can't be measured "
+    "out of 100, but where it flows and where it takes work can be.")
+
 #: Timing line — the small gold line under the card.
 SIGNAL_TIMING_TODAY = "Perfects today"
 SIGNAL_TIMING_FUTURE = "Peaks on {date}"

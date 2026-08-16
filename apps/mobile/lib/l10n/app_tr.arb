@@ -1,9 +1,9 @@
 {
   "@@locale": "tr",
-  "atlasYearChart": "Yıl Haritası",
-  "atlasYearChartSubtitle": "Güneş dönüşü",
-  "atlasInnerCalendar": "İç Takvim",
-  "atlasInnerCalendarSubtitle": "Progresyon + transit",
+  "atlasYearChart": "Doğum gününden doğum gününe",
+  "atlasYearChartSubtitle": "Yıl haritan (güneş dönüşü)",
+  "atlasInnerCalendar": "Önündeki günler",
+  "atlasInnerCalendarSubtitle": "İç takvim: transit + progresyon",
   "wizardWelcomeTitle": "Yolculuk başlıyor",
   "wizardWelcomeBody": "Birkaç adımda haritanı çizeceğiz: doğduğun an, gökyüzünün o anki hâli. Her adımda bir yıldız yanacak.",
   "wizardConsentLabel": "Kullanım Şartları'nı ve Gizlilik Politikası'nı okudum, kabul ediyorum. 13 yaşından büyüğüm.",
@@ -299,7 +299,7 @@
   "benefitNatalBody": "Gezegenler, evler ve açılar; tek seferlik yüzeysel özet değil.",
   "benefitDyadTitle": "Arkadaşlarınla günlük ikili dinamik",
   "benefitDyadBody": "Her gün yenilenen ortak okuma. Kalıcı uyum puanı yok.",
-  "benefitChatTitle": "Ayda 300 jeton",
+  "benefitChatTitle": "Ayda 300 AI kredisi",
   "benefitChatBody": "Sohbette, raporlarda ve çekimlerde dilediğin gibi harca; Rytho seni tanıdıkça konuşma derinleşir.",
   "benefitBaziTitle": "BaZi ve sinastri",
   "benefitBaziBody": "Dört Sütun analizi ve ikili harita karşılaştırması.",
@@ -366,8 +366,8 @@
   "bigThreeMoon": "AY",
   "bigThreeAscendant": "YÜKSELEN",
   "bigThreeStart": "Yolculuğa başla",
-  "profileSubscriptionRow": "Abonelik ve jetonlar",
-  "subscriptionScreenTitle": "Abonelik ve Jetonlar",
+  "profileSubscriptionRow": "Abonelik ve krediler",
+  "subscriptionScreenTitle": "Abonelik ve Krediler",
   "subPlanLabel": "PLAN",
   "subPlanFree": "Ücretsiz",
   "subPlanFreeBody": "Kişiye özel günlük okuma, natal rapor, BaZi, Yıl Haritası ve İç Takvim Rytho+ ile açılır.",
@@ -382,7 +382,7 @@
   "subRestoreDone": "Aboneliğin geri yüklendi ✨",
   "subMonthlyAllowanceRow": "Aylık hak",
   "subAllowanceResetsRow": "Hak tazelenir",
-  "subBuyTokens": "Jeton paketi al",
+  "subBuyTokens": "Kredi paketi al",
   "atlasWaitStage1": "Gezegenler yerleşiyor",
   "atlasWaitStage2": "Açılar okunuyor",
   "atlasWaitStage3": "Raporun yazılıyor",
@@ -492,7 +492,7 @@
       }
     }
   },
-  "iChingQuotaTokens": "Çekim bedeli: {n} token",
+  "iChingQuotaTokens": "Çekim bedeli: {n} kredi",
   "@iChingQuotaTokens": {
     "placeholders": {
       "n": {
@@ -869,14 +869,14 @@
   "purchaseAlreadyOwned": "Bu Google hesabında zaten etkin bir abonelik var — satın alımların geri yükleniyor…",
   "purchaseItemUnavailable": "Ürün mağazada bulunamadı. Play Store'da test kanalına katılan Google hesabının seçili olduğundan emin olup tekrar dene.",
   "purchaseStoreProblem": "Google Play şu an satın almayı tamamlayamadı. Birkaç dakika sonra tekrar dene.",
-  "tokenStoreTitle": "Token Mağazası",
+  "tokenStoreTitle": "Kredi Mağazası",
   "tokenBalanceLabel": "BAKİYEN",
-  "tokenUnit": "token",
+  "tokenUnit": "kredi",
   "tokenAllowanceRow": "Aylık hak (dönem sonunda yenilenir)",
   "tokenPurchasedRow": "Satın alınan (aya devreder)",
-  "tokenRolloverNote": "Aylık hak dönem sonunda yenilenir ve devretmez; satın aldığın tokenlar hiç yanmaz.",
+  "tokenRolloverNote": "Aylık hakkın dönem sonunda yenilenir ve devretmez; satın aldığın krediler hiç yanmaz.",
   "tokenPacksHeader": "Paketler",
-  "tokenPackAmount": "{count} token",
+  "tokenPackAmount": "{count} kredi",
   "@tokenPackAmount": {
     "placeholders": {
       "count": {
@@ -888,8 +888,8 @@
   "tokenPurchaseDone": "Paket yüklendi. İyi okumalar ✨",
   "tokenPacksUnavailable": "Paketler şu an listelenemiyor",
   "tokenPacksUnavailableBody": "Mağaza bağlantısı kurulamadı. Biraz sonra tekrar dene.",
-  "tokenCostsNote": "Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 token. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.",
-  "tokenBalanceChip": "{count} token",
+  "tokenCostsNote": "Sohbet mesajı 1 · I Ching 2 · ikili dinamik 3 · derin raporlar ve yüz okuma 5 kredi. Daha önce ürettiğin bir rapora yeniden bakmak ücretsizdir.",
+  "tokenBalanceChip": "{count} kredi",
   "@tokenBalanceChip": {
     "placeholders": {
       "count": {
@@ -963,5 +963,32 @@
     }
   },
   "basisSynthesis": "Rytho'nun yorumu",
-  "basisFootnote": "Buradaki her alan hesaplanmış gökyüzü verisidir: konumlar efemeristen, açı ve orb ölçümden gelir. Rytho'nun yorumu bu ölçümlerin üzerine kurulur — ölçülmeyen söylenmez."
+  "basisFootnote": "Buradaki her alan hesaplanmış gökyüzü verisidir: konumlar efemeristen, açı ve orb ölçümden gelir. Rytho'nun yorumu bu ölçümlerin üzerine kurulur — ölçülmeyen söylenmez.",
+  "relationshipOpen": "İlişkiyi incele",
+  "relationshipOpenSubtitle": "İki haritanız nerede kolaylaşıyor, nerede emek istiyor",
+  "relationshipTitle": "Sen & {name}",
+  "@relationshipTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "relationshipBirthMissing": "Bu okuma için ikinizin de doğum kaydı gerekiyor. Arkadaşın kaydını tamamladığında burası dolacak.",
+  "relationshipBasisTitle": "Bu eksenin dayanağı",
+  "atlasSectionAbout": "Bana dair",
+  "atlasSectionTime": "Zaman",
+  "atlasSectionOther": "Diğer sistemler",
+  "atlasFreeChartNote": "Çarkın, yerleşimlerin ve açıların ücretsiz. Rytho'nun derin okuması Rytho+ ile açılır.",
+  "relationshipAskPrefill": "{name} ile ilişkimizde {axis} ekseni hakkında konuşalım.",
+  "@relationshipAskPrefill": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "axis": {
+        "type": "String"
+      }
+    }
+  }
 }

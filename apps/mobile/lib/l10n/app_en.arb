@@ -1,9 +1,9 @@
 {
   "@@locale": "en",
-  "atlasYearChart": "Year Chart",
-  "atlasYearChartSubtitle": "Solar return",
-  "atlasInnerCalendar": "Inner Calendar",
-  "atlasInnerCalendarSubtitle": "Progressions + transits",
+  "atlasYearChart": "Birthday to birthday",
+  "atlasYearChartSubtitle": "Your year chart (solar return)",
+  "atlasInnerCalendar": "The days ahead",
+  "atlasInnerCalendarSubtitle": "Inner calendar: transits + progressions",
   "wizardWelcomeTitle": "The journey begins",
   "wizardWelcomeBody": "A few steps and your chart is drawn: the moment you were born, the sky exactly as it stood. A star lights up at every step.",
   "wizardConsentLabel": "I have read and accept the Terms of Use and Privacy Policy. I am over 13.",
@@ -299,7 +299,7 @@
   "benefitNatalBody": "Planets, houses and aspects — not a one-off surface summary.",
   "benefitDyadTitle": "Daily dynamic with your friends",
   "benefitDyadBody": "A shared reading that renews each day. No fixed compatibility score.",
-  "benefitChatTitle": "300 tokens a month",
+  "benefitChatTitle": "300 AI credits a month",
   "benefitChatBody": "Spend them freely on chat, reports and castings; the more Rytho knows you, the deeper it goes.",
   "benefitBaziTitle": "BaZi and synastry",
   "benefitBaziBody": "Four Pillars analysis and chart-to-chart comparison.",
@@ -366,8 +366,8 @@
   "bigThreeMoon": "MOON",
   "bigThreeAscendant": "ASCENDANT",
   "bigThreeStart": "Begin the journey",
-  "profileSubscriptionRow": "Subscription & tokens",
-  "subscriptionScreenTitle": "Subscription & Tokens",
+  "profileSubscriptionRow": "Subscription & credits",
+  "subscriptionScreenTitle": "Subscription & Credits",
   "subPlanLabel": "PLAN",
   "subPlanFree": "Free",
   "subPlanFreeBody": "Your personalised daily reading, natal report, BaZi, Year Chart and Inner Calendar open with Rytho+.",
@@ -382,7 +382,7 @@
   "subRestoreDone": "Your subscription is back ✨",
   "subMonthlyAllowanceRow": "Monthly allowance",
   "subAllowanceResetsRow": "Refreshes on",
-  "subBuyTokens": "Buy a token pack",
+  "subBuyTokens": "Buy a credit pack",
   "atlasWaitStage1": "Placing the planets",
   "atlasWaitStage2": "Reading the aspects",
   "atlasWaitStage3": "Writing your report",
@@ -492,7 +492,7 @@
       }
     }
   },
-  "iChingQuotaTokens": "Cast cost: {n} tokens",
+  "iChingQuotaTokens": "Cast cost: {n} credits",
   "@iChingQuotaTokens": {
     "placeholders": {
       "n": {
@@ -869,14 +869,14 @@
   "purchaseAlreadyOwned": "This Google account already has an active subscription — restoring your purchases…",
   "purchaseItemUnavailable": "The product couldn't be found in the store. Make sure the Google account that joined the test track is selected in Play Store, then try again.",
   "purchaseStoreProblem": "Google Play couldn't complete the purchase right now. Please try again in a few minutes.",
-  "tokenStoreTitle": "Token Store",
+  "tokenStoreTitle": "Credit Store",
   "tokenBalanceLabel": "YOUR BALANCE",
-  "tokenUnit": "tokens",
+  "tokenUnit": "credits",
   "tokenAllowanceRow": "Monthly allowance (renews each period)",
   "tokenPurchasedRow": "Purchased (rolls over)",
-  "tokenRolloverNote": "Your monthly allowance renews each period and doesn't roll over; purchased tokens never expire.",
+  "tokenRolloverNote": "Your monthly allowance renews each period and doesn't roll over; purchased credits never expire.",
   "tokenPacksHeader": "Packs",
-  "tokenPackAmount": "{count} tokens",
+  "tokenPackAmount": "{count} credits",
   "@tokenPackAmount": {
     "placeholders": {
       "count": {
@@ -888,8 +888,8 @@
   "tokenPurchaseDone": "Pack added. Enjoy your readings ✨",
   "tokenPacksUnavailable": "Packs can't be listed right now",
   "tokenPacksUnavailableBody": "Couldn't reach the store. Please try again shortly.",
-  "tokenCostsNote": "Chat message 1 · I Ching 2 · daily dyad 3 · deep reports and face reading 5 tokens. Revisiting a report you've already generated is free.",
-  "tokenBalanceChip": "{count} tokens",
+  "tokenCostsNote": "Chat message 1 · I Ching 2 · daily dyad 3 · deep reports and face reading 5 credits. Revisiting a report you've already generated is free.",
+  "tokenBalanceChip": "{count} credits",
   "@tokenBalanceChip": {
     "placeholders": {
       "count": {
@@ -942,5 +942,15 @@
   "basisExact": "Exact on",
   "basisHouse": "house {house}",
   "basisSynthesis": "Rytho's reading",
-  "basisFootnote": "Every field here is computed sky data: positions come from the ephemeris, the aspect and orb are measured. Rytho's reading is built on these measurements — nothing unmeasured is claimed."
+  "basisFootnote": "Every field here is computed sky data: positions come from the ephemeris, the aspect and orb are measured. Rytho's reading is built on these measurements — nothing unmeasured is claimed.",
+  "relationshipOpen": "Explore the relationship",
+  "relationshipOpenSubtitle": "Where your two charts flow, and where they take work",
+  "relationshipTitle": "You & {name}",
+  "relationshipBirthMissing": "This reading needs both birth records. Once your friend completes theirs, this fills in.",
+  "relationshipBasisTitle": "What this axis rests on",
+  "atlasSectionAbout": "About you",
+  "atlasSectionTime": "Time",
+  "atlasSectionOther": "Other systems",
+  "atlasFreeChartNote": "Your wheel, placements and aspects are free. Rytho's deep reading unlocks with Rytho+.",
+  "relationshipAskPrefill": "Let's talk about the {axis} axis in my relationship with {name}."
 }
