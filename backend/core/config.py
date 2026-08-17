@@ -21,7 +21,28 @@ DEV_MODE: bool = os.getenv("RYTHO_DEV_MODE", "1") == "1"
 # calistirma admin uclarini acardi. Uretimde ASLA 1 olmamali.
 DEV_ADMIN: bool = os.getenv("RYTHO_DEV_ADMIN", "0") == "1"
 
-GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+# SABİT SÜRÜM — takma ad DEĞİL (S-turu).
+#
+# Varsayılan `gemini-flash-latest` idi ve bu bir takma ad: arkasındaki model
+# haber vermeden değişiyor. Değişti de. Ölçülen sonuç: `thinking_budget: 0`
+# artık uygulanmıyor, `thinking_level: "minimal"` ise 400 veriyor. Aynı soru
+# 6 kez soruldu, **3'ü** düşünme bütçeyi yiyip kesildi ve kullanıcıya yarım
+# cümle gösterildi. Yani bir gece içinde, biz hiçbir şey değiştirmeden,
+# sohbetin yarısı bozuldu.
+#
+# Aday karşılaştırması (aynı soru, aynı ayar, 4'er çağrı):
+#
+#     gemini-flash-latest   2/4 kesik   ort. 191 token boşa düşünme
+#     gemini-3.7-flash      2/4 kesik   ort. 196 token boşa düşünme
+#     gemini-3.5-flash      0/4 kesik   0 düşünme   en düşük gecikme
+#
+# `gemini-3.5-flash` düşünme kontrolüne uyan tek aday. Yan fayda maliyet:
+# düşünme token'ları ÇIKTI fiyatından faturalanıyor ($2,50/M), yani boşa
+# düşünme sohbet turu başına ~%24 ek gider demekti.
+#
+# Model yükseltmesi artık BİLİNÇLİ bir karar: `GEMINI_MODEL` ortam
+# değişkeniyle denenir, ölçülür, sonra varsayılan değiştirilir.
+GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "gemini-embedding-2")
 
 # Bilgi tabanı dizini: Docker imajında /app/knowledge, lokalde repo kökü.

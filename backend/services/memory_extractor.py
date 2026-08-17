@@ -54,6 +54,16 @@ _SCHEMA = {
             },
         },
         "mood": {"type": "string"},
+        # Yoğunluk ve ihtiyaç (S-turu). Tek kelimelik ruh hali yetmiyordu:
+        # "biraz kaygılıyım" ile "dağılmak üzereyim" aynı satıra düşüyor ve
+        # model ikisine de aynı tonda cevap veriyordu.
+        "intensity": {"type": "string", "enum": ["low", "medium", "high"]},
+        # Kullanıcının o an ARADIĞI şey. Aynı soru farklı ihtiyaçla
+        # sorulabilir: "ne yapmalıyım" bazen yön ister, bazen sadece
+        # anlaşılmak.
+        "needs": {"type": "string",
+                  "enum": ["information", "direction", "understanding",
+                           "rest"]},
     },
     "required": ["facts"],
 }
@@ -75,6 +85,17 @@ KURALLAR:
 - Çıkarılacak kalıcı bir şey yoksa boş liste döndür. Uydurma.
 - `mood`: kullanıcının bu konuşmadaki baskın ruh hali, tek kelime. Belirsizse
   boş bırak.
+- `intensity`: o ruh halinin şiddeti — low (hafif değinmiş), medium (belirgin
+  ve konuşmanın merkezinde), high (taşıyamadığını söylüyor). Ruh hali yoksa
+  boş bırak. ABARTMA: sıradan bir yorgunluk "high" değildir.
+- `needs`: kullanıcının bu turda ARADIĞI şey —
+  information (bilgi/açıklama), direction (yön/karar desteği),
+  understanding (anlaşılmak, dinlenmek), rest (yalnızca boşalmak, cevap
+  beklemiyor). Emin değilsen boş bırak.
+
+- `sensitivity` kategorisi: kullanıcı bir konunun konuşulmasını İSTEMEDİĞİNİ
+  söylerse bunu kalıcı olarak kaydet ("babasından söz edilmesini istemiyor"
+  gibi). Bu kategori bir yasak listesidir, merak listesi değil.
 
 KATEGORİLER: {kategoriler}
 
@@ -135,7 +156,10 @@ def extract_and_store(uid: str, history: list[dict[str, Any]],
 
         mood = str(data.get("mood") or "").strip()
         if mood:
-            memory_service.record_mood(uid, mood)
+            memory_service.record_mood(
+                uid, mood,
+                intensity=str(data.get("intensity") or "").strip().lower(),
+                needs=str(data.get("needs") or "").strip().lower())
 
         logger.info("Hafıza güncellendi: uid=%s olgu=%d", uid, len(facts))
         return memory

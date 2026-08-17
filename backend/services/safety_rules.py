@@ -187,6 +187,76 @@ def _normalize(text: str) -> str:
     return text.translate(_FOLD).lower().replace("̇", "")
 
 
+#: KRİZ İŞARETLERİ — kullanıcının KENDİSİ zor durumda (S-turu).
+#:
+#: ## Neden yasak-konu kapısından ayrı
+#:
+#: Yasak konu kapısı iki işaret arıyor: konu VE cevap talebi. Bu doğru bir
+#: darlık ("annem hasta, üzgünüm" engellenmemeli). Ama krizde olan biri
+#: SORU SORMAZ; "artık yaşamak istemiyorum" der ve orada durur. İki işaret
+#: aramak, bu cümlenin kapıdan geçmesi demekti — ölçüldü, geçiyordu:
+#: doğrudan astroloji modeline gidiyor ve persona gereği "önce duyguyu
+#: kabul et, sonra kozmik pencere aç" cevabı alıyordu.
+#:
+#: Bu yüzden burada TEK işaret yeter.
+#:
+#: ## Darlık nasıl korunuyor
+#:
+#: Kalıplar niyet bildiren tam ifadelere bağlı, tek kelimeye değil.
+#: "bitirmek" tek başına yok ("bu işi bitirmek istiyorum" krize girmez);
+#: "hayatımı bitirmek" var. Yanlış pozitif riski bilinçli kabul edilir:
+#: krizde olmayan birine yardım hattı göstermek, gerçekten krizde olana
+#: burç yorumu vermekten kat kat iyidir.
+_CRISIS_PATTERNS: dict[str, str] = {
+    "tr": (
+        r"intihar"
+        r"|kendimi oldur|kendime zarar|canima kiy"
+        r"|yasamak istemiyorum|yasamak istemiyor"
+        r"|olmek istiyorum|olsem keske|keske olsem"
+        r"|hayatima son|hayatimi bitir|her seye son ver"
+        r"|yasamanin anlami kalmadi|yasamak icin bir sebep"
+        r"|dayanacak gucum kalmadi|artik dayanamiyorum"
+        # Şiddet mağduriyeti: astroloji sorusu değil, güvenlik meselesi.
+        r"|siddet uygul|dovuyor|tehdit ediyor|beni doviyor"
+        r"|tacize ugra|tecavuz"
+        # Akut panik: "geçirdim" (geçmiş) değil, ŞU AN.
+        r"|panik atak geciriyorum|nefes alamiyorum"
+    ),
+    "en": (
+        r"suicide|suicidal"
+        r"|kill myself|hurt myself|harm myself|end my life"
+        r"|want to die|wish i was dead|wish i were dead"
+        r"|end it all|no reason to live|can't go on|cannot go on"
+        r"|can't take it anymore|cannot take it anymore"
+        r"|abusing me|beating me|threatening me|assault|raped"
+        r"|having a panic attack|can't breathe"
+    ),
+}
+
+_CRISIS_RE: dict[str, re.Pattern[str]] = {
+    dil: re.compile(kalip, re.IGNORECASE)
+    for dil, kalip in _CRISIS_PATTERNS.items()
+}
+
+
+def crisis_signal(message: str) -> str | None:
+    """Mesaj kriz işareti taşıyorsa kategori adını döner, yoksa ``None``.
+
+    Yanıt METNİ burada değil `core.messages` içinde: kullanıcıya dönen her
+    metin orada toplanıyor ve iki dilde tutuluyor.
+
+    Mesaj TÜM dillerin kalıplarına karşı sınanır — dili değiştirmek kapıyı
+    aşmanın yolu olmamalı (yasak konu kapısındaki duruşun aynısı).
+    """
+    if not message:
+        return None
+    hedef = _normalize(message)
+    for dil, kalip in _CRISIS_RE.items():
+        if kalip.search(hedef):
+            return "crisis"
+    return None
+
+
 def forbidden_topic(message: str, lang: str = DEFAULT) -> tuple[str, str] | None:
     """Mesaj yasak bir alanda cevap talep ediyorsa (kategori, yanıt) döner.
 

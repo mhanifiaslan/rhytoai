@@ -127,10 +127,21 @@ def _words(message: str) -> list[str]:
 _TOPIC_TRIGGERS = {
     "tr": {
         "vocation": ("iş", "meslek", "kariyer", "çalış", "patron", "terfi",
-                     "mesai", "statü", "kazanç", "geçim", "emek", "mesleğ"),
+                     "mesai", "statü", "emek", "mesleğ"),
         "relationship": ("ilişki", "sevgili", "eş", "evli", "evlen", "aşk",
                          "partner", "ayrıl", "flört", "arkadaş", "dost",
                          "nişan", "boşan", "sevdiğ"),
+        # S-turu: "para" ve "aile" hiç konu SAYILMIYORDU. Ölçüldü — "Para
+        # konusunda hep aynı hatayı yapıyorum" ve "Babamla aram düzelmeyecek
+        # mi" RAG'e hiç gitmiyordu, oysa korpusta artık doğrudan karşılığı
+        # var (servet_doktrin.md, aile_doktrin.md).
+        "money": ("para", "borç", "kazanç", "geçim", "birikim", "maaş",
+                  "harca", "tasarruf", "gelir", "zengin", "fakir",
+                  "yoksul", "servet"),
+        "family": ("annem", "babam", "anneme", "babama", "annemle",
+                   "babamla", "annesi", "babası", "ebeveyn", "kardeş",
+                   "abim", "ablam", "kardeşim", "ailem", "ailesi",
+                   "çocuğum", "evlad"),
         "mind": ("düşün", "kafam", "zihin", "odaklan", "karar", "anlam",
                  "öğren", "konsantr", "unut", "hafıza", "akıl", "akl"),
         "temperament": ("mizaç", "mizac", "huy", "karakter", "element",
@@ -155,6 +166,17 @@ _TOPIC_TRIGGERS = {
         "relationship": ("relationship", "partner", "marri", "love",
                          "boyfriend", "girlfriend", "spouse", "dating",
                          "breakup", "friend", "divorce", "engaged"),
+        # S-turu: "money" and "family" weren't topics at all. Measured —
+        # "I keep making the same mistake with money" and "will things
+        # ever be right with my father" never reached RAG, though the
+        # corpus now has a direct answer (wealth_doctrine.md,
+        # family_doctrine.md).
+        "money": ("money", "debt", "income", "savings", "salary", "spend",
+                  "afford", "broke", "wealth", "poor", "rich", "budget"),
+        "family": ("my mother", "my father", "my mom", "my dad",
+                   "my parent", "my sibling", "my brother", "my sister",
+                   "my family", "my child", "my kid", "my son",
+                   "my daughter"),
         "mind": ("think", "mind", "focus", "decide", "decision", "learn",
                  "memory", "understand", "concentrat"),
         "temperament": ("temperament", "character", "personality", "nature",

@@ -56,28 +56,90 @@ def warm_up() -> None:
 SYSTEM_INSTRUCTION = prompts.get(i18n.DEFAULT).SYSTEM_INSTRUCTION
 CHAT_SYSTEM_INSTRUCTION = prompts.get(i18n.DEFAULT).CHAT_SYSTEM_INSTRUCTION
 
-CHAT_MAX_OUTPUT_TOKENS = 300
+# Görünür yanıt için gereken bütçe DEĞİL — bu, düşünme dahil TOPLAM çıktı
+# tavanı. Ayrım S-turu'nda pahalıya öğrenildi (aşağıdaki gerekçeye bakın).
+#
+# Ölçüm: tipik 4 cümlelik Türkçe yanıt ~85 token (3,6 karakter/token), 6
+# cümlelik ~146. Yani görünür metin için 300 fazlasıyla yeterliydi; sorun
+# görünür metinde değil, ONUNLA AYNI BÜTÇEDEN yiyen düşünmedeydi.
+CHAT_MAX_OUTPUT_TOKENS = 1200
 CHAT_TEMPERATURE = 0.85
 
-# Düşünme (thinking) kapatma varyantları, tercih sırasıyla:
-# 1) Gemini 3 ailesi: thinking_level="minimal"
-# 2) Gemini 2.5 ailesi: thinking_budget=0
-# 3) Düşünme kapatılamıyorsa: bütçeyi geniş tut ki düşünme tokenları kısa
-#    yanıtın token limitini yutmasın (aksi halde yanıt ortadan kesilir).
+# Düşünme (thinking) kapatma varyantları, tercih sırasıyla.
+#
+# ## Neden bu liste değişti (S-turu)
+#
+# Cihaz bulgusu: "sohbet bazen yarıda kesiliyor, başlamadan bitebiliyor."
+# Aynı soru üretimdeki ayarla 6 kez soruldu — **3'ü kesildi**. Kesilenlerde
+# düşünme 300 token'ın 284'ünü yiyip geriye 10-12 token bırakıyordu ve
+# cümle kelime ortasında bitiyordu ("Gökyüzünde bugün zih").
+#
+# Kök neden: `gemini-flash-latest` bir TAKMA AD ve arkasındaki model kaydı.
+# Ölçülen davranış:
+#   * `thinking_level: "minimal"` → 400 INVALID_ARGUMENT (desteklenmiyor).
+#     Yani bu varyant her soğuk başlangıçta bir çağrıyı boşa harcıyordu.
+#   * `thinking_budget: 0` → kabul ediliyor ama UYGULANMIYOR; 6 çağrının
+#     3'ünde ~190-286 token düşünmeye gitti.
+#
+# Bu yüzden: 400 veren varyant KALDIRILDI ve tavan, düşünme kontrolü yine
+# kayarsa bile görünür metnin sığacağı kadar yükseltildi. Savunma iki
+# katmanlı — ayar tutmazsa bütçe kurtarır, o da tutmazsa `finish_reason`
+# denetimi kesik metnin kullanıcıya ulaşmasını engeller.
 _CHAT_CONFIG_VARIANTS: tuple[dict, ...] = (
-    {"thinking_config": {"thinking_level": "minimal"},
-     "max_output_tokens": CHAT_MAX_OUTPUT_TOKENS},
     {"thinking_config": {"thinking_budget": 0},
      "max_output_tokens": CHAT_MAX_OUTPUT_TOKENS},
-    {"max_output_tokens": 1024},
+    # Düşünme hiç kapatılamıyorsa: bütçeyi iyice aç. Ölçümde en pahalı
+    # model 499 token düşünüp 102 token yazdı; 2048 ikisine de yeter.
+    {"max_output_tokens": 2048},
 )
 
-# Çalıştığı bilinen varyant hatırlanır; her istekte yeniden denenmez.
-_preferred_variant = 0
+#: Çalıştığı bilinen varyant hatırlanır; her istekte baştan denenmez.
+#:
+#: Eskiden bu bir modül global'iydi ve `range(_preferred_variant, ...)` ile
+#: yalnız İLERİ gidiyordu: bir kez 1'e kayınca 0'a bir daha dönmüyordu.
+#: Sözlük hem geri dönüşe açık hem de niyeti okunur kılıyor.
+_variant_state: dict[str, int] = {"preferred": 0}
 
 
 def is_available() -> bool:
     return _get_client() is not None
+
+
+def _read_response(response) -> tuple[str, bool]:
+    """Yanıttan (metin, kesildi_mi) çıkarır.
+
+    ## Neden ayrı bir okuyucu var
+
+    `response.text` kesilmiş bir yanıtta da metin döndürür — hem de hata
+    vermeden. S-turu'nda ölçüldü: `finish_reason=MAX_TOKENS` iken elde
+    kalan 10-12 token kullanıcıya TAM YANIT olarak gösteriliyordu ve
+    cümle kelime ortasında bitiyordu. Kesilmeyi görmenin tek yolu
+    `finish_reason`'a bakmak; metnin kendisi bunu söylemiyor.
+
+    `response.text` erişimi parça yokken istisna da atabilir (SDK sürümüne
+    göre); bu yüzden sarmalanıyor — sohbet bir okuma hatası yüzünden
+    düşmemeli.
+    """
+    kesildi = False
+    try:
+        aday = (response.candidates or [None])[0]
+        sebep = str(getattr(aday, "finish_reason", "") or "")
+        kesildi = sebep.endswith("MAX_TOKENS")
+    except Exception:
+        pass
+
+    try:
+        metin = (response.text or "").strip()
+    except Exception as exc:
+        logger.info("Yanıt metni okunamadı: %s", exc)
+        metin = ""
+    return metin, kesildi
+
+
+#: Kesilen bir raporun yeniden denendiği bütçe. Natal rapor 400-500 kelime
+#: (~900 çıktı token'ı) ve üstüne düşünme biniyor; 8192 ikisine de rahat
+#: yeter ve yalnızca kesilme görüldüğünde kullanılır.
+_REPORT_RETRY_TOKENS = 8192
 
 
 def generate(prompt: str, temperature: float = 0.9,
@@ -86,23 +148,40 @@ def generate(prompt: str, temperature: float = 0.9,
 
     Persona dile göre seçilir: İngilizce yorum Türkçe persona ile üretilirse
     ton ve dil karışır.
+
+    **Kesilme burada da denetlenir (S-turu).** Bu yol raporları üretiyor ve
+    raporun bedeli 5 jeton: yarım kalmış bir metni "rapor" diye teslim
+    etmek hem kalitesiz hem de karşılığı alınmamış bir ücret olur.
+    Kesilme görülürse bir kez geniş bütçeyle denenir; yine keserse None
+    döner ve çağıran (`_cached_generate`) jetonu İADE eder.
     """
     client = _get_client()
     if client is None:
         return None
-    try:
-        response = client.models.generate_content(
-            model=config.GEMINI_MODEL,
-            contents=prompt,
-            config={
-                "system_instruction": prompts.get(lang).SYSTEM_INSTRUCTION,
-                "temperature": temperature,
-            },
-        )
-        if response and response.text:
-            return response.text.strip()
-    except Exception as exc:
-        logger.warning("Gemini üretim hatası: %s", exc)
+
+    temel = {
+        "system_instruction": prompts.get(lang).SYSTEM_INSTRUCTION,
+        "temperature": temperature,
+    }
+    for deneme, ek in enumerate(({}, {"max_output_tokens": _REPORT_RETRY_TOKENS})):
+        try:
+            response = client.models.generate_content(
+                model=config.GEMINI_MODEL, contents=prompt,
+                config={**temel, **ek},
+            )
+            metin, kesildi = _read_response(response)
+            if metin and not kesildi:
+                return metin
+            if kesildi:
+                logger.warning(
+                    "Üretim KESİLDİ (MAX_TOKENS, %d karakter, deneme %d, "
+                    "model=%s)", len(metin), deneme, config.GEMINI_MODEL)
+                continue
+            logger.info("Üretim boş metin döndürdü (deneme %d)", deneme)
+            return None
+        except Exception as exc:
+            logger.warning("Gemini üretim hatası: %s", exc)
+            return None
     return None
 
 
@@ -135,11 +214,19 @@ def chat(history: list[dict], user_message: str,
     """Çok turlu sohbet. history: [{'sender': 'USER'|'AI', 'text': ...}]
 
     Persona kuralları her turda mesaja gömülmez; system_instruction olarak
-    tek yerden verilir. Model, denenen thinking ayarını desteklemiyorsa
-    (400 döner) veya tüm token bütçesini düşünmeye harcarsa (boş metin)
-    sıradaki yapılandırma varyantı denenir.
+    tek yerden verilir.
+
+    Sıradaki varyanta ÜÇ durumda geçilir:
+      1. istisna (ör. ayar bu modelde desteklenmiyor → 400),
+      2. boş metin (bütçenin tamamı düşünmeye gitmiş),
+      3. **kesilmiş metin** (`finish_reason=MAX_TOKENS`) — S-turu'nda
+         eklendi. Eskiden kesik metin başarı sayılıp kullanıcıya
+         gösteriliyordu; cihazda "yarıda kesiliyor" diye görüldü.
+
+    Hiçbir varyant tam bir yanıt üretemezse **kesik metin dönmez**: None
+    döner ve çağıran dürüst bir mesaj gösterir. Yarım cümle göstermek,
+    "şu an yanıt üretemedim" demekten daha kötü bir deneyim.
     """
-    global _preferred_variant
     client = _get_client()
     if client is None:
         return None
@@ -150,7 +237,13 @@ def chat(history: list[dict], user_message: str,
         contents.append({"role": role, "parts": [{"text": msg.get("text", "")}]})
     contents.append({"role": "user", "parts": [{"text": user_message}]})
 
-    for idx in range(_preferred_variant, len(_CHAT_CONFIG_VARIANTS)):
+    baslangic = _variant_state["preferred"]
+    # Tercih edilen varyanttan başla, sonra baştakileri de dene: tercih
+    # geçici bir aksaklıkla kaymışsa geri dönebilmeli.
+    sira = list(range(baslangic, len(_CHAT_CONFIG_VARIANTS))) + \
+        list(range(0, baslangic))
+
+    for idx in sira:
         cfg = {
             "system_instruction": prompts.get(lang).CHAT_SYSTEM_INSTRUCTION,
             "temperature": CHAT_TEMPERATURE,
@@ -160,13 +253,25 @@ def chat(history: list[dict], user_message: str,
             response = client.models.generate_content(
                 model=config.GEMINI_MODEL, contents=contents, config=cfg,
             )
-            if response and response.text:
-                _preferred_variant = idx
-                return response.text.strip()
-            logger.info("Sohbet varyantı %d boş metin döndürdü, sıradaki denenecek", idx)
+            metin, kesildi = _read_response(response)
+            if metin and not kesildi:
+                _variant_state["preferred"] = idx
+                return metin
+            if kesildi:
+                # Sessiz kalmamalı: bu, bir ayarın artık tutmadığının
+                # ilk işareti ve tek görünür yeri burası.
+                logger.warning(
+                    "Sohbet varyantı %d KESİLDİ (MAX_TOKENS, %d karakter); "
+                    "model=%s — sıradaki denenecek",
+                    idx, len(metin), config.GEMINI_MODEL)
+            else:
+                logger.info("Sohbet varyantı %d boş metin döndürdü, "
+                            "sıradaki denenecek", idx)
         except Exception as exc:
-            logger.info("Sohbet varyantı %d başarısız (%s), sıradaki denenecek", idx, exc)
-    logger.warning("Tüm sohbet yapılandırma varyantları başarısız oldu")
+            logger.info("Sohbet varyantı %d başarısız (%s), sıradaki denenecek",
+                        idx, exc)
+    logger.warning("Tüm sohbet yapılandırma varyantları başarısız oldu "
+                   "(model=%s)", config.GEMINI_MODEL)
     return None
 
 

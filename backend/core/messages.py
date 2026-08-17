@@ -209,6 +209,41 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "en": "The birth details needed for this reading are missing.",
     },
 
+    # --- Kriz yanıtı (S-turu) ---
+    #
+    # Bu metin bir astroloji yanıtı DEĞİL ve olmamalı. Ölçüldü: "artık
+    # yaşamak istemiyorum" hiçbir kapıya takılmadan modele gidiyordu ve
+    # persona gereği burç yorumuyla karşılanıyordu.
+    #
+    # Ton kuralları: tanı koymaz, "geçer" demez, sebep sormaz, yıldızlara
+    # bağlamaz. Yalnız üç şey yapar — duyguyu ciddiye alır, yalnız
+    # olmadığını söyler, somut bir numara verir.
+    "crisis.support": {
+        "tr": "Şu an yazdıkların benim yorumlayabileceğim bir şeyin çok "
+              "ötesinde ve bunu ciddiye alıyorum. Bu ağırlığı tek başına "
+              "taşımak zorunda değilsin.\n\n"
+              "Türkiye'de 7/24 ulaşabileceğin destek hatları var:\n"
+              "• 112 — acil yardım\n"
+              "• 182 — sağlık danışma\n"
+              "• 183 — sosyal destek hattı (şiddet, istismar, psikolojik "
+              "destek)\n\n"
+              "Hemen şimdi güvende değilsen 112'yi ara. Güvendeysen ama "
+              "içinden çıkamıyorsan, güvendiğin birine bugün haber ver.\n\n"
+              "Buradayım; hazır olduğunda başka bir şey konuşmak istersen "
+              "yanındayım.",
+        "en": "What you've written is far beyond something I should try to "
+              "interpret, and I take it seriously. You don't have to carry "
+              "this alone.\n\n"
+              "Support is available around the clock:\n"
+              "• Your local emergency number\n"
+              "• findahelpline.com — free, confidential helplines by country\n"
+              "• In the US: call or text 988 (Suicide & Crisis Lifeline)\n\n"
+              "If you are not safe right now, please call emergency services. "
+              "If you are safe but struggling, tell someone you trust "
+              "today.\n\n"
+              "I'm here whenever you want to talk about something else.",
+    },
+
     # --- Eklenen kişiler (P-turu) ---
     # İkisi de 402 + X-Paywall-Reason: people ile döner (istemci jeton
     # mağazasını değil abonelik sayfasını açar). Metin ikiye ayrık, çünkü

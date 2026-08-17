@@ -61,6 +61,10 @@ _TOPIC_SEEDS = {
         # bölümler gelmeden de en yakın gerçek karşılığı (mizaç/element)
         # çeker — sıralama bağımsızlığı.
         "bazi": "Dört Sütun, Günün Efendisi, On Tanrı, güç ve denge",
+        # S-turu: servet_doktrin.md / aile_doktrin.md eklenene kadar bu iki
+        # konunun hiç karşılığı yoktu.
+        "money": "Şans Noktası, geçim, kazanç kapısı, servet talihi",
+        "family": "Ebeveyn, baba, anne, kardeş, aile bağı",
     },
     "en": {
         "vocation": "The quality of employment, work, rank, station",
@@ -77,6 +81,8 @@ _TOPIC_SEEDS = {
         "timing": "Application and separation, transit, an aspect forming",
         "self": "The degree ascending, a person's own nature",
         "bazi": "Four Pillars, Day Master, Ten Gods, strength and balance",
+        "money": "Part of Fortune, livelihood, the earning gate, wealth",
+        "family": "Parent, father, mother, sibling, family bond",
     },
 }
 
@@ -100,6 +106,14 @@ _TOPIC_FACTORS: dict[str, dict[str, tuple]] = {
     "travel": {"planets": ("Moon", "Jupiter"), "houses": (9, 3, 4)},
     "timing": {"planets": (), "houses": ()},
     "self": {"planets": ("Sun", "Moon"), "houses": (1,)},
+    # S-turu — servet_doktrin.md: geçim kapısı Satürn/Jüpiter/Mars/Venüs/
+    # Merkür'e dağılır; 2. ev kendi emeği, 8. ev paylaşılan/devralınan kaynak.
+    "money": {"planets": ("Saturn", "Jupiter", "Mars", "Venus", "Mercury"),
+             "houses": (2, 8)},
+    # S-turu — aile_doktrin.md: baba Güneş/Satürn, anne Ay/Venüs; 4. ev kök
+    # aile, 3. ev kardeş, 5. ev kendi çocuğu.
+    "family": {"planets": ("Sun", "Saturn", "Moon", "Venus"),
+              "houses": (4, 3, 5)},
 }
 
 #: Sorguya girecek en fazla yerleşim / açı / transit satırı. Sorgu uzadıkça

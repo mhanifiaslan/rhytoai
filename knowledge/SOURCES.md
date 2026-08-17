@@ -168,6 +168,16 @@ aşağılamak değil**.
 
 ---
 
+### Servet ve Aile doktrinleri — `corpus/{tr,en}/{servet,aile,wealth,family}_doktrin*.md` ✅ (2026-08-18, S-turu)
+
+| Alan | Değer |
+|---|---|
+| Kaynak | Tetrabiblos IV.2 "The Fortune of Wealth", IV.5 "The Parents", IV.6 "Brothers and Sisters", IV.9 "Children" — Ashmand 1822, kamu malı |
+| Neden ayrı dosya | Bu dört bölüm `en/tetrabiblos.md`'e HİÇ alınmamıştı — ölçüldü, kapı da (`_TOPIC_TRIGGERS`) para/aile konusu tanımıyordu (bkz. S-turu bulgu 3) |
+| Yöntem | **İkisi de Rytho aktarımı** (`license: rytho-original`) — EN dahil, çünkü ham kaynak `Parents`/`Siblings`/`Children` bölümlerinde ölüm/kaza/doğurganlık kehaneti taşıyor ve bunlar aktarılamaz |
+| Kapsam dışı bırakılan | Kardeş sayısı/cinsiyeti tahmini, ebeveyn ölüm şekli/zamanı, çocuk sağlığı/doğurganlık/yaşam süresi (hamilelik güvenlik kapısıyla aynı ilke), servet miktarı/zamanlaması |
+| Yapısal eşleşme | TR ve EN aynı üç-dört alt başlığı taşır (Şans Noktası/gezegen kapıları; Baba-Anne/Kardeşler/Çocuklar) — çift dilli RAG'in "aynı soruya aynı derinlik" ilkesi korunur |
+
 ## Marifetname — `corpus/{tr,en}/marifetname.md` ✅ (2026-08-02)
 
 | Alan | Değer |

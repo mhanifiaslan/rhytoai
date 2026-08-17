@@ -53,6 +53,10 @@ CATEGORIES = (
     "concern",        # tekrar eden kaygılar
     "preference",     # ton, uzunluk, hitap tercihleri
     "milestone",      # kullanıcının önemsediği tarihler
+    # S-turu: kullanıcının konuşulmasını İSTEMEDİĞİ konu. "Bunu konuşmak
+    # istemiyorum" bir kez söylenir ve kalıcı olmalı; her açılışta aynı
+    # yaraya dokunmak "seni tanıyorum" değil, tam tersi.
+    "sensitivity",
 )
 
 #: Sınırlar — hem Firestore doküman boyutu hem prompt bütçesi için.
@@ -175,8 +179,23 @@ def upsert_facts(uid: str, facts: list[dict[str, Any]]) -> dict[str, Any]:
     return memory
 
 
-def record_mood(uid: str, mood: str, note: str = "") -> None:
-    """Günlük ruh hali izini ekler (gün başına tek kayıt; aynı gün üzerine yazar)."""
+#: Ruh hali yoğunluğu (S-turu). Tek kelimelik ruh hali yetmiyordu: "biraz
+#: kaygılıyım" ile "dağılmak üzereyim" aynı satıra düşüyor ve model ikisine
+#: de aynı tonda cevap veriyordu.
+INTENSITIES = ("low", "medium", "high")
+
+#: Kullanıcının o turda ARADIĞI şey. Aynı soru farklı ihtiyaçla sorulabilir:
+#: "ne yapmalıyım" bazen yön ister, bazen sadece anlaşılmak.
+NEEDS = ("information", "direction", "understanding", "rest")
+
+
+def record_mood(uid: str, mood: str, note: str = "",
+                intensity: str = "", needs: str = "") -> None:
+    """Günlük ruh hali izini ekler (gün başına tek kayıt; aynı gün üzerine yazar).
+
+    ``intensity`` ve ``needs`` (S-turu) isteğe bağlı: tanınmayan değer
+    sessizce düşer — modelin uydurduğu bir etiket şemaya giremez.
+    """
     mood = mood.strip()[:60]
     if not mood:
         return
@@ -184,7 +203,15 @@ def record_mood(uid: str, mood: str, note: str = "") -> None:
     memory = get_memory(uid)
     today = dt.date.today().isoformat()
     trail = [entry for entry in memory["moodTrail"] if entry.get("date") != today]
-    trail.append({"date": today, "mood": mood, "note": note.strip()[:MAX_FACT_CHARS]})
+    kayit: dict[str, Any] = {
+        "date": today, "mood": mood,
+        "note": note.strip()[:MAX_FACT_CHARS],
+    }
+    if intensity in INTENSITIES:
+        kayit["intensity"] = intensity
+    if needs in NEEDS:
+        kayit["needs"] = needs
+    trail.append(kayit)
     memory["moodTrail"] = trail[-MAX_MOOD_ENTRIES:]
     _write(uid, memory)
 
@@ -259,10 +286,21 @@ def memory_context(uid: str, max_chars: int = 600) -> str:
                        key=lambda f: f.get("confidence", 0.0), reverse=True):
         parts.append(f"- ({fact['category']}) {fact['value']}")
 
+    # Ruh hali SEYRİ — tek fotoğraf değil eğilim (S-turu). Yoğunluk da
+    # yazılıyor: modelin "üç gündür ağırlaşıyor" ile "dün biraz yorgundu"
+    # arasındaki farkı görmesi, tonunu ona göre kurmasının tek yolu.
     trail = memory["moodTrail"][-5:]
     if trail:
-        moods = ", ".join(f"{e['date']}: {e['mood']}" for e in trail)
-        parts.append(f"- (ruh hali seyri) {moods}")
+        def _yaz(e: dict[str, Any]) -> str:
+            metin = f"{e['date']}: {e['mood']}"
+            if e.get("intensity"):
+                metin += f"({e['intensity']})"
+            return metin
+        parts.append("- (ruh hali seyri) " + ", ".join(_yaz(e) for e in trail))
+        # En son turda kullanıcının ne aradığı, tonun en güçlü ipucu.
+        son = trail[-1]
+        if son.get("needs"):
+            parts.append(f"- (son turda aradığı) {son['needs']}")
 
     # Günlük (R2-G1): son girişler sohbetin gözüne girer — "son ayda ne
     # oldu?" sorusu bu satırlar + gökyüzü verisiyle cevaplanabilir.

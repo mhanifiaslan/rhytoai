@@ -72,13 +72,55 @@ def test_cikarilan_olgular_hafizaya_yazilir(monkeypatch):
     monkeypatch.setattr(memory_service, "upsert_facts",
                         lambda uid, facts: yazilan.append(facts) or {"facts": facts})
     ruh: list = []
+    # S-turu: imza `intensity`/`needs` ile genisledi. Taklit ESNEK tutuluyor
+    # (**kw) — cikarici hatayi yutuyor ve imza uyusmazligi sessizce "ruh hali
+    # hic yazilmadi"a donusuyor; testin bunu bir sonraki genislemede yeniden
+    # yasamasi gereksiz.
     monkeypatch.setattr(memory_service, "record_mood",
-                        lambda uid, mood, note="": ruh.append(mood))
+                        lambda uid, mood, **kw: ruh.append((mood, kw)))
 
     memory_extractor.extract_and_store("u", gecmis, "son mesaj")
 
     assert yazilan and yazilan[0][0]["key"] == "work.transition"
-    assert ruh == ["kaygılı"]
+    assert [m for m, _ in ruh] == ["kaygılı"]
+
+
+def test_yogunluk_ve_ihtiyac_hafizaya_akar(monkeypatch):
+    """S-turu: tek kelimelik ruh hali yetmiyordu — "biraz kaygiliyim" ile
+    "dagilmak uzereyim" ayni satira dusuyor ve model ikisine de ayni tonda
+    cevap veriyordu."""
+    _cikarima_izin_ver(monkeypatch)
+    gecmis = [{"sender": "USER", "text": f"m{i}"} for i in range(4)]
+    monkeypatch.setattr(
+        memory_extractor.gemini_service, "extract_json",
+        lambda *a, **k: json.dumps({
+            "facts": [], "mood": "tükenmiş",
+            "intensity": "high", "needs": "understanding"}))
+
+    kayit: list = []
+    monkeypatch.setattr(memory_service, "upsert_facts",
+                        lambda uid, facts: {"facts": facts})
+    monkeypatch.setattr(memory_service, "record_mood",
+                        lambda uid, mood, **kw: kayit.append((mood, kw)))
+
+    memory_extractor.extract_and_store("u", gecmis, "son mesaj")
+
+    assert kayit, "ruh hali hic yazilmadi"
+    mood, kw = kayit[0]
+    assert mood == "tükenmiş"
+    assert kw.get("intensity") == "high"
+    assert kw.get("needs") == "understanding"
+
+
+def test_uydurma_yogunluk_semadan_gecmez():
+    """Model tanimsiz bir etiket uydurursa kayda GIRMEMELI."""
+    assert "extreme" not in memory_service.INTENSITIES
+    assert "vibes" not in memory_service.NEEDS
+
+
+def test_hassasiyet_kategorisi_var():
+    """"Bunu konusmak istemiyorum" bir kez soylenir ve kalici olmali."""
+    assert "sensitivity" in memory_service.CATEGORIES
 
 
 def test_bozuk_json_istegi_dusurmez(monkeypatch):

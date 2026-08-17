@@ -457,45 +457,139 @@ klasik okuma eksenini** taşısın diye buradadır.
 
 ## Mesleğin Niteliği
 
-Meslek sorusu Batlamyus'ta üç şeye bakılarak okunur: **Merkür**, **Mars** ve
-**Venüs** — ve bunlardan hangisinin köşeye, özellikle Tepe Noktası'na yakın
-durduğuna.
+### Kim yönetici — Güneş ve Tepe Noktası
 
-- **Merkür belirleyiciyse:** yazı, hesap, ticaret, öğretme, aracılık — elin
-  değil zihnin yürüttüğü işler.
-- **Mars belirleyiciyse:** ateşle ve demirle çalışan, güç ve risk isteyen,
-  keskinlik gerektiren işler; askerlik, cerrahlık, ustalık.
-- **Venüs belirleyiciyse:** güzellikle, uyumla ve insanla çalışan işler;
-  sanat, süsleme, ağırlama.
+Batlamyus meslek yöneticisini bulmak için iki yere bakar: **Güneş'e en
+yakın doğan gezegen** (Güneş'in "kolu" gibi çalışır) ve **Tepe
+Noktası'nda ya da orayı gözeten gezegen**. Aynı gezegen ikisini birden
+taşıyorsa (hem Güneş'e yakın hem Tepe'de) tartışmasız yöneticidir. İkisi
+ayrı gezegenlerse ikisi de dinlenir; hangisi daha güçlü konumdaysa
+(kendi burcunda, açılı, görünür) o öne geçer.
 
-İkisi birden güçlüyse iş de karışır: Merkür ile Venüs birlikte sanatın
-zanaatını, Merkür ile Mars keskin bir teknik ustalığı gösterir.
+Tepe Noktası'nda hiçbir belirleyici yoksa, meslek dışarıdan tanınmakla
+değil, kişinin kendi seçimiyle şekillenir — bu bir eksiklik değil,
+farklı bir kuruluştur; klasik metin bunu "ilgisiz ve işsiz kalma"
+diye sert yorumlar, Rytho bunu taşımaz.
 
-Belirleyicinin bulunduğu burcun niteliği işin **biçimini** verir; köşeye
-yakınlığı ise o işin ne kadar görünür olacağını.
+### Meslek Türü — Yöneticiye Göre
 
-Tepe Noktası'nda hiçbir belirleyici yoksa, meslek dışarıdan tanınmakla değil,
-kişinin kendi seçimiyle şekillenir — bu bir eksiklik değil, farklı bir
-kuruluştur.
+Yöneticinin KİMLİĞİ meslek alanının **türünü** verir. Batlamyus üç ana
+gezegene bağlar; günümüz karşılıkları doktrini korur, dönemin somut
+zanaat adlarını (kâtiplik, terzilik) değil doğasını taşır.
+
+**Merkür yönetirse** — zihnin ve dilin işi: yazı, hesap, öğretme,
+aracılık, ticaret, danışmanlık, çeviri, veri ve analiz. Klasik metin
+buna kehanet ve yorum işini de ekler — bugünün diliyle, başkasının
+anlatısını çözümleyip anlamlandıran her meslek.
+
+- Merkür'e **Satürn** eşlik ederse: başkasının işini yönetmek,
+  arka planda kalan sistem kurmak, disiplinli ve sabır isteyen zihinsel
+  emek.
+- Merkür'e **Jüpiter** eşlik ederse: hitabet, savunuculuk, öğretim,
+  saygın kişilerle çalışma — sözün otoriteye dönüştüğü meslekler.
+
+**Venüs yönetirse** — güzelliğin, uyumun ve tenin işi: tasarım, sanat,
+kozmetik, moda, gastronomi, ağırlama, terapi ve bakım, ilişki ve
+uyum gerektiren danışmanlık.
+
+- Venüs'e **Satürn** eşlik ederse: eğlence ve süsleme işinin ciddi,
+  disiplinli ve zanaatkâr tarafı — amatör değil, meslek.
+- Venüs'e **Jüpiter** eşlik ederse: sahne, performans, itibar
+  kazandıran görünürlük; başarı sosyal çevre ve destek üzerinden gelir.
+
+**Mars yönetirse** — ateşin, riskin ve bedenin işi: cerrahi, mühendislik,
+inşaat, spor, güvenlik, acil müdahale, girişimcilik — sonucu hızlı ve
+görünür olan, hata payı düşük işler.
+
+- Mars'a **Satürn** eşlik ederse: yer altında, su altında, kapalı
+  ortamda çalışan teknik meslekler; ustalık ağır koşullarda kanıtlanır.
+- Mars'a **Jüpiter** eşlik ederse: komuta, organizasyon, lojistik —
+  gücün kurumsallaştığı meslekler.
+
+### İki Yönetici Birlikte
+
+İki gezegen birlikte meslek belirleyicisi olduğunda iş de **melez**
+olur — Batlamyus'un en zengin bölümü budur:
+
+- **Merkür + Venüs**: yaratıcı ifade ve zanaat bir arada — müzik,
+  yazarlık, tasarım, performans sanatları, içerik üretimi.
+- **Merkür + Mars**: keskin teknik ustalık — cerrahi, mühendislik,
+  adli/soruşturma işleri, yüksek hassasiyetli zanaat.
+- **Venüs + Mars**'a Jüpiter eşlik ederse: adalet, kamu yönetimi,
+  eğitim, gençlik önderliği — ilişki ve kararlılığın birleştiği
+  otorite mevkileri.
+
+### Belirleyicinin Burcu
+
+Yöneticinin bulunduğu burcun niteliği işin **biçimini** verir (sabit
+burç: süreklilik isteyen meslek; değişken burç: çok yönlü, dağınık
+görünen ama uyum yeteneği yüksek meslek); köşeye yakınlığı ise o işin
+ne kadar görünür ve otorite taşıyıcı olacağını.
+
+Bu doktrinin Rytho'daki işlevi meslek İSMİ vermek değil — "cerrah ol"
+demek kehanettir — kişinin doğal olarak hangi TÜRDE bir çalışma
+ortamında (zihin/güzellik/risk ekseni) kendini bulduğunu göstermektir.
 
 ## Evlilik ve Ortaklık
 
-Batlamyus ortaklığı iki taraftan okur: erkeğin haritasında **Ay**, kadının
-haritasında **Güneş** eşin niteliğini gösterir; ikisinde de **Venüs** bağın
-kendisini.
+### İki Katman: Aradığın ve Kurduğun
 
-Bu ayrım kendi çağının toplumsal düzeninden gelir. Bugün işe yarayan kısmı
-şudur: **haritada ortaklığı gösteren iki ayrı katman vardır** — biri kişinin
-ötekinde aradığı (Ay/Güneş), diğeri bağ kurma biçimi (Venüs).
+Batlamyus ortaklığı iki ayrı katmanda okur. Kaynak metin bunu kadın/erkek
+ayrımıyla yazar — kendi çağının toplumsal düzeni; Rytho bu ayrımı taşımaz,
+doktrini herkes için aynı iki katmana indirger:
+
+- **Işık (Güneş/Ay):** kişinin partnerde bilinçsizce ARADIĞI ton. Ay
+  duygusal güveni, Güneş görünürlük ve tanınma ihtiyacını taşır.
+- **Venüs:** bağı nasıl KURDUĞU — çekimin, uyumun ve sevginin üslubu.
+
+Bu iki katman aynı şeyi söylemeyebilir: biri "neyi arıyorum", öteki
+"nasıl bağlanıyorum" sorusuna cevap verir. İkisi arasındaki fark,
+kişinin ilişkide kendini neden bazen tutarsız hissettiğinin açıklaması
+olabilir.
+
+### Işığa Eşlik Eden Gezegen — Partnerin Tonu
+
+Batlamyus'un en zengin gözlemi burada: Ay'a (ya da Venüs'e) hangi
+gezegen **testimony** veriyorsa (açılı, alım yapıyor), partnerin ya da
+partnerde aranan niteliğin tonu o gezegenin doğasını taşır. Günümüz
+diline, gendersiz ve kehanet iddiası taşımadan aktarılmıştır:
+
+- **Satürn eşlik ederse:** partner ciddi, ağırbaşlı, bazen mesafeli;
+  bağ yavaş kurulur ama sınandığında dayanıklı çıkar.
+- **Jüpiter eşlik ederse:** partner cömert, saygın, geniş ufuklu; bağ
+  güven ve büyüme hissi taşır.
+- **Mars eşlik ederse:** partner cesur, doğrudan, bazen sabırsız; bağ
+  hızlı kurulur, sürtünmeye açıktır.
+- **Venüs eşlik ederse:** partner sıcak, estetik, uyum arayan; bağ
+  kolay akar.
+- **Merkür eşlik ederse:** partner zihinsel, meraklı, esnek; bağ
+  konuşma ve fikir alışverişi üzerinden büyür.
+
+Venüs'ün KENDİSİ hangi gezegenle bağlantılıysa, kişinin sevme biçimi
+de aynı tonu taşır — yukarıdaki liste burada da geçerlidir, yön
+tersine döner: bu kez okunan partner değil, kişinin kendisidir.
+
+### Yedinci Köşe: Zemin
 
 Yedinci köşe (Alçalan) ve orada duran gezegenler, kişinin ötekiyle
-kurduğu ilişkinin zeminini gösterir. Satürn oradaysa bağ ağır ve kalıcı
-kurulur, geç olgunlaşır; Mars oradaysa çabuk kurulur ve sürtünme taşır;
-Venüs oradaysa uyum kolay ama sınav başka yerdedir.
+kurduğu ilişkinin ZEMİNİNİ gösterir — yukarıdaki ton kiminle
+karşılaştığını, burada nasıl bir arazide karşılaştığını anlatır.
+Satürn oradaysa bağ ağır ve kalıcı kurulur, geç olgunlaşır; Mars
+oradaysa çabuk kurulur ve sürtünme taşır; Venüs oradaysa uyum kolay
+ama asıl sınav başka bir eksende yaşanır.
 
-Batlamyus evliliğin sürmesini iki haritanın ışıklarının uyumuna bağlar:
-ışıklar birbirini görüyorsa bağ sürer, görmüyorsa taraflar birbirini
-anlamakta zorlanır.
+### Kalıcılık
+
+Batlamyus evliliğin sürmesini iki haritanın ışıklarının UYUMUNA
+bağlar: ışıklar birbirini görüyorsa (üçgen ya da altmışlık açıyla)
+bağ sürer ve derinleşir; görmüyorsa taraflar birbirini anlamakta
+zorlanır — bu bir "ayrılacaklar" hükmü değil, bir çaba haritasıdır.
+En güçlü kalıcılık işareti: bir tarafın Ay'ı, diğer tarafın Güneş'iyle
+uyumlu ise — biri diğerinin görünmek istediği yerde onu görür.
+
+Kaynak metnin kaç kez evleneceği, hangi yaşta evleneceği gibi
+zamanlama iddiaları buraya taşınmamıştır — bunlar tarihli kehanettir
+ve Rytho'nun sınırının dışındadır.
 
 ## Dostlar ve Düşmanlar
 

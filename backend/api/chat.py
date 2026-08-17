@@ -20,6 +20,7 @@ from services import (
     notification_service,
     profile_service,
     prompts,
+    safety_rules,
     sky_service,
 )
 from services.prompt_composer import compose_chat_message, should_use_rag
@@ -111,6 +112,22 @@ def chat(request: ChatRequest, background: BackgroundTasks,
     Bedel LLM cagrisindan ONCE dusulur; aksi halde hata donen istekler de
     kullaniciya bedava mesaj kazandirirdi. LLM yanit uretemezse iade edilir.
     """
+    # KRİZ KAPISI — her şeyden önce (S-turu).
+    #
+    # Yasak alan kapısından ÖNCE gelir ve ondan farklı çalışır: orada konu
+    # VE cevap talebi birlikte aranıyor, burada tek işaret yeter. Sebep
+    # basit — krizde olan kişi soru sormaz.
+    #
+    # Ölçülmüştü: "artık yaşamak istemiyorum" hiçbir kapıya takılmadan
+    # astroloji modeline gidiyordu.
+    #
+    # Model çağrılmaz, jeton düşmez, kota yenmez ve hafızaya "mood"
+    # yazılmaz: kriz anı bir kişiselleştirme sinyali değil.
+    if safety_rules.crisis_signal(request.message):
+        logger.info("Kriz işareti: yanıt destek metnine yönlendirildi")
+        return {"status": "success", "reply": text("crisis.support", lang),
+                "blocked": "crisis"}
+
     # Yasak alan kapısı kotadan ÖNCE: reddedilen bir soru kullanıcının günlük
     # hakkını yemez.
     blocked = forbidden_topic(request.message, lang=lang)
