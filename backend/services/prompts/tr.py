@@ -480,8 +480,54 @@ DYAD_FALLBACK = (
 #: uydurmaz. "Ölçülmeyen söylenmez" ilkesi burada prompt kısıtı olarak
 #: yazılıdır — kullanıcının kuralı: hazır cevap yok, olmayan şey varmış
 #: gibi gösterilmez.
+#: Eklenen kişinin prompt'ta ve ekranda görünen adı (P-turu). Sunucu bu
+#: kişilerin GERÇEK adını bilmiyor — etiket cihazda kalıyor — bu yüzden AI
+#: onları ilişkiyle anar.
+RELATION_LABELS = {
+    "partner": "eşin",
+    "child": "çocuğun",
+    "parent": "ebeveynin",
+    "sibling": "kardeşin",
+    "friend": "arkadaşın",
+    "work": "iş arkadaşın",
+    "other": "yakının",
+}
+
+#: İlişki türüne göre EKSEN ADI değişiklikleri (P-turu).
+#:
+#: Ölçüm DEĞİŞMEZ — değişen yalnız ad. Gerekçe: "çekim" ekseni
+#: Venüs/Mars/Plüton temaslarından hesaplanıyor ve bu temaslar aile
+#: haritalarında da var (klasik gelenekte sevgi dili ve mizaç uyumu
+#: olarak okunur). Ama ekranda kullanıcıya "Çocuğunuzla çekim: güçlü"
+#: yazmak kabul edilemez. Ölçüleni gizlemiyoruz; DOĞRU ADIYLA sunuyoruz.
+RELATION_AXIS_NAMES = {
+    "child": {"attraction": "Yakınlık ve bakım"},
+    "parent": {"attraction": "Yakınlık ve bakım"},
+    "sibling": {"attraction": "Yakınlık ve tarz"},
+    "work": {"attraction": "Çalışma kimyası",
+             "emotional": "Uyum ve güven"},
+}
+
+#: İlişki türünün AI'ya verdiği çerçeve kısıtı. Boş = kısıt yok.
+RELATION_FRAME = {
+    "child": "BU BİR EBEVEYN–ÇOCUK İLİŞKİSİDİR. Romantik, cinsel ya da "
+             "çekim odaklı hiçbir çerçeve kullanma; Venüs/Mars temaslarını "
+             "sevgi dili, koruma ve mizaç uyumu olarak oku.",
+    "parent": "BU BİR ÇOCUK–EBEVEYN İLİŞKİSİDİR. Romantik, cinsel ya da "
+              "çekim odaklı hiçbir çerçeve kullanma; Venüs/Mars temaslarını "
+              "sevgi dili, bakım ve mizaç uyumu olarak oku.",
+    "sibling": "BU BİR KARDEŞ İLİŞKİSİDİR. Romantik ya da cinsel çerçeve "
+               "kullanma; yakınlığı ve rekabeti olduğu gibi oku.",
+    "work": "BU BİR İŞ İLİŞKİSİDİR. Romantik ya da cinsel çerçeve kullanma; "
+            "eksenleri işbirliği, güven ve çalışma temposu olarak oku. "
+            "Özel hayata dair çıkarım yapma.",
+    "friend": "Bu bir ARKADAŞLIK ilişkisidir; romantik bir bağ İDDİA ETME, "
+              "ama ölçülen yakınlığı olduğu gibi anlat.",
+}
+
 RELATIONSHIP = """
 GÖREV: {me} ile {friend} arasındaki ilişkinin ÖLÇÜLEN yapısını yorumla.
+{frame}
 
 ÇIKTI BİÇİMİ (kesin — başka hiçbir şey yazma):
 communication: <tek cümle>

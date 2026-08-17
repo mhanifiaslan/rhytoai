@@ -604,7 +604,43 @@ def localize_signals(lang: str | None, data: dict | None) -> dict:
     return sonuç
 
 
-def localize_relationship_axes(lang: str | None, data: dict | None) -> dict:
+def relation_label(lang: str | None, relation: str | None) -> str:
+    """Eklenen kişinin ilişki etiketi ("eşin" / "your partner").
+
+    Sunucu bu kişilerin gerçek adını bilmiyor (etiket cihazda kalır), bu
+    yüzden prompt'ta ve fısıltıda geçen ad budur.
+    """
+    p = get(lang)
+    return p.RELATION_LABELS.get(relation or "other",
+                                 p.RELATION_LABELS["other"])
+
+
+def relation_frame(lang: str | None, relation: str | None) -> str:
+    """İlişki türünün AI'ya verdiği çerçeve kısıtı; yoksa boş string."""
+    if not relation:
+        return ""
+    return get(lang).RELATION_FRAME.get(relation, "")
+
+
+def axis_name(lang: str | None, axis: str | None,
+              relation: str | None = None) -> str:
+    """Eksenin gösterilecek adı — ilişki türü onu değiştiriyorsa değişmiş
+    hâliyle.
+
+    Ölçüm türden ETKİLENMEZ; değişen yalnız ad (bkz. RELATION_AXIS_NAMES).
+    "Çocuğunuzla çekim: güçlü" yazmak ölçümü doğru ama sunumu yanlış
+    yapmak olurdu.
+    """
+    p = get(lang)
+    if relation:
+        ozel = p.RELATION_AXIS_NAMES.get(relation) or {}
+        if axis in ozel:
+            return ozel[axis]
+    return p.SYNASTRY_AXIS_NAMES.get(axis, axis)
+
+
+def localize_relationship_axes(lang: str | None, data: dict | None,
+                               relation: str | None = None) -> dict:
     """İlişki eksenlerini (R2-L1) isteğin diline çevirir.
 
     Sayısal uyum puanı YOK: seviye adı, ton adı ve dayanak açılar
@@ -627,7 +663,9 @@ def localize_relationship_axes(lang: str | None, data: dict | None) -> dict:
         seviye = e.get("level") or "quiet"
         ton = e.get("tone") or "quiet"
         return {**e,
-                "axis_local": p.SYNASTRY_AXIS_NAMES.get(anahtar, anahtar),
+                # Eksen adı ilişki türüne göre değişebilir (P-turu);
+                # seviye/ton ve dayanak açılar DEĞİŞMEZ.
+                "axis_local": axis_name(lang, anahtar, relation),
                 "level_local": p.SYNASTRY_LEVEL_NAMES.get(seviye, seviye),
                 "tone_local": p.SYNASTRY_TONE_NAMES.get(ton, ton),
                 "basis": [

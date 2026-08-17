@@ -499,9 +499,56 @@ DYAD_FALLBACK = (
 #: pair's own supporting aspects. The model interprets them; it does not
 #: cast a chart and does not invent placements. "Nothing unmeasured is
 #: claimed" appears here as an explicit prompt constraint.
+#: How an added person is named in prompts and on screen (P-turu). The
+#: server never learns their real name — the label stays on the device —
+#: so the AI refers to them by the relationship.
+RELATION_LABELS = {
+    "partner": "your partner",
+    "child": "your child",
+    "parent": "your parent",
+    "sibling": "your sibling",
+    "friend": "your friend",
+    "work": "your colleague",
+    "other": "someone close to you",
+}
+
+#: Axis NAME overrides per relationship type (P-turu).
+#:
+#: The measurement does not change — only the name. The attraction axis is
+#: computed from Venus/Mars/Pluto contacts, and those contacts exist in
+#: family charts too (classically read as affection and temperament
+#: affinity). But printing "Attraction with your child: strong" is
+#: unacceptable. We are not hiding what is measured; we are naming it
+#: correctly.
+RELATION_AXIS_NAMES = {
+    "child": {"attraction": "Closeness & care"},
+    "parent": {"attraction": "Closeness & care"},
+    "sibling": {"attraction": "Closeness & style"},
+    "work": {"attraction": "Working chemistry",
+             "emotional": "Rapport & trust"},
+}
+
+#: The frame this relationship type imposes on the AI. Empty = no constraint.
+RELATION_FRAME = {
+    "child": "THIS IS A PARENT–CHILD RELATIONSHIP. Never use a romantic, "
+             "sexual or attraction-based frame; read Venus/Mars contacts as "
+             "affection, protectiveness and temperament affinity.",
+    "parent": "THIS IS A CHILD–PARENT RELATIONSHIP. Never use a romantic, "
+              "sexual or attraction-based frame; read Venus/Mars contacts as "
+              "affection, care and temperament affinity.",
+    "sibling": "THIS IS A SIBLING RELATIONSHIP. Never use a romantic or "
+               "sexual frame; read closeness and rivalry as they are.",
+    "work": "THIS IS A WORKING RELATIONSHIP. Never use a romantic or sexual "
+            "frame; read the axes as collaboration, trust and working pace. "
+            "Do not infer anything about their private life.",
+    "friend": "This is a FRIENDSHIP; do not CLAIM a romantic bond, but "
+              "describe the measured closeness as it is.",
+}
+
 RELATIONSHIP = """
 TASK: Interpret the MEASURED structure of the relationship between {me}
 and {friend}.
+{frame}
 
 OUTPUT FORMAT (strict — write nothing else):
 communication: <one sentence>

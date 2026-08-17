@@ -27,11 +27,14 @@ from core import config, firestore as firestore_client
 logger = logging.getLogger(__name__)
 
 #: Kullanıcı dokümanının altındaki tüm koleksiyonlar.
+#: `people` (P-turu): kullanıcının eklediği üçüncü kişilerin doğum verisi.
+#: Hesap silinince BİRLİKTE gitmeli — rızası alınamamış bir kişinin verisi
+#: sahibi ortadan kalktıktan sonra sunucuda kalamaz.
 _SUB_COLLECTIONS = ("private", "friends", "nudges", "blocked",
-                    "conversations")
+                    "conversations", "people")
 
 #: Alt koleksiyonu OLAN alt koleksiyonlar: doküman silinmeden önce içi
-#: boşaltılmalı, yoksa alt doküманlar yetim kalır (faturalanır, erişilemez).
+#: boşaltılmalı, yoksa alt dokümanlar yetim kalır (faturalanır, erişilemez).
 _NESTED = {
     "conversations": ("messages",),
     # Cüzdan defteri `private/wallet` dokümanının altında; `private`

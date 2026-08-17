@@ -296,17 +296,25 @@ def horoscope_reading(sign: str, period: str, sky: dict[str, Any],
     return result
 
 
-def dyad_cache_key(uid_a: str, uid_b: str, today: dt.date) -> str:
-    """İkili okuma önbellek anahtarı — çiftin sırasından bağımsız.
+def dyad_key_for(pair_key: str, today: dt.date) -> str:
+    """İkili okuma önbellek anahtarı — hazır ikili kimliğinden (P-turu).
 
-    İki arkadaş aynı günü aynı metinle görmeli: hem tek üretim yapılır hem de
-    aralarında konuşulabilecek ortak bir şey oluşur.
+    İki arkadaş aynı günü aynı metinle görmeli: hem tek üretim yapılır hem
+    de aralarında konuşulabilecek ortak bir şey oluşur. Bu SİMETRİ artık
+    burada değil, `synastry_service.Counterpart.key` üretilirken sağlanıyor
+    (arkadaşta sıralı ikili) — çünkü karşı taraf bir arkadaş da olabilir,
+    kullanıcının eklediği bir kişi de.
+
+    Burada TEKRAR sıralamak simetriyi BOZARDI: "a" kullanıcısı için
+    `sorted(("a", "a-b"))` ile "b" kullanıcısı için `sorted(("b", "a-b"))`
+    farklı anahtar üretir, yani iki arkadaş aynı günü iki kez ürettirir ve
+    **ikisi de 3 jeton öder**. Arkadaş yolunda üretilen dize eski
+    `dyad_cache_key`'inkiyle birebir aynı: mevcut kayıtlar duruyor.
     """
-    first, second = sorted((uid_a, uid_b))
-    return f"dyad-{first}-{second}-{today.isoformat()}"
+    return f"dyad-{pair_key}-{today.isoformat()}"
 
 
-def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
+def dyad_reading(uid_a: str, pair_key: str, name_a: str, name_b: str,
                  synastry: dict[str, Any], sky: dict[str, Any],
                  lang: str | None = None,
                  spend: Callable[[], None] | None = None,
@@ -327,7 +335,7 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
     today = today or entitlements.user_local_date(uid_a)
-    cache_key = dyad_cache_key(uid_a, uid_b, today)
+    cache_key = dyad_key_for(pair_key, today)
 
     cached = cache.get(cache_key)
     if cached is not None:
@@ -384,9 +392,10 @@ def dyad_reading(uid_a: str, uid_b: str, name_a: str, name_b: str,
     return result
 
 
-def relationship_reading(uid: str, friend_uid: str, me_name: str,
+def relationship_reading(uid: str, pair_key: str, me_name: str,
                          friend_name: str, axes: dict[str, Any],
-                         lang: str | None = None) -> dict[str, Any]:
+                         lang: str | None = None,
+                         relation: str | None = None) -> dict[str, Any]:
     """İlişkinin ÖLÇÜLEN yapısının AI okuması (1.6.0).
 
     ## Neden LLM
@@ -421,12 +430,15 @@ def relationship_reading(uid: str, friend_uid: str, me_name: str,
     lang = lang if lang in i18n.SUPPORTED else i18n.DEFAULT
     p = prompts.get(lang)
 
-    ikili = "-".join(sorted((uid, friend_uid)))
+    # `pair_key` çağırandan gelir (P-turu): arkadaşta sıralı ikili — yani
+    # anahtar DEĞİŞMEDİ, mevcut kayıtlar duruyor — eklenen kişide sahibe
+    # özel ve doğum özetli kimlik.
+    #
     # v2: önbellekten gelen yanıt ARTIK ayrıştırılıyor (aşağıya bak).
     # Sürüm artırıldı ki eski kayıtlar — kartları boş bırakanlar —
     # kendiliğinden düşsün. Bu okuma jetonsuz; tazelenmesi kimseye
     # ücret yazmaz.
-    cache_key = (f"rel-reading-v2-{axes.get('calc_version')}-{ikili}-{lang}")
+    cache_key = (f"rel-reading-v2-{axes.get('calc_version')}-{pair_key}-{lang}")
     cached = cache.get(cache_key)
     if cached is not None:
         # ÖNBELLEK YOLU DA AYRIŞTIRIR.
@@ -440,7 +452,7 @@ def relationship_reading(uid: str, friend_uid: str, me_name: str,
         return {"text": cached, "cached": True,
                 **parse_relationship_reading(cached)}
 
-    yerel = prompts.localize_relationship_axes(lang, axes)
+    yerel = prompts.localize_relationship_axes(lang, axes, relation)
     satirlar = []
     for e in yerel.get("axes") or []:
         baslik = (f"- {e['axis_local']}: {e['level_local']} · "
@@ -456,8 +468,11 @@ def relationship_reading(uid: str, friend_uid: str, me_name: str,
             baslik + (" — " + "; ".join(kanitlar) if kanitlar
                       else f" — {p.NO_ASPECTS}"))
 
+    # İlişki türü çerçevesi (P-turu): ölçüm aynı kalır, AI'nın dili
+    # türe göre kısıtlanır — çocuğuyla "çekim" konuşulmaz.
     prompt = p.RELATIONSHIP.format(
-        me=me_name, friend=friend_name, axes="\n".join(satirlar))
+        me=me_name, friend=friend_name, axes="\n".join(satirlar),
+        frame=prompts.relation_frame(lang, relation))
     fallback = p.RELATIONSHIP_FALLBACK.format(friend=friend_name)
 
     sonuc = _cached_generate(cache_key, prompt, fallback,

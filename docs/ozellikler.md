@@ -178,6 +178,35 @@ aşılıyorsa **iki aday da bildirilir**.
 - Seri görünürlüğü kullanıcının kontrolünde; güvenlik menüsünde
   arkadaşlıktan çıkarma, engelleme, şikâyet.
 
+### 6b. Eklediğin kişiler — eş, çocuk, yakın (P-turu)
+
+Sayfa artık **"Çevrem"**: iki farklı nesne barındırıyor ve ikisi bilinçli
+olarak farklı çiziliyor.
+
+| | Rytho arkadaşı | Eklediğin kişi |
+|---|---|---|
+| Rıza | karşılıklı onay | **yok** — kişi kullanıcı değil |
+| Ham doğum verisi | istemciye ASLA gitmez | kullanıcının kendi verisi |
+| Tepki, seri, "bugün okudu" | var | **YOK** (karşı tarafta kimse yok) |
+
+- **Ad telefondan çıkmaz.** Sunucuya yalnız doğum bilgisi ve ilişki türü
+  gider; etiket cihazda yaşar ve Rytho kişiden "eşin", "çocuğun" diye söz
+  eder. Rehber tarafındaki duruşun aynısı: üçüncü bir kişinin kimliği
+  rızası alınmadan sunucuya yazılmaz.
+- **Kontenjan:** ücretsiz 1, Rytho+ 10. Sebep maliyet: jetonlu yüzeylerin
+  tavanını aylık jeton hakkı çiziyor ama ilişki AI okuması Plus'ta
+  jetonsuz — kontenjan onun matematiksel emniyeti
+  (bkz. `docs/maliyet-calismasi.md` §6c).
+- **İlişki türü dekoratif değil.** "Çekim" ekseni Venüs/Mars/Plüton
+  temaslarından hesaplanıyor ve bu temaslar aile haritalarında da var.
+  Çocuğuyla "Çekim: güçlü" yazmak kabul edilemez; tür seçimi ekseni
+  **"Yakınlık ve bakım"** diye adlandırıyor ve AI'ya romantik çerçeveyi
+  yasaklıyor. **Ölçüm değişmiyor** — seviye, ton ve dayanak açılar aynı;
+  değişen yalnız ad. Ölçüleni gizlemiyoruz, doğru adıyla sunuyoruz.
+- **Saat "bilmiyorum" birinci sınıf seçenek** — eklenen kişilerin çoğunda
+  saat gerçekten bilinmiyor. Boş bırakılırsa Yükselen ve evler
+  üretilmez ve ekranda beyan edilir.
+
 ---
 
 ## 7. Profil ve hesap
@@ -207,6 +236,7 @@ Sonunda "Büyük Üçlü" perdesi (Güneş/Ay/Yükselen açılışı).
 | Günlük seri | İç Takvim (progresyon + transit) |
 | Arkadaşlar katmanının **tamamı** | BaZi · İ Ching · Doğum Kapısı · Yüz Okuma |
 | Profil, doğum kaydı, avatar, bildirimler, dil, sohbet (jeton) | Arkadaşla günlük ikili okuma |
+| **1 kişi ekleme** — harita, Büyük Üçlü ve ilişki ÖLÇÜMÜ açık, yorum kilitli | **10 kişi kontenjanı** + ilişki AI yorumu (jetonsuz) |
 
 **Jeton ekonomisi:** Rytho+ ayda **300 jeton** verir (devretmez); satın
 alınan paketler (100/300/1000) **hiç yanmaz**. Bedeller: sohbet 1 · İ Ching

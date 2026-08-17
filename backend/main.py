@@ -24,6 +24,7 @@ from api.face_reading import router as face_reading_router
 from api.iching import router as iching_router
 from api.maintenance import router as maintenance_router
 from api.notify import router as notify_router
+from api.people import router as people_router
 from api.reports import router as reports_router
 from api.sky import router as sky_router
 from core.ratelimit import RateLimitMiddleware
@@ -125,6 +126,10 @@ app.include_router(reports_router, prefix="/api/v1/reports", tags=["Reports"])
 app.include_router(billing_router, prefix="/api/v1/billing", tags=["Billing"])
 app.include_router(device_router, prefix="/api/v1/device", tags=["Device"])
 app.include_router(contacts_router, prefix="/api/v1/contacts", tags=["Contacts"])
+# Eklenen kişiler (P-turu): kullanıcının kendi girdiği eş/çocuk/yakın
+# kayıtları. Yazma buradan geçiyor çünkü kontenjan Firestore kurallarında
+# zorlanamaz (koleksiyon sayılamaz); okuma istemcinin kendi akışından.
+app.include_router(people_router, prefix="/api/v1/people", tags=["People"])
 app.include_router(maintenance_router, prefix="/api/v1/maintenance", tags=["Maintenance"])
 # Bildirimler (Faz 6). Eski notify.py istemcinin serbestçe başlık/gövde
 # göndermesine izin verdiği için kaldırılmıştı; yenisinde metin SUNUCUDA

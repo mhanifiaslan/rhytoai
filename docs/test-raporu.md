@@ -101,6 +101,13 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 67 | İlişki kartları (R9-1): aynı arkadaşın ilişki ekranı İKİ KEZ açılır — her ikisinde de dört eksende ipucu cümlesi görünür (önceden ilk açılış dolu, sonrakiler boştu) | ⬜ | 1.7.0+23 + sunucu |
 | 68 | Saatsiz Ay (R9-2): doğum saati girilmemiş profilde Ay satırında `~` işareti ve bakır beyan var; sınır tarihlerinde ikinci burç adayı yazılı | ⬜ | 1.7.0+23 + sunucu |
 | 69 | Saatsiz sinastri + Atlas kartı (R9-3/4): saati olmayan arkadaşla ilişki eksenlerinde Yükselen dayanağı YOK ve beyan görünüyor; doğum kaydı eksik hesapta Atlas paywall değil "kaydı tamamla" kartı gösteriyor | ⬜ | 1.7.0+23 + sunucu |
+| 70 | Ekleme seçimi (P2): Çevrem sağ üstteki "+" doğrudan kullanıcı adı sayfası AÇMIYOR — iki seçenekli sayfa açıyor; "Kendim ekleyeceğim" kişi formuna gidiyor | ⬜ | 1.8.0+24 |
+| 71 | Kişi ekleme (P1/P2): eş eklenir (ad + tür + tarih + şehir), listede "Eklediklerin" bölümünde görünür; satırda tepki ikonu, seri ve "bugün okudu" YOK | ⬜ | 1.8.0+24 |
+| 72 | Kontenjan (P1/P6): ÜCRETSİZ hesapta ikinci kişi eklenmeye çalışılır → abonelik yönlendirmesi; Rytho+ hesapta 10 kişi eklenebilir, 11.'de "listeden birini çıkar" mesajı (Rytho+ önerilmez) | ⬜ | 1.8.0+24 + sunucu |
+| 73 | "Çekim" onarımı (P5): tür "çocuğum" seçilen kişide ilişki ekranında eksen adı **"Yakınlık ve bakım"**; metinde romantik çerçeve YOK. Aynı ölçüm eş türünde "Çekim" olarak görünüyor | ⬜ | 1.8.0+24 + sunucu |
+| 74 | Kişi mahremiyeti (P1/P7): kişi eklerken ekranda "bu ad telefondan çıkmaz" beyanı var; uygulama silinip yeniden kurulduğunda doğum verisi geliyor ama ad boş — beyan doğrulanmış oluyor | ⬜ | 1.8.0+24 |
+| 75 | Saatsiz kişi (P2/P3): saati "bilmiyorum" bırakılan kişide Büyük Üçlü'de **Yükselen satırı YOK** ve bakır beyan var; ilişki eksenlerinde Yükselen dayanağı geçmiyor | ⬜ | 1.8.0+24 + sunucu |
+| 76 | Kişi silme (P3/P7): kişi silinir → listeden düşer, kontenjan sayacı geri gelir; hesap silinince `users/{uid}/people` kalmaz (destek: Firestore'dan bak) | ⬜ | 1.8.0+24 + sunucu |
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,

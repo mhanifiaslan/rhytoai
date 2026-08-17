@@ -64,6 +64,22 @@ const LegalSections kPrivacyPolicyTr = [
         'paylaşılmaz ve satılmaz.'
   ),
   (
+    'Eklediğin kişiler',
+    'Eşinin, çocuğunun ya da bir yakınının doğum bilgilerini eklersen bu '
+        'kayıt yalnızca senin hesabının altında tutulur: başka hiçbir '
+        'kullanıcı erişemez, arkadaş listelerinde görünmez, rehber '
+        'eşleşmesine girmez ve hiçbir dizinde aranamaz.\n\n'
+        'O kişinin ADI sunucuya HİÇ gönderilmez — verdiğin etiket yalnızca '
+        'bu telefonda saklanır. Sunucuda duran tek kimlik işareti, seçtiğin '
+        'yakınlık türüdür (eş, çocuk, ebeveyn...); Rytho o kişiden adıyla '
+        'değil "eşin", "çocuğun" diye söz eder.\n\n'
+        'Bu kişiler uygulamayı kullanmadığı için rızaları alınamıyor. Bu '
+        'yüzden veriyi yalnızca sen görürsün, dilediğin an silebilirsin ve '
+        'hesabını sildiğinde bu kayıtlar da birlikte silinir. Bilgileri '
+        'girerken o kişinin bilgisi ve isteği dahilinde hareket etmek '
+        'senin sorumluluğundadır.'
+  ),
+  (
     'Sohbet ve kullanıcı hafızası',
     'Sohbet mesajların yanıt üretmek üzere yapay zeka sağlayıcımıza '
         'iletilir.\n\n'
@@ -288,6 +304,24 @@ const LegalSections kPrivacyPolicyEn = [
         '(your name, username, sun sign, and your streak if you enable it). '
         'Birth data is never shared with third parties for advertising or '
         'profiling, and is never sold.'
+  ),
+  (
+    'People you add',
+    'If you add the birth details of your partner, your child or someone '
+        'close to you, that record lives only under your account: no other '
+        'user can reach it, it never appears in friend lists, it is never '
+        'used for contact matching and it cannot be found in any directory.'
+        '\n\n'
+        'Their NAME is never sent to our servers — the label you enter is '
+        'kept on this phone only. The single identifying field stored on the '
+        'server is the relationship type you chose (partner, child, '
+        'parent...); Rytho refers to them as "your partner" or "your child", '
+        'never by name.\n\n'
+        'These people do not use the app, so their consent cannot be '
+        'collected. That is why the data is visible only to you, can be '
+        'deleted by you at any time, and is removed together with your '
+        'account. Entering their details with their knowledge and agreement '
+        'is your responsibility.'
   ),
   (
     'Chat and user memory',

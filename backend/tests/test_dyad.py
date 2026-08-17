@@ -61,30 +61,45 @@ def temiz_onbellek(tmp_path, monkeypatch):
 # Önbellek anahtarı
 # --------------------------------------------------------------------------
 
-def test_dyad_anahtari_cift_sirasindan_bagimsiz():
-    """İki arkadaş aynı günü aynı metinle görmeli — anahtar simetrik olmalı."""
+def test_dyad_anahtari_cift_sirasindan_bagimsiz(monkeypatch):
+    """İki arkadaş aynı günü aynı metinle görmeli — anahtar simetrik olmalı.
+
+    P-turu: simetriyi ARTIK `dyad_key_for` degil `friend_counterpart`
+    sagliyor (karsi taraf bir arkadas da olabilir, eklenen bir kisi de).
+    Bu yuzden test gercek yolu izliyor; sadece anahtar bicimini olcmek
+    bozulma aninda bile gecen sahte bir guvence olurdu.
+    """
+    from services import synastry_service
+    import services.profile_service as ps
+
+    monkeypatch.setattr(ps, "get_profile",
+                        lambda uid: {"displayName": uid,
+                                     "birthDate": "1990-01-01",
+                                     "birthCity": "Ankara"})
     gun = dt.date(2026, 7, 28)
-    assert (report_service.dyad_cache_key("uid-a", "uid-b", gun)
-            == report_service.dyad_cache_key("uid-b", "uid-a", gun))
+    ab = synastry_service.friend_counterpart("uid-a", "uid-b")
+    ba = synastry_service.friend_counterpart("uid-b", "uid-a")
+    assert (report_service.dyad_key_for(ab.key, gun)
+            == report_service.dyad_key_for(ba.key, gun))
 
 
 def test_dyad_anahtari_gune_gore_degisir():
-    assert (report_service.dyad_cache_key("a", "b", dt.date(2026, 7, 28))
-            != report_service.dyad_cache_key("a", "b", dt.date(2026, 7, 29)))
+    assert (report_service.dyad_key_for("a-b", dt.date(2026, 7, 28))
+            != report_service.dyad_key_for("a-b", dt.date(2026, 7, 29)))
 
 
 def test_dyad_onbellekten_okur():
-    anahtar = report_service.dyad_cache_key("a", "b", dt.date.today())
+    anahtar = report_service.dyad_key_for("a-b", dt.date.today())
     cache.set(anahtar, "Hazır ikili okuma.", ttl_seconds=600)
 
-    sonuc = report_service.dyad_reading("b", "a", "Ada", "Deniz",
+    sonuc = report_service.dyad_reading("b", "a-b", "Ada", "Deniz",
                                         SAHTE_SINASTRI, SAHTE_GOKYUZU)
     assert sonuc["cached"] is True
     assert sonuc["text"] == "Hazır ikili okuma."
 
 
 def test_dyad_onbellek_isabetinde_rag_ve_llm_calismaz(monkeypatch):
-    anahtar = report_service.dyad_cache_key("a", "b", dt.date.today())
+    anahtar = report_service.dyad_key_for("a-b", dt.date.today())
     cache.set(anahtar, "Hazır.", ttl_seconds=600)
 
     rag_cagrildi: list[int] = []
@@ -93,7 +108,7 @@ def test_dyad_onbellek_isabetinde_rag_ve_llm_calismaz(monkeypatch):
     monkeypatch.setattr(report_service.gemini_service, "generate",
                         lambda prompt, **k: pytest.fail("Önbellek isabetinde LLM'e gidilmemeli"))
 
-    report_service.dyad_reading("a", "b", "Ada", "Deniz",
+    report_service.dyad_reading("a", "a-b", "Ada", "Deniz",
                                 SAHTE_SINASTRI, SAHTE_GOKYUZU)
     assert rag_cagrildi == []
 
@@ -111,7 +126,7 @@ def test_dyad_prompta_uyum_skoru_girmez(monkeypatch):
         return "üretilmiş metin"
 
     monkeypatch.setattr(report_service.gemini_service, "generate", sahte_generate)
-    report_service.dyad_reading("a", "b", "Ada", "Deniz",
+    report_service.dyad_reading("a", "a-b", "Ada", "Deniz",
                                 SAHTE_SINASTRI, SAHTE_GOKYUZU)
 
     prompt = yakalanan["prompt"]
@@ -123,12 +138,12 @@ def test_dyad_prompta_uyum_skoru_girmez(monkeypatch):
 
 def test_dyad_llm_yanit_vermezse_fallback(monkeypatch):
     monkeypatch.setattr(report_service.gemini_service, "generate", lambda p, **k: "")
-    sonuc = report_service.dyad_reading("a", "b", "Ada", "Deniz",
+    sonuc = report_service.dyad_reading("a", "a-b", "Ada", "Deniz",
                                         SAHTE_SINASTRI, SAHTE_GOKYUZU)
     assert sonuc["fallback"] is True
     assert "Ada" in sonuc["text"] and "Deniz" in sonuc["text"]
     # Yedek metin önbelleğe yazılmamalı
-    assert cache.get(report_service.dyad_cache_key("a", "b", dt.date.today())) is None
+    assert cache.get(report_service.dyad_key_for("a-b", dt.date.today())) is None
 
 
 # --------------------------------------------------------------------------

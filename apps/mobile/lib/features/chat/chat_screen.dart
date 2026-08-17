@@ -31,6 +31,11 @@ import '../../l10n/app_localizations.dart';
 /// kimliği. Bu konuşmadaki HER mesajla sunucuya gider; sunucu arkadaşlığı
 /// doğrular ve ölçülen ilişki eksenlerini prompt'a fısıldar — takip
 /// soruları da bağlamı korur. Ham doğum verisi hiçbir yönde taşınmaz.
+///
+/// [personId] (P-turu): sohbet KULLANICININ EKLEDİĞİ bir kişi bağlamında
+/// açıldıysa o kişinin kimliği. Aynı fısıltı mekanizması; farkı yetki
+/// kapısı (arkadaşlık değil sahiplik) ve kişinin adıyla değil ilişkisiyle
+/// anılması — sunucu o adı zaten bilmiyor.
 
 /// Bakiye bu sayının altına inince çip bakır renge döner (R2-F2): aylık
 /// hakkın (300) yaklaşık %10'u — "bitmek üzere" uyarısı, panik değil.
@@ -38,11 +43,16 @@ const int _kDusukBakiye = 30;
 
 class ChatScreen extends ConsumerStatefulWidget {
   const ChatScreen(
-      {super.key, this.conversationId, this.initialText, this.friendUid});
+      {super.key,
+      this.conversationId,
+      this.initialText,
+      this.friendUid,
+      this.personId});
 
   final String? conversationId;
   final String? initialText;
   final String? friendUid;
+  final String? personId;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -145,6 +155,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         // "peki ya tartıştığımızda?" gibi takip soruları da Erkan'la
         // ölçülen eksenler üzerinden cevaplanır.
         if (widget.friendUid != null) 'friend_uid': widget.friendUid,
+        if (widget.personId != null) 'person_id': widget.personId,
       });
       final veri = response.data as Map;
       setState(() {

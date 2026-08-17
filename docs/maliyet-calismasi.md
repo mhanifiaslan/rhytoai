@@ -125,6 +125,49 @@ katmana açılan harita, LLM maliyeti olmadığı için ücretsiz kullanıcı
 maliyetini artırmaz; karşılığında ilk-değer ve dönüşüm beklentisi yükselir
 (analiz: "kullanıcı önce 'bu uygulama bana bir şey söylüyor' demeli").
 
+## 6c. P-turu: eklenen kişiler (Çevrem) — 2026-08-18
+
+Kullanıcı artık eşini, çocuğunu, bir yakınını ekleyip haritalarını ve
+aralarındaki bağı takip edebiliyor. Tarifeyi belirleyen tek soru şu oldu:
+**hangi yüzeyin tavanı yok?**
+
+### Jetonlu yüzeylerin tavanı ZATEN var
+
+Aylık 300 jeton hakkı (K5 zorlaması açık) matematiksel bir üst sınır.
+Kişi sayısı bu tavanı BÜYÜTEMEZ — yalnız jeton hızını artırır, ki bu
+gelir lehinedir (paket satışı). Kişinin natal raporu / BaZi / yıl
+haritası mevcut **5 jeton**, günlük ikili okuma **3 jeton**, kişi
+bağlamlı sohbet **1 jeton** — hiçbir yeni bedel eklenmedi.
+
+### Tavansız olan tek yüzey: ilişki AI okuması
+
+Bu okuma Plus'ta **jetonsuz** üretiliyor (çift başına bir üretim + 30
+gün önbellek). Kişi sayısı sınırsız olsaydı bu yüzeyin de tavanı olmazdı.
+
+| Senaryo | Jetonsuz ek LLM yükü | Net gelire oranı |
+|---|---|---|
+| Ücretsiz kullanıcı, 1 kişi | **$0** (yorum Plus kapısında) | %0 |
+| Plus, 10 kişilik kontenjan dolu | 10 × ~$0,0018 = **~$0,018/ay** | **%0,6** |
+| Kontenjan OLMASAYDI, 100 kişi | ~$0,18/ay ve **üst sınır yok** | tavansız |
+
+**Kontenjan (ücretsiz 1 / Plus 10) bu yüzeyin matematiksel emniyetidir.**
+Sabit `people_service.FREE_PERSON_SLOTS` / `PLUS_PERSON_SLOTS`; aşımda
+402 + `X-Paywall-Reason: people`.
+
+### Maliyeti OLMAYAN yüzeyler
+
+| Yüzey | LLM | Not |
+|---|---|---|
+| Kişinin çarkı + Büyük Üçlü + yerleşimler | **$0** | efemeris hesabı; "hesap bedava, yorum paralı" |
+| İlişki ölçümü (4 eksen + dayanak açılar) | **$0** | 30 gün önbellek, doğum özetli anahtar |
+| İlişki türüne göre eksen adı | **$0** | sabit tablo (`RELATION_AXIS_NAMES`) |
+
+**Sonuç: en kötü durum marjı %77 → ~%76.** Özellik bir maliyet sorunu
+değil; kontenjan durduğu sürece bedavaya yakın. Asıl beklenen etki gelir
+tarafında: ücretsiz kullanıcının eklediği TEK kişi (çoğunlukla eşi) dört
+ekseni ölçülmüş görüp yorumu kilitli bulur — ürünün üretebileceği en
+dürüst paywall, çünkü gösterilen ölçüm gerçektir.
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

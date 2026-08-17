@@ -185,12 +185,16 @@ class TestSohbetFisiltisi:
 
     def test_whisper_eksen_ve_dayanak_tasir(self, monkeypatch):
         sonuc = synastry_service.relationship_axes(SAHTE_SINASTRI)
-        monkeypatch.setattr(synastry_service, "cached_axes",
-                            lambda uid, fuid: sonuc)
+        # P-turu: hesap yolu `axes_for` oldu (arkadas ve eklenen kisi ayni
+        # fonksiyona giriyor); `cached_axes` artik ince bir sarmal.
+        monkeypatch.setattr(synastry_service, "axes_for",
+                            lambda uid, other: sonuc)
         import services.profile_service as ps
         monkeypatch.setattr(ps, "get_profile",
                             lambda uid: {"displayName": "Erkan",
-                                         "sunSign": "Aslan"})
+                                         "sunSign": "Aslan",
+                                         "birthDate": "1990-01-01",
+                                         "birthCity": "Ankara"})
         metin = synastry_service.relationship_whisper("a", "b", "tr")
         assert "Erkan" in metin and "Aslan" in metin
         assert "İletişim" in metin

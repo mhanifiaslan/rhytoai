@@ -12,8 +12,9 @@ from core.messages import text
 from core.entitlements import require_plus
 from core import cache, entitlements, wallet
 from services import (astro_service, bazi_service, birth_hexagram_service,
-                      chart_context, notification_service, profile_service,
-                      prompts, report_service, signal_service)
+                      chart_context, notification_service, people_service,
+                      profile_service, prompts, report_service,
+                      signal_service)
 from services.bazi_service import get_bazi_chart
 from services.iching_service import cast_iching, enrich_cast
 from services.sky_service import get_sky_now
@@ -80,6 +81,17 @@ class SynastryReportRequest(BaseModel):
 
 class DyadRequest(BaseModel):
     friend_uid: str = Field(min_length=1, max_length=128)
+
+
+class RelationshipRequest(BaseModel):
+    """İlişkinin karşı tarafı: ya bir Rytho arkadaşı ya eklenen bir kişi.
+
+    İkisi de verilirse `friend_uid` kazanır (eski istemciler yalnız onu
+    gönderiyor); hiçbiri verilmezse 400.
+    """
+
+    friend_uid: str | None = Field(default=None, max_length=128)
+    person_id: str | None = Field(default=None, max_length=128)
 
 
 def _natal_kwargs(d: BirthData) -> dict:
@@ -454,37 +466,49 @@ def iching_status(user: AuthUser = Depends(get_current_user)):
 
 
 @router.post("/dyad")
-def dyad(req: DyadRequest,
+def dyad(req: RelationshipRequest,
          user: AuthUser = Depends(require_plus("dyad")),
          lang: str = Depends(get_language)):
-    """İki arkadaşın BUGÜNE özgü ilişki dinamiği.
+    """İkinizin BUGÜNE özgü ilişki dinamiği.
 
-    İstemci yalnızca arkadaşın kimliğini gönderir; iki doğum verisini de sunucu
-    Firestore'dan okur ve yanıtta **döndürmez**. Böylece arkadaşın doğum
-    tarihi/saati/yeri hiçbir zaman karşı istemciye ulaşmaz.
+    Karşı taraf bir Rytho arkadaşı (`friend_uid`) ya da kullanıcının
+    eklediği bir kişi (`person_id`) olabilir — bkz. `/relationship`.
+
+    İstemci yalnızca kimlik gönderir; doğum verisini sunucu okur ve
+    yanıtta **döndürmez**. Böylece arkadaşın doğum tarihi/saati/yeri
+    hiçbir zaman karşı istemciye ulaşmaz. (Eklenen kişide veri zaten
+    kullanıcının kendisinin, ama simetri için aynı yol kullanılıyor.)
     """
-    if req.friend_uid == user.uid:
-        raise HTTPException(status_code=400, detail=text("dyad.self", lang))
+    from services import synastry_service
 
-    if not profile_service.are_friends(user.uid, req.friend_uid):
-        raise HTTPException(status_code=403,
-                            detail=text("dyad.not_friends", lang))
+    if req.friend_uid:
+        if req.friend_uid == user.uid:
+            raise HTTPException(status_code=400,
+                                detail=text("dyad.self", lang))
+        if not profile_service.are_friends(user.uid, req.friend_uid):
+            raise HTTPException(status_code=403,
+                                detail=text("dyad.not_friends", lang))
+        karsi = synastry_service.friend_counterpart(user.uid, req.friend_uid)
+    elif req.person_id:
+        karsi = synastry_service.person_counterpart(user.uid, req.person_id,
+                                                    lang)
+    else:
+        raise HTTPException(status_code=400,
+                            detail=text("dyad.profile_missing", lang))
 
     me = profile_service.get_profile(user.uid)
-    friend = profile_service.get_profile(req.friend_uid)
-    if not me or not friend:
+    if not me or karsi is None:
         raise HTTPException(status_code=404,
                             detail=text("dyad.profile_missing", lang))
 
     synastry = astro_service.get_synastry(
-        profile_service.birth_kwargs(me), profile_service.birth_kwargs(friend)
-    )
+        profile_service.birth_kwargs(me), karsi.birth)
     sky = prompts.localize_sky(lang, get_sky_now())
     # Bedeli İSTEYEN taraf öder; arkadaş aynı gün içinde aynı okumayı
     # önbellekten ücretsiz görür (anahtar çift bazlı).
     report = report_service.dyad_reading(
-        user.uid, req.friend_uid,
-        me.get("displayName") or "Gezgin", friend.get("displayName") or "Gezgin",
+        user.uid, karsi.key,
+        me.get("displayName") or "Gezgin", karsi.label,
         synastry, sky, lang=lang,
         spend=wallet.spender(user.uid, "dyad", lang=lang),
         refund=lambda: wallet.refund_spend(user.uid, "dyad"),
@@ -504,10 +528,22 @@ def dyad(req: DyadRequest,
 
 
 @router.post("/relationship")
-def relationship(req: DyadRequest,
+def relationship(req: RelationshipRequest,
                  user: AuthUser = Depends(get_current_user),
                  lang: str = Depends(get_language)):
-    """Arkadaşla ilişki eksenleri (R2-L1) — nitel okuma, sayısal puan YOK.
+    """İlişki eksenleri (R2-L1) — nitel okuma, sayısal puan YOK.
+
+    Karşı taraf iki türden biri olabilir (P-turu):
+
+    * **Rytho arkadaşı** (`friend_uid`) — karşılıklı arkadaşlık ŞART;
+      arkadaşın ham doğum verisi istemciye hiçbir zaman gitmez.
+    * **Eklenen kişi** (`person_id`) — kullanıcının kendi girdiği eş,
+      çocuk, yakın. Yetki kapısı arkadaşlık değil SAHİPLİK: kayıt
+      çağıranın kendi ağacından okunur, başkasının person_id'si orada
+      bulunamaz (`people_service.get_person`).
+
+    Eklenen kişide eksen ADLARI ilişki türüne göre değişir — çocuğuyla
+    "Çekim" değil "Yakınlık ve bakım" yazar; ölçüm aynı kalır.
 
     Mevcut ``/synastry`` ucu iki kişinin doğum verisini İSTEMCİDEN alıyor;
     arkadaş için kullanılamaz — arkadaşın doğum tarihi/saati/yeri istemciye
@@ -524,42 +560,57 @@ def relationship(req: DyadRequest,
 
     Jeton düşülmez: okuma çift başına bir kez üretilip 30 gün saklanır.
     """
-    if req.friend_uid == user.uid:
-        raise HTTPException(status_code=400, detail=text("dyad.self", lang))
-    if not profile_service.are_friends(user.uid, req.friend_uid):
-        raise HTTPException(status_code=403,
-                            detail=text("dyad.not_friends", lang))
+    from services import synastry_service
+
+    if req.friend_uid:
+        if req.friend_uid == user.uid:
+            raise HTTPException(status_code=400,
+                                detail=text("dyad.self", lang))
+        if not profile_service.are_friends(user.uid, req.friend_uid):
+            raise HTTPException(status_code=403,
+                                detail=text("dyad.not_friends", lang))
+        karsi = synastry_service.friend_counterpart(user.uid, req.friend_uid)
+    elif req.person_id:
+        # Yetki kapısı SAHİPLİK: kayıt çağıranın kendi ağacından okunur,
+        # başkasının person_id'si orada bulunamaz — bu yüzden ayrı bir
+        # 403 kontrolüne gerek yok, `None` zaten "senin değil" demektir.
+        karsi = synastry_service.person_counterpart(user.uid, req.person_id,
+                                                    lang)
+        if karsi is None and not people_service.get_person(user.uid,
+                                                           req.person_id):
+            raise HTTPException(status_code=404,
+                                detail=text("people.missing", lang))
+    else:
+        raise HTTPException(status_code=400,
+                            detail=text("dyad.profile_missing", lang))
 
     me = profile_service.get_profile(user.uid)
-    friend = profile_service.get_profile(req.friend_uid)
-    if not me or not friend:
+    if not me:
         raise HTTPException(status_code=404,
                             detail=text("dyad.profile_missing", lang))
-    if not (chart_context.has_birth_data(me)
-            and chart_context.has_birth_data(friend)):
+    if karsi is None or not chart_context.has_birth_data(me):
         # Varsayılan doğum verisiyle hesaplanan ilişkiyi "sizin haritanız"
         # diye sunmak veri uydurmaktır (chart_context kuralı).
         return {"status": "success",
                 "data": {"axes": [], "reason": "birth_missing"}}
 
     try:
-        from services import synastry_service
-
-        # Hesap + çift bazlı önbellek yardımcıda (R4-2): sohbet fısıltısı
-        # da aynı kaydı kullanır — aynı ikili için tek hesap.
-        eksenler = synastry_service.cached_axes(user.uid, req.friend_uid)
+        # Hesap + önbellek yardımcıda (R4-2): sohbet fısıltısı da aynı
+        # kaydı kullanır — aynı ikili için tek hesap.
+        eksenler = synastry_service.axes_for(user.uid, karsi)
         if eksenler is None:
             return {"status": "success",
                     "data": {"axes": [], "reason": "birth_missing"}}
 
-        veri = prompts.localize_relationship_axes(lang, eksenler)
+        veri = prompts.localize_relationship_axes(lang, eksenler,
+                                                  karsi.relation)
 
         if entitlements.is_subscriber(user.uid):
             okuma = report_service.relationship_reading(
-                user.uid, req.friend_uid,
+                user.uid, karsi.key,
                 me.get("displayName") or "?",
-                friend.get("displayName") or friend.get("username") or "?",
-                eksenler, lang=lang)
+                karsi.label, eksenler, lang=lang,
+                relation=karsi.relation)
             # Her eksen KENDİ cümlesini taşır: kart boş kalmamalı, kullanıcı
             # "neyi soracağım?" durumuna düşmemeli (cihaz turu bulgusu).
             # Cümleyi model o çift için yazar; hazır tablo yok.

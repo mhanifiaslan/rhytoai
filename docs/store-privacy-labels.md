@@ -31,6 +31,8 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
 | Token cüzdanı | `users/{uid}/private/wallet` — yalnızca sunucu yazar | Kullanım hakkı muhasebesi | Evet | Hayır |
 | **Telefon numarası (isteğe bağlı)** | Firebase Auth (numara); `phoneHashes/{sha256}` + `users/{uid}/private/phone` (yalnızca özet) | Numara-hesap eşleşmesi; açılırsa rehber eşleşmesi | Evet | Hayır |
 | **Rehber (isteğe bağlı, varsayılan KAPALI)** | SAKLANMAZ — numaralar cihazda SHA-256'lanır, özet listesi eşleştirme sonrası atılır; ad/soyad hiç okunmaz | Karşılıklı arkadaş önerisi | Hayır (geçici işleme) | Hayır |
+| **Eklenen kişilerin doğum verisi (isteğe bağlı)** | `users/{uid}/people/{id}` — yalnızca sunucu yazar, yalnızca sahibi okur | Kullanıcının yakınlarının haritası ve ilişki ölçümü | Evet (ekleyene bağlı) | Hayır |
+| **Eklenen kişilerin ADI** | **SAKLANMAZ** — etiket yalnızca cihazda (`SharedPreferences`); sunucuda yalnız ilişki türü (`partner`/`child`/…) durur | Arayüzde tanıma | — | Hayır |
 | Cihaz tanımlayıcısı (rastgele, donanım DEĞİL) | `users/{uid}/private/device` | Tek cihaz kilidi (yalnızca aboneler) | Evet | Hayır |
 | Bildirim kimliği (FCM token) | `users/{uid}.fcmToken` | Bildirim gönderimi | Evet | Hayır |
 | Saat dilimi (IANA adı) | `users/{uid}.timezone` | Bildirimin yerel sabaha denk gelmesi | Evet | Hayır |
@@ -187,6 +189,20 @@ Her iki formda da:
 - Kullanıcılar arası etkileşim: **evet, sınırlı** — yalnızca sabit tepki kümesi
 - Konum paylaşımı: **hayır**
 - Dijital satın alma: **evet** (abonelik)
+
+### Çocuk verisi duruşu (P-turu)
+
+Kullanıcı "çocuğum" türünde bir kişi ekleyebiliyor. Bu, uygulamayı
+**çocuklara yönelik yapmaz** ve Families programına sokmaz:
+
+- Çocuk için hesap açılmaz, oturum yoktur, bildirim gönderilmez, hiçbir
+  şekilde uygulamanın kullanıcısı olmaz.
+- Veriyi giren ve gören taraf yalnızca ebeveyn/veli olan yetişkin
+  kullanıcıdır; kayıt onun hesabının altında ve yalnız ona açıktır.
+- Uygulamanın hedef kitlesi 13+/12+ olarak kalır; mağaza formundaki
+  "hedef yaş grubu" beyanı DEĞİŞMEZ.
+- Toplanan alan yalnızca doğum tarihi/saati/şehri ve yakınlık türüdür;
+  **ad sunucuya hiç gitmez** (etiket cihazda kalır).
 
 ---
 

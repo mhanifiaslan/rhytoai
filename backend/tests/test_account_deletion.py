@@ -119,6 +119,11 @@ def ornek_store():
         "users/ben/friends/arkadas": {"status": "accepted"},
         "users/ben/nudges/n1": {"fromUid": "arkadas", "reaction": "shine"},
         "users/ben/blocked/kotu": {"at": 1},
+        # Eklenen kisi (P-turu): ucuncu bir kisinin dogum verisi. Rizasi
+        # ALINAMAMIS bir kisinin verisi, sahibi hesabini sildikten sonra
+        # sunucuda kalamaz.
+        "users/ben/people/p1": {"relation": "partner",
+                                "birthDate": "1990-03-12"},
         # Karsi taraftaki izler
         "users/arkadas/friends/ben": {"status": "accepted"},
         "users/arkadas/nudges/n9": {"fromUid": "ben", "reaction": "streak"},
@@ -158,6 +163,7 @@ def store(monkeypatch):
     "users/ben/friends/arkadas",
     "users/ben/nudges/n1",
     "users/ben/blocked/kotu",
+    "users/ben/people/p1",
     "publicProfiles/ben",
     "usernames/gezgin",
 ])

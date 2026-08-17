@@ -1093,5 +1093,45 @@
   },
   "birthMissingTitle": "Your birth record is incomplete",
   "birthMissingBody": "Your birth date and city are needed to calculate your chart. This is not a Rytho+ lock — once the record is complete, the wheel, placements and aspects open for free.",
-  "birthMissingAction": "Complete your birth record"
+  "birthMissingAction": "Complete your birth record",
+
+  "circleTitle": "My circle",
+  "circleFriendsSection": "Friends on Rytho",
+  "circlePeopleSection": "People you added",
+  "circleEmptyTitle": "Add your partner or child",
+  "circleEmptyBody": "See the charts of the people close to you and the bond between you. They don't need the app.",
+  "addChooserTitle": "Who are you adding?",
+  "addChooserFriend": "Someone on Rytho",
+  "addChooserFriendBody": "By username, contacts or an invite link. Both sides confirm; you can send reactions and see each other's streaks.",
+  "addChooserPerson": "I'll add them myself",
+  "addChooserPersonBody": "Your partner, your child, someone close. You enter their birth details.",
+
+  "peopleAddTitle": "Add a person",
+  "peopleEditTitle": "Edit person",
+  "peopleLabelField": "Name",
+  "peopleLabelHint": "What do you call them?",
+  "peopleLabelNote": "This name never leaves your phone. Only the birth details are stored on the server; Rytho refers to them as \"your partner\", \"your child\".",
+  "peopleRelation": "Relationship",
+  "peopleConsent": "You are entering this person's birth details on their behalf. The record is visible only to you, no other user can reach it, and it is deleted together with your account.",
+  "peopleSaved": "Saved",
+  "peopleRemove": "Remove person",
+  "peopleRemoveConfirm": "Delete this person and their chart? This cannot be undone.",
+  "peopleRemoved": "Removed",
+  "peopleSlots": "{used}/{limit} people",
+  "@peopleSlots": {
+    "placeholders": {
+      "used": { "type": "int" },
+      "limit": { "type": "int" }
+    }
+  },
+  "peopleUnnamed": "Unnamed person",
+  "peopleHourUnknownBadge": "Birth time unknown — Ascendant and houses were not calculated.",
+
+  "relationPartner": "My partner",
+  "relationChild": "My child",
+  "relationParent": "My parent",
+  "relationSibling": "My sibling",
+  "relationFriend": "My friend",
+  "relationWork": "My colleague",
+  "relationOther": "Close to me"
 }

@@ -19,7 +19,9 @@ eksenler farklı ölçeklerde çalışıyor, tek eşik hepsini yanlış okurdu.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
+from dataclasses import dataclass
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -201,6 +203,107 @@ def relationship_axes(synastry: dict[str, Any]) -> dict[str, Any]:
 # Önbellekli erişim + sohbet fısıltısı (R4-2)
 # ---------------------------------------------------------------------------
 
+@dataclass(frozen=True)
+class Counterpart:
+    """İlişkinin KARŞI TARAFI — Rytho arkadaşı ya da kullanıcının eklediği
+    kişi (P-turu).
+
+    İlişki hesabı iki tarafın doğum verisinden başka bir şey bilmek zorunda
+    değil; ikisi arasındaki fark kimlik ve gizlilik katmanında. Bu yüzden
+    hesap yolu buradan aşağısı için TEK: arkadaş ve kişi aynı fonksiyonlara
+    girer, ayrışma yalnız bu nesnenin nasıl kurulduğundadır.
+    """
+
+    #: Önbellek anahtarına giren kararlı kimlik. Arkadaşta sıralı ikili
+    #: (simetrik — iki taraf aynı kaydı paylaşır), kişide sahibe özel.
+    key: str
+
+    #: astro_service'in beklediği doğum verisi.
+    birth: dict[str, Any]
+
+    #: Prompt'ta ve fısıltıda görünen ad. Arkadaşta gerçek görünen ad,
+    #: kişide İLİŞKİ ETİKETİ ("eşin") — sunucu kişinin adını bilmiyor.
+    label: str
+
+    sun_sign: str | None = None
+
+    #: Yalnız eklenen kişide dolu; eksen adlarını ve AI çerçevesini
+    #: belirler (çocukla "çekim" ekseni gösterilmez).
+    relation: str | None = None
+
+
+def friend_counterpart(uid: str, friend_uid: str) -> Counterpart | None:
+    """Arkadaşı karşı tarafa çevirir; doğum verisi yoksa None."""
+    from services import chart_context, profile_service
+
+    friend = profile_service.get_profile(friend_uid)
+    if not friend or not chart_context.has_birth_data(friend):
+        return None
+    return Counterpart(
+        # Simetrik anahtar KORUNUYOR: mevcut önbellek kayıtları düşmesin.
+        key="-".join(sorted((uid, friend_uid))),
+        birth=profile_service.birth_kwargs(friend),
+        label=(friend.get("displayName") or friend.get("username") or "?"),
+        sun_sign=friend.get("sunSign"),
+    )
+
+
+def person_counterpart(uid: str, person_id: str,
+                       lang: str | None = None) -> Counterpart | None:
+    """Eklenen kişiyi karşı tarafa çevirir; kişi bu kullanıcının değilse
+    None (sahiplik doğrulaması `people_service.get_person` üzerinden).
+
+    Anahtar doğum ÖZETİNİ taşır: kullanıcı kişinin doğum saatini
+    düzeltince eski eksenler kendiliğinden düşer. Arkadaş yolunda bu
+    yapılamıyor (anahtar simetrik ve iki profile bağlı) ama burada
+    bedava — eksenler LLM'siz hesap, tazelenmesi kimseye ücret yazmaz.
+    """
+    from services import people_service, prompts
+
+    kayit = people_service.get_person(uid, person_id)
+    if not kayit or not kayit.get("birthDate"):
+        return None
+
+    etiket = prompts.relation_label(lang, kayit.get("relation") or "other")
+    ozet = hashlib.sha256(
+        "|".join(str(kayit.get(alan) or "") for alan in
+                 ("birthDate", "birthTime", "birthCity", "birthNation"))
+        .encode("utf-8")).hexdigest()[:10]
+    return Counterpart(
+        key=f"{uid}-p{person_id}-{ozet}",
+        birth=people_service.birth_kwargs(kayit, name=etiket),
+        label=etiket,
+        sun_sign=kayit.get("sunSign"),
+        relation=kayit.get("relation") or "other",
+    )
+
+
+def axes_for(uid: str, other: Counterpart) -> dict[str, Any] | None:
+    """Kullanıcı ile karşı taraf arasındaki eksenler, önbellekli.
+
+    Kullanıcının kendi doğum verisi yoksa None: varsayılan doğum verisiyle
+    "sizin ilişkiniz" üretilmez (chart_context kuralı). YETKİ DOĞRULAMASI
+    ÇAĞIRANIN İŞİ — bu fonksiyon yalnız hesaplar.
+    """
+    from core import cache
+    from services import astro_service, chart_context, profile_service
+
+    me = profile_service.get_profile(uid)
+    if not me or not chart_context.has_birth_data(me):
+        return None
+
+    anahtar = f"rel-axes-{SYNASTRY_CALC_VERSION}-{other.key}"
+    eksenler = cache.get(anahtar)
+    if eksenler is None:
+        ham = astro_service.get_synastry(
+            profile_service.birth_kwargs(me), other.birth)
+        eksenler = relationship_axes(ham)
+        # Natal veriye bağlı: doğum verisi değişmedikçe geçerli.
+        cache.set(anahtar, eksenler, ttl_seconds=30 * 24 * 3600,
+                  owner_uid=uid)
+    return eksenler
+
+
 def cached_axes(uid: str, friend_uid: str) -> dict[str, Any] | None:
     """İki arkadaşın ilişki eksenleri, çift bazlı simetrik önbellekle.
 
@@ -210,56 +313,50 @@ def cached_axes(uid: str, friend_uid: str) -> dict[str, Any] | None:
     (chart_context kuralı). ARKADAŞLIK DOĞRULAMASI ÇAĞIRANIN İŞİDİR —
     bu fonksiyon yalnız hesaplar.
     """
-    from core import cache
-    from services import astro_service, chart_context, profile_service
-
-    me = profile_service.get_profile(uid)
-    friend = profile_service.get_profile(friend_uid)
-    if not me or not friend:
+    karsi = friend_counterpart(uid, friend_uid)
+    if karsi is None:
         return None
-    if not (chart_context.has_birth_data(me)
-            and chart_context.has_birth_data(friend)):
-        return None
-
-    ikili = "-".join(sorted((uid, friend_uid)))
-    anahtar = f"rel-axes-{SYNASTRY_CALC_VERSION}-{ikili}"
-    eksenler = cache.get(anahtar)
-    if eksenler is None:
-        ham = astro_service.get_synastry(
-            profile_service.birth_kwargs(me),
-            profile_service.birth_kwargs(friend))
-        eksenler = relationship_axes(ham)
-        # Natal veriye bağlı: doğum verisi değişmedikçe geçerli.
-        cache.set(anahtar, eksenler, ttl_seconds=30 * 24 * 3600,
-                  owner_uid=uid)
-    return eksenler
+    return axes_for(uid, karsi)
 
 
 def relationship_whisper(uid: str, friend_uid: str, lang: str,
                          max_chars: int = 600) -> str:
-    """Sohbet için kompakt ilişki bağlamı (R4-2).
+    """Arkadaş için sohbet bağlamı (R4-2) — `whisper_for`'un ince sarmalı."""
+    karsi = friend_counterpart(uid, friend_uid)
+    if karsi is None:
+        return ""
+    return whisper_for(uid, karsi, lang, max_chars=max_chars)
+
+
+def whisper_for(uid: str, other: Counterpart, lang: str,
+                max_chars: int = 600) -> str:
+    """Sohbet için kompakt ilişki bağlamı (R4-2, P-turu'nda genelleşti).
 
     Cihaz bulgusu: arkadaşla ilgili soruda model bağlamsız kaldığı için
     kullanıcının KENDİ haritasından genel cevap uyduruyordu. Bu fısıltı,
-    ölçülen eksenleri (seviye · ton + en güçlü dayanak açısı) ve arkadaşın
-    görünen adını modelin önüne koyar. Ham doğum verisi YOKTUR — dyad
-    kuralı: arkadaşın doğum bilgisi hiçbir katmanda karşıya taşınmaz.
-    """
-    from services import profile_service, prompts
+    ölçülen eksenleri (seviye · ton + en güçlü dayanak açısı) ve karşı
+    tarafın adını modelin önüne koyar. Ham doğum verisi YOKTUR — dyad
+    kuralı: karşı tarafın doğum bilgisi hiçbir katmanda taşınmaz.
 
-    eksenler = cached_axes(uid, friend_uid)
+    Eklenen kişide "ad" gerçek ad değil ilişki etiketidir ("eşin"):
+    sunucu o kişinin adını zaten bilmiyor.
+    """
+    from services import prompts
+
+    eksenler = axes_for(uid, other)
     if eksenler is None:
         return ""
-    friend = profile_service.get_profile(friend_uid) or {}
-    ad = friend.get("displayName") or friend.get("username") or "?"
 
     etiket = "Arkadaş" if lang == "tr" else "Friend"
-    ilk = f"{etiket}: {ad}"
-    if friend.get("sunSign"):
-        ilk += f" ({friend['sunSign']})"
+    if other.relation:
+        etiket = "Kişi" if lang == "tr" else "Person"
+    ilk = f"{etiket}: {other.label}"
+    if other.sun_sign:
+        ilk += f" ({other.sun_sign})"
     satirlar = [ilk]
 
-    yerel = prompts.localize_relationship_axes(lang, eksenler)
+    yerel = prompts.localize_relationship_axes(lang, eksenler,
+                                               other.relation)
     for e in yerel.get("axes") or []:
         satir = (f"- {e['axis_local']}: {e['level_local']} · "
                  f"{e['tone_local']}")
@@ -270,4 +367,10 @@ def relationship_whisper(uid: str, friend_uid: str, lang: str,
         satirlar.append(satir)
 
     metin = "\n".join(satirlar)
+    if other.relation:
+        # Modelin türü bilmesi ŞART: aksi halde çocuğuyla ilgili soruya
+        # romantik çerçeveyle cevap verebilir (bkz. RELATION_FRAME).
+        cerceve = prompts.relation_frame(lang, other.relation)
+        if cerceve:
+            metin = f"{metin}\n- {cerceve}"
     return metin[:max_chars]

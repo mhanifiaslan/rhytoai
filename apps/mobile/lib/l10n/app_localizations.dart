@@ -4417,6 +4417,192 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Doğum kaydını tamamla'**
   String get birthMissingAction;
+
+  /// No description provided for @circleTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çevrem'**
+  String get circleTitle;
+
+  /// No description provided for @circleFriendsSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'daki arkadaşların'**
+  String get circleFriendsSection;
+
+  /// No description provided for @circlePeopleSection.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eklediklerin'**
+  String get circlePeopleSection;
+
+  /// No description provided for @circleEmptyTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşini, çocuğunu ekle'**
+  String get circleEmptyTitle;
+
+  /// No description provided for @circleEmptyBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yakınlarının haritalarını ve aranızdaki bağı gör. Onların uygulamayı kullanmasına gerek yok.'**
+  String get circleEmptyBody;
+
+  /// No description provided for @addChooserTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kimi ekliyorsun?'**
+  String get addChooserTitle;
+
+  /// No description provided for @addChooserFriend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho\'da olan biri'**
+  String get addChooserFriend;
+
+  /// No description provided for @addChooserFriendBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kullanıcı adı, rehber ya da davet bağlantısıyla. Karşılıklı onay gerekir; tepki gönderebilir, serilerini görürsünüz.'**
+  String get addChooserFriendBody;
+
+  /// No description provided for @addChooserPerson.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kendim ekleyeceğim'**
+  String get addChooserPerson;
+
+  /// No description provided for @addChooserPersonBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşin, çocuğun, bir yakının. Doğum bilgilerini sen girersin.'**
+  String get addChooserPersonBody;
+
+  /// No description provided for @peopleAddTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kişi ekle'**
+  String get peopleAddTitle;
+
+  /// No description provided for @peopleEditTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kişiyi düzenle'**
+  String get peopleEditTitle;
+
+  /// No description provided for @peopleLabelField.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adı'**
+  String get peopleLabelField;
+
+  /// No description provided for @peopleLabelHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kişiyi nasıl anıyorsun?'**
+  String get peopleLabelHint;
+
+  /// No description provided for @peopleLabelNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ad telefonundan çıkmaz. Sunucuda yalnız doğum bilgisi durur; Rytho bu kişiden \"eşin\", \"çocuğun\" diye söz eder.'**
+  String get peopleLabelNote;
+
+  /// No description provided for @peopleRelation.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yakınlık'**
+  String get peopleRelation;
+
+  /// No description provided for @peopleConsent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kişinin doğum bilgilerini onun adına giriyorsun. Kayıt yalnız sana görünür, başka hiçbir kullanıcı erişemez ve hesabını silersen birlikte silinir.'**
+  String get peopleConsent;
+
+  /// No description provided for @peopleSaved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kaydedildi'**
+  String get peopleSaved;
+
+  /// No description provided for @peopleRemove.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kişiyi çıkar'**
+  String get peopleRemove;
+
+  /// No description provided for @peopleRemoveConfirm.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu kişi ve haritası silinsin mi? Geri alınamaz.'**
+  String get peopleRemoveConfirm;
+
+  /// No description provided for @peopleRemoved.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkarıldı'**
+  String get peopleRemoved;
+
+  /// No description provided for @peopleSlots.
+  ///
+  /// In tr, this message translates to:
+  /// **'{used}/{limit} kişi'**
+  String peopleSlots(int used, int limit);
+
+  /// No description provided for @peopleUnnamed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Adsız kişi'**
+  String get peopleUnnamed;
+
+  /// No description provided for @peopleHourUnknownBadge.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum saati bilinmiyor — Yükselen ve evler hesaplanmadı.'**
+  String get peopleHourUnknownBadge;
+
+  /// No description provided for @relationPartner.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşim'**
+  String get relationPartner;
+
+  /// No description provided for @relationChild.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çocuğum'**
+  String get relationChild;
+
+  /// No description provided for @relationParent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Annem/Babam'**
+  String get relationParent;
+
+  /// No description provided for @relationSibling.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kardeşim'**
+  String get relationSibling;
+
+  /// No description provided for @relationFriend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Arkadaşım'**
+  String get relationFriend;
+
+  /// No description provided for @relationWork.
+  ///
+  /// In tr, this message translates to:
+  /// **'İş arkadaşım'**
+  String get relationWork;
+
+  /// No description provided for @relationOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yakınım'**
+  String get relationOther;
 }
 
 class _AppLocalizationsDelegate

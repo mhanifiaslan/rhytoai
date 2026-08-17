@@ -2472,4 +2472,106 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get birthMissingAction => 'Complete your birth record';
+
+  @override
+  String get circleTitle => 'My circle';
+
+  @override
+  String get circleFriendsSection => 'Friends on Rytho';
+
+  @override
+  String get circlePeopleSection => 'People you added';
+
+  @override
+  String get circleEmptyTitle => 'Add your partner or child';
+
+  @override
+  String get circleEmptyBody =>
+      'See the charts of the people close to you and the bond between you. They don\'t need the app.';
+
+  @override
+  String get addChooserTitle => 'Who are you adding?';
+
+  @override
+  String get addChooserFriend => 'Someone on Rytho';
+
+  @override
+  String get addChooserFriendBody =>
+      'By username, contacts or an invite link. Both sides confirm; you can send reactions and see each other\'s streaks.';
+
+  @override
+  String get addChooserPerson => 'I\'ll add them myself';
+
+  @override
+  String get addChooserPersonBody =>
+      'Your partner, your child, someone close. You enter their birth details.';
+
+  @override
+  String get peopleAddTitle => 'Add a person';
+
+  @override
+  String get peopleEditTitle => 'Edit person';
+
+  @override
+  String get peopleLabelField => 'Name';
+
+  @override
+  String get peopleLabelHint => 'What do you call them?';
+
+  @override
+  String get peopleLabelNote =>
+      'This name never leaves your phone. Only the birth details are stored on the server; Rytho refers to them as \"your partner\", \"your child\".';
+
+  @override
+  String get peopleRelation => 'Relationship';
+
+  @override
+  String get peopleConsent =>
+      'You are entering this person\'s birth details on their behalf. The record is visible only to you, no other user can reach it, and it is deleted together with your account.';
+
+  @override
+  String get peopleSaved => 'Saved';
+
+  @override
+  String get peopleRemove => 'Remove person';
+
+  @override
+  String get peopleRemoveConfirm =>
+      'Delete this person and their chart? This cannot be undone.';
+
+  @override
+  String get peopleRemoved => 'Removed';
+
+  @override
+  String peopleSlots(int used, int limit) {
+    return '$used/$limit people';
+  }
+
+  @override
+  String get peopleUnnamed => 'Unnamed person';
+
+  @override
+  String get peopleHourUnknownBadge =>
+      'Birth time unknown — Ascendant and houses were not calculated.';
+
+  @override
+  String get relationPartner => 'My partner';
+
+  @override
+  String get relationChild => 'My child';
+
+  @override
+  String get relationParent => 'My parent';
+
+  @override
+  String get relationSibling => 'My sibling';
+
+  @override
+  String get relationFriend => 'My friend';
+
+  @override
+  String get relationWork => 'My colleague';
+
+  @override
+  String get relationOther => 'Close to me';
 }

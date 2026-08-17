@@ -209,6 +209,32 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "en": "The birth details needed for this reading are missing.",
     },
 
+    # --- Eklenen kişiler (P-turu) ---
+    # İkisi de 402 + X-Paywall-Reason: people ile döner (istemci jeton
+    # mağazasını değil abonelik sayfasını açar). Metin ikiye ayrık, çünkü
+    # kontenjanı dolan ABONEYE "Rytho+ al" demek saçmadır — ve sayı hem 1
+    # hem 10 olabildiği için ifade tekil/çoğuldan bağımsız kuruldu.
+    "people.limit_free": {
+        "tr": "{limit} kişilik sınıra ulaştın. Rytho+ ile eşini, "
+              "çocuklarını ve yakınlarını birlikte takip edebilirsin.",
+        "en": "You've reached your limit of {limit}. Rytho+ lets you follow "
+              "your partner, children and close ones together.",
+    },
+    "people.limit_plus": {
+        "tr": "{limit} kişilik sınıra ulaştın. Yeni birini eklemek için "
+              "listeden bir kişiyi çıkarabilirsin.",
+        "en": "You've reached your limit of {limit}. Remove someone from "
+              "your list to add a new person.",
+    },
+    "people.invalid": {
+        "tr": "Bu kişinin doğum bilgileri eksik ya da hatalı görünüyor.",
+        "en": "This person's birth details look incomplete or invalid.",
+    },
+    "people.missing": {
+        "tr": "Bu kişi bulunamadı.",
+        "en": "This person could not be found.",
+    },
+
     # --- Genel ---
     "face_consent_required": {
         "tr": "Yüz okuma için biyometrik işleme rızası gerekiyor. "

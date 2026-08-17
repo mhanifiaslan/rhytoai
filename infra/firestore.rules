@@ -126,6 +126,23 @@ service cloud.firestore {
         allow read, create, delete: if isOwner(uid);
       }
 
+      // ---------- Eklenen kişiler (P-turu) ----------
+      // Kullanıcının kendi girdiği eş/çocuk/ebeveyn/yakın kayıtları.
+      // Arkadaştan farkı: bu kişiler Rytho kullanıcısı DEĞİL, rızaları
+      // alınamıyor. Bu yüzden kayıt yalnızca sahibinde durur; hiçbir
+      // başka kullanıcı okuyamaz, publicProfiles'a çıkmaz, rehber
+      // eşleşmesine girmez. Kişinin ADI dokümanda YOKTUR (yalnız
+      // `relation`) — etiket cihazda yaşar; bkz. services/people_service.py.
+      //
+      // Yazma neden kapalı: kontenjan (ücretsiz 1 / Plus 10) bir ürün
+      // gerçeğidir ve Firestore kuralları koleksiyon SAYAMAZ. Ekleme ve
+      // silme /api/v1/people uçlarından geçer (conversations deseninin
+      // aynısı); istemci yalnızca okur.
+      match /people/{personId} {
+        allow read: if isOwner(uid);
+        allow write: if false;
+      }
+
       // Kullanıcı hafızası (memory_service), abonelik kaydı (billing) ve
       // bildirim gönderim kaydı (notification_service) — yalnızca sunucu
       // (Admin SDK) erişir; Admin SDK bu kuralları atlar.

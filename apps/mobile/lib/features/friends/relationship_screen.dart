@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
 import '../../core/friends.dart';
+import '../../core/people.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
@@ -15,6 +16,7 @@ import '../../widgets/markdown_text.dart';
 import '../../widgets/nebula_widgets.dart';
 import '../chat/chat_screen.dart';
 import '../paywall/plus_locked_card.dart';
+import '../people/person_form_screen.dart' show relationLabel;
 
 /// İLİŞKİ — iki haritanın dört eksende nitel okuması (R2-L1).
 ///
@@ -27,9 +29,20 @@ import '../paywall/plus_locked_card.dart';
 /// Hesap ücretsizdir (LLM yok); derin yorum arkadaş ekranındaki günlük ikili
 /// okumada ve Rytho AI'da kalır.
 class RelationshipScreen extends ConsumerStatefulWidget {
-  const RelationshipScreen({super.key, required this.friend});
+  /// Rytho arkadaşıyla ilişki.
+  const RelationshipScreen({super.key, required Friend this.friend})
+      : person = null;
 
-  final Friend friend;
+  /// Kullanıcının kendi eklediği kişiyle ilişki (P-turu).
+  ///
+  /// Ekran aynı ekran: ölçüm, kartlar ve kilit satırı birebir korunur.
+  /// Değişen tek şey karşı tarafın kim olduğu — ve eksen ADLARI, çünkü
+  /// onları sunucu ilişki türüne göre yolluyor (çocukla "çekim" yazmaz).
+  const RelationshipScreen.forPerson({super.key, required Person this.person})
+      : friend = null;
+
+  final Friend? friend;
+  final Person? person;
 
   @override
   ConsumerState<RelationshipScreen> createState() =>
@@ -61,7 +74,9 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
     try {
       final dio = ref.read(apiProvider);
       final response = await dio.post('/api/v1/reports/relationship',
-          data: {'friend_uid': widget.friend.uid});
+          data: widget.friend != null
+              ? {'friend_uid': widget.friend!.uid}
+              : {'person_id': widget.person!.id});
       final data = Map<String, dynamic>.from(response.data['data']);
       if (!mounted) return;
       setState(() {
@@ -81,15 +96,23 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
     }
   }
 
+  /// Karşı tarafın ekranda görünen adı. Eklenen kişide etiket CİHAZDAN
+  /// gelir; sunucu o adı bilmiyor ve bilmesi de gerekmiyor.
+  String _karsiAd(AppLocalizations l10n) => widget.friend?.name ??
+      widget.person!.label ??
+      relationLabel(l10n, widget.person!.relation);
+
   void _ask(String axisLocal) {
     final l10n = AppLocalizations.of(context);
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => ChatScreen(
-        // R4-2: bağlam sunucuda kurulur (friendUid) — model bu sohbette
-        // Erkan'la ölçülen eksenleri görür, genel cevaba düşmez.
-        friendUid: widget.friend.uid,
+        // R4-2: bağlam sunucuda kurulur — model bu sohbette ölçülen
+        // eksenleri görür, genel cevaba düşmez. Kişi yolunda kapı
+        // arkadaşlık değil sahipliktir (P-turu).
+        friendUid: widget.friend?.uid,
+        personId: widget.person?.id,
         initialText: l10n.relationshipAskPrefill(
-            widget.friend.name, axisLocal.toLowerCase()),
+            _karsiAd(l10n), axisLocal.toLowerCase()),
       ),
     ));
   }
@@ -164,7 +187,7 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
     }
 
     return CosmicScaffold(
-      appBar: AppBar(title: Text(l10n.relationshipTitle(widget.friend.name))),
+      appBar: AppBar(title: Text(l10n.relationshipTitle(_karsiAd(l10n)))),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 40),
         children: [const SizedBox(height: RythoSpace.sm), govde],

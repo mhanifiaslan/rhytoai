@@ -2459,4 +2459,106 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get birthMissingAction => 'Doğum kaydını tamamla';
+
+  @override
+  String get circleTitle => 'Çevrem';
+
+  @override
+  String get circleFriendsSection => 'Rytho\'daki arkadaşların';
+
+  @override
+  String get circlePeopleSection => 'Eklediklerin';
+
+  @override
+  String get circleEmptyTitle => 'Eşini, çocuğunu ekle';
+
+  @override
+  String get circleEmptyBody =>
+      'Yakınlarının haritalarını ve aranızdaki bağı gör. Onların uygulamayı kullanmasına gerek yok.';
+
+  @override
+  String get addChooserTitle => 'Kimi ekliyorsun?';
+
+  @override
+  String get addChooserFriend => 'Rytho\'da olan biri';
+
+  @override
+  String get addChooserFriendBody =>
+      'Kullanıcı adı, rehber ya da davet bağlantısıyla. Karşılıklı onay gerekir; tepki gönderebilir, serilerini görürsünüz.';
+
+  @override
+  String get addChooserPerson => 'Kendim ekleyeceğim';
+
+  @override
+  String get addChooserPersonBody =>
+      'Eşin, çocuğun, bir yakının. Doğum bilgilerini sen girersin.';
+
+  @override
+  String get peopleAddTitle => 'Kişi ekle';
+
+  @override
+  String get peopleEditTitle => 'Kişiyi düzenle';
+
+  @override
+  String get peopleLabelField => 'Adı';
+
+  @override
+  String get peopleLabelHint => 'Bu kişiyi nasıl anıyorsun?';
+
+  @override
+  String get peopleLabelNote =>
+      'Bu ad telefonundan çıkmaz. Sunucuda yalnız doğum bilgisi durur; Rytho bu kişiden \"eşin\", \"çocuğun\" diye söz eder.';
+
+  @override
+  String get peopleRelation => 'Yakınlık';
+
+  @override
+  String get peopleConsent =>
+      'Bu kişinin doğum bilgilerini onun adına giriyorsun. Kayıt yalnız sana görünür, başka hiçbir kullanıcı erişemez ve hesabını silersen birlikte silinir.';
+
+  @override
+  String get peopleSaved => 'Kaydedildi';
+
+  @override
+  String get peopleRemove => 'Kişiyi çıkar';
+
+  @override
+  String get peopleRemoveConfirm =>
+      'Bu kişi ve haritası silinsin mi? Geri alınamaz.';
+
+  @override
+  String get peopleRemoved => 'Çıkarıldı';
+
+  @override
+  String peopleSlots(int used, int limit) {
+    return '$used/$limit kişi';
+  }
+
+  @override
+  String get peopleUnnamed => 'Adsız kişi';
+
+  @override
+  String get peopleHourUnknownBadge =>
+      'Doğum saati bilinmiyor — Yükselen ve evler hesaplanmadı.';
+
+  @override
+  String get relationPartner => 'Eşim';
+
+  @override
+  String get relationChild => 'Çocuğum';
+
+  @override
+  String get relationParent => 'Annem/Babam';
+
+  @override
+  String get relationSibling => 'Kardeşim';
+
+  @override
+  String get relationFriend => 'Arkadaşım';
+
+  @override
+  String get relationWork => 'İş arkadaşım';
+
+  @override
+  String get relationOther => 'Yakınım';
 }

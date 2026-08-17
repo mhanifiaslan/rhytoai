@@ -1176,5 +1176,45 @@
   },
   "birthMissingTitle": "Doğum kaydın eksik",
   "birthMissingBody": "Haritanı hesaplayabilmek için doğum tarihin ve şehrin gerekli. Bu bir Rytho+ kilidi değil — kaydı tamamladığında çark, yerleşimler ve açılar ücretsiz açılır.",
-  "birthMissingAction": "Doğum kaydını tamamla"
+  "birthMissingAction": "Doğum kaydını tamamla",
+
+  "circleTitle": "Çevrem",
+  "circleFriendsSection": "Rytho'daki arkadaşların",
+  "circlePeopleSection": "Eklediklerin",
+  "circleEmptyTitle": "Eşini, çocuğunu ekle",
+  "circleEmptyBody": "Yakınlarının haritalarını ve aranızdaki bağı gör. Onların uygulamayı kullanmasına gerek yok.",
+  "addChooserTitle": "Kimi ekliyorsun?",
+  "addChooserFriend": "Rytho'da olan biri",
+  "addChooserFriendBody": "Kullanıcı adı, rehber ya da davet bağlantısıyla. Karşılıklı onay gerekir; tepki gönderebilir, serilerini görürsünüz.",
+  "addChooserPerson": "Kendim ekleyeceğim",
+  "addChooserPersonBody": "Eşin, çocuğun, bir yakının. Doğum bilgilerini sen girersin.",
+
+  "peopleAddTitle": "Kişi ekle",
+  "peopleEditTitle": "Kişiyi düzenle",
+  "peopleLabelField": "Adı",
+  "peopleLabelHint": "Bu kişiyi nasıl anıyorsun?",
+  "peopleLabelNote": "Bu ad telefonundan çıkmaz. Sunucuda yalnız doğum bilgisi durur; Rytho bu kişiden \"eşin\", \"çocuğun\" diye söz eder.",
+  "peopleRelation": "Yakınlık",
+  "peopleConsent": "Bu kişinin doğum bilgilerini onun adına giriyorsun. Kayıt yalnız sana görünür, başka hiçbir kullanıcı erişemez ve hesabını silersen birlikte silinir.",
+  "peopleSaved": "Kaydedildi",
+  "peopleRemove": "Kişiyi çıkar",
+  "peopleRemoveConfirm": "Bu kişi ve haritası silinsin mi? Geri alınamaz.",
+  "peopleRemoved": "Çıkarıldı",
+  "peopleSlots": "{used}/{limit} kişi",
+  "@peopleSlots": {
+    "placeholders": {
+      "used": { "type": "int" },
+      "limit": { "type": "int" }
+    }
+  },
+  "peopleUnnamed": "Adsız kişi",
+  "peopleHourUnknownBadge": "Doğum saati bilinmiyor — Yükselen ve evler hesaplanmadı.",
+
+  "relationPartner": "Eşim",
+  "relationChild": "Çocuğum",
+  "relationParent": "Annem/Babam",
+  "relationSibling": "Kardeşim",
+  "relationFriend": "Arkadaşım",
+  "relationWork": "İş arkadaşım",
+  "relationOther": "Yakınım"
 }

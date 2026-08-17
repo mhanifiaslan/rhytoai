@@ -229,8 +229,11 @@ def _iliski_modu(cift_sayisi: int) -> int:
         # Onbellegi atla: her cift icin gercekten uretilsin.
         report_service.cache.get = lambda k: None  # type: ignore[assignment]
         report_service.cache.set = lambda k, v, **kw: None  # type: ignore
+        # 2. arguman P-turu'nda `pair_key` oldu (karsi taraf bir arkadas
+        # da olabilir, eklenen bir kisi de); onbellek zaten atlaniyor.
         sonuc = report_service.relationship_reading(
-            f"u{i}", f"u{j}", a["name"], b["name"], eksenler, lang="tr")
+            f"u{i}", "-".join(sorted((f"u{i}", f"u{j}"))),
+            a["name"], b["name"], eksenler, lang="tr")
         okumalar.append(sonuc["text"])
         print(f"  [{a['name']}-{b['name']}] {len(sonuc['text'])} karakter"
               f"{' (FALLBACK)' if sonuc.get('fallback') else ''}")

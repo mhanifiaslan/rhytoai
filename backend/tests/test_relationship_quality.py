@@ -259,24 +259,47 @@ class TestIliskiOkumasiPromptu:
         assert cozum["axis_lines"]["emotional"] == "Ikinci eksen"
         assert cozum["theme"] == "Ana tema."
 
-    def test_onbellek_anahtari_cift_bazli_ve_simetrik(self, monkeypatch):
-        from services import report_service
+    def test_arkadas_anahtari_cift_bazli_ve_simetrik(self, monkeypatch):
+        """Simetri garantisi P-turu'nda `friend_counterpart`'a TASINDI.
 
-        anahtarlar = []
-        monkeypatch.setattr(report_service.cache, "get",
-                            lambda k: anahtarlar.append(k))
-        monkeypatch.setattr(report_service.gemini_service, "generate",
-                            lambda prompt, lang=None: "x")
-        monkeypatch.setattr(report_service.cache, "set",
-                            lambda k, v, **kw: None)
+        `relationship_reading` artik hazir bir `pair_key` aliyor (cunku
+        karsi taraf bir arkadas da olabilir, eklenen bir kisi de). Simetri
+        hala bir gereklilik — iki arkadas ayni kaydi paylasmali — ama
+        garantiyi veren yer degisti; test onu ORADA tutuyor.
+        """
+        from services import synastry_service
+        import services.profile_service as ps
 
-        eksenler = {"calc_version": "2", "axes": []}
-        report_service.relationship_reading("a", "b", "A", "B", eksenler,
-                                            lang="tr")
-        report_service.relationship_reading("b", "a", "B", "A", eksenler,
-                                            lang="tr")
-        assert anahtarlar[0] == anahtarlar[1], "anahtar sıraya bagli"
-        assert "a-b" in anahtarlar[0]
+        monkeypatch.setattr(ps, "get_profile",
+                            lambda uid: {"displayName": uid.upper(),
+                                         "birthDate": "1990-01-01",
+                                         "birthCity": "Ankara"})
+        ab = synastry_service.friend_counterpart("a", "b")
+        ba = synastry_service.friend_counterpart("b", "a")
+        assert ab.key == ba.key, "anahtar siraya bagli"
+        assert "a-b" in ab.key
+
+    def test_kisi_anahtari_sahibe_ozel_ve_dogum_ozetli(self, monkeypatch):
+        """Eklenen kisinin anahtari SAHIBE ozeldir ve dogum ozeti tasir:
+        kullanici kisinin dogum saatini duzeltince eski eksenler
+        kendiliginden duser (arkadas yolunda bu yapilamiyor)."""
+        from services import people_service, synastry_service
+
+        kayit = {"id": "p1", "relation": "child", "birthDate": "2015-06-01",
+                 "birthCity": "Izmir"}
+        monkeypatch.setattr(people_service, "get_person",
+                            lambda uid, pid: dict(kayit))
+        ilk = synastry_service.person_counterpart("ben", "p1", "tr")
+
+        kayit["birthTime"] = "07:05"          # kullanici saati ekledi
+        sonra = synastry_service.person_counterpart("ben", "p1", "tr")
+
+        assert ilk.key.startswith("ben-pp1-")
+        assert ilk.key != sonra.key, "dogum degisti, anahtar degismedi"
+
+        monkeypatch.setattr(people_service, "get_person",
+                            lambda uid, pid: None)
+        assert synastry_service.person_counterpart("baskasi", "p1") is None
 
 
 class TestOnbellekYolu:

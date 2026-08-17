@@ -45,6 +45,10 @@ class ChatRequest(BaseModel):
     #: arkadaşlığı doğrular ve ölçülen ilişki eksenlerini fısıltı olarak
     #: prompt'a ekler — istemciye ham doğum verisi HİÇ dönmez.
     friend_uid: str | None = None
+    #: P-turu: soru EKLENEN BİR KİŞİ bağlamındaysa o kişinin kimliği.
+    #: Yetki kapısı arkadaşlık değil sahipliktir; fısıltı kişiyi adıyla
+    #: değil ilişkisiyle anar ("eşin") — sunucu adı zaten bilmiyor.
+    person_id: str | None = None
 
 
 def _sky_summary(lang: str, profile: dict | None = None) -> str:
@@ -196,6 +200,24 @@ def chat(request: ChatRequest, background: BackgroundTasks,
             else:
                 logger.info("Sohbet ilişki bağlamı reddedildi: arkadaş "
                             "değil (%s→%s)", user.uid, request.friend_uid)
+        elif request.person_id:
+            # Sahiplik kapısı `person_counterpart` içinde: kayıt çağıranın
+            # kendi ağacından okunuyor, başkasının kişisi None döner ve
+            # bağlam SESSİZCE atlanır (sohbet düşmez — arkadaş yolundaki
+            # duruşun aynısı).
+            try:
+                from services import synastry_service
+                karsi = synastry_service.person_counterpart(
+                    user.uid, request.person_id, lang)
+                if karsi is None:
+                    logger.info("Sohbet kişi bağlamı atlandı: kayıt yok ya "
+                                "da sahibi değil (%s)", user.uid)
+                else:
+                    relationship = synastry_service.whisper_for(
+                        user.uid, karsi, lang)
+            except Exception as exc:
+                logger.warning("Kişi fısıltısı üretilemedi (%s/%s): %s",
+                               user.uid, request.person_id, exc)
 
         message = compose_chat_message(mesaj_metni, passages,
                                        memory=memory, chart=chart, sky=sky,

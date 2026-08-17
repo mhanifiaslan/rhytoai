@@ -7,6 +7,7 @@ import '../../core/analytics.dart';
 import '../../core/contact_match.dart';
 import '../../core/deep_links.dart';
 import '../../core/friends.dart';
+import '../../core/people.dart';
 import '../../core/providers.dart';
 import '../../core/safety.dart';
 import '../../theme/rytho_theme.dart';
@@ -15,6 +16,9 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../people/person_detail_screen.dart' show PersonDetailScreen;
+import '../people/person_form_screen.dart'
+    show PersonFormScreen, relationIcon, relationLabel;
 import '../profile/account_screen.dart' show AccountScreen;
 import '../profile/diary_screen.dart' show DiaryScreen;
 import 'contacts_screen.dart' show ContactsScreen;
@@ -47,7 +51,10 @@ class FriendsScreen extends ConsumerWidget {
 
     return CosmicScaffold(
       appBar: AppBar(
-        title: Text(l10n.friendsTitle),
+        // "Arkadaşlar" → "Çevrem" (P-turu): sayfa artık İKİ FARKLI nesne
+        // barındırıyor — karşılıklı onayla eklenen Rytho arkadaşları ve
+        // kullanıcının kendi girdiği kişiler (eş, çocuk, yakın).
+        title: Text(l10n.circleTitle),
         actions: [
           // Görünür, dolgulu düğme (Revize R6). Eski hâli AppBar varsayılan
           // renkli IconButton'dı ve kullanıcı adı yokken disabled-griydi —
@@ -56,14 +63,9 @@ class FriendsScreen extends ConsumerWidget {
           Padding(
             padding: const EdgeInsets.only(right: RythoSpace.md),
             child: Pressable(
-              onTap: () {
-                if (username == null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(l10n.addFriendNeedsUsername)));
-                  return;
-                }
-                _showAddFriendSheet(context, username);
-              },
+              // Artık doğrudan kullanıcı adı sayfası açmaz: iki ekleme yolu
+              // var ve gizlilik anlamları farklı, seçimi kullanıcı yapmalı.
+              onTap: () => _showAddChooser(context, username),
               child: Container(
                 width: 40,
                 height: 40,
@@ -105,8 +107,16 @@ class FriendsScreen extends ConsumerWidget {
             child: Text(friendlyError(e, l10n),
                 style: RythoText.body(13, color: RythoColors.parchmentDim)),
           ),
-          data: (friends) => _FriendsList(friends: friends),
+          // Boş durum yalnız İKİ liste de boşken çizilir; kişileri olan
+          // ama arkadaşı olmayan kullanıcıya "hiç kimsen yok" demek
+          // yanlış olurdu.
+          data: (friends) => _FriendsList(
+              friends: friends,
+              boslugoster: (ref.watch(peopleProvider).value ?? []).isEmpty),
         ),
+        // Eklenen kişiler AYRI bölüm (P-turu): satır anatomisi de farklı —
+        // tepki, seri ve "bugün okudu" YOK, çünkü karşı tarafta kimse yok.
+        const _PeopleSection(),
       ]),
     );
   }
@@ -380,14 +390,18 @@ class _InboxPanel extends ConsumerWidget {
 }
 
 class _FriendsList extends StatelessWidget {
-  const _FriendsList({required this.friends});
+  const _FriendsList({required this.friends, this.boslugoster = true});
 
   final List<Friend> friends;
+
+  /// Kişi listesi de boş mu? Değilse buradaki boş durum çizilmez.
+  final bool boslugoster;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     if (friends.isEmpty) {
+      if (!boslugoster) return const SizedBox.shrink();
       return Padding(
         padding: const EdgeInsets.fromLTRB(28, 40, 28, 0),
         child: Column(children: [
@@ -420,7 +434,9 @@ class _FriendsList extends StatelessWidget {
       ],
       if (accepted.isNotEmpty) ...[
         const SectionDivider(),
-        _sectionTitle(l10n.yourFriends),
+        // "Arkadaşların" → "Rytho'daki arkadaşların": aşağıda ikinci bir
+        // bölüm var ve ikisi farklı şeyler (P-turu).
+        _sectionTitle(l10n.circleFriendsSection),
         for (final (i, friend) in accepted.indexed)
           _FriendTile(friend: friend)
               .animate(delay: Duration(milliseconds: 40 * i))
@@ -599,6 +615,237 @@ void _handlePendingInvite(
     if (invite == myUsername) return;
     _showAddFriendSheet(context, myUsername, prefill: invite);
   });
+}
+
+/// "+" düğmesinin açtığı SEÇİM sayfası (P-turu).
+///
+/// Eskiden düğme doğrudan kullanıcı adı sayfasını açıyordu. Artık iki
+/// ekleme yolu var ve **gizlilik anlamları farklı**: Rytho arkadaşı
+/// karşılıklı onaydır ve karşı tarafın ham doğum verisi asla görülmez;
+/// eklenen kişi ise kullanıcının kendi girdiği veridir. Bu farkı bir
+/// açılır menüye gömmek yerine seçim anında yazıyoruz.
+Future<void> _showAddChooser(BuildContext context, String? myUsername) {
+  final l10n = AppLocalizations.of(context);
+  return showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: RythoColors.inkLight,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      side: BorderSide(color: RythoColors.glassStroke),
+    ),
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            RythoSpace.xl, RythoSpace.xl, RythoSpace.xl, RythoSpace.lg),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(l10n.addChooserTitle, style: RythoText.display(19)),
+          const SizedBox(height: RythoSpace.lg),
+          _EkleSecenegi(
+            icon: Icons.alternate_email_rounded,
+            title: l10n.addChooserFriend,
+            body: l10n.addChooserFriendBody,
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              if (myUsername == null) {
+                // Devre dışı düğme yerine SEBEBİ söyleyen düğme (R6).
+                ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(l10n.addFriendNeedsUsername)));
+                return;
+              }
+              _showAddFriendSheet(context, myUsername);
+            },
+          ),
+          const SizedBox(height: RythoSpace.md),
+          _EkleSecenegi(
+            icon: Icons.person_add_alt_rounded,
+            title: l10n.addChooserPerson,
+            body: l10n.addChooserPersonBody,
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => const PersonFormScreen()));
+            },
+          ),
+        ]),
+      ),
+    ),
+  );
+}
+
+class _EkleSecenegi extends StatelessWidget {
+  const _EkleSecenegi({
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(RythoSpace.lg),
+        decoration: BoxDecoration(
+          color: RythoColors.inkLighter,
+          border: Border.all(color: RythoColors.glassStroke),
+          borderRadius: BorderRadius.circular(RythoRadius.md),
+        ),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, size: 20, color: RythoColors.lilac),
+          const SizedBox(width: RythoSpace.md),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+              Text(title, style: RythoText.body(15, w: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text(body,
+                  style: RythoText.body(12, color: RythoColors.parchmentDim)),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
+/// EKLENEN KİŞİLER bölümü — arkadaş satırından bilinçli olarak FARKLI.
+///
+/// Tepki ikonu, seri rozeti ve "bugün okudu" YOK: karşı tarafta bir
+/// kullanıcı yok. Olmayan etkileşimi çizmek, ürünün "ölçülmeyen
+/// söylenmez" duruşunun arayüz tarafındaki karşılığını çiğnemek olurdu.
+class _PeopleSection extends ConsumerWidget {
+  const _PeopleSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final kisiler = ref.watch(peopleProvider).value ?? const <Person>[];
+    final kontenjan = ref.watch(personSlotsProvider).value;
+
+    if (kisiler.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(20, 28, 20, 0),
+        child: Pressable(
+          onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PersonFormScreen())),
+          child: Container(
+            padding: const EdgeInsets.all(RythoSpace.lg),
+            decoration: BoxDecoration(
+              color: RythoColors.inkLighter,
+              border: Border.all(
+                  color: RythoColors.lilac.withValues(alpha: 0.35)),
+              borderRadius: BorderRadius.circular(RythoRadius.md),
+            ),
+            child: Row(children: [
+              const Icon(Icons.favorite_rounded,
+                  size: 20, color: RythoColors.lilac),
+              const SizedBox(width: RythoSpace.md),
+              Expanded(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.circleEmptyTitle,
+                          style: RythoText.body(14.5, w: FontWeight.w700)),
+                      const SizedBox(height: 3),
+                      Text(l10n.circleEmptyBody,
+                          style: RythoText.body(12,
+                              color: RythoColors.parchmentDim)),
+                    ]),
+              ),
+            ]),
+          ),
+        ),
+      );
+    }
+
+    return Column(children: [
+      const SectionDivider(),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 2),
+        child: Row(children: [
+          Text(l10n.circlePeopleSection,
+              style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+          const Spacer(),
+          if (kontenjan != null && kontenjan.limit > 0)
+            Text(l10n.peopleSlots(kontenjan.used, kontenjan.limit),
+                style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+        ]),
+      ),
+      for (final (i, kisi) in kisiler.indexed)
+        _PersonTile(person: kisi)
+            .animate(delay: Duration(milliseconds: 40 * i))
+            .fadeIn(duration: 300.ms),
+    ]);
+  }
+}
+
+/// Kişi satırı: tür ikonu + etiket + burç çipi + 🪐 ilişki.
+class _PersonTile extends StatelessWidget {
+  const _PersonTile({required this.person});
+
+  final Person person;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final ad = person.label ?? relationLabel(l10n, person.relation);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+      child: Pressable(
+        onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => PersonDetailScreen(person: person))),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: RythoSpace.lg, vertical: 12),
+          decoration: BoxDecoration(
+            color: RythoColors.inkLighter,
+            border: Border.all(color: RythoColors.glassStroke),
+            borderRadius: BorderRadius.circular(RythoRadius.md),
+          ),
+          child: Row(children: [
+            Container(
+              width: 34,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: RythoColors.lilac.withValues(alpha: 0.18),
+              ),
+              child: Icon(relationIcon(person.relation),
+                  size: 17, color: RythoColors.lilac),
+            ),
+            const SizedBox(width: RythoSpace.md),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(ad,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: RythoText.body(14.5, w: FontWeight.w600)),
+                    const SizedBox(height: 2),
+                    Text(
+                      person.sunSign ??
+                          relationLabel(l10n, person.relation),
+                      style: RythoText.body(11.5,
+                          color: RythoColors.parchmentDim),
+                    ),
+                  ]),
+            ),
+            const Icon(Icons.public_rounded,
+                size: 18, color: RythoColors.lilac),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
 Future<void> _showAddFriendSheet(BuildContext context, String myUsername,
