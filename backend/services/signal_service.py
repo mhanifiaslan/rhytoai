@@ -33,7 +33,10 @@ logger = logging.getLogger(__name__)
 #: v2 (R2-S6): `tone` alanı eklendi ve ayrılan açı puanı düştü; sürüm
 #: artmasaydı eski kayıtlar 24 saat boyunca tonsuz (yanlış cümleli)
 #: servis edilirdi.
-SIGNAL_CALC_VERSION = "2"
+#: v3 (KA-turu): tema KESİN tekil oldu — sürüm artmasaydı bugünün
+#: önbelleğindeki çift-temalı kayıtlar 24 saat daha servis edilirdi
+#: (kullanıcı kusuru ekranda gördü; aynı gün düzelmeli).
+SIGNAL_CALC_VERSION = "3"
 
 #: Pencere: bugün + 7 gün. Daha uzunu "bugün senin için" iddiasını sulandırır.
 WINDOW_DAYS = 8
@@ -221,18 +224,19 @@ def compute_signals(birth: dict[str, Any], hour_known: bool = True,
         liste.append(aday)
     liste.sort(key=lambda a: (-a["score"], a["transit"], a["natal"]))
 
-    # Tema çeşitliliği: 2. ve 3. sırada, henüz kullanılmamış temanın en
-    # güçlüsü tercih edilir; kalmadıysa genel sıra doldurur. Amaç üç kartın
-    # üçünün de "kariyer" dememesi — analiz kararı, ürün sesi.
+    # Tema KESİN tekil (KA-turu cihaz bulgusu): eski döngü kullanılmamış
+    # tema kalmayınca aynı temayı TEKRAR seçiyordu ve ekranda iki "İç
+    # dünya" kartı beliriyordu — iki ayrı olay, ama kullanıcı tema
+    # etiketini kimlik olarak okuyor ve "hangisi doğru?" diye soruyor.
+    # Artık tema başına EN GÜÇLÜ tek olay kart olur; havuzda 3'ten az
+    # tema varsa 3'ten az kart gösterilir. Fazla olaylar kaybolmaz —
+    # takvim şeridinde kendi günlerinde duruyorlar.
     secilen: list[dict[str, Any]] = []
-    kalan = list(liste)
-    while kalan and len(secilen) < MAX_SIGNALS:
-        kullanilan = {s["theme"] for s in secilen}
-        yeni_temali = next(
-            (a for a in kalan if a["theme"] not in kullanilan), None)
-        secim = yeni_temali if yeni_temali is not None else kalan[0]
-        secilen.append(secim)
-        kalan.remove(secim)
+    for aday in liste:
+        if len(secilen) >= MAX_SIGNALS:
+            break
+        if aday["theme"] not in {s["theme"] for s in secilen}:
+            secilen.append(aday)
 
     return {
         "calc_version": SIGNAL_CALC_VERSION,
@@ -481,20 +485,33 @@ def insight_bundle(ham: dict[str, Any], lang: str) -> dict[str, Any] | None:
 
     yorumlar: list[str] = []
     soru: str | None = None
+
+    def soru_mu(satir: str) -> bool:
+        nonlocal soru
+        if not satir.upper().startswith(p.CHECKIN_PREFIX):
+            return False
+        aday = satir[len(p.CHECKIN_PREFIX):].strip()
+        if aday and aday != "-" and len(aday) <= CHECKIN_QUESTION_MAX:
+            soru = aday
+        return True
+
     for satir in metin.splitlines():
         satir = satir.strip().strip('"').strip()
         if not satir:
             continue
-        if satir.upper().startswith(p.CHECKIN_PREFIX):
-            aday = satir[len(p.CHECKIN_PREFIX):].strip()
-            if aday and aday != "-" and len(aday) <= CHECKIN_QUESTION_MAX:
-                soru = aday
+        if soru_mu(satir):
             continue
         # "1." / "1)" / "-" öneklerini soy.
         for onek in (f"{len(yorumlar) + 1}.", f"{len(yorumlar) + 1})", "-"):
             if satir.startswith(onek):
                 satir = satir[len(onek):].strip()
                 break
+        # Canlıda ölçülen kusur (18:13, "biçim dışı (4 satır)"): model soru
+        # satırını "4. SORU: ..." diye NUMARALAYARAK yazdı; numara soyulunca
+        # soru 4. kart cümlesi sanılıp bütün paket reddedildi. Önek soyulmuş
+        # hâl de soru olabilir — ikinci kez bakılır.
+        if soru_mu(satir):
+            continue
         yorumlar.append(satir)
     if len(yorumlar) != len(sinyaller) or any(
             len(y) > p.SIGNAL_INSIGHT_MAX for y in yorumlar):

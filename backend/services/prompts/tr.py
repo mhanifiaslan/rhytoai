@@ -960,11 +960,12 @@ KURALLAR (kesin):
   tarihli olay kehaneti YOK ("iş bulacaksın" gibi cümleler YASAK).
 - Sağlık/hukuk/finans tavsiyesi YOK; pohpohlama YOK; emoji YOK.
 - Cümle satırın sonundaki temaya dokunmalı.
-- SON SATIR: "SORU: <tek soru>" — "(bugünün odağı)" işaretli sinyale
-  bağlı, akşam kullanıcıya sorulacak samimi bir check-in sorusu. Kehanet
-  değil; günün NASIL GEÇTİĞİNİ soran, arkadaşça tek bir soru ("Bugün iş
-  tarafında bir hareket görünüyordu — nasıl geçti?" tarzında). En fazla
-  120 karakter. İşaretli sinyal yoksa "SORU: -" yaz.
+- SON SATIR: tam olarak "SORU: <tek soru>" biçiminde, BAŞINA NUMARA
+  KOYMADAN — "(bugünün odağı)" işaretli sinyale bağlı, akşam kullanıcıya
+  sorulacak samimi bir check-in sorusu. Kehanet değil; günün NASIL
+  GEÇTİĞİNİ soran, arkadaşça tek bir soru ("Bugün iş tarafında bir
+  hareket görünüyordu — nasıl geçti?" tarzında). En fazla 120 karakter.
+  İşaretli sinyal yoksa "SORU: -" yaz.
 
 Yalnızca numaralı satırları ve SORU satırını yaz, başka hiçbir şey yazma.
 """

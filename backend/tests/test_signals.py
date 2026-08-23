@@ -113,8 +113,15 @@ class TestSiralamaVeTema:
         assert ay["theme"] == "inner"
         assert "natal_sign" not in ay and "natal_house" not in ay
 
-    def test_tema_cesitliligi(self, monkeypatch):
-        """2. ve 3. sırada kullanılmamış temanın en güçlüsü öne geçer."""
+    def test_tema_kesin_tekil(self, monkeypatch):
+        """KA-turu cihaz bulgusu: aynı temadan İKİNCİ kart ASLA çıkmaz.
+
+        Eski davranış kullanılmamış tema kalmayınca temayı tekrar seçiyordu
+        ve ekranda iki "İç dünya" kartı beliriyordu — kullanıcı tema
+        etiketini kimlik okuyup "hangisi doğru?" diye sordu. Artık tema
+        başına en güçlü tek olay kart olur; havuzda 3'ten az tema varsa
+        3'ten az kart döner (fazla olaylar takvim şeridinde zaten var).
+        """
         takvim = {**SAHTE_TAKVIM, "events": [], "active_now": [
             # İki güçlü kariyer adayı + bir zayıf ilişki adayı.
             {"transit": "Saturn", "natal": "Sun", "aspect": "conjunction",
@@ -127,10 +134,10 @@ class TestSiralamaVeTema:
         natal = {**SAHTE_NATAL, "placements": [
             {"planet": "Venus", "sign": "aries", "house": 7}]}
         ham = _hesapla(monkeypatch, takvim=takvim, natal=natal)
-        # 1: Satürn-Güneş (kariyer). 2: kullanılmamış tema (ilişkiler)
-        # puanı düşük de olsa öne geçer. 3: kalan kariyer adayı.
+        # 1: Satürn-Güneş (kariyer, en güçlü). 2: ilişkiler. İkinci
+        # kariyer adayı KART OLMAZ — üç yerine iki kart.
         assert [s["theme"] for s in ham["signals"]] == [
-            "career", "relationships", "career"]
+            "career", "relationships"]
 
 
 class TestYerellestirme:
@@ -224,6 +231,19 @@ class TestYorumPaketi:
         paket = signal_service.insight_bundle(self.HAM, "tr")
         assert paket == {"insights": ["Birinci yorum.", "İkinci yorum."],
                          "checkin_question": "Bugün nasıl geçti?"}
+
+    def test_numarali_soru_satiri_da_taninir(self, monkeypatch):
+        """CANLI kusur (rev 00069, 18:13): model soruyu "3. SORU: ..."
+        diye numaralayarak yazdı; numara soyulunca soru kart cümlesi
+        sanılıp paket komple reddedildi ve kartlar teknik yedeğe düştü —
+        kullanıcı ekranda gördü. Önek soyulmuş hâl de soru sayılmalı."""
+        monkeypatch.setattr(
+            signal_service.gemini_service, "generate",
+            lambda prompt, lang=None: ("1. Bir.\n2. İki."
+                                       "\n3. SORU: Bugün nasıl geçti?"))
+        paket = signal_service.insight_bundle(self.HAM, "tr")
+        assert paket["insights"] == ["Bir.", "İki."]
+        assert paket["checkin_question"] == "Bugün nasıl geçti?"
 
     def test_soru_tire_ise_none(self, monkeypatch):
         monkeypatch.setattr(

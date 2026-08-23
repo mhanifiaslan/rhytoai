@@ -1002,11 +1002,12 @@ RULES (strict):
   for" — no dated event prophecy ("you will get the job" is FORBIDDEN).
 - No health/legal/financial advice; no flattery; no emoji.
 - Each sentence must touch the theme at the end of its line.
-- LAST LINE: "QUESTION: <one question>" — a warm check-in question tied to
-  the signal marked "(today's focus)", to be asked in the evening. Not a
-  prophecy; a friendly question about how the day WENT ("Something was
-  moving on the work front today — how did it go?" style). At most 120
-  characters. If no signal is marked, write "QUESTION: -".
+- LAST LINE: exactly "QUESTION: <one question>", with NO NUMBER in front —
+  a warm check-in question tied to the signal marked "(today's focus)",
+  to be asked in the evening. Not a prophecy; a friendly question about
+  how the day WENT ("Something was moving on the work front today — how
+  did it go?" style). At most 120 characters. If no signal is marked,
+  write "QUESTION: -".
 
 Write only the numbered lines and the QUESTION line, nothing else.
 """
