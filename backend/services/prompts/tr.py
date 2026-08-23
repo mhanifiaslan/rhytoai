@@ -812,6 +812,16 @@ SIGNAL_EXACT_LABEL = "kesinleşme"
 # şeyden seçilir: TEMA (natal ev) ve TON (açının doğası). Teknik satır
 # kaybolmaz — "Neye dayanıyor?" sayfasında, dayanağın ilk satırı olarak durur.
 # Kesin olay vaadi YOK; eğilim dili (analizdeki 27. madde).
+#: Ana ekran sinyal kartlarının ÜCRETSİZ katman varsayılanı (R2-S6).
+#:
+#: Ç-turu'nda TAKVİMDEN kaldırıldı: orada 30 güne yayılan onlarca olay bu
+#: 12 kutudan birine (özellikle "inner") düşüp BİREBİR AYNI cümleyi
+#: alıyordu — ölçüldü, bir günde üç ayrı olay aynı cümleyi üç kez gösterdi
+#: (bkz. `signal_service.calendar_insights`). Burada BİLEREK KALDI: kart
+#: metni ücretsiz kullanıcıdan gizlenmiyor (takvimin aksine) ve risk çok
+#: daha düşük — yalnız 3 sinyal var, `compute_signals` zaten aralarında
+#: tema çeşitliliği zorluyor. Aboneye zaten AI yorumu (`signal_insights`)
+#: öncelikli gidiyor; bu yalnız ücretsizin ve biçim-dışı yedeğin metni.
 SIGNAL_HUMAN_LINES = {
     "career": {
         "support": ("İş ve hedefler tarafında yol açılıyor; ilerlemek bugün "
@@ -936,6 +946,41 @@ KURALLAR (kesin):
 - GÜNDELİK DİL: gezegen, açı, burç, ev, derece, orb ADI GEÇMESİN. Kullanıcı
   "Satürn kare Ay" değil, hayatında ne olduğunu okumak istiyor. (Teknik
   dayanak kullanıcıya ayrı bir ekranda zaten gösteriliyor.)
+- EĞİLİM dili kullan: "bu tema görünürleşiyor", "şuna alan aç" — kesin
+  tarihli olay kehaneti YOK ("iş bulacaksın" gibi cümleler YASAK).
+- Sağlık/hukuk/finans tavsiyesi YOK; pohpohlama YOK; emoji YOK.
+- Cümle satırın sonundaki temaya dokunmalı.
+
+Yalnızca numaralı satırları yaz, başka hiçbir şey yazma.
+"""
+
+#: Takvim olaylarının tek çağrılık toplu yorumu (Ç-turu).
+#:
+#: Neden var: `SIGNAL_HUMAN_LINES` (tema × ton) yalnızca 12 sabit cümle
+#: taşıyordu ve 30 günlük takvimde birçok farklı astrolojik olay aynı
+#: kutuya (özellikle "iç dünya") düşüp BİREBİR AYNI cümleyi alıyordu —
+#: ölçüldü: bir örnek haritada bir günde üç ayrı olay üç kez aynı cümleyi
+#: gösterdi. SIGNALS_PROMPT'un aynısı, tek farkla: parti içi TEKRARSIZLIK
+#: burada açıkça istenir, çünkü takvim (sinyal kartlarının aksine) aynı
+#: temadan birden fazla olay taşıyabilir.
+CALENDAR_INSIGHTS_PROMPT = """
+GÖREV: Aşağıdaki {count} kişisel transit olayının HER BİRİ için tek
+cümlelik bir yorum yaz.
+
+OLAYLAR (ölçülmüş gökyüzü verisi, tarih sırasıyla):
+{lines}
+
+KURALLAR (kesin):
+- TAM {count} satır yaz; her satır "1." gibi numarayla başlasın ve olay
+  sırasını korusun.
+- Her cümle EN FAZLA 140 karakter; tek cümle, nokta ile bitir.
+- GÜNDELİK DİL: gezegen, açı, burç, ev, derece, orb ADI GEÇMESİN. Kullanıcı
+  "Satürn kare Ay" değil, hayatında ne olduğunu okumak istiyor. (Teknik
+  dayanak kullanıcıya ayrı bir ekranda zaten gösteriliyor.)
+- HER SATIR BİRBİRİNDEN FARKLI OLSUN. Birden fazla olay aynı temaya
+  değebilir (ör. birkaçı "iç dünya") — bu durumda bile HER BİRİ kendi
+  tarihine, kendi yoğunluğuna özgü ayrı bir cümle olsun; iki satır
+  birbirinin kopyası ya da neredeyse aynısı OLMASIN.
 - EĞİLİM dili kullan: "bu tema görünürleşiyor", "şuna alan aç" — kesin
   tarihli olay kehaneti YOK ("iş bulacaksın" gibi cümleler YASAK).
 - Sağlık/hukuk/finans tavsiyesi YOK; pohpohlama YOK; emoji YOK.

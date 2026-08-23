@@ -168,6 +168,30 @@ tarafında: ücretsiz kullanıcının eklediği TEK kişi (çoğunlukla eşi) d�
 ekseni ölçülmüş görüp yorumu kilitli bulur — ürünün üretebileceği en
 dürüst paywall, çünkü gösterilen ölçüm gerçektir.
 
+## 6d. Ç-turu: takvim yorumu (calendar_insights) — 2026-08-18
+
+Kök neden: 30 günlük takvim şeridi, her açı-kesinleşmesinin gündelik
+cümlesini `SIGNAL_HUMAN_LINES` (4 tema × 3 ton = 12 sabit cümle) tablosundan
+seçiyordu — LLM'siz, **$0**, ama ölçülen bedeli farklı astrolojik olayların
+birebir aynı cümleye düşmesiydi (bir örnek haritada bir günde üç olay aynı
+cümleyi üç kez gösterdi). Onarım `signal_insights`in (§6b'deki "Sinyaller —
+abone yorumu" satırı) BİREBİR AYNI desenini takvime taşıyor: `calendar_insights`
+tek çağrıda tüm açı-kesinleşmelerini yazdırır — bu, **yeni bir LLM maliyeti**
+demek.
+
+| Sınır | Değer | Not |
+|---|---|---|
+| Tetiklenme sıklığı | **abone başına günde en fazla 1** | takvimin kendi 24s önbelleğiyle aynı ritim; `calendar-insight-{fp}-{lang}` anahtarı ayrı ve dil bazlı |
+| Yığın boyutu | **≤20 olay** (`CALENDAR_INSIGHT_MAX_EVENTS`) | ölçüm: gerçek 30-90 günlük takvimlerde 3-17 açı-kesinleşmesi çıktı; 20 rahat bir tavan |
+| Ücretsiz kullanıcı | **$0, değişmez** | `calendar_insights` yalnız `is_subscriber` dalında çağrılır — ücretsiz katmanda hiç tetiklenmez (Ç6 bekçisi: çağrı sayacı sıfır) |
+| Biçim-dışı üretim | **$0 tekrar** | boş sözlük de önbelleklenir — LLM her istekte yeniden yorulmaz |
+
+Büyüklük mertebesi: sinyal yorumunun (3 öğe, ~$0,0009/gün/abone) 3-17
+öğeye büyütülmüş hâli — en kötü durumda (17 olay) günlük maliyet kabaca
+3-6 katına çıkar (~$0,003-0,005/gün), aylık **~$0,10-0,15/abone**. Bu,
+§6b'deki abone başına aylık LLM tavanını (~$0,73) ölçülebilir ama küçük
+bir miktar (~%1-2) artırır; marj matematiğini bozmaz.
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

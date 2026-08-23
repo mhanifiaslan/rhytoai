@@ -846,11 +846,18 @@ SIGNAL_DATE_FMT = "{month} {day}"
 
 SIGNAL_EXACT_LABEL = "exact"
 
-# PLAIN LANGUAGE card lines (R2-S6). Nobody wants to read "Chiron trine
-# natal Venus"; they want to read what is happening in their life. The
-# sentence is picked from two measured things: THEME (natal house) and
-# TONE (nature of the aspect). The technical line is not lost — it opens
-# the "What's behind this?" sheet as the first line of the basis.
+#: The home-screen signal cards' FREE-TIER default (R2-S6).
+#:
+#: Removed from the CALENDAR in Ç-turu: there, dozens of events spread
+#: over 30 days could fall into one of these 12 buckets (especially
+#: "inner") and get the LITERAL SAME sentence — measured, one day showed
+#: three separate events with the identical line three times (see
+#: `signal_service.calendar_insights`). Kept HERE deliberately: card text
+#: is never hidden from free users (unlike the calendar) and the risk is
+#: far lower — only 3 signals show, and `compute_signals` already forces
+#: theme diversity among them. Subscribers already get the AI-authored
+#: `signal_insights` text first; this is only the free tier's and the
+#: format-failure fallback's text.
 SIGNAL_HUMAN_LINES = {
     "career": {
         "support": ("The way opens around work and goals; progress meets "
@@ -975,6 +982,42 @@ RULES (strict):
 - PLAIN LANGUAGE: never name a planet, aspect, sign, house, degree or orb.
   People want to read what is happening in their life, not "Saturn square
   Moon". (The technical basis is shown to them on a separate screen.)
+- Use TENDENCY language: "this theme is becoming visible", "make room
+  for" — no dated event prophecy ("you will get the job" is FORBIDDEN).
+- No health/legal/financial advice; no flattery; no emoji.
+- Each sentence must touch the theme at the end of its line.
+
+Write only the numbered lines, nothing else.
+"""
+
+#: One-call batch reading for calendar events (Ç-turu).
+#:
+#: Why this exists: `SIGNAL_HUMAN_LINES` (theme × tone) only held 12 fixed
+#: sentences, and over a 30-day calendar many different astrological
+#: events landed in the same bucket (especially "inner") and got the
+#: LITERAL SAME sentence — measured: one sample chart showed three
+#: separate events on one day showing the identical line three times.
+#: Same as SIGNALS_PROMPT, with one addition: within-batch non-repetition
+#: is explicit here, because the calendar (unlike signal cards) can carry
+#: more than one event under the same theme.
+CALENDAR_INSIGHTS_PROMPT = """
+TASK: Write a one-sentence reading for EACH of the {count} personal
+transit events below.
+
+EVENTS (measured sky data, in date order):
+{lines}
+
+RULES (strict):
+- Write EXACTLY {count} lines; each starts with a number like "1." and
+  keeps the event order.
+- Each sentence AT MOST 140 characters; one sentence, end with a period.
+- PLAIN LANGUAGE: never name a planet, aspect, sign, house, degree or orb.
+  People want to read what is happening in their life, not "Saturn square
+  Moon". (The technical basis is shown to them on a separate screen.)
+- EVERY LINE MUST DIFFER FROM THE OTHERS. Multiple events may touch the
+  same theme (e.g. several "inner") — even then, each one gets its own
+  sentence specific to its own date and intensity; no two lines may be
+  copies or near-copies of each other.
 - Use TENDENCY language: "this theme is becoming visible", "make room
   for" — no dated event prophecy ("you will get the job" is FORBIDDEN).
 - No health/legal/financial advice; no flattery; no emoji.

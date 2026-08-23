@@ -252,6 +252,200 @@ class TestYorumKatmani:
         assert iz1 != iz2
 
 
+class TestTakvimYorumu:
+    """Ç1/Ç6: `calendar_insights` — `signal_insights`'la (R2-S1) BİREBİR
+    AYNI biçim/doğrulama deseninde çalışır, ama eşleşme SIRAYLA değil
+    `event_fingerprint` KİMLİĞİYLE yapılır (takvim olayları sinyaller gibi
+    sabit-3'lük bir liste değil).
+
+    `test_cakisma_bekcisi_farkli_olaylar_farkli_cumle_alir` bu turun ÖLÇÜLMÜŞ
+    kusurunu birebir yakalar: eskiden `SIGNAL_HUMAN_LINES` (4 tema × 3 ton
+    = 12 sabit cümle) yüzünden 30 günlük takvimde birçok farklı astrolojik
+    olay (özellikle "iç dünya"/Ay simgesi teması) BİREBİR AYNI cümleye
+    düşüyordu; bir örnek haritada bir günde üç olay aynı cümleyi üç kez
+    gösterdi.
+    """
+
+    OLAYLAR = [
+        {"date": "2026-08-18", "type": "aspect_exact", "transit": "Saturn",
+         "natal": "Moon", "aspect": "square", "theme": "inner",
+         "tone": "tension"},
+        {"date": "2026-08-20", "type": "aspect_exact", "transit": "Uranus",
+         "natal": "Mercury", "aspect": "conjunction", "theme": "inner",
+         "tone": "focus"},
+        {"date": "2026-09-10", "type": "aspect_exact", "transit": "Neptune",
+         "natal": "Sun", "aspect": "square", "theme": "inner",
+         "tone": "tension"},
+        # İstasyonun teması yok — havuzdan düşmeli (SIGNAL_HUMAN_LINES'ta
+        # istasyonların zaten hiç cümlesi yoktu, bu yeni fonksiyonda da
+        # olmamalı).
+        {"date": "2026-08-25", "type": "station_retrograde",
+         "transit": "Pluto"},
+    ]
+
+    def test_dogru_bicimde_parmak_izine_eslenir(self, monkeypatch):
+        monkeypatch.setattr(
+            signal_service.gemini_service, "generate",
+            lambda prompt, lang=None: "1. Birinci.\n2. İkinci.\n3. Üçüncü.")
+        yorumlar = signal_service.calendar_insights(self.OLAYLAR, "tr")
+        assert len(yorumlar) == 3
+        for o, beklenen in zip(self.OLAYLAR[:3],
+                               ["Birinci.", "İkinci.", "Üçüncü."]):
+            assert yorumlar[signal_service.event_fingerprint(o)] == beklenen
+
+    def test_istasyon_ve_temasiz_olay_promptan_cikar(self, monkeypatch):
+        yakalanan = {}
+
+        def sahte_uret(prompt, lang=None):
+            yakalanan["prompt"] = prompt
+            return "1. Birinci.\n2. İkinci.\n3. Üçüncü."
+
+        monkeypatch.setattr(signal_service.gemini_service, "generate",
+                            sahte_uret)
+        signal_service.calendar_insights(self.OLAYLAR, "tr")
+        assert "Pluto" not in yakalanan["prompt"]
+
+    def test_satir_sayisi_tutmazsa_none(self, monkeypatch):
+        monkeypatch.setattr(signal_service.gemini_service, "generate",
+                            lambda prompt, lang=None: "1. Tek satır.")
+        assert signal_service.calendar_insights(self.OLAYLAR, "tr") is None
+
+    def test_asiri_uzun_satir_none(self, monkeypatch):
+        uzun = "1. " + "ç" * 200 + "\n2. Kısa.\n3. Kısa."
+        monkeypatch.setattr(signal_service.gemini_service, "generate",
+                            lambda prompt, lang=None: uzun)
+        assert signal_service.calendar_insights(self.OLAYLAR, "tr") is None
+
+    def test_temali_olay_yoksa_cagirmadan_none(self, monkeypatch):
+        """Yalnız istasyon varsa LLM'e hiç gidilmez — boşuna harcama yok."""
+        cagrildi = {"n": 0}
+
+        def sahte_uret(prompt, lang=None):
+            cagrildi["n"] += 1
+            return "1. x"
+
+        monkeypatch.setattr(signal_service.gemini_service, "generate",
+                            sahte_uret)
+        istasyonlar = [o for o in self.OLAYLAR if o["type"] != "aspect_exact"]
+        assert signal_service.calendar_insights(istasyonlar, "tr") is None
+        assert cagrildi["n"] == 0
+
+    def test_yigin_ust_siniri_uygulanir(self, monkeypatch):
+        """20'den fazla açı-kesinleşmesi verilse bile yalnız ilk
+        CALENDAR_INSIGHT_MAX_EVENTS kadarı promta girer — maliyet tavanı
+        (Ç-turu ölçümü: gerçek 30-90 günlük takvimlerde 3-17 olay çıktı)."""
+        cok = [{"date": f"2026-{(i % 12) + 1:02d}-10", "type": "aspect_exact",
+               "transit": "Saturn", "natal": f"Point{i}", "aspect": "square",
+               "theme": "inner"} for i in range(30)]
+        yakalanan = {}
+
+        def sahte_uret(prompt, lang=None):
+            yakalanan["prompt"] = prompt
+            n = signal_service.CALENDAR_INSIGHT_MAX_EVENTS
+            return "\n".join(f"{i}. Yorum {i}." for i in range(1, n + 1))
+
+        monkeypatch.setattr(signal_service.gemini_service, "generate",
+                            sahte_uret)
+        yorumlar = signal_service.calendar_insights(cok, "tr")
+        assert len(yorumlar) == signal_service.CALENDAR_INSIGHT_MAX_EVENTS
+        assert "Point20" not in yakalanan["prompt"]  # 21. olay dışarda kaldı
+
+    def test_cakisma_bekcisi_farkli_olaylar_farkli_cumle_alir(
+            self, monkeypatch):
+        """Bu turun ölçülen kusurunu birebir yakalar (bkz. sınıf docstring).
+
+        Beşi de 'inner' temasında — eski tabloda hepsi aynı 1-2 cümleye
+        düşerdi. Burada model beş FARKLI cümle üretir (sahtelenmiş) ve
+        fonksiyonun bunları beş AYRI olaya, birbirine karıştırmadan
+        eşlediği doğrulanır: ne çakışma (aynı cümle iki olaya), ne kayıp
+        (bir olay cümlesiz kalması).
+        """
+        genis_takvim = [
+            {"date": f"2026-09-{d:02d}", "type": "aspect_exact",
+             "transit": t, "natal": n, "aspect": "square", "theme": "inner"}
+            for d, (t, n) in enumerate(
+                [("Uranus", "Mercury"), ("Uranus", "Venus"),
+                 ("Neptune", "Sun"), ("Neptune", "Ascendant"),
+                 ("Pluto", "Moon")], start=1)
+        ]
+        monkeypatch.setattr(
+            signal_service.gemini_service, "generate",
+            lambda prompt, lang=None: "\n".join(
+                f"{i}. Bu olaya özgü {i}. cümle." for i in range(1, 6)))
+        yorumlar = signal_service.calendar_insights(genis_takvim, "tr")
+        assert len(yorumlar) == 5
+        assert len(set(yorumlar.values())) == 5  # tekrar YOK
+        for i, o in enumerate(genis_takvim, 1):
+            assert yorumlar[signal_service.event_fingerprint(o)] == (
+                f"Bu olaya özgü {i}. cümle.")
+
+
+class TestTakvimParmakIzi:
+    """`event_fingerprint` + `calendar_fingerprint`: önbellek anahtarının
+    dayandığı kararlı kimlik."""
+
+    def test_event_fingerprint_kararli_ve_ayirt_edici(self):
+        o1 = {"transit": "Saturn", "natal": "Moon", "aspect": "square",
+              "date": "2026-08-18"}
+        o2 = {**o1}
+        o3 = {**o1, "date": "2026-09-07"}  # yalnız tarih farklı
+        assert signal_service.event_fingerprint(o1) == \
+            signal_service.event_fingerprint(o2)
+        assert signal_service.event_fingerprint(o1) != \
+            signal_service.event_fingerprint(o3)
+
+    def test_calendar_fingerprint_farkli_kumeler_farkli_iz(self):
+        temel = [{"type": "aspect_exact", "theme": "inner",
+                  "transit": "Saturn", "natal": "Moon", "aspect": "square",
+                  "date": "2026-08-18"}]
+        genisletilmis = temel + [{"type": "aspect_exact", "theme": "career",
+                                  "transit": "Jupiter", "natal": "Sun",
+                                  "aspect": "trine", "date": "2026-08-20"}]
+        assert signal_service.calendar_fingerprint(temel) != \
+            signal_service.calendar_fingerprint(genisletilmis)
+
+    def test_calendar_fingerprint_istasyonu_ve_temasizi_saymaz(self):
+        """İmzaya yalnız temalı açı-kesinleşmeleri girer — istasyon
+        değişse de takvim yorumu önbelleği boşuna tazelenmemeli."""
+        temel = [{"type": "aspect_exact", "theme": "inner",
+                  "transit": "Saturn", "natal": "Moon", "aspect": "square",
+                  "date": "2026-08-18"}]
+        istasyonlu = temel + [{"type": "station_retrograde",
+                               "transit": "Pluto", "date": "2026-08-25"}]
+        temasiz = temel + [{"type": "aspect_exact", "transit": "Mars",
+                            "natal": "Sun", "aspect": "opposition",
+                            "date": "2026-08-19"}]  # theme yok
+        assert signal_service.calendar_fingerprint(temel) == \
+            signal_service.calendar_fingerprint(istasyonlu)
+        assert signal_service.calendar_fingerprint(temel) == \
+            signal_service.calendar_fingerprint(temasiz)
+
+
+class TestSignalHumanLinesKapsami:
+    """Ç4/Ç5 regresyon bekçisi: `SIGNAL_HUMAN_LINES` yalnız sinyal
+    kartlarının ücretsiz-katman son çaresinde yaşamalı. Takvim bir daha
+    bu tabloyu kullanmaya BAŞLARSA (ör. birileri eski satırı geri
+    yapıştırırsa) bu test kırılır — tam bu turun kusurunun geri gelmesini
+    yakalayacak şekilde tasarlandı.
+    """
+
+    def test_takvim_yerellestirmesi_tabloya_dokunmaz(self):
+        """`.SIGNAL_HUMAN_LINES` ERİŞİMİ (gerçek kullanım) aranır — takvimin
+        önceki davranışını AÇIKLAYAN yorum satırındaki bare isim geçişi
+        (`SIGNAL_HUMAN_LINES` tırnaksız anılıyor) bilerek dışarıda
+        bırakılır; asıl tehlike kodun tabloyu tekrar OKUMASIdır."""
+        import inspect
+        kaynak = inspect.getsource(prompts.localize_transit_calendar)
+        assert ".SIGNAL_HUMAN_LINES" not in kaynak
+
+    def test_sinyal_yerellestirmesi_hala_tabloyu_kullanir(self):
+        """Ters yönde de bir bekçi: tablo YANLIŞLIKLA sinyal kartlarından
+        da silinmemeli (Ç5'te bilerek geri konan davranış)."""
+        import inspect
+        kaynak = inspect.getsource(prompts.localize_signals)
+        assert ".SIGNAL_HUMAN_LINES" in kaynak
+
+
 class TestTakvimZenginlestirme:
     """R2-Z1: 90 günlük takvim olayları sinyallerle aynı tema/ton dilini
     taşır; istasyonlara tema UYDURULMAZ."""
@@ -275,20 +469,42 @@ class TestTakvimZenginlestirme:
         assert zengin[0]["theme"] == "inner"  # nokta tabanlı yedek (Ay)
         assert "natal_sign" not in zengin[0]
 
-    def test_yerellestirme_gunluk_dil_ve_teknik(self):
+    def test_yerellestirme_teknik_hep_var_line_onceden_yazilirsa_gecer(self):
+        """Ç-turu: `line` artık tema×ton tablosundan DEĞİL, olaya ÖNCEDEN
+        yazılmış AI metninden gelir (`api/astrology.py`'nin
+        `calendar_insights` sonucunu olaya yazdığı yer). Bu fonksiyon
+        yalnız TAŞIR — kendi başına üretmez.
+
+        Ölçülen kusur tam olarak buydu: eskiden burası tema+ton'a bakıp
+        12 sabit cümleden birini seçiyordu ve 30 günde birçok farklı olay
+        birebir aynı cümleye düşüyordu.
+        """
         zengin = signal_service.enrich_events(self.OLAYLAR, SAHTE_NATAL)
         cal = {"start": "2026-08-16", "days": 90, "events": zengin,
                "active_now": [], "disclosures": []}
         yerel = prompts.localize_transit_calendar("tr", cal)
         kesin = yerel["events"][0]
+        # Teknik dayanak HER ZAMAN üretilir (tema+ton'dan bağımsız,
+        # `SIGNAL_LINE_EXACT` şablonundan) — bu değişmedi.
         assert kesin["theme_local"] == "İç dünya"
-        assert kesin["line"].startswith("İç dünyanda gerilim")
         assert "Satürn" in kesin["technical"]
         assert kesin["date_local"] == "18 Ağustos"
+        # `line` önceden yazılmadıysa BOŞ kalır — sabit cümleye DÜŞMEZ.
+        assert kesin["line"] == ""
         # İstasyon satırı eski davranışını korur.
         istasyon = yerel["events"][1]
         assert "line" not in istasyon
         assert istasyon["type_local"] == "retroya dönüş"
+
+    def test_onceden_yazilmis_ai_metni_oldugu_gibi_tasinir(self):
+        """`api/astrology.py` `line`'ı olaya YAZDIKTAN SONRA çağırır —
+        localize bunu değiştirmeden geçirmeli."""
+        zengin = signal_service.enrich_events(self.OLAYLAR, SAHTE_NATAL)
+        zengin[0] = {**zengin[0], "line": "Bu çift o güne özgü bir cümle."}
+        cal = {"start": "2026-08-16", "days": 90, "events": zengin,
+               "active_now": [], "disclosures": []}
+        yerel = prompts.localize_transit_calendar("tr", cal)
+        assert yerel["events"][0]["line"] == "Bu çift o güne özgü bir cümle."
 
 
 PROFIL = {"uid": "u1", "birthDate": "1990-05-12", "birthTime": "14:30",

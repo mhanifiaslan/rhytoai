@@ -314,6 +314,97 @@ def signals_fingerprint(ham: dict[str, Any]) -> str:
         .encode()).hexdigest()[:20]
 
 
+#: Bir toplu çağrıya girecek en fazla olay sayısı — maliyeti sınırlar.
+#: Ölçüm (Ç-turu): 30-90 günlük gerçek takvimlerde 3-17 arası açı-
+#: kesinleşmesi çıktı; 20 rahat bir tavan.
+CALENDAR_INSIGHT_MAX_EVENTS = 20
+
+
+def event_fingerprint(o: dict[str, Any]) -> str:
+    """Tek bir takvim olayının kararlı kimliği — (gezen, natal, açı, tarih).
+
+    Sinyallerin aksine takvim olayları SIRALI bir listede geri dönmez
+    (çağıran kendi ham olay listesine `line`'ı geri yazacak); bu yüzden
+    eşleştirme POZİSYONLA değil KİMLİKLE yapılır.
+    """
+    return f"{o.get('transit')}|{o.get('natal')}|{o.get('aspect')}|{o.get('date')}"
+
+
+def calendar_fingerprint(events: list[dict[str, Any]]) -> str:
+    """Takvimin ilgili (temalı) olaylarının bütün imzası — önbellek anahtarı.
+
+    Yalnız `theme` taşıyan açı-kesinleşmeleri sayılır: istasyonların okuması
+    yok, imzaya girmeleri önbelleği gereksiz yere tazeler.
+    """
+    ilgili = sorted(event_fingerprint(o) for o in events
+                    if o.get("type") == "aspect_exact" and o.get("theme"))
+    imza = "|".join(ilgili)
+    return hashlib.sha256(f"{SIGNAL_CALC_VERSION}|{imza}"
+                          .encode()).hexdigest()[:20]
+
+
+def calendar_insights(events: list[dict[str, Any]],
+                      lang: str) -> dict[str, str] | None:
+    """Takvimdeki açı-kesinleşmeleri için toplu AI yorumu — TEK çağrı.
+
+    ## Neden var (Ç-turu)
+
+    `SIGNAL_HUMAN_LINES` (tema × ton) yalnızca 12 sabit cümle taşıyordu;
+    30 günlük takvimde birçok farklı astrolojik olay aynı kutuya
+    (özellikle "iç dünya") düşüp BİREBİR AYNI cümleyi alıyordu. Ölçüldü:
+    bir örnek haritada bir günde üç ayrı olay üç kez aynı cümleyi
+    gösterdi. Bu fonksiyon `signal_insights`'la (R2-S1) BİREBİR AYNI
+    desende çalışır — tek fark, prompt açıkça parti-içi tekrarsızlık ister.
+
+    Dönen: parmak izi -> cümle sözlüğü. Model satır sayısını tutturamazsa
+    `None` döner; olaylar `line`SİZ kalır ve mobil zaten teknik dayanağı
+    gösteriyor (bkz. `calendar_strip.dart` `_OlaySatiri`) — yarım/uydurma
+    eşleştirme yapılmaz.
+    """
+    ilgili = [o for o in events
+             if o.get("type") == "aspect_exact" and o.get("theme")]
+    if not ilgili:
+        return None
+    ilgili = ilgili[:CALENDAR_INSIGHT_MAX_EVENTS]
+
+    p = prompts.get(lang)
+    satirlar = []
+    for i, o in enumerate(ilgili, 1):
+        parca = (f"{i}. {prompts.planet_name(lang, o['transit'])} "
+                 f"{prompts.aspect_name(lang, o['aspect'])} "
+                 f"natal {prompts.planet_name(lang, o['natal'])}"
+                 f" ({o['date']})"
+                 f" — {p.SIGNAL_THEME_NAMES.get(o['theme'], o['theme'])}")
+        satirlar.append(parca)
+
+    prompt = p.CALENDAR_INSIGHTS_PROMPT.format(
+        count=len(ilgili), lines="\n".join(satirlar))
+    try:
+        metin = (gemini_service.generate(prompt, lang=lang) or "").strip()
+    except Exception as exc:
+        logger.warning("Takvim yorumu üretilemedi: %s", exc)
+        return None
+
+    yorumlar: list[str] = []
+    for satir in metin.splitlines():
+        satir = satir.strip().strip('"').strip()
+        if not satir:
+            continue
+        for onek in (f"{len(yorumlar) + 1}.", f"{len(yorumlar) + 1})", "-"):
+            if satir.startswith(onek):
+                satir = satir[len(onek):].strip()
+                break
+        yorumlar.append(satir)
+
+    if len(yorumlar) != len(ilgili) or any(
+            len(y) > p.SIGNAL_INSIGHT_MAX for y in yorumlar):
+        logger.info("Takvim yorumu biçim dışı (%s satır), yedeğe düşüldü",
+                    len(yorumlar))
+        return None
+
+    return {event_fingerprint(o): y for o, y in zip(ilgili, yorumlar)}
+
+
 def signal_insights(ham: dict[str, Any], lang: str) -> list[str] | None:
     """Her sinyal için tek cümlelik yorum — üçü TEK çağrıda.
 

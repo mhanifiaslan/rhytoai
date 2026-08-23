@@ -71,6 +71,20 @@ def sahte_motor(monkeypatch):
     monkeypatch.setattr(chart_context, "chart_facts", lambda uid, p: {})
     monkeypatch.setattr(signal_service, "enrich_events",
                         lambda olaylar, natal: olaylar)
+    # Ç-turu: yorum katmani (LLM) ayrica sahtelenir — gercek gemini_service
+    # cagrisina hic GIDILMEZ, deterministik kalir. Cagri sayaci disaridan
+    # okunabilir (ucretsiz katmanda sifir kalmali — bkz. Ç6 testleri).
+    sayac = {"n": 0}
+
+    def sahte_yorum(events, lang):
+        sayac["n"] += 1
+        olay = events[0]
+        return {signal_service.event_fingerprint(olay):
+                "Bu gune ozgu cumle."}
+
+    monkeypatch.setattr(signal_service, "calendar_insights", sahte_yorum)
+    monkeypatch.setattr(astrology, "_test_yorum_sayaci", sayac,
+                        raising=False)
     # Onbellek testler arasinda tasinmasin: bir kosuda yazilan yuk
     # digerine sizarsa kilit testi yanlislikla gecerdi.
     bellek: dict = {}
@@ -148,3 +162,26 @@ def test_okumasi_olmayan_olaya_kilit_KONMAZ(monkeypatch, kullanici,
     assert "locked" not in tipler["station"]
     # Istasyonun olcumu ucretsiz katmanda da duruyor.
     assert tipler["station"]["transit_local"]
+
+
+@uygulama_gerekir
+def test_ucretsiz_kullanicida_yorum_hic_uretilmez(monkeypatch, kullanici,
+                                                   sahte_motor):
+    """Ç6: 'hesap bedava, yorum parali' — ucretsiz kullanicida takvim
+    yorumu (LLM cagrisi) HIC tetiklenmemeli. Onceki tasarimda her aci-
+    kesinlesmesi otomatik `line` aldigi icin bu ayrim yoktu; simdi
+    `calendar_insights` YALNIZCA abone dalinda cagriliyor — bu test
+    ucretsiz kullanicida cagri sayacinin sifir kaldigini dogrudan olcer.
+    """
+    _cek(monkeypatch, sahte_motor, abone=False)
+    assert sahte_motor._test_yorum_sayaci["n"] == 0
+
+
+@uygulama_gerekir
+def test_abonede_yorum_tek_seferde_uretilir_ve_onbelleklenir(
+        monkeypatch, kullanici, sahte_motor):
+    """Ç2: yorum onbellegi 24s TTL ile ayri anahtarlanir — ayni istek
+    ikinci kez atildiginda LLM'e tekrar gidilmez."""
+    _cek(monkeypatch, sahte_motor, abone=True)
+    _cek(monkeypatch, sahte_motor, abone=True)
+    assert sahte_motor._test_yorum_sayaci["n"] == 1

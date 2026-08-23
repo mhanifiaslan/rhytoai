@@ -488,12 +488,21 @@ def localize_transit_calendar(lang: str | None, cal: dict | None) -> dict:
             sonuç["date_local"] = signal_date(lang, o["date"])
         # R2-Z1: tema/ton taşıyan kesinleşme olayı "Bu tarih neden önemli?"
         # sayfasını sinyal kartlarıyla AYNI dille doldurur: gündelik cümle
-        # (tema × ton) + teknik dayanak satırı.
+        # + teknik dayanak satırı.
+        #
+        # `line` ARTIK burada üretilmez (Ç-turu). Eskiden tema×ton sabit
+        # bir 12 cümlelik tabloya (`SIGNAL_HUMAN_LINES`) bakıyordu ve
+        # birçok farklı astrolojik olay birebir aynı cümleye düşüyordu
+        # (ölçüldü: bir günde üç ayrı olay aynı cümleyi üç kez gösterdi).
+        # Yorum artık `api/astrology.py`'de abone için `calendar_insights`
+        # ile ÖNCEDEN üretilip olaya `o["line"]` olarak yazılıyor; burası
+        # yalnız OLDUĞU GİBİ taşır. Üretilmediyse (ücretsiz kullanıcı ya
+        # da AI biçimi tutturamadıysa) boş kalır — mobil bu durumda kendi
+        # teknik dayanak yedeğini gösterir (`calendar_strip.dart`).
         if o.get("theme") and o.get("tone"):
             sonuç["theme_local"] = p.SIGNAL_THEME_NAMES.get(o["theme"],
                                                             o["theme"])
-            sonuç["line"] = p.SIGNAL_HUMAN_LINES.get(
-                o["theme"], {}).get(o["tone"], "")
+            sonuç["line"] = o.get("line", "")
             sonuç["technical"] = p.SIGNAL_LINE_EXACT.format(
                 transit=sonuç["transit_local"],
                 natal=sonuç.get("natal_local", ""),
@@ -562,8 +571,22 @@ def localize_signals(lang: str | None, data: dict | None) -> dict:
         else:
             teknik = p.SIGNAL_LINE_ACTIVE.format(**alanlar)
 
-        # KART cümlesi (R2-S6): tema + ton, gündelik dil. Ölçülen iki şeyden
-        # seçilir; gezegen/açı adı geçmez — o bilgi dayanak sayfasında.
+        # KART cümlesi (R2-S6): AI yorumu varsa (signal_insights) o
+        # kullanılır. YOKSA — ücretsiz katman ya da biçim tutmadıysa —
+        # tema×ton şablonuna düşülür.
+        #
+        # Ç-turu'nda bu şablon TAKVİMDEN kaldırıldı (orada birçok farklı
+        # olay aynı 12 cümleden birine düşüp birebir tekrar ediyordu —
+        # ölçüldü) ama BURADA BİLEREK KALDI: `headline`/`technical`
+        # takvimin aksine ücretsiz kullanıcıdan HİÇ gizlenmiyor — ücretsiz
+        # katmanın kendi ürün tasarımı bu şablon ("hesap bedava, yorum
+        # paralı"). Onu kaldırıp doğrudan teknik cümleye ("Satürn, natal
+        # Ay ile Kare açısını...") düşmek, ücretsiz kullanıcının HER GÜN
+        # gördüğü ana kart metnine jargon sızdırırdı — bu bir düzeltme
+        # değil regresyon olurdu. Ayrıca risk takvimden çok daha düşük:
+        # yalnız 3 sinyal gösteriliyor ve `compute_signals` zaten aralarında
+        # tema çeşitliliği zorluyor (aynı tema iki kez seçilmez, elde
+        # başka seçenek yoksa).
         tema = s.get("theme") or "inner"
         ton = s.get("tone") or "focus"
         insan = p.SIGNAL_HUMAN_LINES.get(tema, {}).get(ton) or teknik

@@ -167,6 +167,30 @@ def transit_calendar(user: AuthUser = Depends(get_current_user),
                 cal.get("events") or [], natal)}
             cache.set(anahtar, cal, ttl_seconds=24 * 3600)
 
+        # Yorum (Ç-turu): YALNIZCA abonede, önbellekten AYRI ve DİL BAZLI.
+        #
+        # Ham `cal` (yukarıdaki `anahtar`) dilden bağımsız ve paylaşımlı —
+        # yorum metni orada YAŞAYAMAZ, çünkü TR/EN aynı ham takvimi
+        # paylaşıyor. Sinyal kartlarındaki `signals-insight-{fp}-{lang}`
+        # deseninin birebir aynısı: ayrı anahtar, biçim-dışı çıktı da
+        # (boş sözlük) önbelleklenir ki her istekte LLM yeniden yorulmasın.
+        #
+        # Ücretsiz kullanıcıda bu blok HİÇ ÇALIŞMAZ — boşuna harcama yok.
+        if is_subscriber(user.uid):
+            fp = signal_service.calendar_fingerprint(cal.get("events") or [])
+            yorum_anahtari = f"calendar-insight-{fp}-{lang}"
+            yorumlar = cache.get(yorum_anahtari)
+            if yorumlar is None:
+                yorumlar = signal_service.calendar_insights(
+                    cal.get("events") or [], lang) or {}
+                cache.set(yorum_anahtari, yorumlar, ttl_seconds=24 * 3600)
+            if yorumlar:
+                def _yorumu_isle(o: dict) -> dict:
+                    fp_o = signal_service.event_fingerprint(o)
+                    return {**o, "line": yorumlar[fp_o]} if fp_o in yorumlar else o
+                cal = {**cal, "events": [
+                    _yorumu_isle(o) for o in (cal.get("events") or [])]}
+
         yerel = prompts.localize_transit_calendar(lang, cal)
         if not is_subscriber(user.uid):
             yerel = _takvimi_kilitle(yerel)
@@ -188,13 +212,21 @@ def _takvimi_kilitle(yerel: dict) -> dict:
     Kalan: tarih, olay türü, tema ve ton. Bunlar hesabın kendisi ve
     ürünün kuralı gereği ücretsiz. Giden: yorum cümleleri.
 
-    `locked: true` YALNIZCA okuması olan olaya konur. İstasyonların
+    `locked: true` YALNIZCA okuması OLABİLECEK olaya konur. İstasyonların
     (retro dönüşleri) hiçbir katmanda gündelik cümlesi yok — onları da
     kilitli işaretlemek "Rytho+ ile açılır" diyip abonelikte de
     açılmayan bir şey vaat etmek olurdu (cihaz turu, 1.5.1+18).
+
+    Koşul BİLEREK `line` değil `theme` varlığına bakar (Ç-turu). Yorum
+    metni artık YALNIZ abonede üretiliyor — ücretsiz kullanıcının olay
+    sözlüğünde `line` zaten hiç yok. Koşul eskisi gibi `line`'a
+    bağlansaydı ücretsiz kullanıcı kilit rozetini TAMAMEN kaybederdi
+    (bugün her açı-kesinleşmesi otomatik `line` aldığı için bu fark
+    görünmüyordu). `theme`, "bu olay TÜRÜNÜN bir okuması olabilir mi"
+    sorusuna cevap verir — metnin o an üretilip üretilmediğinden bağımsız.
     """
     def olay(o: dict) -> dict:
-        if not o.get("line"):
+        if not o.get("theme"):
             return o
         temiz = {k: v for k, v in o.items() if k not in _KILITLI_ALANLAR}
         temiz["locked"] = True
