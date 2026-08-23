@@ -148,7 +148,7 @@ class RunResult(BaseModel):
 
 
 @router.post("/run", response_model=RunResult)
-def run(type: Literal["daily", "streak"] = "daily",
+def run(type: Literal["daily", "checkin", "streak"] = "daily",
         dry_run: bool = False,
         force: bool = False,
         ignore_dedupe: bool = False,
@@ -214,19 +214,37 @@ def run(type: Literal["daily", "streak"] = "daily",
                 continue
             if lang not in sky_by_lang:
                 sky_by_lang[lang] = prompts.localize_sky(lang, ham_sky)
-            # R2-S4/S6: sabah bildirimi jenerik değil, kullanıcının 1
-            # numaralı SİNYALİ — başlık temanın adı, gövde kartla aynı
-            # gündelik dil cümlesi. Üretilemezse paylaşımlı burç satırına
-            # geri düşülür; bildirim bu yüzden asla atlanmaz.
+            # R2-S4 → KA-turu: sabah bildirimi kullanıcının 1 numaralı
+            # sinyalinin O GÜNE ÖZGÜ AI cümlesi (uç ile paylaşılan
+            # paket — günde toplam bir üretim). Üretilemezse paylaşımlı
+            # burç satırına geri düşülür; bildirim asla atlanmaz.
+            # `route`/`fp`/`idx`/`d`: dokununca ilgili sinyal kartının
+            # dayanak sayfası açılsın diye (KA5) — eski istemci bu
+            # alanları yok sayar, davranışı değişmez.
             sinyal_push = notification_service.signal_push(
                 profil, lang, today=yerel.date())
             if sinyal_push is not None:
-                baslik, govde = sinyal_push
+                baslik, govde, iz = sinyal_push
+                veri = {"type": "daily", "sign": sign, "route": "signal",
+                        "fp": iz, "idx": "0", "d": gun}
             else:
                 baslik = prompts.get(lang).PUSH_DAILY_TITLE
                 govde = notification_service.daily_push_body(
                     sign, sky_by_lang[lang], lang, gun)
-            veri = {"type": "daily", "sign": sign}
+                veri = {"type": "daily", "sign": sign}
+        elif type == "checkin":
+            # KA4: günün önemli sinyaline bağlı kişisel soru — yalnız
+            # sabah paketinde soru YAZILMIŞSA gider; LLM çağrılmaz.
+            # Soru FCM yükünde taşınır: içeriği yalnız transit
+            # satırlarından üretildiği için kişisel veri sızdırmaz.
+            checkin = notification_service.checkin_push(
+                profil, lang, today=yerel.date())
+            if checkin is None:
+                atlanan["soru-yok"] = atlanan.get("soru-yok", 0) + 1
+                continue
+            baslik, govde = checkin
+            veri = {"type": "checkin", "route": "chat",
+                    "q": govde, "q_date": gun}
         else:
             baslik, govde = notification_service.streak_push(profil, lang)
             veri = {"type": "streak"}

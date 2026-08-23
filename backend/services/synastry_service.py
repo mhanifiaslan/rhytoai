@@ -324,6 +324,10 @@ def relationship_whisper(uid: str, friend_uid: str, lang: str,
     """Arkadaş için sohbet bağlamı (R4-2) — `whisper_for`'un ince sarmalı."""
     karsi = friend_counterpart(uid, friend_uid)
     if karsi is None:
+        # KA8: boş fısıltı loglanır — eskiden model bağlamsız kaldığında
+        # sebep hiçbir yerde görünmüyordu.
+        logger.info("İlişki fısıltısı boş: arkadaşın doğum verisi yok "
+                    "(%s→%s)", uid, friend_uid)
         return ""
     return whisper_for(uid, karsi, lang, max_chars=max_chars)
 
@@ -345,6 +349,9 @@ def whisper_for(uid: str, other: Counterpart, lang: str,
 
     eksenler = axes_for(uid, other)
     if eksenler is None:
+        # KA8: boş fısıltı loglanır (kullanıcının kendi doğum verisi yok).
+        logger.info("İlişki fısıltısı boş: kullanıcının doğum verisi yok "
+                    "(%s)", uid)
         return ""
 
     etiket = "Arkadaş" if lang == "tr" else "Friend"

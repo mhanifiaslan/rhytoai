@@ -353,8 +353,9 @@ def calendar_insights(events: list[dict[str, Any]],
     30 günlük takvimde birçok farklı astrolojik olay aynı kutuya
     (özellikle "iç dünya") düşüp BİREBİR AYNI cümleyi alıyordu. Ölçüldü:
     bir örnek haritada bir günde üç ayrı olay üç kez aynı cümleyi
-    gösterdi. Bu fonksiyon `signal_insights`'la (R2-S1) BİREBİR AYNI
-    desende çalışır — tek fark, prompt açıkça parti-içi tekrarsızlık ister.
+    gösterdi. Bu fonksiyon sinyal paketiyle (`insight_bundle`) BİREBİR
+    AYNI ayrıştırma/doğrulama desenindedir — tek fark, prompt açıkça
+    parti-içi tekrarsızlık ister ve soru satırı yoktur.
 
     Dönen: parmak izi -> cümle sözlüğü. Model satır sayısını tutturamazsa
     `None` döner; olaylar `line`SİZ kalır ve mobil zaten teknik dayanağı
@@ -405,19 +406,56 @@ def calendar_insights(events: list[dict[str, Any]],
     return {event_fingerprint(o): y for o, y in zip(ilgili, yorumlar)}
 
 
-def signal_insights(ham: dict[str, Any], lang: str) -> list[str] | None:
-    """Her sinyal için tek cümlelik yorum — üçü TEK çağrıda.
+#: Check-in sorusu üst sınırı — FCM data yükünde taşınır, kısa kalmalı.
+CHECKIN_QUESTION_MAX = 120
 
-    Model satır sayısını tutturamazsa None döner ve arayüz şablon başlıkla
-    yaşar; yarım/uydurma eşleştirme yapılmaz.
+#: Yorum paketi önbellek ömürleri. Başarısızlık KISA tutulur (R9-1 emsali):
+#: eski davranışta tek biçim hatası `[]` olarak 24 saat önbellekleniyordu ve
+#: o günün TAMAMI sessizce AI'sız kalıyordu.
+BUNDLE_TTL_OK = 24 * 3600
+BUNDLE_TTL_FAIL = 3600
+
+
+def significant_signal(ham: dict[str, Any]) -> int | None:
+    """Günün "önemli" sinyalinin indeksi — akşam check-in sorusu buna bağlanır.
+
+    Determinist: `exact_on` olup kesinleşmesine ≤1 gün kalan İLK sinyal;
+    yoksa 1 numaralı sinyal etkin ve orb ≤ 1.0 ise o; yoksa None (soru
+    üretilmez, akşam seri hatırlatmasına düşülür).
+    """
+    sinyaller = ham.get("signals") or []
+    for i, s in enumerate(sinyaller):
+        gun = s.get("days_to_exact")
+        if s.get("exact_on") and isinstance(gun, int) and gun <= 1:
+            return i
+    if sinyaller:
+        bir = sinyaller[0]
+        orb = bir.get("orb")
+        if bir.get("active") and isinstance(orb, (int, float)) and orb <= 1.0:
+            return 0
+    return None
+
+
+def insight_bundle(ham: dict[str, Any], lang: str) -> dict[str, Any] | None:
+    """Sinyal yorumları + akşam check-in sorusu — hepsi TEK çağrıda (KA1).
+
+    Dönen: ``{"insights": [str, ...], "checkin_question": str | None}``.
+    Numaralı satırlar biçim tutmazsa None (yarım eşleştirme yok). SORU
+    satırı eksik/biçimsizse KISMİ KABUL: yorumlar döner, soru None —
+    sabah bildirimi akşam sorusuna rehin olmaz.
+
+    Prompt satırlarına `movement` da girer: kart cümlesi zamanlama
+    etiketiyle ("etkisi sönüyor") çelişmesin — cihaz bulgusu, aynı metnin
+    biri "güçleniyor" biri "sönüyor" iki kartta göründüğü gün.
     """
     sinyaller = ham.get("signals") or []
     if not sinyaller:
         return None
     p = prompts.get(lang)
+    odak = significant_signal(ham)
     satirlar = []
-    for i, s in enumerate(sinyaller, 1):
-        parca = (f"{i}. {prompts.planet_name(lang, s['transit'])} "
+    for i, s in enumerate(sinyaller):
+        parca = (f"{i + 1}. {prompts.planet_name(lang, s['transit'])} "
                  f"{prompts.aspect_name(lang, s['aspect'])} "
                  f"natal {prompts.planet_name(lang, s['natal'])}")
         if s.get("exact_on"):
@@ -425,6 +463,12 @@ def signal_insights(ham: dict[str, Any], lang: str) -> list[str] | None:
         elif s.get("orb") is not None:
             parca += f" (orb {s['orb']}°)"
         parca += f" — {p.SIGNAL_THEME_NAMES.get(s['theme'], s['theme'])}"
+        if s.get("movement") == "applying":
+            parca += f" — {p.SIGNAL_PROMPT_APPLYING}"
+        elif s.get("movement") == "separating":
+            parca += f" — {p.SIGNAL_PROMPT_SEPARATING}"
+        if i == odak:
+            parca += f" — {p.SIGNAL_PROMPT_FOCUS_MARK}"
         satirlar.append(parca)
 
     prompt = p.SIGNALS_PROMPT.format(count=len(sinyaller),
@@ -436,9 +480,15 @@ def signal_insights(ham: dict[str, Any], lang: str) -> list[str] | None:
         return None
 
     yorumlar: list[str] = []
+    soru: str | None = None
     for satir in metin.splitlines():
         satir = satir.strip().strip('"').strip()
         if not satir:
+            continue
+        if satir.upper().startswith(p.CHECKIN_PREFIX):
+            aday = satir[len(p.CHECKIN_PREFIX):].strip()
+            if aday and aday != "-" and len(aday) <= CHECKIN_QUESTION_MAX:
+                soru = aday
             continue
         # "1." / "1)" / "-" öneklerini soy.
         for onek in (f"{len(yorumlar) + 1}.", f"{len(yorumlar) + 1})", "-"):
@@ -451,4 +501,39 @@ def signal_insights(ham: dict[str, Any], lang: str) -> list[str] | None:
         logger.info("Sinyal yorumu biçim dışı (%s satır), şablona düşüldü",
                     len(yorumlar))
         return None
-    return yorumlar
+    # Odak yoksa modelin yine de yazdığı soru KULLANILMAZ: "önemli gün"
+    # hükmü determinist seçicinindir, modelin değil.
+    if odak is None:
+        soru = None
+    return {"insights": yorumlar, "checkin_question": soru}
+
+
+def cached_insight_bundle(ham: dict[str, Any], lang: str,
+                          generate_if_missing: bool = True
+                          ) -> dict[str, Any] | None:
+    """Paylaşılan yorum paketi önbelleği — uç VE bildirim aynı kaydı kullanır.
+
+    Kim önce çalışırsa (yerel 09:00 bildirimi ya da uygulama açılışı) o
+    üretir, diğeri okur: günde en fazla BİR çağrı/harita/dil. Parmak izi
+    tarihi içerdiği için kayıt günlük tazelenir.
+
+    ``generate_if_missing=False`` yalnız okur (akşam check-in yolu LLM
+    yakmaz). Başarısızlık sentinel'i KISA ömürle yazılır ki bir biçim
+    hatası bütün günü zehirlemesin (eski `[] 24s` kusurunun onarımı).
+    """
+    from core import cache
+    if not ham.get("signals"):
+        return None
+    anahtar = f"signals-bundle-{signals_fingerprint(ham)}-{lang}"
+    paket = cache.get(anahtar)
+    if paket is None and generate_if_missing:
+        paket = insight_bundle(ham, lang)
+        if paket is None:
+            paket = {"insights": None, "checkin_question": None,
+                     "failed": True}
+            cache.set(anahtar, paket, ttl_seconds=BUNDLE_TTL_FAIL)
+        else:
+            cache.set(anahtar, paket, ttl_seconds=BUNDLE_TTL_OK)
+    if not paket or paket.get("failed") or not paket.get("insights"):
+        return None
+    return paket

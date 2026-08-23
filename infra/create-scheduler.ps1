@@ -107,6 +107,9 @@ Write-Host "3/4 Zamanlayici isleri kuruluyor..."
 # saatten birkac dakika sonra calisir.
 $isler = @(
     @{ ad = "rytho-notify-daily";  tur = "daily";  cron = "5 * * * *" },
+    # KA4: aksam check-in sorusu. Streak'ten (:10) ONCE kosar; ayni aksam
+    # ikisinden yalniz biri gider (should_send'deki karsilikli koruma).
+    @{ ad = "rytho-notify-checkin"; tur = "checkin"; cron = "8 * * * *" },
     @{ ad = "rytho-notify-streak"; tur = "streak"; cron = "10 * * * *" }
     # Sohbet arsivi temizligi (R4): 30 gundur kullanilmayan konusmalar.
     @{ ad = "rytho-cleanup"; uri = "/api/v1/maintenance/cleanup"; cron = "20 3 * * *" }

@@ -10,7 +10,7 @@ from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
 from core.entitlements import require_plus
-from core import cache, entitlements, wallet
+from core import entitlements, wallet
 from services import (astro_service, bazi_service, birth_hexagram_service,
                       chart_context, notification_service, people_service,
                       profile_service, prompts, report_service,
@@ -145,9 +145,11 @@ def signals(user: AuthUser = Depends(get_current_user),
     Jeton YOK. Ham sinyaller LLM'siz hesaptır ve transit takvimi gibi doğum
     verisine anahtarlı PAYLAŞIMLI önbellekte tutulur (aynı doğum verisi =
     aynı gökyüzü = aynı sinyaller). Tek cümlelik yorum katmanı ("insight")
-    yalnız abonelere üretilir; üç sinyal TEK LLM çağrısıyla yazılır ve
-    sinyal parmak izine anahtarlı önbelleğe girer — günde en fazla bir
-    çağrı/harita/dil (birim ekonomi kuralı).
+    KA-turu'ndan beri HERKESE üretilir (kullanıcı kararı: "hazır cümle
+    asla olmasın; herkese AI") — abonelik kapısı YOK. Yorumlar + akşam
+    check-in sorusu TEK LLM çağrısıyla yazılır ve sinyal parmak izine
+    anahtarlı PAYLAŞILAN pakete girer; sabah bildirimi de aynı paketi
+    okur — günde en fazla bir çağrı/harita/dil (birim ekonomi kuralı).
 
     Doğum verisi yoksa 400 DEĞİL boş liste döner: ana ekran yeni kullanıcıya
     hata değil "haritanı tamamla" kartı göstermeli.
@@ -160,23 +162,24 @@ def signals(user: AuthUser = Depends(get_current_user),
             return {"status": "success",
                     "data": {"signals": [], "reason": "birth_missing"}}
 
-        if ham.get("signals") and entitlements.is_subscriber(user.uid):
-            iz = signal_service.signals_fingerprint(ham)
-            yorum_anahtari = f"signals-insight-{iz}-{lang}"
-            yorumlar = cache.get(yorum_anahtari)
-            if yorumlar is None:
-                yorumlar = signal_service.signal_insights(ham, lang)
-                # Biçim dışı çıktı da (boş liste olarak) önbelleklenir:
-                # aksi halde her istekte LLM yeniden denenirdi (push dersi).
-                cache.set(yorum_anahtari, yorumlar or [],
-                          ttl_seconds=24 * 3600)
-            if yorumlar:
+        soru = None
+        if ham.get("signals"):
+            paket = signal_service.cached_insight_bundle(ham, lang)
+            if paket:
                 ham = {**ham, "signals": [
                     {**s, "insight": y}
-                    for s, y in zip(ham["signals"], yorumlar)]}
+                    for s, y in zip(ham["signals"], paket["insights"])]}
+                soru = paket.get("checkin_question")
 
-        return {"status": "success",
-                "data": prompts.localize_signals(lang, ham)}
+        yerel = prompts.localize_signals(lang, ham)
+        # Mobil derin bağlantı eşleşmesi (KA5) parmak iziyle yapılır;
+        # soru, bildirime dokunmadan uygulamayı açan kullanıcıya da
+        # akşam yüzeyinde gösterilebilsin diye yanıtta taşınır.
+        if ham.get("signals"):
+            yerel["fingerprint"] = signal_service.signals_fingerprint(ham)
+        if soru:
+            yerel["checkin_question"] = soru
+        return {"status": "success", "data": yerel}
     except HTTPException:
         raise
     except Exception as e:

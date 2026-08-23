@@ -38,8 +38,9 @@ DEFAULT_QUIET_TO = 8
 #: Bildirim türlerinin hedef yerel saati. Zamanlayıcı saatte bir çalışır ve
 #: yalnızca yerel saati bu değere eşit olan kullanıcılara gönderir.
 TARGET_HOURS = {
-    "daily": 9,    # sabah: günün okuması hazır
-    "streak": 20,  # akşam: seri kırılmadan önce son hatırlatma
+    "daily": 9,     # sabah: günün okuması hazır
+    "checkin": 20,  # akşam: günün önemli sinyaline bağlı kişisel soru (KA4)
+    "streak": 20,   # akşam: seri kırılmadan önce son hatırlatma (soru yoksa)
 }
 
 #: Zamanlayıcıdan tetiklenebilecek türler.
@@ -153,9 +154,13 @@ def mark_sent(uid: str, tur: str, gun: str) -> None:
 # Karar
 # ---------------------------------------------------------------------------
 
-#: Tür -> profildeki tercih alanı.
+#: Tür -> profildeki tercih alanı. `checkin` BİLEREK streak tercihini
+#: paylaşır: ikisi de "akşam dürtmesi" ailesinden ve akşam en fazla biri
+#: gider — ayrı bir anahtar mobil ayar ekranını büyütürdü. Kullanıcılar
+#: ayrı kapatmak isterse `notifyCheckin` o zaman eklenir.
 PREF_FIELDS = {
     "daily": "notifyDaily",
+    "checkin": "notifyStreak",
     "streak": "notifyStreak",
     "friend": "notifyFriends",
 }
@@ -208,6 +213,18 @@ def should_send(profile: dict[str, Any], tur: str,
             return False, "seri-kisa"
         if profile.get("lastSeenDaily") == yerel.date().isoformat():
             return False, "bugun-zaten-okudu"
+        # KA4: akşam EN FAZLA bir bildirim — check-in gittiyse seri
+        # hatırlatması susar. (checkin işi :08'de, streak :10'da koşar;
+        # bu koruma sırayı da yeniden denemeyi de dert etmez.)
+        if already_sent(profile["uid"], "checkin",
+                        yerel.date().isoformat()):
+            return False, "aksam-checkin-gitti"
+
+    if tur == "checkin" and already_sent(profile["uid"], "streak",
+                                         yerel.date().isoformat()):
+        # Ters sıra da korunur: streak bir şekilde önce gittiyse aynı
+        # akşam bir de soru göndermeyiz.
+        return False, "aksam-streak-gitti"
 
     if not ignore_dedupe and already_sent(profile["uid"], tur,
                                           yerel.date().isoformat()):
@@ -274,13 +291,22 @@ def daily_push_body(sign: str, sky: dict[str, Any], lang: str,
 
 
 def signal_push(profile: dict[str, Any], lang: str,
-                today: dt.date | None = None) -> tuple[str, str] | None:
-    """R2-S4: sabah bildirimi kullanıcının 1 numaralı sinyalinden.
+                today: dt.date | None = None
+                ) -> tuple[str, str, str] | None:
+    """Sabah bildirimi kullanıcının 1 numaralı sinyalinden (R2-S4 → KA-turu).
 
-    ``(başlık, gövde)`` döner: başlık temanın adı ("Bugün: İlişkiler"),
-    gövde kartla AYNI gündelik dil cümlesi — kullanıcı bildirimde okuduğu
-    cümleyi uygulamayı açınca kartta bulur (aynı paylaşımlı önbellek).
-    Metin ŞABLONDUR, LLM çağırmaz.
+    ``(başlık, gövde, parmak_izi)`` döner: başlık temanın adı ("Bugün:
+    İlişkiler"), gövde o güne/o kişiye ÖZGÜ AI cümlesi — uç ile AYNI
+    paylaşılan paketten (`cached_insight_bundle`), yani kullanıcı
+    bildirimde okuduğu cümleyi uygulamayı açınca kartta bulur ve günde
+    toplam bir LLM çağrısı yapılır (kim önce çalışırsa). Parmak izi
+    derin bağlantı eşleşmesi içindir (KA5).
+
+    Eski davranış (`headline` = 12 cümlelik sabit tablo) cihazda ölçülen
+    kusurdu: tema+ton haftalarca sabit kaldığı için HERKESE her sabah
+    birebir aynı metin gidiyordu. Paket üretilemezse gövde DÜRÜST teknik
+    satıra düşer — o da ölçülmüş veridir ve tarih içerdiği için günden
+    güne değişir.
 
     Üretilemezse (doğum verisi yok / hesap düştü / satır uzun) None döner
     ve çağıran paylaşımlı burç satırına düşer; bildirim ASLA atlanmaz.
@@ -290,14 +316,49 @@ def signal_push(profile: dict[str, Any], lang: str,
         ham = signal_service.cached_signals(profile, today=today)
         if not ham or not ham.get("signals"):
             return None
+        paket = signal_service.cached_insight_bundle(ham, lang)
         sinyal = prompts.localize_signals(lang, ham)["signals"][0]
-        govde = sinyal["headline"]
-        if not 0 < len(govde) <= MAX_PUSH_BODY:
-            return None
+        govde = ""
+        if paket and paket.get("insights"):
+            govde = paket["insights"][0]
+            if not 0 < len(govde) <= prompts.get(lang).SIGNAL_INSIGHT_MAX:
+                govde = ""  # taşan yorum: dürüst teknik satıra düş
+        if not govde:
+            govde = sinyal["technical"]
+            if not 0 < len(govde) <= MAX_PUSH_BODY:
+                return None
         p = prompts.get(lang)
-        return p.PUSH_SIGNAL_TITLE.format(theme=sinyal["theme_local"]), govde
+        iz = signal_service.signals_fingerprint(ham)
+        return (p.PUSH_SIGNAL_TITLE.format(theme=sinyal["theme_local"]),
+                govde, iz)
     except Exception as exc:
         logger.warning("Sinyal bildirimi uretilemedi (%s): %s",
+                       profile.get("uid"), exc)
+        return None
+
+
+def checkin_push(profile: dict[str, Any], lang: str,
+                 today: dt.date | None = None) -> tuple[str, str] | None:
+    """Akşam check-in sorusu (KA4) — YALNIZ önbellekten, LLM yakmaz.
+
+    Soru sabahki toplu üretimin son satırıdır; akşam işi yalnız okur
+    (`generate_if_missing=False`). Paket yoksa ya da o gün "önemli
+    sinyal" çıkmadıysa None döner — çağıran kullanıcıyı atlar ve :10'daki
+    seri hatırlatması normal davranır.
+    """
+    try:
+        from services import signal_service
+        ham = signal_service.cached_signals(profile, today=today)
+        if not ham or not ham.get("signals"):
+            return None
+        paket = signal_service.cached_insight_bundle(
+            ham, lang, generate_if_missing=False)
+        soru = (paket or {}).get("checkin_question")
+        if not soru:
+            return None
+        return prompts.get(lang).PUSH_CHECKIN_TITLE, soru
+    except Exception as exc:
+        logger.warning("Check-in bildirimi uretilemedi (%s): %s",
                        profile.get("uid"), exc)
         return None
 

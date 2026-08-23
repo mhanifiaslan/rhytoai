@@ -128,11 +128,19 @@ class PreparedConversation:
     """
 
     def __init__(self, conversation_id: str, create: bool,
-                 title_prefix: str | None, message_count: int):
+                 title_prefix: str | None, message_count: int,
+                 friend_uid: str | None = None,
+                 person_id: str | None = None):
         self.conversation_id = conversation_id
         self.create = create
         self.title_prefix = title_prefix
         self.message_count = message_count
+        #: KA7: konuya yapışmış bağlam. İstemci konuşmayı listeden yeniden
+        #: açınca friend/person kimliğini geri gönderemiyordu ve bağlam
+        #: KALICI kayboluyordu; artık konu dokümanında durur ve `prepare`
+        #: mevcut okumadan bedavaya geri getirir.
+        self.friend_uid = friend_uid
+        self.person_id = person_id
 
 
 def prepare(uid: str, requested_id: str | None) -> PreparedConversation | None:
@@ -155,12 +163,18 @@ def prepare(uid: str, requested_id: str | None) -> PreparedConversation | None:
                 veri = anlik.to_dict() or {}
                 adet = int(veri.get("messageCount", 0))
                 if adet + 2 <= MAX_MESSAGES_PER_CONVERSATION:
-                    return PreparedConversation(requested_id, False, None, adet)
+                    return PreparedConversation(
+                        requested_id, False, None, adet,
+                        friend_uid=veri.get("friendUid"),
+                        person_id=veri.get("personId"))
                 # Konu doldu: devam konusu. İstemci dönen kimliği izlediği
                 # için konuşma kesintisiz sürer; eski konu arşivde kalır.
+                # Bağlam da devam konusuna taşınır.
                 return PreparedConversation(
                     koleksiyon.document().id, True,
-                    str(veri.get("title", "")), 0)
+                    str(veri.get("title", "")), 0,
+                    friend_uid=veri.get("friendUid"),
+                    person_id=veri.get("personId"))
             # İstemcinin elindeki kimlik silinmiş (temizlik/tahliye): aynı
             # kimliğe YENİ doküman kurulur, istemci fark etmez.
             return PreparedConversation(requested_id, True, None, 0)
@@ -171,10 +185,18 @@ def prepare(uid: str, requested_id: str | None) -> PreparedConversation | None:
 
 
 def write_turn(uid: str, prepared: PreparedConversation,
-               user_text: str, ai_text: str, lang: str) -> None:
+               user_text: str, ai_text: str, lang: str,
+               friend_uid: str | None = None,
+               person_id: str | None = None) -> None:
     """Bir soru-cevap turunu arşive yazar — arka plan görevi.
 
     Başarısızlık yanıtı etkilemez; yalnızca o tur arşivden düşer.
+
+    ``friend_uid``/``person_id`` (KA7): turun etkin bağlamı. Konu
+    dokümanına yazılır ki listeden yeniden açılan konuşma bağlamını
+    KAYBETMESİN (`prepare` geri getirir). Bağlam sonradan da gelebilir
+    (kullanıcı konuşmanın ortasında kişi ekranından dönerse) — bu yüzden
+    yalnız oluşturmada değil, doluysa her turda yazılır.
     """
     client = firestore_client.get_client()
     if client is None:
@@ -190,14 +212,19 @@ def write_turn(uid: str, prepared: PreparedConversation,
             _evict_oldest_if_needed(client, uid)
             baslik = (f"{prepared.title_prefix} ↪" if prepared.title_prefix
                       else title_from(user_text))
-            conv_ref.set({
+            kayit = {
                 "title": baslik,
                 "createdAt": simdi,
                 "updatedAt": simdi,
                 "messageCount": 0,
                 "expireAt": son_kullanim,
                 "lang": lang,
-            })
+            }
+            if friend_uid:
+                kayit["friendUid"] = friend_uid
+            if person_id:
+                kayit["personId"] = person_id
+            conv_ref.set(kayit)
 
         mesajlar = conv_ref.collection("messages")
         # AI damgasına mikro fark: aynı anda yazılan çift, createdAt
@@ -210,11 +237,16 @@ def write_turn(uid: str, prepared: PreparedConversation,
             "sender": "AI", "text": ai_text,
             "createdAt": simdi + dt.timedelta(milliseconds=1),
         })
-        conv_ref.set({
+        guncelleme = {
             "updatedAt": simdi,
             "messageCount": prepared.message_count + 2,
             "expireAt": son_kullanim,
-        }, merge=True)
+        }
+        if friend_uid:
+            guncelleme["friendUid"] = friend_uid
+        if person_id:
+            guncelleme["personId"] = person_id
+        conv_ref.set(guncelleme, merge=True)
     except Exception as exc:
         # Arşiv yazımı yanıtın parçası değil; düşerse yalnızca loglanır.
         logger.warning("Sohbet arşivine yazılamadı (%s): %s", uid, exc)

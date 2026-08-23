@@ -131,15 +131,22 @@ final diaryProvider =
 /// abonede ayrıca tek cümlelik yorum ("insight") gelir. Doğum verisi yoksa
 /// sunucu hata değil boş liste döner; ekran bölümü sessizce gizler — ana
 /// ekran yeni kullanıcıya hata göstermez.
-final signalsProvider =
-    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+/// Tam sinyal yanıtı — liste + `fingerprint` (KA5 derin bağlantı
+/// eşleşmesi) + `checkin_question` alanları.
+final signalsDataProvider =
+    FutureProvider<Map<String, dynamic>>((ref) async {
   final profile = ref.watch(profileProvider).value;
   if (profile == null || profile['onboardingCompleted'] != true) {
-    return const [];
+    return const {'signals': []};
   }
   final dio = ref.watch(apiProvider);
   final response = await dio.get('/api/v1/reports/signals');
-  final data = Map<String, dynamic>.from(response.data['data']);
+  return Map<String, dynamic>.from(response.data['data']);
+});
+
+final signalsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final data = await ref.watch(signalsDataProvider.future);
   return [
     for (final s in (data['signals'] as List? ?? const []))
       Map<String, dynamic>.from(s as Map),

@@ -113,6 +113,11 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 79 | Duygu okuması (S3): "çok yorgunum, hiçbir şey yapasım yok" yazılır — yanıt önce duyguyu karşılar, soru sormaz, teknik terim yok; "Merkür retro ne demek" gibi nötr soruda duygu tercümanlığı yapılmaz | ⬜ | sunucu |
 | 80 | İnsan dili (S4): "işimde tıkandım" gibi bir soruda yanıtta ev numarası/orb/derece geçmiyor; "neye dayanıyor" diye sorulunca teknik dayanak açıkça veriliyor | ⬜ | sunucu |
 | 81 | RAG kapsaması (S5/S6): "para konusunda hep aynı hatayı yapıyorum" ve "babamla aram düzelmeyecek mi" sorularında yanıt genel geçmiyor, o çiftin doğum verisine (haritaya) özgü bir dayanak taşıyor | ⬜ | sunucu |
+| 82 | Kart tekilliği (KA1/KA2): ana ekranda üç kart üç FARKLI, o güne özgü cümle taşıyor (ücretsiz hesapta da); "Etkisi sönüyor" etiketli kartın cümlesi yükseliş anlatmıyor; iki kartta aynı cümle YOK | ⬜ | 1.9.0+25 + sunucu |
+| 83 | Sabah bildirimi (KA2/KA5): bildirim gövdesi karttaki AI cümlesiyle aynı; ertesi sabah FARKLI metin geliyor; dokununca uygulama ilgili kartın "Neye dayanıyor?" sayfasıyla açılıyor | ⬜ | 1.9.0+25 + sunucu |
+| 84 | Akşam check-in (KA4/KA5): önemli transit gününün akşamı kişisel soru bildirimi geliyor (seri hatırlatması O AKŞAM gelmiyor); dokununca sohbet soruyla açık; cevap ertesi gün sohbette hatırlanıyor | ⬜ | 1.9.0+25 + sunucu |
+| 85 | Sohbet çevresi (KA6): ana sekmeden "eşimle aram nasıl?" sorusu eşin burcunu ve ölçülen eksenleri anan cevap alıyor; cihazdaki adla sorunca da ("Ayşe nasıl?") aynı bağlam geliyor; ad sunucu loglarında YOK | ⬜ | 1.9.0+25 + sunucu |
+| 86 | Sohbet derinliği (KA8): "bu hafta beni ne bekliyor?" yaklaşan kesinleşmelere dayanan cevap alıyor; konuşma listesinden yeniden açılan kişi-bağlamlı sohbet bağlamını koruyor | ⬜ | 1.9.0+25 + sunucu |
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,

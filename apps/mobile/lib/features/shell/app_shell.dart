@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../core/device_claim.dart';
+import '../../core/notifications.dart'
+    show PendingNotification, pendingNotificationProvider;
 import '../../core/providers.dart'
     show OnboardOutcome, justOnboardedProvider, profileProvider;
 import '../../widgets/big_three_reveal.dart';
@@ -10,6 +12,7 @@ import '../../widgets/cosmic_scaffold.dart';
 import '../../l10n/app_localizations.dart';
 import '../../widgets/glass.dart';
 import '../atlas/atlas_screen.dart';
+import '../chat/chat_screen.dart';
 import '../chat/conversation_list_screen.dart';
 import '../friends/friends_screen.dart';
 import '../profile/profile_screen.dart';
@@ -44,6 +47,11 @@ class _AppShellState extends ConsumerState<AppShell> {
       if (!mounted) return;
       maybeConfirmDeviceTakeover(context, ref);
       _buyukUcluPerdesi();
+      // Soğuk açılış: check-in niyeti dinleyiciden ÖNCE yazılmış olabilir.
+      final bekleyen = ref.read(pendingNotificationProvider);
+      if (bekleyen != null && bekleyen.type == 'checkin') {
+        _checkinNiyeti(bekleyen);
+      }
     });
   }
 
@@ -73,8 +81,34 @@ class _AppShellState extends ConsumerState<AppShell> {
     showBigThreeReveal(context, sun: gunes, moon: ay, ascendant: yukselen);
   }
 
+  /// Akşam check-in bildirimi (KA5): dokunma sohbeti SORUYLA açar.
+  /// Soru bayatsa (dünün bildirimi bugün açıldı) yalnız konu listesi
+  /// açılır — dünkü soruyu bugün sormak yanıltıcı olur.
+  void _checkinNiyeti(PendingNotification niyet) {
+    ref.read(pendingNotificationProvider.notifier).clear();
+    final soru = niyet.data['q'] ?? '';
+    final gun = niyet.data['q_date'] ?? '';
+    final bugun = DateTime.now().toIso8601String().substring(0, 10);
+    if (soru.isNotEmpty && gun == bugun) {
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => ChatScreen(initialText: soru, source: 'checkin')));
+    } else {
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => const ConversationListScreen()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Bekleyen check-in niyeti: bildirime dokunulduğunda uygulama hangi
+    // hâlde olursa olsun (soğuk/sıcak) buradan işlenir. Daily niyetini
+    // SkyScreen tüketir (ilgili sinyal kartının dayanak sayfası).
+    ref.listen<PendingNotification?>(pendingNotificationProvider,
+        (previous, next) {
+      if (next != null && next.type == 'checkin' && mounted) {
+        _checkinNiyeti(next);
+      }
+    });
     final index = ref.watch(shellTabProvider);
     final l10n = AppLocalizations.of(context);
     // Etiketler dile göre üretildiği için const olamaz.

@@ -545,7 +545,8 @@ def localize_signals(lang: str | None, data: dict | None) -> dict:
     """Sinyalleri (R2-S1) isteğin diline çevirir ve başlık cümlesini kurar.
 
     Başlık ŞABLONDUR: her alanı ölçülmüş veriden gelir, LLM'siz üretilir ve
-    her katmana açıktır. Abone yorumu (``insight``) varsa olduğu gibi taşınır.
+    her katmana açıktır. AI yorumu (``insight``) varsa olduğu gibi taşınır
+    (KA-turu'ndan beri her katmana üretilir, yalnız aboneye değil).
     """
     if not data:
         return {}
@@ -571,25 +572,18 @@ def localize_signals(lang: str | None, data: dict | None) -> dict:
         else:
             teknik = p.SIGNAL_LINE_ACTIVE.format(**alanlar)
 
-        # KART cümlesi (R2-S6): AI yorumu varsa (signal_insights) o
-        # kullanılır. YOKSA — ücretsiz katman ya da biçim tutmadıysa —
-        # tema×ton şablonuna düşülür.
+        # KART cümlesi: AI yorumu (`insight`) İSTEMCİDE tercih edilir;
+        # `headline` yalnız yorumun bulunmadığı ana (nadir biçim hatası,
+        # kısa-TTL penceresi) düşülen SON ÇARE metnidir.
         #
-        # Ç-turu'nda bu şablon TAKVİMDEN kaldırıldı (orada birçok farklı
-        # olay aynı 12 cümleden birine düşüp birebir tekrar ediyordu —
-        # ölçüldü) ama BURADA BİLEREK KALDI: `headline`/`technical`
-        # takvimin aksine ücretsiz kullanıcıdan HİÇ gizlenmiyor — ücretsiz
-        # katmanın kendi ürün tasarımı bu şablon ("hesap bedava, yorum
-        # paralı"). Onu kaldırıp doğrudan teknik cümleye ("Satürn, natal
-        # Ay ile Kare açısını...") düşmek, ücretsiz kullanıcının HER GÜN
-        # gördüğü ana kart metnine jargon sızdırırdı — bu bir düzeltme
-        # değil regresyon olurdu. Ayrıca risk takvimden çok daha düşük:
-        # yalnız 3 sinyal gösteriliyor ve `compute_signals` zaten aralarında
-        # tema çeşitliliği zorluyor (aynı tema iki kez seçilmez, elde
-        # başka seçenek yoksa).
-        tema = s.get("theme") or "inner"
-        ton = s.get("tone") or "focus"
-        insan = p.SIGNAL_HUMAN_LINES.get(tema, {}).get(ton) or teknik
+        # KA-turu: buradaki tema×ton sabit tablosu (`SIGNAL_HUMAN_LINES`)
+        # SİLİNDİ. Cihazda ölçülen kusur: aynı ekranda iki ÖZDEŞ kart,
+        # biri "güçleniyor" biri "sönüyor" etiketiyle; sabah bildirimi de
+        # aynı tabloyu kullandığı için herkese haftalarca aynı cümle
+        # gitti. Kullanıcı kararıyla yorum artık HERKESE kişi başı AI
+        # (`signal_service.insight_bundle`); son çare hazır cümle değil
+        # DÜRÜST teknik satır — ölçülmüş veridir, uydurma değil.
+        insan = teknik
 
         # ZAMANLAMA satırı — kartın altındaki küçük çizgi.
         if s.get("exact_on") and s.get("days_to_exact") == 0:

@@ -192,6 +192,29 @@ Büyüklük mertebesi: sinyal yorumunun (3 öğe, ~$0,0009/gün/abone) 3-17
 §6b'deki abone başına aylık LLM tavanını (~$0,73) ölçülebilir ama küçük
 bir miktar (~%1-2) artırır; marj matematiğini bozmaz.
 
+## 6e. KA-turu: sinyal yorumu herkese + akşam check-in sorusu — 2026-08-23
+
+Kök neden: kart ve sabah bildirimi metni 12 cümlelik sabit tablodan
+(`SIGNAL_HUMAN_LINES`) geliyordu — cihazda iki özdeş kart + herkese her
+sabah birebir aynı bildirim olarak ölçüldü. **Kullanıcı kararı: yorum
+HERKESE kişi başı AI** ("ücretsiz kullanıcı zaten ~3 gün kullanacak,
+maliyeti göze alıyorum"); tablo silindi, son çare dürüst teknik satır.
+
+| Sınır | Değer | Not |
+|---|---|---|
+| Tetiklenme | **aktif kullanıcı başına günde en fazla 1 çağrı** | uç ve sabah bildirimi AYNI paketi paylaşır (`signals-bundle-{fp}-{lang}`); kim önce çalışırsa üretir |
+| Akşam sorusu | **0 ek çağrı** | check-in sorusu sabahki toplu çağrının son satırı; akşam işi yalnız önbellekten okur |
+| Uyuyan kullanıcı | **$0** | üretim yalnız (a) bildirime uygun (token+tercih+doğum verisi) kullanıcıda 09:00 yerel, (b) uygulamayı açanda tetiklenir |
+| Biçim hatası | kısa TTL (1 saat) | eski `[] 24 saat` zehirlenmesi kapandı; en kötü ihtimalle günde birkaç yeniden deneme |
+
+Birim: ~600 girdi + ~150 çıktı token/çağrı (3 sinyal + soru) ≈
+**~$0,0006/gün/aktif kullanıcı → ~$0,018/ay**. Abonede §6b'deki sinyal
+yorumu satırının yerine geçer (aynı çağrı, +1 satır — fark ihmal).
+Ücretsiz katman İLK KEZ tekrarlanan LLM maliyeti taşıyor: 1.000 günlük
+aktif ücretsiz kullanıcıda ~$18/ay — kullanıcı onayıyla kabul edilmiş
+dönüşüm yatırımı ("kişisel astrolog" vaadinin ücretsiz vitrini). Takvim
+`line`, günlük okuma ve raporların Plus kapıları DEĞİŞMEDİ.
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

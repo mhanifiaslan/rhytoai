@@ -218,6 +218,58 @@ def test_seri_hatirlatmasi_aksam_gonderilir(gonderilmemis):
     assert gonder, gerekce
 
 
+# --- Aksam check-in sorusu (KA4) ---
+
+def test_checkin_aksam_saatinde(gonderilmemis):
+    """Hedef saat 20:00 yerel; sabah saatinde gitmez."""
+    assert ns.TARGET_HOURS["checkin"] == 20
+    gonder, gerekce = ns.should_send(profil(), "checkin", utc(17))
+    assert gonder, gerekce
+    gonder, gerekce = ns.should_send(profil(), "checkin", utc(6))
+    assert not gonder and gerekce == "saat-uygun-degil"
+
+
+def test_checkin_streak_tercihini_paylasir(gonderilmemis):
+    """Ayri bir `notifyCheckin` alani BILEREK yok: ikisi de "aksam
+    durtmesi" ailesi ve aksam en fazla biri gidiyor. Streak'i kapatan
+    kullanici check-in de almaz."""
+    assert ns.PREF_FIELDS["checkin"] == "notifyStreak"
+    gonder, gerekce = ns.should_send(
+        profil(notifyStreak=False), "checkin", utc(17))
+    assert not gonder and gerekce == "tercih-kapali"
+
+
+def test_aksam_en_fazla_bir_bildirim(monkeypatch):
+    """Karsilikli bastirma iki yonde de tutar: check-in gittiyse streak
+    susar, streak gittiyse check-in gitmez — is sirasi/yeniden deneme
+    fark etmez."""
+    monkeypatch.setattr(ns, "mark_sent", lambda uid, tur, gun: None)
+
+    def checkin_gitti(uid, tur, gun):
+        return tur == "checkin"
+
+    monkeypatch.setattr(ns, "already_sent", checkin_gitti)
+    gonder, gerekce = ns.should_send(profil(streakCount=4), "streak", utc(17))
+    assert not gonder and gerekce == "aksam-checkin-gitti"
+
+    def streak_gitti(uid, tur, gun):
+        return tur == "streak"
+
+    monkeypatch.setattr(ns, "already_sent", streak_gitti)
+    gonder, gerekce = ns.should_send(profil(), "checkin", utc(17))
+    assert not gonder and gerekce == "aksam-streak-gitti"
+
+
+def test_checkin_gunun_okunmasina_bakmaz(gonderilmemis):
+    """`lastSeenDaily` yalniz streak'i susturur: gunun okumasini acmis
+    kullaniciya da aksam sorusu gider — soru okumanin degil GUNUN
+    kendisinin takibi."""
+    yerel_gun = ns.local_now(profil(), utc(17)).date().isoformat()
+    gonder, gerekce = ns.should_send(
+        profil(lastSeenDaily=yerel_gun), "checkin", utc(17))
+    assert gonder, gerekce
+
+
 # --- Olay tabanli (arkadas tepkisi) ---
 
 def test_arkadas_tepkisi_sessiz_saatte_dusurulur():
@@ -516,6 +568,92 @@ def test_prova_gondermez_ve_kaydetmez(monkeypatch):
     assert govde["status"] == "dry-run"
     assert govde["queued"] == 1
     assert govde["sent"] == 0
+
+
+@uygulama_gerekir
+def test_daily_fcm_yuku_derin_baglanti_alanlari_tasir(monkeypatch):
+    """KA5: sabah bildiriminin data yükü route/fp/idx/d taşır — istemci
+    dokununca ilgili sinyal kartının dayanak sayfasını açar. Eski yük
+    yalnız {type, sign} idi ve dokunma sekme numarasından öteye gidemezdi."""
+    from api import notify
+    from services import push_service
+
+    monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
+    monkeypatch.setattr(notify, "_iter_profiles",
+                        lambda: iter([profil(quietFrom=0, quietTo=0)]))
+    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
+    monkeypatch.setattr(ns, "mark_sent", lambda uid, tur, gun: None)
+    monkeypatch.setattr(
+        ns, "signal_push",
+        lambda p, lang, today=None: ("Bugün: İç dünya",
+                                     "Güne özgü cümle.", "iz123"))
+
+    yakalanan = []
+
+    def sahte_gonder(mesajlar):
+        yakalanan.extend(mesajlar)
+        return push_service.SendResult(sent=len(mesajlar), failed=0,
+                                       pruned=[])
+
+    monkeypatch.setattr(push_service, "send", sahte_gonder)
+    with TestClient(app) as client:
+        yanit = client.post("/api/v1/notify/run?type=daily&force=true",
+                            headers={"Authorization": "dogru"})
+    assert yanit.status_code == 200 and yanit.json()["sent"] == 1
+    veri = yakalanan[0].data
+    assert veri["type"] == "daily"
+    assert veri["route"] == "signal"
+    assert veri["fp"] == "iz123"
+    assert veri["idx"] == "0"
+    assert veri["d"]  # yerel gün — bayat dokunma koruması
+
+
+@uygulama_gerekir
+def test_checkin_fcm_yuku_soruyu_tasir(monkeypatch):
+    """KA4/KA5: check-in yükü soruyu ve gününü taşır (soğuk açılışta ağ
+    turu olmadan sohbet soruyla açılır); soru yoksa kullanıcı atlanır."""
+    from api import notify
+    from services import push_service
+
+    monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
+    monkeypatch.setattr(notify, "_iter_profiles",
+                        lambda: iter([profil(quietFrom=0, quietTo=0)]))
+    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
+    monkeypatch.setattr(ns, "mark_sent", lambda uid, tur, gun: None)
+    monkeypatch.setattr(
+        ns, "checkin_push",
+        lambda p, lang, today=None: ("Rytho merak ediyor",
+                                     "Bugün iş tarafı nasıl geçti?"))
+
+    yakalanan = []
+
+    def sahte_gonder(mesajlar):
+        yakalanan.extend(mesajlar)
+        return push_service.SendResult(sent=len(mesajlar), failed=0,
+                                       pruned=[])
+
+    monkeypatch.setattr(push_service, "send", sahte_gonder)
+    with TestClient(app) as client:
+        yanit = client.post("/api/v1/notify/run?type=checkin&force=true",
+                            headers={"Authorization": "dogru"})
+    assert yanit.status_code == 200 and yanit.json()["sent"] == 1
+    veri = yakalanan[0].data
+    assert veri["type"] == "checkin"
+    assert veri["route"] == "chat"
+    assert veri["q"] == "Bugün iş tarafı nasıl geçti?"
+    assert veri["q_date"]
+
+    # Soru yoksa: kullanıcı "soru-yok" ile atlanır, streak işine kalır.
+    monkeypatch.setattr(notify, "_iter_profiles",
+                        lambda: iter([profil(quietFrom=0, quietTo=0)]))
+    monkeypatch.setattr(ns, "checkin_push", lambda p, lang, today=None: None)
+    with TestClient(app) as client:
+        yanit = client.post("/api/v1/notify/run?type=checkin&force=true",
+                            headers={"Authorization": "dogru"})
+    assert yanit.json()["sent"] == 0  # yeni gonderim yok
+    assert yanit.json()["skipped"].get("soru-yok") == 1
 
 
 def test_ignore_dedupe_yalnizca_tekrar_korumasini_atlar(monkeypatch):

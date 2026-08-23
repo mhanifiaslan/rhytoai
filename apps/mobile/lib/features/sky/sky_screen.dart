@@ -32,6 +32,7 @@ import '../../core/notifications.dart'
     show
         markNotificationPromptShown,
         notificationPromptShown,
+        pendingNotificationProvider,
         requestNotificationPermission;
 import '../../l10n/app_localizations.dart';
 
@@ -170,7 +171,8 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
           color: RythoColors.magenta,
           backgroundColor: RythoColors.inkLight,
           onRefresh: () async {
-            ref.invalidate(signalsProvider);
+            // signalsProvider bu kaynaktan türetiliyor; kaynak tazelenir.
+            ref.invalidate(signalsDataProvider);
             ref.invalidate(dailyReadingProvider);
             // Abonelik durumu da tazelensin: satın alma sonrası webhook
             // sunucuya islenene kadar kisa bir gecikme olabiliyor.
@@ -494,13 +496,66 @@ class _Header extends StatelessWidget {
 // ekranın dibinde kalıyor ve kaydırılmadan görünmüyordu; günlük gibi
 // her gün tekrarlanacak bir ritüelin kapısı kaymayan bir yerde durmalı.
 
-class _SignalsSection extends ConsumerWidget {
+class _SignalsSection extends ConsumerStatefulWidget {
   const _SignalsSection();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_SignalsSection> createState() => _SignalsSectionState();
+}
+
+class _SignalsSectionState extends ConsumerState<_SignalsSection> {
+  /// KA5: sabah bildirimi niyeti bir kez işlenir — sinyaller yüklendiğinde
+  /// ilgili kartın "Neye dayanıyor?" sayfası kendiliğinden açılır.
+  void _dailyNiyetiIsle(List<Map<String, dynamic>> sinyaller) {
+    final niyet = ref.read(pendingNotificationProvider);
+    if (niyet == null || niyet.type != 'daily') return;
+    if (niyet.data['route'] != 'signal' || sinyaller.isEmpty) {
+      // Eski sunucudan gelen yüklerde route yok — yalnız sekme açılır.
+      ref.read(pendingNotificationProvider.notifier).clear();
+      return;
+    }
+    ref.read(pendingNotificationProvider.notifier).clear();
+
+    final bugun = DateTime.now().toIso8601String().substring(0, 10);
+    if ((niyet.data['d'] ?? '') != bugun) return; // bayat: yalnız sekme
+
+    // Parmak izi eşleşmesi: sinyaller bildirimden beri değiştiyse (nadir)
+    // yanlış kartı açmak yerine 1 numaralı karta düşülür — asla yanlış
+    // dayanak gösterilmez, en kötü durumda "bugünün ilk kartı" açılır.
+    final veri = ref.read(signalsDataProvider).value ?? const {};
+    final fp = veri['fingerprint'] as String? ?? '';
+    var indeks = int.tryParse(niyet.data['idx'] ?? '0') ?? 0;
+    if (fp.isEmpty || fp != (niyet.data['fp'] ?? '') ||
+        indeks < 0 || indeks >= sinyaller.length) {
+      indeks = 0;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final sinyal = sinyaller[indeks];
+      final insight = sinyal['insight'] as String?;
+      final kartCumlesi = (insight != null && insight.isNotEmpty)
+          ? insight
+          : (sinyal['headline'] as String? ?? '');
+      showSignalBasisSheet(context, {...sinyal, 'card_text': kartCumlesi});
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final sinyaller = ref.watch(signalsProvider).value ?? const [];
+    // Niyet dinleyicisi sinyaller HAZIRKEN tetiklenmeli; hem ilk yükleme
+    // (bildirimle soğuk açılış) hem sıcak dokunma bu yoldan geçer.
+    ref.listen(pendingNotificationProvider, (previous, next) {
+      if (next != null && next.type == 'daily') {
+        final guncel = ref.read(signalsProvider).value ?? const [];
+        if (guncel.isNotEmpty) _dailyNiyetiIsle(guncel);
+      }
+    });
+    if (sinyaller.isNotEmpty &&
+        ref.read(pendingNotificationProvider)?.type == 'daily') {
+      _dailyNiyetiIsle(sinyaller);
+    }
     if (sinyaller.isEmpty) return const SizedBox.shrink();
 
     // En yakın kesinleşme: kartlarda tarih zaten geçiyor; bu satır güne

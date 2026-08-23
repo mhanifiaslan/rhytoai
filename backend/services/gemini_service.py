@@ -162,8 +162,15 @@ def generate(prompt: str, temperature: float = 0.9,
     temel = {
         "system_instruction": prompts.get(lang).SYSTEM_INSTRUCTION,
         "temperature": temperature,
+        # KA3: düşünme burada da kapatılır — S-turu'nda sohbet için
+        # ölçülen ders (düşünme bütçeyi yiyip metni kesiyordu) bu yola
+        # yarım uygulanmıştı: `chat()` kapatıyor, `generate()` kapatmıyordu.
+        # Ayar yine yok sayılırsa ilk denemenin 2048'lik tavanı görünür
+        # metne yeter; o da kesilirse geniş bütçeli deneme devreye girer.
+        "thinking_config": {"thinking_budget": 0},
     }
-    for deneme, ek in enumerate(({}, {"max_output_tokens": _REPORT_RETRY_TOKENS})):
+    for deneme, ek in enumerate(({"max_output_tokens": 2048},
+                                 {"max_output_tokens": _REPORT_RETRY_TOKENS})):
         try:
             response = client.models.generate_content(
                 model=config.GEMINI_MODEL, contents=prompt,

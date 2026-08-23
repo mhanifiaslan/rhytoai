@@ -150,6 +150,29 @@ Future<void> _forgetLabel(String personId) async {
   await prefs.remove(_labelKey(personId));
 }
 
+/// Türkçe-güvenli küçük harf: `toLowerCase` "İ"yi `i + birleşik nokta`
+/// yapar ve `contains` sessizce kaçırır (bkz. backend
+/// `prompt_composer.normalize` — aynı tuzağın istemci tarafı).
+String _normalize(String s) => s.toLowerCase().replaceAll('̇', '');
+
+/// KA6: mesaj cihazdaki kişi etiketlerinden birini (adını) anıyorsa o
+/// kişinin kimliği; yoksa null.
+///
+/// Ad SUNUCUYA GİTMEZ — eşleşme cihazda yapılır, yalnız `person_id`
+/// gönderilir; sunucu kimliği ilişki türü fısıltısına çevirir. Böylece
+/// kullanıcı ana sekmeden "Ayşe'yle aram nasıl?" diye sorduğunda da doğru
+/// kişinin ölçümü sohbete girer. Kısa etiketler (<3 harf) yanlış pozitif
+/// riskine karşı eşleşmeye girmez.
+String? matchPersonIdByLabel(String message, List<Person> people) {
+  final metin = _normalize(message);
+  for (final kisi in people) {
+    final etiket = kisi.label?.trim();
+    if (etiket == null || etiket.length < 3) continue;
+    if (metin.contains(_normalize(etiket))) return kisi.id;
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------
 // Yazma — SUNUCUDAN (kontenjan istemcide zorlanamaz)
 // ---------------------------------------------------------------------------

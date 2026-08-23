@@ -29,7 +29,10 @@ logger = logging.getLogger(__name__)
 
 #: Çıkarımın tetiklenmesi için konuşmada en az kaç kullanıcı mesajı olmalı.
 #: Kısa "merhaba" turlarından olgu çıkarmaya çalışmak boşa çağrıdır.
-MIN_USER_TURNS = 3
+#: 3 → 2 (KA9): eşik 3'ken her yeni konunun ilk İKİ mesajı hiç işlenmiyor
+#: ve günde 1 kota ile çoğu kullanıcının hafızası boş kalıyordu — "beni
+#: tanımıyor" şikâyetinin ölçülen parçalarından biri.
+MIN_USER_TURNS = 2
 
 #: Günlük çıkarım hakkı (kullanıcı başına). Kota altyapısı entitlements'ta.
 DAILY_EXTRACTIONS = 1
@@ -125,18 +128,28 @@ def should_extract(history: list[dict[str, Any]]) -> bool:
 
 
 def extract_and_store(uid: str, history: list[dict[str, Any]],
-                      last_message: str) -> dict[str, Any] | None:
+                      last_message: str,
+                      source: str | None = None) -> dict[str, Any] | None:
     """Konuşmadan olgu çıkarıp hafızaya yazar. Arka planda çağrılmak üzeredir.
 
     Hiçbir hata isteği etkilemez: çıkarım en iyi çaba (best effort) bir
     zenginleştirmedir, sohbetin çalışması ona bağlı değildir.
+
+    ``source == "checkin"`` (KA9): akşam sorusuna verilen TEK mesajlık
+    cevap da işlenir — tur eşiği atlanır ve kota +1 açılır. Aksi hâlde
+    ürünün kendi sorduğu sorunun cevabı ("Bugün nasıl geçti?" → "Kötü,
+    işten kötü haber aldım") hafızaya hiç düşmezdi; oysa bu, döngünün
+    bütün amacı.
     """
     try:
-        if not should_extract(history):
+        checkin = source == "checkin"
+        if not checkin and not should_extract(history):
             return None
 
-        # Günlük çıkarım kotası: aktif kullanıcı başına en fazla bir ek çağrı.
-        if not entitlements.consume_quota(uid, "memory_extract", DAILY_EXTRACTIONS):
+        # Günlük çıkarım kotası: aktif kullanıcı başına en fazla bir ek
+        # çağrı; check-in günlerinde bir fazlası.
+        kota = DAILY_EXTRACTIONS + (1 if checkin else 0)
+        if not entitlements.consume_quota(uid, "memory_extract", kota):
             return None
 
         prompt = _PROMPT.format(

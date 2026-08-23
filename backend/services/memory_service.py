@@ -311,10 +311,20 @@ def memory_context(uid: str, max_chars: int = 600) -> str:
     if memory.get("toneHint"):
         parts.append(f"- (ton tercihi) {memory['toneHint']}")
 
+    # `continue`, `break` DEĞİL (KA9): eski döngü sığmayan İLK parçada
+    # duruyordu — olgular bütçeyi doldurunca ruh hali seyri, günlük ve
+    # ton tercihi TAMAMEN düşüyordu (hepsi olgulardan sonra geliyor).
+    # Şimdi sığmayan parça atlanır, sonraki kısa parçalar yine girer.
+    # Tek parça tek başına bütçeden büyükse ve henüz hiçbir şey
+    # eklenmediyse kelime sınırından kırpılır — hafıza fısıltısı hiç
+    # boş kalmasın.
     context = ""
     for part in parts:
-        if len(context) + len(part) + 1 > max_chars:
-            break
+        kalan = max_chars - len(context) - 1
+        if len(part) > kalan:
+            if not context and kalan > 40:
+                context += part[:kalan].rsplit(" ", 1)[0] + "…\n"
+            continue
         context += part + "\n"
     return context.strip()
 

@@ -223,3 +223,13 @@ class TestRaporYolu:
         istemci = _istemciyi_degistir(monkeypatch, [_Yanit("Tam rapor.", "STOP")])
         assert gs.generate("prompt", lang="tr") == "Tam rapor."
         assert len(istemci.models.cagrilar) == 1
+
+    def test_dusunme_kapali_ve_ilk_deneme_tavanli(self, monkeypatch):
+        """KA3: S-turu'nun sohbet dersi (`thinking_budget: 0` + acik tavan)
+        `generate()`'e YARIM uygulanmisti — dusunme acikti ve ilk deneme
+        tavansizdi; bos/kesik cikti bu yuzden sohbetten daha olasiydi."""
+        istemci = _istemciyi_degistir(monkeypatch, [_Yanit("Tam.", "STOP")])
+        gs.generate("prompt", lang="tr")
+        cagri = istemci.models.cagrilar[0]
+        assert cagri.get("thinking_config") == {"thinking_budget": 0}
+        assert cagri.get("max_output_tokens") == 2048

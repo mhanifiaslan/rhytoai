@@ -194,6 +194,38 @@ def test_dolu_konu_devam_konusu_acar(depo):
     assert h2.title_prefix  # eski başlık taşınır ("... ↪")
 
 
+def test_baglam_konuya_yapisir_ve_geri_gelir(depo):
+    """KA7: friend/person kimliği konu dokümanına yazılır ve `prepare`
+    geri getirir — listeden yeniden açılan konuşma "eşin" bağlamını
+    KAYBETMEZ (eski davranış: bağlam yalnız ekran ömrü kadar yaşıyordu)."""
+    h1 = chat_history.prepare("u1", None)
+    chat_history.write_turn("u1", h1, "eşimle aram nasıl?", "cevap", "tr",
+                            None, "kisi-1")
+
+    h2 = chat_history.prepare("u1", h1.conversation_id)
+    assert h2.person_id == "kisi-1"
+    assert h2.friend_uid is None
+
+    # Bağlam sonradan da gelebilir (konuşmanın ortasında kişi ekranından
+    # dönüş): doluysa her turda yazılır.
+    chat_history.write_turn("u1", h2, "peki arkadaşım?", "cevap", "tr",
+                            "arkadas-1", None)
+    h3 = chat_history.prepare("u1", h1.conversation_id)
+    assert h3.friend_uid == "arkadas-1"
+    assert h3.person_id == "kisi-1"  # eski bağlam silinmez
+
+
+def test_dolu_konu_baglami_devam_konusuna_tasir(depo):
+    h1 = chat_history.prepare("u1", None)
+    chat_history.write_turn("u1", h1, "ilk", "cevap", "tr", None, "kisi-9")
+    depo[f"users/u1/conversations/{h1.conversation_id}"]["messageCount"] = \
+        chat_history.MAX_MESSAGES_PER_CONVERSATION
+
+    h2 = chat_history.prepare("u1", h1.conversation_id)
+    assert h2.create
+    assert h2.person_id == "kisi-9"
+
+
 def test_silinmis_kimlik_ayni_kimlikle_yeniden_kurulur(depo):
     """Temizlik istemcinin elindeki konuyu silmiş olabilir; istemci fark
     etmeden aynı kimliğe yeni doküман kurulur."""

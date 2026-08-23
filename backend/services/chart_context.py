@@ -354,7 +354,12 @@ def chart_facts(uid: str, profile: dict[str, Any],
     # boyunca alansız kayıt servis ederdi.
     transit = _cached(f"transit-facts-v2-{uid}-{ozet}-{gun}", uid,
                       TRANSIT_TTL_SECONDS, lambda: transit_facts(birth))
-    return {**natal, "transits": (transit or {}).get("hits", [])}
+    # `upcoming` da taşınır (KA8): 7 günlük kesinleşmeler zaten transit
+    # önbelleğinde hesaplıydı ama burada ATILIYORDU — sohbet "bu hafta
+    # beni ne bekliyor?" sorusuna dayanaksız kalıyordu; günlük okuma
+    # görüyordu, sohbet görmüyordu.
+    return {**natal, "transits": (transit or {}).get("hits", []),
+            "upcoming": (transit or {}).get("upcoming", [])}
 
 
 def bazi_facts(uid: str, profile: dict[str, Any]) -> dict[str, Any] | None:
@@ -507,6 +512,13 @@ def render(facts: dict[str, Any], lang: str | None = None) -> str:
                 aspect=prompts.aspect_name(lang, t["aspect"]),
                 orb=f"{t['orb']:.1f}") for t in transitler)))
 
+    # Yaklaşan 7 günün kesinleşmeleri (KA8): hesap zaten vardı, sohbete
+    # hiç girmiyordu — "bu hafta beni ne bekliyor?" dayanaksız kalıyordu.
+    yaklasan = facts.get("upcoming") or []
+    if yaklasan:
+        satirlar.append("- {}: {}".format(
+            p.CHART_UPCOMING_LABEL, upcoming_lines(yaklasan, lang)))
+
     # Not: profildeki `wuXingElement` / `mizac` alanları bilerek YAZILMIYOR.
     # Yüz okuma cihaz üstünde; bu anahtarlar sunucu fısıltısına girmez.
     # Değerleri serbest Türkçe metindi ("Demevi (sıcak-nemli)") — İngilizce
@@ -607,6 +619,10 @@ def chart_whisper(uid: str, profile: dict[str, Any] | None,
     if facts is None:
         facts = chart_facts(uid, profile)
     if not facts:
+        # SESSİZ kalmasın (KA8): bu düşüş "sadece burcumu biliyor"
+        # şikâyetinin birebir mekanizmasıydı ve loglarda hiç görünmüyordu.
+        logger.info("Harita fısıltısı SIĞ özete düştü (%s): olgular yok "
+                    "(doğum verisi eksik ya da hesap üretilemedi)", uid)
         return profile_service.chart_summary(profile, lang=lang)
     metin = render(facts, lang=lang).strip()
     if include_bazi:

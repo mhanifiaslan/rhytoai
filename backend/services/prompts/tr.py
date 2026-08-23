@@ -76,10 +76,19 @@ KONUŞMA KURALLARIN (kesin):
   sohbet doğal aksın.
 - Ansiklopedik döküm YASAK. Bir terim kullanırsan (retro, yükselen, Day Master
   gibi) tek cümlede insanca açıkla; tanım paragrafı yazma.
-- Kullanıcının haritası (Güneş/Ay/Yükselen) sana her mesajda veriliyor. Onu
-  gösteriş yapmadan, yorumun temeli olarak kullan; her cevapta konumları
-  saymana gerek yok. Sana verilmeyen bir konumu ASLA uydurma — bilmiyorsan
-  "doğum saatini bilmem gerekir" gibi dürüst bir şey söyle.
+- Sana her mesajda fısıltı blokları verilir ve bunlar SENİN kullanıcıyı
+  tanıma zeminindir: TAM haritası (yerleşimler, evler, element dengesi,
+  doğum açıları), BUGÜNKÜ ve ÖNÜMÜZDEKİ 7 GÜNÜN transitleri, hakkında
+  hatırladıkların (hafıza + günlük), ÇEVRESİ (eklediği yakınlar ve
+  arkadaşları) ve — soru bir kişiye dairse — o kişiyle ölçülmüş ilişki
+  eksenleri. Bunları gösteriş yapmadan yorumun temeli olarak kullan;
+  her cevapta saymana gerek yok. Sana verilmeyen bir konumu ASLA
+  uydurma — bilmiyorsan "doğum saatini bilmem gerekir" gibi dürüst bir
+  şey söyle.
+- Çevresindeki biri konuya girerse ya da günün gökyüzü ilişki/aile
+  temasına ağır basıyorsa, ÇEVRE bilgisini sorulmadan da tali olarak
+  dokundur ("annenin Boğa tarafı bu gerilimi büyütüyor olabilir" gibi) —
+  ama ölçüm fısıltısı gelmemiş bir ilişki hakkında derin analiz yapma.
 
 TEKNİK DİL (kesin — cihaz bulgusu: "konuşmalar çok teknik oluyor"):
 - Derece, orb, EV NUMARASI ve açı adı cümlelerine GİRMESİN. Bunlar senin
@@ -227,13 +236,27 @@ WHISPER_MEMORY = (
     "çelişirse kullanıcının SON söylediği geçerlidir):"
 )
 WHISPER_RELATIONSHIP = (
-    "KULLANICININ SORDUĞU ARKADAŞLA İLİŞKİ ÖLÇÜMÜ (iki doğum haritası "
+    "KULLANICININ SORDUĞU KİŞİYLE İLİŞKİ ÖLÇÜMÜ (iki doğum haritası "
     "arasındaki açılardan sunucuda hesaplandı — buna sadık kal, burada "
     "yazmayan hiçbir eksen ya da açı uydurma. Cevabını BU İKİ KİŞİNİN "
     "ilişkisine kur; kullanıcının kendi haritasından genel cevap verme. "
     "En az bir ekseni ya da dayanak açıyı ADIYLA an. Sayısal uyum puanı "
     "VERME — ürün ilişkilere puan vermez):"
 )
+#: Çevre listesi (KA6): arka plan bilgisi — model çevreyi BİLİR ama
+#: sayıp dökmez; konu değince doğal biçimde işe katar.
+WHISPER_CIRCLE = (
+    "KULLANICININ ÇEVRESİ (uygulamaya eklediği yakınları ve arkadaşları — "
+    "arka plan bilgindir; listeyi sayma, sorulmadan tek tek anlatma. Konu "
+    "bu kişilerden birine ya da gökyüzü ilişki/aile temasına değiyorsa "
+    "doğal biçimde işe kat: örneğin aile teması yoğun bir günde annesinin "
+    "burcunu bildiğini belli eden tek bir dokunuş yeter. Bu listede doğum "
+    "haritası ölçümü YOK — derin ilişki analizi ancak ölçüm fısıltısı "
+    "geldiğinde yapılır, buradan uydurulmaz):"
+)
+#: Çevre satırlarının küçük etiketleri.
+CIRCLE_FRIENDS_LABEL = "Arkadaşları:"
+CIRCLE_NO_HOUR = "doğum saati bilinmiyor"
 WHISPER_CHART = (
     "KULLANICININ HARİTASI (Swiss Ephemeris ile hesaplandı — buna sadık kal, "
     "burada YAZMAYAN hiçbir konumu, açıyı veya transiti uydurma. Bu blok "
@@ -294,6 +317,8 @@ CHART_STELLIUM_LABEL = "Yığılma"
 CHART_STELLIUM_FMT = "{house} ({count} gezegen)"
 CHART_NATAL_ASPECTS_LABEL = "Doğum haritasının en sıkı açıları"
 CHART_TRANSITS_LABEL = "Bugün haritasına dokunan transitler"
+#: Sohbet fısıltısının yaklaşan-kesinleşmeler satırı (KA8).
+CHART_UPCOMING_LABEL = "Önümüzdeki 7 günün kesinleşmeleri"
 #: Transit satırı: "Satürn → Güneş Karşıt (0.8°)". Ok yönü hangi gezegenin
 #: gezindiğini, hangisinin doğum haritasında sabit durduğunu ayırır.
 CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
@@ -323,6 +348,10 @@ PUSH_STREAK_TITLE = "🔥 {days} günlük serin"
 PUSH_STREAK_BODY = (
     "Bugün okumanı henüz açmadın. Seriyi sürdürmek birkaç saniye alır."
 )
+
+#: Akşam check-in bildirimi (KA-turu): gövde, sabahki toplu üretimde yazılan
+#: kişisel sorudur; başlık arkadaşça ve sabit.
+PUSH_CHECKIN_TITLE = "Rytho merak ediyor"
 
 PUSH_FRIEND_TITLE = "{name} seni dürttü"
 #: Tepki etiketleri friend_detail_screen ile aynı kümeden gelir.
@@ -807,55 +836,20 @@ SIGNAL_DATE_FMT = "{day} {month}"
 
 SIGNAL_EXACT_LABEL = "kesinleşme"
 
-# İNSAN DİLİ kart cümleleri (R2-S6). Kullanıcı "Kiron natal Venüs ile üçgen"
-# okumak istemiyor; hayatında ne olduğunu okumak istiyor. Cümle ölçülmüş iki
-# şeyden seçilir: TEMA (natal ev) ve TON (açının doğası). Teknik satır
-# kaybolmaz — "Neye dayanıyor?" sayfasında, dayanağın ilk satırı olarak durur.
-# Kesin olay vaadi YOK; eğilim dili (analizdeki 27. madde).
-#: Ana ekran sinyal kartlarının ÜCRETSİZ katman varsayılanı (R2-S6).
+#: `SIGNAL_HUMAN_LINES` KALDIRILDI (KA-turu).
 #:
-#: Ç-turu'nda TAKVİMDEN kaldırıldı: orada 30 güne yayılan onlarca olay bu
-#: 12 kutudan birine (özellikle "inner") düşüp BİREBİR AYNI cümleyi
-#: alıyordu — ölçüldü, bir günde üç ayrı olay aynı cümleyi üç kez gösterdi
-#: (bkz. `signal_service.calendar_insights`). Burada BİLEREK KALDI: kart
-#: metni ücretsiz kullanıcıdan gizlenmiyor (takvimin aksine) ve risk çok
-#: daha düşük — yalnız 3 sinyal var, `compute_signals` zaten aralarında
-#: tema çeşitliliği zorluyor. Aboneye zaten AI yorumu (`signal_insights`)
-#: öncelikli gidiyor; bu yalnız ücretsizin ve biçim-dışı yedeğin metni.
-SIGNAL_HUMAN_LINES = {
-    "career": {
-        "support": ("İş ve hedefler tarafında yol açılıyor; ilerlemek bugün "
-                    "daha az direnç istiyor."),
-        "tension": ("Kariyer tarafında bir direnç noktası beliriyor; acele "
-                    "karardan çok sağlam adım."),
-        "focus": ("Kariyer alanı öne çıkıyor; enerjini tek bir hedefte "
-                  "toplamak için uygun aralık."),
-    },
-    "relationships": {
-        "support": ("Yakınlık ve anlaşma kolaylaşıyor; konuşulmayı bekleyen "
-                    "şeyi konuşmak için iyi zaman."),
-        "tension": ("İlişkilerde bir sürtünme görünür oluyor; tepkiden önce "
-                    "dinlemek işe yarıyor."),
-        "focus": ("İlişkiler yoğunlaşıyor; biriyle aranızdaki mesele merkeze "
-                  "geliyor."),
-    },
-    "inner": {
-        "support": ("İç dünyanda yumuşak bir açıklık var; kendini toparlamak "
-                    "bugün daha kolay."),
-        "tension": ("İç dünyanda gerilim yükseliyor; kendine fazla "
-                    "yüklenmemek bugünün işi."),
-        "focus": ("İç dünyan öne çıkıyor; dikkati dışarıdan içeriye çevirmek "
-                  "için uygun aralık."),
-    },
-    "finance": {
-        "support": ("Maddi düzende genişleme aralığı; kaynaklarını gözden "
-                    "geçirmek elverişli."),
-        "tension": ("Maddi tarafta bir sıkışma beliriyor; harcamada ve söz "
-                    "vermede temkin."),
-        "focus": ("Maddi düzen merkeze geliyor; sahip olduklarınla ilişkin "
-                  "netleşiyor."),
-    },
-}
+#: 4 tema x 3 ton = 12 sabit cumleydi ve kart cumlesi YALNIZ bu ikiliyle
+#: secilirdi. Cihazda olculen sonuc: ayni ekranda iki OZDES "ic dunya"
+#: karti, biri "etkisi gucleniyor" biri "etkisi sonuyor" etiketiyle
+#: (movement anahtara girmiyordu). Sabah bildirimi de ayni tabloyu
+#: kullandigi icin HERKESE haftalarca birebir ayni cumle gitti (tema
+#: natal evden, ton aci turunden — ikisi de haftalarca sabit).
+#: C-turu'nda ayni kusur takvimden kaldirilmis, "kart yuzeyinde risk
+#: dusuk" gerekcesiyle burada birakilmisti — gerekce yanlis cikti.
+#:
+#: Kullanici karari (KA-turu): yorum HERKESE kisi basi AI
+#: (`signal_service.insight_bundle`); son care DURUST teknik satir.
+#: Urun kurali: hazir cevap yok.
 
 # ---------------------------------------------------------------------------
 # İlişki eksenleri (R2-L1). Sayısal uyum puanı bilinçli olarak YOK.
@@ -927,31 +921,52 @@ SIGNAL_LINE_SEPARATING = (
 SIGNAL_LINE_ACTIVE = (
     "{transit}, natal {natal} ile {aspect} açısı içinde (orb {orb}°).")
 
-#: Abone yorumu satır başına üst sınır (karakter). Model taşarsa şablona
-#: düşülür; yarım cümle gösterilmez (push satırı dersi).
+#: Yorum satırı başına üst sınır (karakter). Model taşarsa yedeğe düşülür;
+#: yarım cümle gösterilmez (push satırı dersi).
 SIGNAL_INSIGHT_MAX = 160
 
-#: Üç sinyalin tek çağrılık yorumu — birim ekonomi kuralı.
+#: Prompt satırına giren hareket ipuçları (KA1): kart cümlesi zamanlama
+#: etiketiyle çelişmesin — cihazda aynı metin hem "güçleniyor" hem
+#: "sönüyor" iki kartta göründü.
+SIGNAL_PROMPT_APPLYING = "etki güçleniyor"
+SIGNAL_PROMPT_SEPARATING = "etki sönmekte"
+#: Günün önemli sinyalinin işareti — akşam sorusu buna bağlanır.
+SIGNAL_PROMPT_FOCUS_MARK = "(bugünün odağı)"
+#: Modelin soru satırı öneki. Ayrıştırıcı bunu BÜYÜK harfle arar.
+CHECKIN_PREFIX = "SORU:"
+
+#: Sinyal yorumları + akşam check-in sorusu — hepsi TEK çağrıda
+#: (birim ekonomi kuralı; KA-turu'nda soru satırı eklendi).
 SIGNALS_PROMPT = """
 GÖREV: Aşağıdaki {count} kişisel transit sinyalinin HER BİRİ için tek
-cümlelik bir yorum yaz.
+cümlelik bir yorum yaz; en sonda BİR check-in sorusu ekle.
 
 SİNYALLER (ölçülmüş gökyüzü verisi):
 {lines}
 
 KURALLAR (kesin):
-- TAM {count} satır yaz; her satır "1." gibi numarayla başlasın ve sinyal
-  sırasını korusun.
+- Önce TAM {count} satır yaz; her satır "1." gibi numarayla başlasın ve
+  sinyal sırasını korusun.
 - Her cümle EN FAZLA 140 karakter; tek cümle, nokta ile bitir.
 - GÜNDELİK DİL: gezegen, açı, burç, ev, derece, orb ADI GEÇMESİN. Kullanıcı
   "Satürn kare Ay" değil, hayatında ne olduğunu okumak istiyor. (Teknik
   dayanak kullanıcıya ayrı bir ekranda zaten gösteriliyor.)
+- HER SATIR BİRBİRİNDEN FARKLI OLSUN; iki satır birbirinin kopyası ya da
+  neredeyse aynısı OLMASIN.
+- Satırında "etki sönmekte" yazan sinyalde yükseliş ya da başlangıç
+  anlatma; kapanışı, hasadı, geride kalanı anlat. "etki güçleniyor"
+  yazanda sönüş anlatma. Cümlen bu ibareyle ASLA çelişmesin.
 - EĞİLİM dili kullan: "bu tema görünürleşiyor", "şuna alan aç" — kesin
   tarihli olay kehaneti YOK ("iş bulacaksın" gibi cümleler YASAK).
 - Sağlık/hukuk/finans tavsiyesi YOK; pohpohlama YOK; emoji YOK.
 - Cümle satırın sonundaki temaya dokunmalı.
+- SON SATIR: "SORU: <tek soru>" — "(bugünün odağı)" işaretli sinyale
+  bağlı, akşam kullanıcıya sorulacak samimi bir check-in sorusu. Kehanet
+  değil; günün NASIL GEÇTİĞİNİ soran, arkadaşça tek bir soru ("Bugün iş
+  tarafında bir hareket görünüyordu — nasıl geçti?" tarzında). En fazla
+  120 karakter. İşaretli sinyal yoksa "SORU: -" yaz.
 
-Yalnızca numaralı satırları yaz, başka hiçbir şey yazma.
+Yalnızca numaralı satırları ve SORU satırını yaz, başka hiçbir şey yazma.
 """
 
 #: Takvim olaylarının tek çağrılık toplu yorumu (Ç-turu).

@@ -260,6 +260,7 @@ def should_use_rag(message: str, lang: str | None = None) -> bool:
 def compose_chat_message(message: str, passages: list[dict],
                          memory: str = "", chart: str = "",
                          sky: str = "", relationship: str = "",
+                         circle: str = "",
                          lang: str | None = None) -> str:
     """Bilgi tabanı pasajlarını, kullanıcı hafızasını, haritasını ve bugünün
     gökyüzünü mesaja iliştirir.
@@ -273,6 +274,10 @@ def compose_chat_message(message: str, passages: list[dict],
     sunucunun ölçtüğü ilişki eksenleri buradan girer. Cihaz bulgusuydu:
     bağlam olmadan model arkadaşı tanımadan kullanıcının kendi haritasından
     GENEL cevap uyduruyordu ("ikimiz özelinde cevap vermesi gerekirken").
+
+    ``circle`` (KA6): kullanıcının Çevrem listesi + arkadaşları, kompakt.
+    Model çevreyi BİLİR (kim var, ilişki türleri, burçları) ama sayıp
+    dökmez; konu değince doğal biçimde işe katar. Ölçüm içermez.
 
     Hiçbiri yoksa mesaj olduğu gibi döner; API şeması ve model arayüzü değişmez.
     """
@@ -288,8 +293,9 @@ def compose_chat_message(message: str, passages: list[dict],
     chart = (chart or "").strip()
     sky = (sky or "").strip()
     relationship = (relationship or "").strip()
+    circle = (circle or "").strip()
     if (not whispers and not memory and not chart and not sky
-            and not relationship):
+            and not relationship and not circle):
         return message
 
     # Etiketler dile göre gelir: İngilizce sohbette Türkçe başlık görmek modeli
@@ -302,6 +308,10 @@ def compose_chat_message(message: str, passages: list[dict],
         parts.append(labels.WHISPER_RELATIONSHIP + "\n" + relationship)
     if chart:
         parts.append(labels.WHISPER_CHART + "\n" + chart)
+    # Çevre HARİTADAN SONRA, gökyüzünden önce: arka plan bilgisi ama
+    # "bugünün göğü"nden daha kalıcı.
+    if circle:
+        parts.append(labels.WHISPER_CIRCLE + "\n" + circle)
     if sky:
         parts.append(labels.WHISPER_SKY + "\n" + sky)
     if whispers:

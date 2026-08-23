@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/api.dart';
 import '../../core/conversations.dart';
+import '../../core/people.dart';
 import '../../core/sound.dart';
 import '../../core/wallet.dart';
 import '../../theme/rytho_theme.dart';
@@ -47,12 +48,18 @@ class ChatScreen extends ConsumerStatefulWidget {
       this.conversationId,
       this.initialText,
       this.friendUid,
-      this.personId});
+      this.personId,
+      this.source});
 
   final String? conversationId;
   final String? initialText;
   final String? friendUid;
   final String? personId;
+
+  /// KA-turu: konuşmanın nereden açıldığı ("checkin" = akşam bildirimi).
+  /// Sunucu bunu hafıza çıkarımında kullanır: check-in cevabı tek mesajlık
+  /// olsa da işlenir.
+  final String? source;
 
   @override
   ConsumerState<ChatScreen> createState() => _ChatScreenState();
@@ -147,6 +154,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final son20 = history.length > 20
           ? history.sublist(history.length - 20)
           : history;
+      // KA6: ekrandan bağlam gelmediyse mesaj cihazdaki kişi adlarına
+      // karşı taranır — "Ayşe'yle aram nasıl?" ana sekmeden sorulsa da
+      // doğru kişinin ölçümü sohbete girer. Ad sunucuya GİTMEZ, yalnız
+      // kimlik gider (gizlilik kuralı: etiket cihazda kalır).
+      String? adEslesen;
+      if (widget.friendUid == null && widget.personId == null) {
+        final kisiler = ref.read(peopleProvider).value ?? const <Person>[];
+        adEslesen = matchPersonIdByLabel(text, kisiler);
+      }
       final response = await dio.post('/api/v1/chat', data: {
         'history': son20,
         'message': text,
@@ -156,6 +172,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         // ölçülen eksenler üzerinden cevaplanır.
         if (widget.friendUid != null) 'friend_uid': widget.friendUid,
         if (widget.personId != null) 'person_id': widget.personId,
+        if (widget.personId == null && adEslesen != null)
+          'person_id': adEslesen,
+        // KA-turu: check-in cevabı tek mesajlık da olsa hafızaya işlensin.
+        if (widget.source != null) 'source': widget.source,
       });
       final veri = response.data as Map;
       setState(() {

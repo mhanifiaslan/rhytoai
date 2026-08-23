@@ -23,7 +23,7 @@ from pydantic import BaseModel, Field
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
-from services import people_service
+from services import circle_context, people_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -81,6 +81,7 @@ def create_person(req: PersonRequest,
                   lang: str = Depends(get_language)):
     """Kişi ekler. Kontenjan doluysa 402 + ``X-Paywall-Reason: people``."""
     kayit = people_service.create_person(user.uid, req.to_fields(), lang=lang)
+    circle_context.invalidate(user.uid)
     return {"status": "success", "data": {"person": kayit, **_liste(user.uid)}}
 
 
@@ -96,6 +97,7 @@ def update_person(person_id: str, req: PersonRequest,
     """
     kayit = people_service.update_person(user.uid, person_id,
                                          req.to_fields(), lang=lang)
+    circle_context.invalidate(user.uid)
     return {"status": "success", "data": {"person": kayit}}
 
 
@@ -105,4 +107,5 @@ def delete_person(person_id: str,
                   lang: str = Depends(get_language)):
     if not people_service.delete_person(user.uid, person_id):
         raise HTTPException(status_code=404, detail=text("people.missing", lang))
+    circle_context.invalidate(user.uid)
     return {"status": "success", "data": _liste(user.uid)}

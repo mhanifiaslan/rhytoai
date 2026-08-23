@@ -14,13 +14,16 @@ from services import memory_extractor, memory_service, prompt_composer
 # --------------------------------------------------------------------------
 
 def test_kisa_konusmada_cikarim_yapilmaz():
-    """Tek "merhaba" turundan olgu çıkarmaya çalışmak boşa LLM çağrısıdır."""
+    """İlk "merhaba" turundan olgu çıkarmaya çalışmak boşa LLM çağrısıdır."""
     assert memory_extractor.should_extract([]) is False
+
+
+def test_ikinci_kullanici_mesajinda_cikarim_yapilir():
+    """Eşik 3 → 2 (KA9): eskiden her yeni konunun ilk İKİ mesajı hiç
+    işlenmiyordu ve günde 1 kota ile çoğu kullanıcının hafızası boş
+    kalıyordu — "beni tanımıyor" şikâyetinin ölçülen parçalarından biri."""
     assert memory_extractor.should_extract(
-        [{"sender": "USER", "text": "selam"}]) is False
-
-
-def test_yeterince_uzun_konusmada_cikarim_yapilir():
+        [{"sender": "USER", "text": "selam"}]) is True
     gecmis = [
         {"sender": "USER", "text": "selam"},
         {"sender": "AI", "text": "merhaba"},
@@ -43,6 +46,34 @@ def test_kota_dolduysa_llm_e_gidilmez(monkeypatch):
                         lambda *a, **k: pytest.fail("kota dolarken LLM çağrılmamalı"))
 
     assert memory_extractor.extract_and_store("u", gecmis, "son mesaj") is None
+
+
+def test_checkin_cevabi_tek_turda_islenir(monkeypatch):
+    """KA9: akşam sorusuna verilen TEK mesajlık cevap tur eşiğini atlar ve
+    kotayı +1 kullanır — aksi hâlde ürünün kendi sorduğu sorunun cevabı
+    hafızaya hiç düşmezdi (döngünün bütün amacı)."""
+    kotalar = []
+
+    def sahte_kota(uid, key, limit):
+        kotalar.append(limit)
+        return True
+
+    monkeypatch.setattr(memory_extractor.entitlements, "consume_quota",
+                        sahte_kota)
+    monkeypatch.setattr(
+        memory_extractor.gemini_service, "extract_json",
+        lambda *a, **k: json.dumps({"facts": []}))
+    monkeypatch.setattr(memory_extractor.memory_service, "upsert_facts",
+                        lambda uid, facts: {"facts": []})
+    sonuc = memory_extractor.extract_and_store(
+        "u", [], "Kötü geçti, işten kötü haber aldım", source="checkin")
+    assert sonuc is not None
+    assert kotalar == [memory_extractor.DAILY_EXTRACTIONS + 1]
+    # Normal yol tek mesajda hiç LLM'e gitmez (eşik).
+    monkeypatch.setattr(
+        memory_extractor.gemini_service, "extract_json",
+        lambda *a, **k: pytest.fail("eşik altında LLM çağrılmamalı"))
+    assert memory_extractor.extract_and_store("u", [], "selam") is None
 
 
 # --------------------------------------------------------------------------
@@ -183,6 +214,37 @@ def test_hafiza_celisirse_son_soylenen_gecerli():
     sonuc = prompt_composer.compose_chat_message(
         "artık o işte değilim", [], memory="- (work) X şirketinde çalışıyor")
     assert "SON söylediği" in sonuc
+
+
+def test_butce_sigmayan_parcayi_atlar_sonrakini_alir(monkeypatch):
+    """KA9: eski döngü sığmayan İLK parçada DURUYORDU — olgular bütçeyi
+    doldurunca ruh hali seyri, günlük ve ton tercihi tamamen düşüyordu.
+    Artık sığmayan atlanır, sonraki kısa parçalar yine girer."""
+    monkeypatch.setattr(memory_service, "get_memory", lambda uid: {
+        "facts": [{"category": "work", "value": "k" * 500,
+                   "confidence": 0.9},
+                  {"category": "goal", "value": "kısa hedef",
+                   "confidence": 0.5}],
+        "moodTrail": [{"date": "2026-08-23", "mood": "yorgun",
+                       "intensity": "high"}],
+        "diary": [],
+        "toneHint": "nazik",
+    })
+    sonuc = memory_service.memory_context("u", max_chars=200)
+    # 500 karakterlik olgu sığmaz ve ATLANIR; kısa olgu, ruh hali ve ton
+    # yine de girer — eski davranışta üçü de kaybolurdu.
+    assert "kısa hedef" in sonuc
+    assert "yorgun(high)" in sonuc
+    assert "nazik" in sonuc
+
+
+def test_cevre_fisiltisi_eklenir():
+    """KA6: çevre yuvası — model listeyi bilir ama sayıp dökmez."""
+    sonuc = prompt_composer.compose_chat_message(
+        "bugün nasıl geçer", [], circle="- eşin: Güneş Terazi")
+    assert "ÇEVRESİ" in sonuc
+    assert "eşin: Güneş Terazi" in sonuc
+    assert "sayma" in sonuc  # sayıp dökme yasağı etikette
 
 
 # --------------------------------------------------------------------------

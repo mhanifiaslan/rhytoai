@@ -4,6 +4,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/legacy.dart'
+    show StateNotifier, StateNotifierProvider;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -214,7 +216,8 @@ final FlutterLocalNotificationsPlugin _localNotifications =
 bool _yerelBildirimHazir = false;
 
 /// Yerel bildirim altyapısını kurar (kanal + dokunma yönlendirmesi).
-Future<void> _initLocalNotifications(ValueChanged<int> onSelectTab) async {
+Future<void> _initLocalNotifications(ValueChanged<int> onSelectTab,
+    ValueChanged<Map<String, dynamic>> onIntent) async {
   if (_yerelBildirimHazir) return;
   _yerelBildirimHazir = true;
 
@@ -227,12 +230,8 @@ Future<void> _initLocalNotifications(ValueChanged<int> onSelectTab) async {
       onDidReceiveNotificationResponse: (yanit) {
         final ham = yanit.payload;
         if (ham == null || ham.isEmpty) return;
-        // Yük, gönderildiği gibi düz `anahtar=deger` çiftleri.
-        final veri = <String, dynamic>{};
-        for (final parca in ham.split('&')) {
-          final i = parca.indexOf('=');
-          if (i > 0) veri[parca.substring(0, i)] = parca.substring(i + 1);
-        }
+        final veri = decodeNotificationPayload(ham);
+        onIntent(veri);
         onSelectTab(tabForNotification(veri));
       },
     );
@@ -251,7 +250,7 @@ Future<void> _showForeground(RemoteMessage mesaj) async {
   final bildirim = mesaj.notification;
   if (bildirim == null) return;
 
-  final yuk = mesaj.data.entries.map((e) => '${e.key}=${e.value}').join('&');
+  final yuk = encodeNotificationPayload(mesaj.data);
   try {
     await _localNotifications.show(
       // Kimlik olarak zaman damgası: aynı anda birden fazla bildirim
@@ -277,21 +276,79 @@ Future<void> _showForeground(RemoteMessage mesaj) async {
   }
 }
 
+/// Ön plan bildirimi yükünü `anahtar=deger` çiftlerine kodlar.
+///
+/// Değerler URL-kodlu (KA5 onarımı): check-in sorusu serbest metin ve
+/// `&`/`=` içerebilir — kodlanmazsa dokunma ayrıştırması sessizce bozulur.
+String encodeNotificationPayload(Map<String, dynamic> data) => data.entries
+    .map((e) => '${e.key}=${Uri.encodeComponent('${e.value}')}')
+    .join('&');
+
+/// [encodeNotificationPayload] ile yazılan yükü geri çözer.
+Map<String, dynamic> decodeNotificationPayload(String ham) {
+  final veri = <String, dynamic>{};
+  for (final parca in ham.split('&')) {
+    final i = parca.indexOf('=');
+    if (i > 0) {
+      var deger = parca.substring(i + 1);
+      try {
+        deger = Uri.decodeComponent(deger);
+      } catch (_) {} // eski biçim kodlanmamış olabilir
+      veri[parca.substring(0, i)] = deger;
+    }
+  }
+  return veri;
+}
+
 /// Bildirime dokunulduğunda hangi sekmenin açılacağı.
 ///
-/// Sunucu her bildirime `type` alanı koyuyor (daily / streak / friend).
-/// Eşleşmeyen bir tür gelirse ana ekranda kalınır — bilinmeyen bir değer
-/// yüzünden uygulama boş bir ekrana düşmemeli.
+/// Sunucu her bildirime `type` alanı koyuyor (daily / checkin / streak /
+/// friend). Eşleşmeyen bir tür gelirse ana ekranda kalınır — bilinmeyen bir
+/// değer yüzünden uygulama boş bir ekrana düşmemeli.
 int tabForNotification(Map<String, dynamic> data) {
   switch (data['type']) {
     case 'friend':
       return 2; // Arkadaşlar
     case 'daily':
+    case 'checkin': // sohbet kabuğun üstüne açılır; zemin Gökyüzü kalır
     case 'streak':
     default:
       return 0; // Gökyüzü
   }
 }
+
+// ---------------------------------------------------------------------------
+// Bekleyen bildirim niyeti (KA5)
+//
+// `deep_links.dart`'taki PendingInvite deseninin ikizi: dokunma anında
+// uygulama henüz hazır olmayabilir (soğuk açılış, oturum yüklenmemiş) —
+// niyet burada bekler, tüketen ekran hazır olunca işler ve temizler.
+// Eskiden dokunma yalnızca sekme numarası atıyordu ve R2-S4'ün "tıklanınca
+// ilgili sinyal kartı açılır" vaadi hiç yazılmamıştı.
+// ---------------------------------------------------------------------------
+
+class PendingNotification {
+  const PendingNotification(this.data);
+
+  final Map<String, String> data;
+
+  String? get type => data['type'];
+}
+
+class PendingNotificationIntent extends StateNotifier<PendingNotification?> {
+  PendingNotificationIntent() : super(null);
+
+  void set(Map<String, dynamic> data) {
+    state = PendingNotification(
+        data.map((k, v) => MapEntry(k, v?.toString() ?? '')));
+  }
+
+  void clear() => state = null;
+}
+
+final pendingNotificationProvider =
+    StateNotifierProvider<PendingNotificationIntent, PendingNotification?>(
+        (_) => PendingNotificationIntent());
 
 /// Bildirim alımını ve dokunma yönlendirmesini kurar.
 ///
@@ -300,27 +357,31 @@ int tabForNotification(Map<String, dynamic> data) {
 /// - **Arka plan:** sistem gösterir, dokunma `onMessageOpenedApp`'e gelir.
 /// - **Kapalı:** sistem gösterir, dokunma uygulamayı açar ve
 ///   `getInitialMessage` ile okunur.
-Future<void> handleNotificationTaps(
-    ValueChanged<int> onSelectTab) async {
-  await _initLocalNotifications(onSelectTab);
+Future<void> handleNotificationTaps(ValueChanged<int> onSelectTab,
+    ValueChanged<Map<String, dynamic>> onIntent) async {
+  await _initLocalNotifications(onSelectTab, onIntent);
 
   // Ön planda gelen bildirim: göstermezsek kullanıcı hiçbir şey görmez.
   FirebaseMessaging.onMessage.listen(_showForeground);
 
   try {
     final ilk = await FirebaseMessaging.instance.getInitialMessage();
-    if (ilk != null) _bildirimAcildi(ilk, onSelectTab);
+    if (ilk != null) _bildirimAcildi(ilk, onSelectTab, onIntent);
   } catch (e) {
     debugPrint('Açılış bildirimi okunamadı: $e');
   }
 
   FirebaseMessaging.onMessageOpenedApp
-      .listen((mesaj) => _bildirimAcildi(mesaj, onSelectTab));
+      .listen((mesaj) => _bildirimAcildi(mesaj, onSelectTab, onIntent));
 }
 
-void _bildirimAcildi(RemoteMessage mesaj, ValueChanged<int> onSelectTab) {
+void _bildirimAcildi(RemoteMessage mesaj, ValueChanged<int> onSelectTab,
+    ValueChanged<Map<String, dynamic>> onIntent) {
   // Bildirimden dönüş, bu kategoride retention'ın ana ölçüsü.
   Analytics.notificationOpened('${mesaj.data['type'] ?? 'unknown'}');
+  // Niyet SEKMEDEN ÖNCE yazılır: tüketen ekran sekme değişimiyle
+  // kurulurken niyeti hazır bulmalı.
+  onIntent(mesaj.data);
   onSelectTab(tabForNotification(mesaj.data));
 }
 
@@ -347,6 +408,8 @@ final notificationSyncProvider = Provider<void>((ref) {
     listenForTokenRefresh();
     handleNotificationTaps((tab) {
       ref.read(shellTabProvider.notifier).state = tab;
+    }, (veri) {
+      ref.read(pendingNotificationProvider.notifier).set(veri);
     });
   }, fireImmediately: true);
 

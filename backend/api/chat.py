@@ -50,6 +50,10 @@ class ChatRequest(BaseModel):
     #: Yetki kapısı arkadaşlık değil sahipliktir; fısıltı kişiyi adıyla
     #: değil ilişkisiyle anar ("eşin") — sunucu adı zaten bilmiyor.
     person_id: str | None = None
+    #: KA-turu: konuşmanın nereden açıldığı ("checkin" = akşam sorusuna
+    #: cevap). Hafıza çıkarıcı bunun tek mesajlık cevabını da işler —
+    #: normalde ≥2 kullanıcı mesajı bekler ve check-in cevabı kaybolurdu.
+    source: str | None = None
 
 
 def _sky_summary(lang: str, profile: dict | None = None) -> str:
@@ -65,39 +69,45 @@ def _sky_summary(lang: str, profile: dict | None = None) -> str:
     kullanıcının yerel tarihine bağlıdır ve gökyüzü yükü UTC'de hesaplanıp
     tüm kullanıcılarla paylaşıldığı için oraya gömülemez.
     """
+    # try TÜM gövdeyi kapsar (KA8): eskiden yalnız `get_sky_now()`
+    # korunuyordu; biçimleme satırlarından fırlayan bir istisna dış
+    # yakalayıcıya taşıp sohbeti 500 ile düşürürdü — gökyüzü sohbetin
+    # çalışması için zorunlu değil.
     try:
         sky = prompts.localize_sky(lang, get_sky_now())
+
+        p = prompts.get(lang)
+        moon = sky.get("moon_phase") or {}
+        retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
+        aspects = "; ".join(
+            f"{a['p1']}-{a['p2']} {a['aspect']}"
+            for a in (sky.get("aspects") or [])[:3]
+        )
+
+        satirlar = [
+            p.SKY_MOON.format(name=moon.get("name"),
+                              illumination=moon.get("illumination")),
+            p.SKY_RETROS.format(retros=retros),
+        ]
+        if aspects:
+            satirlar.append(p.SKY_ASPECTS.format(aspects=aspects))
+
+        # Marifetname katmanı: korpusa girdiği hâlde motorda karşılığı
+        # olmayan iki bilgi buradan geliyor. Karşılığı olmasaydı model
+        # bunlar hakkında dayanaksız konuşurdu.
+        yerel_gun = notification_service.local_now(profile or {}).date()
+        satirlar.append(p.SKY_DAY_RULER.format(
+            planet=prompts.planet_name(lang,
+                                       sky_service.day_ruler(yerel_gun))))
+        menzil = sky.get("moon_mansion") or {}
+        if menzil:
+            satirlar.append(p.SKY_MOON_MANSION.format(
+                number=menzil.get("number"), name=menzil.get("name")))
+
+        return "\n".join(satirlar)
     except Exception as exc:
         logger.warning("Gökyüzü alınamadı: %s", exc)
         return ""
-
-    p = prompts.get(lang)
-    moon = sky.get("moon_phase") or {}
-    retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
-    aspects = "; ".join(
-        f"{a['p1']}-{a['p2']} {a['aspect']}" for a in (sky.get("aspects") or [])[:3]
-    )
-
-    satirlar = [
-        p.SKY_MOON.format(name=moon.get("name"),
-                          illumination=moon.get("illumination")),
-        p.SKY_RETROS.format(retros=retros),
-    ]
-    if aspects:
-        satirlar.append(p.SKY_ASPECTS.format(aspects=aspects))
-
-    # Marifetname katmanı: korpusa girdiği hâlde motorda karşılığı olmayan
-    # iki bilgi buradan geliyor. Karşılığı olmasaydı model bunlar hakkında
-    # dayanaksız konuşurdu.
-    yerel_gun = notification_service.local_now(profile or {}).date()
-    satirlar.append(p.SKY_DAY_RULER.format(
-        planet=prompts.planet_name(lang, sky_service.day_ruler(yerel_gun))))
-    menzil = sky.get("moon_mansion") or {}
-    if menzil:
-        satirlar.append(p.SKY_MOON_MANSION.format(
-            number=menzil.get("number"), name=menzil.get("name")))
-
-    return "\n".join(satirlar)
 
 
 @router.post("")
@@ -200,45 +210,107 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # maliyeti yok) ve sohbetin "şu an" ile bağını kurar.
         sky = _sky_summary(lang, profile)
 
-        # İlişki fısıltısı (R4-2): istemci arkadaş bağlamı gönderdiyse ve
-        # arkadaşlık ÇİFT TARAFLI doğruysa ölçülen eksenler prompt'a girer.
-        # Doğrulanamazsa bağlam SESSİZCE atlanır ve loglanır — sohbet
+        # ETKİN bağlam (KA7): istekten gelen kimlik ÖNCELİKLİ; yoksa konu
+        # dokümanına yapışmış bağlam geri yüklenir — listeden yeniden
+        # açılan konuşma "eşin" bağlamını kaybetmesin. İkisi de varsa
+        # KİŞİ kazanır (tek ilişki yuvası var; kişi daha spesifik).
+        etkin_person = request.person_id or (
+            hazir_konu.person_id if hazir_konu else None)
+        etkin_friend = request.friend_uid or (
+            hazir_konu.friend_uid if hazir_konu else None)
+
+        # KA6: açık bağlam yoksa mesajın kendisi bir yakını anıyor mu?
+        # ("eşimle aram nasıl?" ana sekmeden soruluyordu ve SIFIR kişi
+        # bağlamıyla gidiyordu — cihaz bulgusu.) Eşleşme deterministik
+        # kelime tablosuyla; aynı türde birden çok kişi varsa TAHMİN YOK.
+        from services import circle_context
+        if not etkin_person and not etkin_friend:
+            tur = circle_context.match_relation(mesaj_metni, lang)
+            if tur:
+                etkin_person = circle_context.person_for_relation(
+                    user.uid, tur)
+                if etkin_person:
+                    logger.info("Sohbet kişi bağlamı kelimeden eşleşti "
+                                "(%s, %s)", user.uid, tur)
+
+        # İlişki fısıltısı (R4-2): bağlam varsa ölçülen eksenler prompt'a
+        # girer. Doğrulanamazsa SESSİZCE atlanır ve loglanır — sohbet
         # düşmez, model yalnız kullanıcının kendi haritasıyla cevaplar.
         relationship = ""
-        if request.friend_uid and request.friend_uid != user.uid:
-            if profile_service.are_friends(user.uid, request.friend_uid):
-                try:
-                    from services import synastry_service
-                    relationship = synastry_service.relationship_whisper(
-                        user.uid, request.friend_uid, lang)
-                except Exception as exc:
-                    logger.warning("İlişki fısıltısı üretilemedi (%s→%s): %s",
-                                   user.uid, request.friend_uid, exc)
-            else:
-                logger.info("Sohbet ilişki bağlamı reddedildi: arkadaş "
-                            "değil (%s→%s)", user.uid, request.friend_uid)
-        elif request.person_id:
+        if etkin_person:
             # Sahiplik kapısı `person_counterpart` içinde: kayıt çağıranın
-            # kendi ağacından okunuyor, başkasının kişisi None döner ve
-            # bağlam SESSİZCE atlanır (sohbet düşmez — arkadaş yolundaki
-            # duruşun aynısı).
+            # kendi ağacından okunuyor, başkasının kişisi None döner.
             try:
                 from services import synastry_service
                 karsi = synastry_service.person_counterpart(
-                    user.uid, request.person_id, lang)
+                    user.uid, etkin_person, lang)
                 if karsi is None:
                     logger.info("Sohbet kişi bağlamı atlandı: kayıt yok ya "
                                 "da sahibi değil (%s)", user.uid)
+                    etkin_person = None
                 else:
                     relationship = synastry_service.whisper_for(
                         user.uid, karsi, lang)
             except Exception as exc:
                 logger.warning("Kişi fısıltısı üretilemedi (%s/%s): %s",
-                               user.uid, request.person_id, exc)
+                               user.uid, etkin_person, exc)
+        elif etkin_friend and etkin_friend != user.uid:
+            if profile_service.are_friends(user.uid, etkin_friend):
+                try:
+                    from services import synastry_service
+                    relationship = synastry_service.relationship_whisper(
+                        user.uid, etkin_friend, lang)
+                except Exception as exc:
+                    logger.warning("İlişki fısıltısı üretilemedi (%s→%s): %s",
+                                   user.uid, etkin_friend, exc)
+            else:
+                logger.info("Sohbet ilişki bağlamı reddedildi: arkadaş "
+                            "değil (%s→%s)", user.uid, etkin_friend)
+                etkin_friend = None
+
+        # KA6: çevre listesi her turda — model kullanıcının yakınlarını
+        # BİLİR (tür + burçlar; ad sunucuda yok) ama sayıp dökmez.
+        circle = ""
+        try:
+            circle = circle_context.circle_whisper(user.uid, lang)
+        except Exception as exc:
+            logger.warning("Çevre fısıltısı üretilemedi (%s): %s",
+                           user.uid, exc)
+
+        # KA6/3 — tema tetikli tali bağlam: bugün gökyüzü ilişki temasına
+        # ağır basıyorsa ve açık bir kişi bağlamı yoksa, öncelikli yakının
+        # ölçümü İLİŞTİRİLİR ("iç mevsimde aileyle ilgili süreç görünüyorsa
+        # aile bilgileriyle analiz yapabilmeli" — kullanıcı isteği).
+        # Eksenler LLM'siz ve önbellekli; maliyet yalnız CPU.
+        if not relationship and circle:
+            try:
+                from services import signal_service, synastry_service
+                ham_sinyaller = signal_service.cached_signals(
+                    profile, today=entitlements.user_local_date(user.uid))
+                temalar = {s.get("theme") for s in
+                           (ham_sinyaller or {}).get("signals") or []}
+                if "relationships" in temalar:
+                    oncelikli = circle_context.priority_person(user.uid)
+                    if oncelikli:
+                        karsi = synastry_service.person_counterpart(
+                            user.uid, oncelikli, lang)
+                        if karsi is not None:
+                            relationship = synastry_service.whisper_for(
+                                user.uid, karsi, lang)
+                            logger.info("Tema tetikli kişi bağlamı eklendi "
+                                        "(%s)", user.uid)
+            except Exception as exc:
+                logger.info("Tema tetikli bağlam kurulamadı (%s): %s",
+                            user.uid, exc)
 
         message = compose_chat_message(mesaj_metni, passages,
                                        memory=memory, chart=chart, sky=sky,
-                                       relationship=relationship, lang=lang)
+                                       relationship=relationship,
+                                       circle=circle, lang=lang)
+        if message == mesaj_metni:
+            # Hiçbir fısıltı kurulamadı — "sadece burcumu biliyor"
+            # şikâyetinin en ağır hâli. Sessiz kalmasın (KA8).
+            logger.info("Sohbet SIFIR fısıltıyla gitti (%s)", user.uid)
 
         reply = gemini_service.chat(history, message, lang=lang)
         if reply is None:
@@ -253,12 +325,18 @@ def chat(request: ChatRequest, background: BackgroundTasks,
             from services import fact_guard
             def yeniden(duzelti: str) -> str | None:
                 return gemini_service.chat(history, duzelti, lang=lang)
+            # `facts=` ŞART (KA8): verilmeyince bekçi dayanağı prompt
+            # METNİNDEN yeniden çıkarıyordu — R8'in kapattığı kırılganlık.
+            # Sonuç: doğru konumlar "uydurma" damgası yiyip boşa yeniden
+            # üretime ve modeli spesifiklikten kaçıran düzeltmelere yol
+            # açıyordu.
             reply, _ = fact_guard.enforce(
-                reply, message, lang=lang, regenerate=yeniden)
+                reply, message, lang=lang, regenerate=yeniden, facts=facts)
         # Olgu çıkarımı yanıttan SONRA, arka planda: kullanıcı ikinci bir LLM
         # çağrısını beklemez. Kendi içinde kotalı ve hataya dayanıklı.
         background.add_task(
-            memory_extractor.extract_and_store, user.uid, history, request.message
+            memory_extractor.extract_and_store, user.uid, history,
+            request.message, source=request.source,
         )
 
         # Arşiv yazımı da arka planda (Revize R4). Hafıza çıkarıcı AYNEN
@@ -268,6 +346,7 @@ def chat(request: ChatRequest, background: BackgroundTasks,
             background.add_task(
                 chat_history.write_turn, user.uid, hazir_konu,
                 mesaj_metni, reply, lang,
+                etkin_friend if not etkin_person else None, etkin_person,
             )
 
         return {"status": "success", "reply": reply,

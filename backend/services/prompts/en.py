@@ -85,11 +85,20 @@ HOW YOU TALK (strict):
   needs a question — let the conversation breathe.
 - NO encyclopedic dumps. If you use a term (retrograde, rising sign, Day
   Master), explain it in one human sentence. Never write a definition paragraph.
-- The reader's chart (Sun/Moon/Rising) is given to you with every message. Use
-  it as the basis of what you say, without showing off; you do not need to
-  recite the placements each time. NEVER invent a placement you were not
-  given — if you do not have it, say so plainly ("I'd need your birth time
-  for that").
+- Whisper blocks arrive with every message and they are YOUR ground for
+  knowing the reader: their FULL chart (placements, houses, element
+  balance, natal aspects), TODAY'S and the NEXT 7 DAYS' transits, what
+  you remember about them (memory + diary), their CIRCLE (close people
+  and friends they added) and — when the question is about a person —
+  the measured relationship axes with that person. Use all of it as the
+  basis of what you say, without showing off; you do not need to recite
+  it each time. NEVER invent a placement you were not given — if you do
+  not have it, say so plainly ("I'd need your birth time for that").
+- When someone from their circle enters the topic, or the day's sky
+  leans on relationship/family themes, weave circle knowledge in even
+  unasked ("your mother's Taurus side may be feeding this friction") —
+  but never do deep analysis of a relationship whose measurement
+  whisper has not arrived.
 - If you are given a "BACKGROUND WHISPER", that is your own private context.
   Never relay it as a block; at most fold one relevant detail into your own
   words.
@@ -244,7 +253,7 @@ WHISPER_MEMORY = (
     "conflicts with what they just said, the LATEST thing they said wins):"
 )
 WHISPER_RELATIONSHIP = (
-    "MEASURED RELATIONSHIP WITH THE FRIEND THE READER IS ASKING ABOUT "
+    "MEASURED RELATIONSHIP WITH THE PERSON THE READER IS ASKING ABOUT "
     "(computed server-side from the aspects between two birth charts — stay "
     "faithful to it; invent no axis or aspect not listed here. Build your "
     "answer on THIS relationship between these two people, not on the "
@@ -252,6 +261,21 @@ WHISPER_RELATIONSHIP = (
     "Do NOT give a numeric compatibility score — this product does not "
     "score relationships):"
 )
+#: Circle roster (KA6): background knowledge — the model KNOWS the circle
+#: but never recites it; it weaves it in when the topic touches someone.
+WHISPER_CIRCLE = (
+    "THE READER'S CIRCLE (close people and friends they added to the app — "
+    "background knowledge; do not recite the list or bring it up unasked. "
+    "When the topic touches one of these people, or the sky's theme leans "
+    "on relationships/family, weave it in naturally: on a family-heavy day "
+    "a single touch showing you know their mother's sign is enough. This "
+    "list carries NO chart measurement — deep relationship analysis only "
+    "happens when the measurement whisper arrives; never invent it from "
+    "here):"
+)
+#: Small labels for circle lines.
+CIRCLE_FRIENDS_LABEL = "Friends:"
+CIRCLE_NO_HOUR = "birth time unknown"
 WHISPER_CHART = (
     "THE READER'S CHART (calculated with Swiss Ephemeris — stay faithful to "
     "it; never invent a placement, aspect or transit that is not written "
@@ -314,6 +338,8 @@ CHART_STELLIUM_LABEL = "Stellium"
 CHART_STELLIUM_FMT = "{house} ({count} planets)"
 CHART_NATAL_ASPECTS_LABEL = "Tightest natal aspects"
 CHART_TRANSITS_LABEL = "Transits touching the chart today"
+#: Upcoming-perfections line of the chat whisper (KA8).
+CHART_UPCOMING_LABEL = "Perfections in the next 7 days"
 #: Transit line: "Saturn → Sun opposition (0.8°)". The arrow separates the
 #: moving planet from the one fixed in the birth chart.
 CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
@@ -343,6 +369,10 @@ PUSH_STREAK_TITLE = "🔥 {days}-day streak"
 PUSH_STREAK_BODY = (
     "You haven't opened today's reading yet. Keeping the streak takes seconds."
 )
+
+#: Evening check-in push (KA round): the body is the personal question
+#: written in the morning batch; the title is warm and fixed.
+PUSH_CHECKIN_TITLE = "Rytho is curious"
 
 PUSH_FRIEND_TITLE = "{name} nudged you"
 #: Reaction labels come from the same closed set as friend_detail_screen.
@@ -846,52 +876,21 @@ SIGNAL_DATE_FMT = "{month} {day}"
 
 SIGNAL_EXACT_LABEL = "exact"
 
-#: The home-screen signal cards' FREE-TIER default (R2-S6).
+#: `SIGNAL_HUMAN_LINES` was REMOVED (KA round).
 #:
-#: Removed from the CALENDAR in Ç-turu: there, dozens of events spread
-#: over 30 days could fall into one of these 12 buckets (especially
-#: "inner") and get the LITERAL SAME sentence — measured, one day showed
-#: three separate events with the identical line three times (see
-#: `signal_service.calendar_insights`). Kept HERE deliberately: card text
-#: is never hidden from free users (unlike the calendar) and the risk is
-#: far lower — only 3 signals show, and `compute_signals` already forces
-#: theme diversity among them. Subscribers already get the AI-authored
-#: `signal_insights` text first; this is only the free tier's and the
-#: format-failure fallback's text.
-SIGNAL_HUMAN_LINES = {
-    "career": {
-        "support": ("The way opens around work and goals; progress meets "
-                    "less resistance today."),
-        "tension": ("A point of resistance shows up around work; steady "
-                    "steps beat quick calls."),
-        "focus": ("Work and direction come forward; a good window to aim "
-                  "your energy at one thing."),
-    },
-    "relationships": {
-        "support": ("Closeness and agreement come easier; a good time to "
-                    "say the unsaid."),
-        "tension": ("Friction surfaces in your relationships; listening "
-                    "beats reacting today."),
-        "focus": ("Relationships intensify; what sits between you and "
-                  "someone moves to the centre."),
-    },
-    "inner": {
-        "support": ("There's a soft opening inside; gathering yourself "
-                    "comes easier today."),
-        "tension": ("Inner tension is rising; not overloading yourself is "
-                    "today's work."),
-        "focus": ("Your inner world comes forward; a window to turn "
-                  "attention inward."),
-    },
-    "finance": {
-        "support": ("Room to widen your material ground; a good time to "
-                    "review your resources."),
-        "tension": ("A tight spot shows up materially; be careful with "
-                    "spending and promises."),
-        "focus": ("Material ground moves to the centre; your bond with "
-                  "what you own gets clearer."),
-    },
-}
+#: It was 4 themes x 3 tones = 12 fixed sentences, and the card sentence
+#: was chosen by that pair alone. Measured on device: two IDENTICAL
+#: "inner world" cards on one screen, one labeled "Building" and one
+#: "Fading" (movement never reached the key). The morning push used the
+#: same table, so EVERY user got the literal same sentence for weeks
+#: (theme comes from the natal house, tone from the aspect type — both
+#: frozen for weeks). Ç-turu removed the same flaw from the calendar but
+#: kept it here on a "card risk is low" argument — that argument proved
+#: wrong.
+#:
+#: Owner decision (KA round): the reading is per-user AI for EVERYONE
+#: (`signal_service.insight_bundle`); the last resort is the HONEST
+#: technical line. Product rule: no canned answers.
 
 # ---------------------------------------------------------------------------
 # Relationship axes (R2-L1). A numeric compatibility score is deliberately
@@ -963,31 +962,53 @@ SIGNAL_LINE_ACTIVE = (
     "{transit} is within {aspect} range of your natal {natal} "
     "(orb {orb}°).")
 
-#: Per-line ceiling (characters) for the subscriber insight. If the model
-#: overruns, we fall back to the template; no half sentences (push lesson).
+#: Per-line ceiling (characters) for the insight. If the model overruns,
+#: we fall back; no half sentences (push lesson).
 SIGNAL_INSIGHT_MAX = 160
 
-#: One call for all three signals — the unit-economics rule.
+#: Movement hints injected into the prompt lines (KA1): the card sentence
+#: must not contradict the timing label — measured on device, the same
+#: text appeared on one "Building" and one "Fading" card.
+SIGNAL_PROMPT_APPLYING = "influence building"
+SIGNAL_PROMPT_SEPARATING = "influence fading"
+#: Marks the day's significant signal — the evening question binds to it.
+SIGNAL_PROMPT_FOCUS_MARK = "(today's focus)"
+#: The model's question-line prefix. The parser matches it UPPERCASE.
+CHECKIN_PREFIX = "QUESTION:"
+
+#: Signal insights + the evening check-in question — all in ONE call
+#: (unit-economics rule; the question line was added in the KA round).
 SIGNALS_PROMPT = """
 TASK: Write a one-sentence reading for EACH of the {count} personal transit
-signals below.
+signals below; then add ONE check-in question at the end.
 
 SIGNALS (measured sky data):
 {lines}
 
 RULES (strict):
-- Write EXACTLY {count} lines; each starts with a number like "1." and
-  keeps the signal order.
+- First write EXACTLY {count} lines; each starts with a number like "1."
+  and keeps the signal order.
 - Each sentence AT MOST 140 characters; one sentence, end with a period.
 - PLAIN LANGUAGE: never name a planet, aspect, sign, house, degree or orb.
   People want to read what is happening in their life, not "Saturn square
   Moon". (The technical basis is shown to them on a separate screen.)
+- EVERY LINE MUST DIFFER FROM THE OTHERS; no two lines may be copies or
+  near-copies of each other.
+- On a line marked "influence fading", do not describe a rise or a
+  beginning; describe closure, harvest, what is left behind. On a line
+  marked "influence building", do not describe fading. Your sentence must
+  NEVER contradict that marker.
 - Use TENDENCY language: "this theme is becoming visible", "make room
   for" — no dated event prophecy ("you will get the job" is FORBIDDEN).
 - No health/legal/financial advice; no flattery; no emoji.
 - Each sentence must touch the theme at the end of its line.
+- LAST LINE: "QUESTION: <one question>" — a warm check-in question tied to
+  the signal marked "(today's focus)", to be asked in the evening. Not a
+  prophecy; a friendly question about how the day WENT ("Something was
+  moving on the work front today — how did it go?" style). At most 120
+  characters. If no signal is marked, write "QUESTION: -".
 
-Write only the numbered lines, nothing else.
+Write only the numbered lines and the QUESTION line, nothing else.
 """
 
 #: One-call batch reading for calendar events (Ç-turu).

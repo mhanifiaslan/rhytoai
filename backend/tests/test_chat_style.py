@@ -92,6 +92,90 @@ def test_bilgi_sorusunda_rag_cagrilir_ve_kirpilir(monkeypatch):
             f"pasaj kırpılmamış: {len(satir)} karakter")
 
 
+def test_olgu_bekcisi_hesaplanmis_haritayi_alir(monkeypatch):
+    """KA8: `enforce`'a `facts` GEÇİRİLMELİ. Verilmeyince bekçi dayanağı
+    prompt metninden yeniden çıkarıyordu (R8'in kapattığı kırılganlık) ve
+    doğru konumlar "uydurma" damgası yiyip boşa yeniden üretime yol
+    açıyordu."""
+    from services import fact_guard
+
+    yakalanan = {}
+
+    def sahte_enforce(reply, message, lang=None, regenerate=None, **k):
+        # `facts` yalnız gerçekten geçirildiyse k'ya düşer — eski imzayla
+        # çağrı yakalanan'ı boş bırakır ve test kırılır.
+        yakalanan.update(k)
+        return reply, False
+
+    monkeypatch.setattr(fact_guard, "enforce", sahte_enforce)
+    monkeypatch.setattr(gemini_service, "chat",
+                        lambda history, msg, **k: "yanıt")
+    with TestClient(app) as client:
+        r = client.post("/api/v1/chat",
+                        json={"history": [], "message": "bugün nasılım?"})
+        assert r.status_code == 200
+    # Profilsiz test kullanıcısında facts None olabilir; kritik olan
+    # PARAMETRENİN geçirilmesi — anahtar yakalanmadıysa çağrı eski imzada.
+    assert "facts" in yakalanan
+
+
+def test_akraba_kelimesi_kisi_fisiltisini_bağlar(monkeypatch):
+    """KA6: ana sekmeden "eşimle aram nasıl?" sorusu artık bağlamsız
+    gitmez — sunucu akraba kelimesinden kişiyi çözer ve ölçülen ilişki
+    fısıltısını iliştirir."""
+    from services import circle_context, synastry_service
+
+    monkeypatch.setattr(circle_context, "person_for_relation",
+                        lambda uid, tur: "p1" if tur == "partner" else None)
+    monkeypatch.setattr(circle_context, "circle_whisper",
+                        lambda uid, lang=None: "- eşin: Güneş Terazi")
+    monkeypatch.setattr(
+        synastry_service, "person_counterpart",
+        lambda uid, pid, lang=None: object())
+    monkeypatch.setattr(
+        synastry_service, "whisper_for",
+        lambda uid, karsi, lang, max_chars=600:
+            "Kişi: eşin (Terazi)\n- İletişim: Güçlü · akıcı")
+
+    yakalanan = {}
+
+    def sahte_chat(history, msg, **k):
+        yakalanan["msg"] = msg
+        return "yanıt"
+
+    monkeypatch.setattr(gemini_service, "chat", sahte_chat)
+    with TestClient(app) as client:
+        r = client.post("/api/v1/chat", json={
+            "history": [], "message": "Eşimle aram nasıl olacak?"})
+        assert r.status_code == 200
+    msg = yakalanan["msg"]
+    assert "İLİŞKİ ÖLÇÜMÜ" in msg
+    assert "İletişim: Güçlü" in msg
+    assert "ÇEVRESİ" in msg  # roster da her turda giriyor
+
+
+def test_cevre_fisiltisi_her_turda(monkeypatch):
+    """KA6: kişi anılmayan sohbette bile model çevreyi BİLİR (tali yorum
+    için); derin ölçüm ise iliştirilmez."""
+    from services import circle_context
+
+    monkeypatch.setattr(circle_context, "circle_whisper",
+                        lambda uid, lang=None: "- çocuğun: Güneş Koç")
+    yakalanan = {}
+
+    def sahte_chat(history, msg, **k):
+        yakalanan["msg"] = msg
+        return "yanıt"
+
+    monkeypatch.setattr(gemini_service, "chat", sahte_chat)
+    with TestClient(app) as client:
+        r = client.post("/api/v1/chat",
+                        json={"history": [], "message": "bugün nasılım?"})
+        assert r.status_code == 200
+    assert "çocuğun: Güneş Koç" in yakalanan["msg"]
+    assert "İLİŞKİ ÖLÇÜMÜ" not in yakalanan["msg"]
+
+
 def test_api_semasi_degismedi(monkeypatch):
     """İstek/yanıt şeması korunmalı — istemci sözleşmesi.
 

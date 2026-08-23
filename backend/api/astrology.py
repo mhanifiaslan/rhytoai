@@ -183,7 +183,11 @@ def transit_calendar(user: AuthUser = Depends(get_current_user),
             if yorumlar is None:
                 yorumlar = signal_service.calendar_insights(
                     cal.get("events") or [], lang) or {}
-                cache.set(yorum_anahtari, yorumlar, ttl_seconds=24 * 3600)
+                # Biçim-dışı (boş) sonuç KISA ömürle yazılır (KA3, R9-1
+                # emsali): 24 saat olsaydı tek biçim hatası günün tamamını
+                # yorumsuz kilitlerdi; 1 saatte kendine gelir.
+                cache.set(yorum_anahtari, yorumlar,
+                          ttl_seconds=24 * 3600 if yorumlar else 3600)
             if yorumlar:
                 def _yorumu_isle(o: dict) -> dict:
                     fp_o = signal_service.event_fingerprint(o)

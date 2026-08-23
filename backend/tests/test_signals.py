@@ -134,37 +134,26 @@ class TestSiralamaVeTema:
 
 
 class TestYerellestirme:
-    """R2-S6: kart yüzeyi GÜNDELİK dil, teknik satır dayanak sayfasında."""
+    """Kart yüzeyinin sözleşmesi: AI yorumu (`insight`) istemcide tercih
+    edilir; `headline` = dürüst teknik yedek (KA-turu)."""
 
-    #: Kart cümlesinde ASLA geçmemesi gereken jargon (kullanıcı geri
-    #: bildirimi: "Kiron natal Venüs ile üçgen açısına yaklaşıyor" —
-    #: anlamsız). Teknik terimler ayrı bir alanda, ayrı bir ekranda.
-    JARGON_TR = ["Kiron", "Satürn", "Venüs", "natal", "Kare", "Üçgen",
-                 "orb", "°"]
-    JARGON_EN = ["Chiron", "Saturn", "Venus", "natal", "Square", "Trine",
-                 "orb", "°"]
+    def test_kart_yedegi_durust_teknik_satir(self, monkeypatch):
+        """KA-turu: `headline` artık tema×ton tablosundan GELMEZ — tablo
+        silindi. Gündelik dil görevi herkese üretilen AI yorumunda
+        (`insight`, istemci tercih eder); `headline` yalnız yorum yokken
+        düşülen SON ÇARE ve o da uydurma değil, ölçülmüş teknik satırdır.
 
-    def test_kart_cumlesi_tr_gundelik_dil(self, monkeypatch):
+        Eski davranış cihazda ölçülen kusurdu: 12 sabit cümle, aynı
+        ekranda iki özdeş kart + her sabah aynı bildirim üretiyordu.
+        """
         ham = _hesapla(monkeypatch)
         birinci = prompts.localize_signals("tr", ham)["signals"][0]
-        # Ay natal 4. evde + kare → iç dünya / gerilim.
-        assert birinci["headline"] == (
-            "İç dünyanda gerilim yükseliyor; kendine fazla yüklenmemek "
-            "bugünün işi.")
+        assert birinci["headline"] == birinci["technical"]
         assert birinci["theme_local"] == "İç dünya"
         assert birinci["timing_local"] == "18 Ağustos günü netleşiyor"
-        for jargon in self.JARGON_TR:
-            assert jargon not in birinci["headline"], jargon
-
-    def test_kart_cumlesi_en_gundelik_dil(self, monkeypatch):
-        ham = _hesapla(monkeypatch)
-        birinci = prompts.localize_signals("en", ham)["signals"][0]
-        assert birinci["headline"] == (
-            "Inner tension is rising; not overloading yourself is "
-            "today's work.")
-        assert birinci["timing_local"] == "Peaks on August 18"
-        for jargon in self.JARGON_EN:
-            assert jargon not in birinci["headline"], jargon
+        ing = prompts.localize_signals("en", ham)["signals"][0]
+        assert ing["headline"] == ing["technical"]
+        assert ing["timing_local"] == "Peaks on August 18"
 
     def test_teknik_satir_dayanakta_durur(self, monkeypatch):
         """Teknik bilgi KAYBOLMAZ — 'Neye dayanıyor?' sayfasının ilk satırı."""
@@ -177,15 +166,6 @@ class TestYerellestirme:
         ing = prompts.localize_signals("en", ham)["signals"][0]
         assert ing["technical"] == (
             "Saturn perfects its Square to your natal Moon on August 18.")
-
-    def test_her_tema_ton_ciftinin_cumlesi_var(self):
-        """Eksik kombinasyon kartı teknik cümleye düşürürdü — sessiz kusur."""
-        for lang in ("tr", "en"):
-            p = prompts.get(lang)
-            for tema in signal_service.THEMES:
-                for ton in ("support", "tension", "focus"):
-                    cumle = p.SIGNAL_HUMAN_LINES[tema][ton]
-                    assert cumle and len(cumle) <= 110, (lang, tema, ton)
 
     def test_zamanlama_satirlari(self):
         bugun = {"generated_for": "2026-08-16", "signals": [
@@ -219,37 +199,184 @@ class TestYerellestirme:
         assert yerel["signals"][0]["insight"] == "Deneme yorumu."
 
 
-class TestYorumKatmani:
+class TestYorumPaketi:
+    """KA1: `insight_bundle` — N kart cümlesi + akşam sorusu, TEK çağrı.
+
+    `days_to_exact=1` olan ilk sinyal `significant_signal`'ın "önemli gün"
+    seçimidir; prompta "(bugünün odağı)" işaretiyle girer ve son satırdaki
+    SORU ona bağlanır.
+    """
+
     HAM = {"generated_for": "2026-08-16", "signals": [
         {"transit": "Saturn", "natal": "Moon", "aspect": "square",
-         "orb": 0.8, "exact_on": "2026-08-18", "theme": "inner"},
+         "orb": 0.8, "exact_on": "2026-08-18", "days_to_exact": 1,
+         "movement": "applying", "theme": "inner"},
         {"transit": "Uranus", "natal": "Medium_Coeli",
-         "aspect": "conjunction", "orb": 2.4, "theme": "career"},
+         "aspect": "conjunction", "orb": 2.4, "movement": "separating",
+         "theme": "career"},
     ]}
 
-    def test_dogru_bicim_liste_doner(self, monkeypatch):
+    def test_dogru_bicim_paket_doner(self, monkeypatch):
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: "1. Birinci yorum.\n2. İkinci yorum.")
-        yorumlar = signal_service.signal_insights(self.HAM, "tr")
-        assert yorumlar == ["Birinci yorum.", "İkinci yorum."]
+            lambda prompt, lang=None: ("1. Birinci yorum.\n2. İkinci yorum."
+                                       "\nSORU: Bugün nasıl geçti?"))
+        paket = signal_service.insight_bundle(self.HAM, "tr")
+        assert paket == {"insights": ["Birinci yorum.", "İkinci yorum."],
+                         "checkin_question": "Bugün nasıl geçti?"}
+
+    def test_soru_tire_ise_none(self, monkeypatch):
+        monkeypatch.setattr(
+            signal_service.gemini_service, "generate",
+            lambda prompt, lang=None: "1. Bir.\n2. İki.\nSORU: -")
+        paket = signal_service.insight_bundle(self.HAM, "tr")
+        assert paket["insights"] == ["Bir.", "İki."]
+        assert paket["checkin_question"] is None
+
+    def test_soru_satiri_eksikse_kismi_kabul(self, monkeypatch):
+        """Sabah bildirimi akşam sorusuna rehin olmaz: SORU satırı
+        gelmezse yorumlar YİNE kabul edilir."""
+        monkeypatch.setattr(signal_service.gemini_service, "generate",
+                            lambda prompt, lang=None: "1. Bir.\n2. İki.")
+        paket = signal_service.insight_bundle(self.HAM, "tr")
+        assert paket["insights"] == ["Bir.", "İki."]
+        assert paket["checkin_question"] is None
+
+    def test_uzun_soru_atilir_yorumlar_kalir(self, monkeypatch):
+        uzun_soru = "SORU: " + "s" * 200
+        monkeypatch.setattr(
+            signal_service.gemini_service, "generate",
+            lambda prompt, lang=None: f"1. Bir.\n2. İki.\n{uzun_soru}")
+        paket = signal_service.insight_bundle(self.HAM, "tr")
+        assert paket["insights"] == ["Bir.", "İki."]
+        assert paket["checkin_question"] is None
 
     def test_satir_sayisi_tutmazsa_none(self, monkeypatch):
         monkeypatch.setattr(signal_service.gemini_service, "generate",
                             lambda prompt, lang=None: "1. Tek satır.")
-        assert signal_service.signal_insights(self.HAM, "tr") is None
+        assert signal_service.insight_bundle(self.HAM, "tr") is None
 
     def test_asiri_uzun_satir_none(self, monkeypatch):
         uzun = "1. " + "ç" * 200 + "\n2. Kısa."
         monkeypatch.setattr(signal_service.gemini_service, "generate",
                             lambda prompt, lang=None: uzun)
-        assert signal_service.signal_insights(self.HAM, "tr") is None
+        assert signal_service.insight_bundle(self.HAM, "tr") is None
+
+    def test_prompt_hareket_ve_odak_isaretleri_tasir(self, monkeypatch):
+        """Ç-kusurunun kökü: cümle zamanlama etiketiyle çelişebiliyordu.
+        Prompt artık her satıra movement ipucunu ve önemli sinyale odak
+        işaretini koyar."""
+        yakalanan = {}
+
+        def sahte(prompt, lang=None):
+            yakalanan["prompt"] = prompt
+            return "1. Bir.\n2. İki.\nSORU: -"
+
+        monkeypatch.setattr(signal_service.gemini_service, "generate", sahte)
+        signal_service.insight_bundle(self.HAM, "tr")
+        p = prompts.get("tr")
+        assert p.SIGNAL_PROMPT_APPLYING in yakalanan["prompt"]
+        assert p.SIGNAL_PROMPT_SEPARATING in yakalanan["prompt"]
+        assert p.SIGNAL_PROMPT_FOCUS_MARK in yakalanan["prompt"]
+
+    def test_odak_yoksa_soru_kullanilmaz(self, monkeypatch):
+        """"Önemli gün" hükmü determinist seçicinin: odak yokken modelin
+        yine de yazdığı soru atılır — akşam bildirimi uydurma bir öneme
+        bağlanmaz."""
+        odaksiz = {"generated_for": "2026-08-16", "signals": [
+            {"transit": "Saturn", "natal": "Moon", "aspect": "square",
+             "orb": 2.5, "movement": "applying", "theme": "inner",
+             "active": True}]}
+        assert signal_service.significant_signal(odaksiz) is None
+        monkeypatch.setattr(
+            signal_service.gemini_service, "generate",
+            lambda prompt, lang=None: "1. Bir.\nSORU: Nasıl geçti?")
+        paket = signal_service.insight_bundle(odaksiz, "tr")
+        assert paket["insights"] == ["Bir."]
+        assert paket["checkin_question"] is None
+
+    def test_onemli_gun_secimi(self):
+        # exact_on + days_to_exact <= 1 olan İLK sinyal.
+        assert signal_service.significant_signal(self.HAM) == 0
+        # Kesinleşme uzaktaysa: 1 numara aktif ve dar orb'luysa o.
+        dar = {"signals": [{"transit": "Saturn", "natal": "Sun",
+                            "aspect": "square", "orb": 0.5, "active": True}]}
+        assert signal_service.significant_signal(dar) == 0
+        # Ne kesinleşme ne dar orb: soru üretilmez.
+        genis = {"signals": [{"transit": "Saturn", "natal": "Sun",
+                              "aspect": "square", "orb": 2.5,
+                              "active": True}]}
+        assert signal_service.significant_signal(genis) is None
 
     def test_parmak_izi_tarih_ve_kumeye_bagli(self):
         iz1 = signal_service.signals_fingerprint(self.HAM)
         iz2 = signal_service.signals_fingerprint(
             {**self.HAM, "generated_for": "2026-08-17"})
         assert iz1 != iz2
+
+
+class TestPaketOnbellegi:
+    """KA1/KA2: uç ve bildirim AYNI önbelleği paylaşır; başarısızlık KISA
+    ömürle yazılır (eski `[] 24 saat` zehirlenmesinin onarımı)."""
+
+    HAM = TestYorumPaketi.HAM
+
+    def _bellek(self, monkeypatch):
+        import core.cache as cache_mod
+        depo: dict = {}
+        yazilan_ttl: dict = {}
+        monkeypatch.setattr(cache_mod, "get", depo.get)
+
+        def sahte_set(k, v, ttl_seconds=0, owner_uid=None):
+            depo[k] = v
+            yazilan_ttl[k] = ttl_seconds
+
+        monkeypatch.setattr(cache_mod, "set", sahte_set)
+        return depo, yazilan_ttl
+
+    def test_ayni_gun_tek_uretim(self, monkeypatch):
+        self._bellek(monkeypatch)
+        sayac = {"n": 0}
+
+        def sahte(prompt, lang=None):
+            sayac["n"] += 1
+            return "1. Bir.\n2. İki.\nSORU: Nasıl geçti?"
+
+        monkeypatch.setattr(signal_service.gemini_service, "generate", sahte)
+        bir = signal_service.cached_insight_bundle(self.HAM, "tr")
+        iki = signal_service.cached_insight_bundle(self.HAM, "tr")
+        assert bir == iki and bir["insights"] == ["Bir.", "İki."]
+        assert sayac["n"] == 1
+
+    def test_yalniz_oku_uretmez(self, monkeypatch):
+        self._bellek(monkeypatch)
+        sayac = {"n": 0}
+
+        def sahte(prompt, lang=None):
+            sayac["n"] += 1
+            return "1. Bir.\n2. İki.\nSORU: -"
+
+        monkeypatch.setattr(signal_service.gemini_service, "generate", sahte)
+        assert signal_service.cached_insight_bundle(
+            self.HAM, "tr", generate_if_missing=False) is None
+        assert sayac["n"] == 0  # akşam yolu LLM yakmaz
+
+    def test_basarisizlik_kisa_ttl_ile_yazilir(self, monkeypatch):
+        depo, ttl = self._bellek(monkeypatch)
+        monkeypatch.setattr(signal_service.gemini_service, "generate",
+                            lambda prompt, lang=None: "bozuk çıktı")
+        assert signal_service.cached_insight_bundle(self.HAM, "tr") is None
+        anahtar = next(iter(depo))
+        assert depo[anahtar].get("failed") is True
+        assert ttl[anahtar] == signal_service.BUNDLE_TTL_FAIL
+        # Başarı 24 saatle yazılır.
+        depo.clear(); ttl.clear()
+        monkeypatch.setattr(
+            signal_service.gemini_service, "generate",
+            lambda prompt, lang=None: "1. Bir.\n2. İki.\nSORU: -")
+        assert signal_service.cached_insight_bundle(self.HAM, "tr")
+        anahtar = next(iter(depo))
+        assert ttl[anahtar] == signal_service.BUNDLE_TTL_OK
 
 
 class TestTakvimYorumu:
@@ -422,28 +549,26 @@ class TestTakvimParmakIzi:
 
 
 class TestSignalHumanLinesKapsami:
-    """Ç4/Ç5 regresyon bekçisi: `SIGNAL_HUMAN_LINES` yalnız sinyal
-    kartlarının ücretsiz-katman son çaresinde yaşamalı. Takvim bir daha
-    bu tabloyu kullanmaya BAŞLARSA (ör. birileri eski satırı geri
-    yapıştırırsa) bu test kırılır — tam bu turun kusurunun geri gelmesini
-    yakalayacak şekilde tasarlandı.
+    """KA2 regresyon bekçisi: `SIGNAL_HUMAN_LINES` artık HİÇBİR YERDE yok.
+
+    Ç-turu tabloyu takvimden kaldırıp kartlarda "risk düşük" diye
+    bırakmıştı; cihazda iki özdeş kart + her sabah aynı bildirim olarak
+    geri döndü. Kullanıcı kararı: hazır cümle asla — yorum herkese AI,
+    son çare dürüst teknik satır. Biri tabloyu geri yapıştırırsa bu
+    testler kırılır.
     """
 
-    def test_takvim_yerellestirmesi_tabloya_dokunmaz(self):
-        """`.SIGNAL_HUMAN_LINES` ERİŞİMİ (gerçek kullanım) aranır — takvimin
-        önceki davranışını AÇIKLAYAN yorum satırındaki bare isim geçişi
-        (`SIGNAL_HUMAN_LINES` tırnaksız anılıyor) bilerek dışarıda
-        bırakılır; asıl tehlike kodun tabloyu tekrar OKUMASIdır."""
-        import inspect
-        kaynak = inspect.getsource(prompts.localize_transit_calendar)
-        assert ".SIGNAL_HUMAN_LINES" not in kaynak
+    def test_tablo_modullerde_yok(self):
+        for lang in ("tr", "en"):
+            assert not hasattr(prompts.get(lang), "SIGNAL_HUMAN_LINES"), lang
 
-    def test_sinyal_yerellestirmesi_hala_tabloyu_kullanir(self):
-        """Ters yönde de bir bekçi: tablo YANLIŞLIKLA sinyal kartlarından
-        da silinmemeli (Ç5'te bilerek geri konan davranış)."""
+    def test_yerellestirme_tabloya_erismez(self):
+        """`.SIGNAL_HUMAN_LINES` ERİŞİMİ (gerçek kullanım) aranır — geçmişi
+        anlatan yorumlardaki tırnaksız anma bilerek dışarıda bırakılır."""
         import inspect
-        kaynak = inspect.getsource(prompts.localize_signals)
-        assert ".SIGNAL_HUMAN_LINES" in kaynak
+        for fonksiyon in (prompts.localize_signals,
+                          prompts.localize_transit_calendar):
+            assert ".SIGNAL_HUMAN_LINES" not in inspect.getsource(fonksiyon)
 
 
 class TestTakvimZenginlestirme:
@@ -511,6 +636,51 @@ PROFIL = {"uid": "u1", "birthDate": "1990-05-12", "birthTime": "14:30",
           "birthCity": "Istanbul", "displayName": "t"}
 
 
+class TestSinyalUcu:
+    """KA1: /reports/signals — yorum HERKESE (abonelik kapısı KALKTI) ve
+    yanıt derin bağlantı için `fingerprint` + akşam için
+    `checkin_question` taşır."""
+
+    def test_ucretsiz_kullanici_da_yorum_alir(self, monkeypatch):
+        import pytest
+        try:
+            from main import app
+        except Exception as exc:  # pragma: no cover - ortama bağlı
+            pytest.skip(f"FastAPI uygulaması içe aktarılamadı: {exc}")
+        from fastapi.testclient import TestClient
+        from api import reports
+        from core import entitlements
+        from services import profile_service
+
+        monkeypatch.setattr(entitlements, "FORCE_PLUS", False)
+        # AÇIKÇA abone DEĞİL — eski kodda bu kullanıcı yorumsuz kalırdı.
+        monkeypatch.setattr(reports.entitlements, "is_subscriber",
+                            lambda uid: False)
+        monkeypatch.setattr(profile_service, "get_profile",
+                            lambda uid: dict(PROFIL))
+        ham = {"generated_for": "2026-08-16", "signals": [
+            {"transit": "Saturn", "natal": "Moon", "aspect": "square",
+             "orb": 0.8, "exact_on": "2026-08-18", "days_to_exact": 1,
+             "movement": "applying", "theme": "inner", "tone": "tension"},
+        ], "disclosures": []}
+        monkeypatch.setattr(signal_service, "cached_signals",
+                            lambda profile, today=None: ham)
+        monkeypatch.setattr(
+            signal_service, "cached_insight_bundle",
+            lambda h, lang, generate_if_missing=True: {
+                "insights": ["Bugüne özgü cümle."],
+                "checkin_question": "Bugün nasıl geçti?"})
+
+        with TestClient(app) as client:
+            yanit = client.get("/api/v1/reports/signals",
+                               headers={"Authorization": "Bearer test-sig"})
+        assert yanit.status_code == 200, yanit.text
+        veri = yanit.json()["data"]
+        assert veri["signals"][0]["insight"] == "Bugüne özgü cümle."
+        assert veri["fingerprint"]
+        assert veri["checkin_question"] == "Bugün nasıl geçti?"
+
+
 class TestOnbellekVeBildirim:
     def test_cached_signals_gunde_bir_hesaplar(self, monkeypatch):
         """Uç ve bildirim aynı kaydı paylaşır: ikinci çağrı hesap yapmaz.
@@ -544,21 +714,42 @@ class TestOnbellekVeBildirim:
     def test_cached_signals_dogum_verisi_yoksa_none(self):
         assert signal_service.cached_signals({"uid": "u2"}) is None
 
-    def test_bildirim_bir_numarali_sinyalden(self, monkeypatch):
-        """Bildirimde de kart cümlesi görünür — jargon telefona düşmez."""
+    HAM_SINYAL = {"generated_for": "2026-08-16", "signals": [
+        {"transit": "Saturn", "natal": "Moon", "aspect": "square",
+         "orb": 0.8, "movement": "applying", "active": True,
+         "exact_on": "2026-08-18", "days_to_exact": 2,
+         "theme": "inner", "tone": "tension"}], "disclosures": []}
+
+    def test_bildirim_bir_numarali_sinyalin_ai_yorumu(self, monkeypatch):
+        """KA2: sabah bildirimi artık sabit tablo DEĞİL, o güne özgü AI
+        cümlesi (uçla paylaşılan paket). Eski davranışta tema+ton
+        haftalarca sabit kaldığı için herkese her sabah birebir aynı
+        metin gidiyordu — kullanıcının cihaz bulgusu."""
         from services import notification_service
-        ham = {"generated_for": "2026-08-16", "signals": [
-            {"transit": "Saturn", "natal": "Moon", "aspect": "square",
-             "orb": 0.8, "movement": "applying", "active": True,
-             "exact_on": "2026-08-18", "days_to_exact": 2,
-             "theme": "inner", "tone": "tension"}], "disclosures": []}
         monkeypatch.setattr(signal_service, "cached_signals",
-                            lambda profile, today=None: ham)
-        baslik, govde = notification_service.signal_push(PROFIL, "tr")
+                            lambda profile, today=None: self.HAM_SINYAL)
+        monkeypatch.setattr(
+            signal_service, "cached_insight_bundle",
+            lambda ham, lang, generate_if_missing=True: {
+                "insights": ["Bugüne özgü tek cümle."],
+                "checkin_question": None})
+        baslik, govde, iz = notification_service.signal_push(PROFIL, "tr")
         assert baslik == "Bugün: İç dünya"
-        assert govde == ("İç dünyanda gerilim yükseliyor; kendine fazla "
-                         "yüklenmemek bugünün işi.")
-        assert "natal" not in govde and "Satürn" not in govde
+        assert govde == "Bugüne özgü tek cümle."
+        assert iz  # derin bağlantı eşleşmesi için parmak izi taşır
+
+    def test_bildirim_paket_yoksa_teknik_satira_duser(self, monkeypatch):
+        """AI üretilemezse gövde SABİT CÜMLE DEĞİL dürüst teknik satır —
+        o da ölçülmüş veridir ve tarih içerdiği için günden güne değişir."""
+        from services import notification_service
+        monkeypatch.setattr(signal_service, "cached_signals",
+                            lambda profile, today=None: self.HAM_SINYAL)
+        monkeypatch.setattr(
+            signal_service, "cached_insight_bundle",
+            lambda ham, lang, generate_if_missing=True: None)
+        baslik, govde, iz = notification_service.signal_push(PROFIL, "tr")
+        assert govde == ("Satürn, natal Ay ile Kare açısını 18 Ağustos "
+                         "günü kesinleştiriyor.")
 
     def test_bildirim_sinyal_yoksa_none(self, monkeypatch):
         """None dönüşü çağıranı paylaşımlı burç satırına düşürür."""
@@ -567,17 +758,45 @@ class TestOnbellekVeBildirim:
                             lambda profile, today=None: None)
         assert notification_service.signal_push(PROFIL, "tr") is None
 
-    def test_bildirim_uzun_satiri_reddeder(self, monkeypatch):
-        from services import notification_service, prompts
-        ham = {"signals": [{"transit": "Saturn", "natal": "Moon",
-                            "aspect": "square", "theme": "inner"}]}
+    def test_bildirim_uzun_yorumda_teknige_duser(self, monkeypatch):
+        """Taşan AI cümlesi kırpılıp gönderilmez (yarım cümle kuralı) —
+        teknik satıra düşülür; o da taşarsa bildirim None."""
+        from services import notification_service
         monkeypatch.setattr(signal_service, "cached_signals",
-                            lambda profile, today=None: ham)
+                            lambda profile, today=None: self.HAM_SINYAL)
         monkeypatch.setattr(
-            prompts, "localize_signals",
-            lambda lang, data: {"signals": [{"headline": "u" * 200,
-                                             "theme_local": "İç dünya"}]})
-        assert notification_service.signal_push(PROFIL, "tr") is None
+            signal_service, "cached_insight_bundle",
+            lambda ham, lang, generate_if_missing=True: {
+                "insights": ["u" * 200], "checkin_question": None})
+        baslik, govde, iz = notification_service.signal_push(PROFIL, "tr")
+        assert govde.startswith("Satürn, natal Ay ile")
+
+    def test_checkin_push_yalniz_onbellekten(self, monkeypatch):
+        """KA4: akşam sorusu önbellekten OKUNUR; yoksa None döner ve
+        üretim HİÇ tetiklenmez (akşam LLM yakmaz)."""
+        from services import notification_service
+        monkeypatch.setattr(signal_service, "cached_signals",
+                            lambda profile, today=None: self.HAM_SINYAL)
+        cagrilar = []
+
+        def sahte_paket(ham, lang, generate_if_missing=True):
+            cagrilar.append(generate_if_missing)
+            if generate_if_missing:
+                return {"insights": ["x"], "checkin_question": "Soru?"}
+            return None
+
+        monkeypatch.setattr(signal_service, "cached_insight_bundle",
+                            sahte_paket)
+        assert notification_service.checkin_push(PROFIL, "tr") is None
+        assert cagrilar == [False]  # yalnız-oku ile çağrıldı
+
+        monkeypatch.setattr(
+            signal_service, "cached_insight_bundle",
+            lambda ham, lang, generate_if_missing=True: {
+                "insights": ["x"], "checkin_question": "Bugün nasıl geçti?"})
+        baslik, govde = notification_service.checkin_push(PROFIL, "tr")
+        assert govde == "Bugün nasıl geçti?"
+        assert baslik == "Rytho merak ediyor"
 
     def test_bildirim_hatada_dusmez(self, monkeypatch):
         """Sinyal hesabı düşerse bildirim düşmez; None ile yedeğe geçilir."""
