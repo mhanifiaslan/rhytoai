@@ -261,6 +261,42 @@ def natal_facts(birth: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def filter_transit_hits(raw_aspects: list[dict[str, Any]],
+                        natal_points: frozenset | set = _ASPECT_POINTS,
+                        cap: int = _MAX_TRANSITS) -> list[dict[str, Any]]:
+    """Transit süzgeç doktrini TEK yerde (GT1): majör açı, Ay'sız gezenler,
+    orb ≤ 3.0, yavaş-önce sıralama, üst sınır.
+
+    `transit_facts` ve `synastry_service.pair_transits` aynı doktrini
+    kullanır — iki kopya iki ayrı doktrine ayrışırdı. `movement` alanı da
+    taşınır (kaynakta zaten var; çift katmanı "güçleniyor/sönüyor" der).
+    """
+    vurus = []
+    for a in raw_aspects or []:
+        if a.get("aspect") not in _MAJOR_ASPECTS:
+            continue
+        gezen, natal = a.get("p1"), a.get("p2")
+        if gezen not in _TRANSIT_MOVERS or natal not in natal_points:
+            continue
+        orb = abs(float(a.get("orbit") or 0.0))
+        if orb > _TRANSIT_MAX_ORB:
+            continue
+        vurus.append({"transit": gezen, "natal": natal,
+                      "aspect": a["aspect"], "orb": orb,
+                      "movement": a.get("movement")})
+    # Önce yavaş gezenler, sonra orb. Salt orb sıralaması listeyi her gün
+    # Merkür'le doldurup dönemin asıl temasını dışarıda bırakıyordu.
+    vurus.sort(key=lambda v: (0 if v["transit"] in _SLOW_MOVERS else 1,
+                              v["orb"]))
+    return vurus[:cap]
+
+
+def is_slow_mover(planet: str) -> bool:
+    """Gezenin yavaşlardan olup olmadığı — çift katmanının birleşim
+    sıralaması da aynı doktrini kullansın diye dışa açık."""
+    return planet in _SLOW_MOVERS
+
+
 def transit_facts(birth: dict[str, Any]) -> dict[str, Any]:
     """Bugünkü gökyüzünün natal haritaya değdiği noktalar.
 
@@ -272,22 +308,7 @@ def transit_facts(birth: dict[str, Any]) -> dict[str, Any]:
         **astro_service.subject_kwargs(birth),
         hour_known=astro_service.hour_is_known(birth),
     )
-    vurus = []
-    for a in ham.get("aspects_to_natal", []):
-        if a.get("aspect") not in _MAJOR_ASPECTS:
-            continue
-        gezen, natal = a.get("p1"), a.get("p2")
-        if gezen not in _TRANSIT_MOVERS or natal not in _ASPECT_POINTS:
-            continue
-        orb = abs(float(a.get("orbit") or 0.0))
-        if orb > _TRANSIT_MAX_ORB:
-            continue
-        vurus.append({"transit": gezen, "natal": natal,
-                      "aspect": a["aspect"], "orb": orb})
-    # Önce yavaş gezenler, sonra orb. Salt orb sıralaması listeyi her gün
-    # Merkür'le doldurup dönemin asıl temasını dışarıda bırakıyordu.
-    vurus.sort(key=lambda v: (0 if v["transit"] in _SLOW_MOVERS else 1,
-                              v["orb"]))
+    vurus = filter_transit_hits(ham.get("aspects_to_natal", []))
 
     # YAKLAŞANLAR (T3): önümüzdeki 7 günün ilk 2 kesinleşmesi. Takvim
     # üretilemezse günlük okuma yaklaşansız devam eder — vuruşlarla aynı
@@ -305,7 +326,7 @@ def transit_facts(birth: dict[str, Any]) -> dict[str, Any]:
     except Exception as exc:
         logger.warning("Yaklaşan transitler üretilemedi: %s", exc)
 
-    return {"hits": vurus[:_MAX_TRANSITS], "upcoming": yaklasan}
+    return {"hits": vurus, "upcoming": yaklasan}
 
 
 # --------------------------------------------------------------------------

@@ -153,7 +153,10 @@ Future<void> _forgetLabel(String personId) async {
 /// Türkçe-güvenli küçük harf: `toLowerCase` "İ"yi `i + birleşik nokta`
 /// yapar ve `contains` sessizce kaçırır (bkz. backend
 /// `prompt_composer.normalize` — aynı tuzağın istemci tarafı).
-String _normalize(String s) => s.toLowerCase().replaceAll('̇', '');
+/// GT-turu'nda dışa açıldı: @-bahsetme süzgeci de aynı kuralı kullanır.
+String normalizeTr(String s) => s.toLowerCase().replaceAll('̇', '');
+
+String _normalize(String s) => normalizeTr(s);
 
 /// KA6: mesaj cihazdaki kişi etiketlerinden birini (adını) anıyorsa o
 /// kişinin kimliği; yoksa null.

@@ -4603,6 +4603,42 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Yakınım'**
   String get relationOther;
+
+  /// No description provided for @relationshipTodayLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'BUGÜN ARANIZA DOKUNAN GÖKYÜZÜ'**
+  String get relationshipTodayLabel;
+
+  /// No description provided for @relationshipTodayQuiet.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün aranıza dokunan belirgin bir transit yok — sakin bir gün.'**
+  String get relationshipTodayQuiet;
+
+  /// No description provided for @relationshipTodayAskPrefill.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bugün {name} ile aramıza dokunan gökyüzünü konuşalım.'**
+  String relationshipTodayAskPrefill(String name);
+
+  /// No description provided for @chatMentionAttached.
+  ///
+  /// In tr, this message translates to:
+  /// **'{name} bağlamı ekli'**
+  String chatMentionAttached(String name);
+
+  /// No description provided for @chatMentionClearTooltip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlamı kaldır'**
+  String get chatMentionClearTooltip;
+
+  /// No description provided for @chatMentionEmpty.
+  ///
+  /// In tr, this message translates to:
+  /// **'Eşleşen kişi yok — Çevrem\'den ekleyebilirsin'**
+  String get chatMentionEmpty;
 }
 
 class _AppLocalizationsDelegate

@@ -2561,4 +2561,28 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get relationOther => 'Yakınım';
+
+  @override
+  String get relationshipTodayLabel => 'BUGÜN ARANIZA DOKUNAN GÖKYÜZÜ';
+
+  @override
+  String get relationshipTodayQuiet =>
+      'Bugün aranıza dokunan belirgin bir transit yok — sakin bir gün.';
+
+  @override
+  String relationshipTodayAskPrefill(String name) {
+    return 'Bugün $name ile aramıza dokunan gökyüzünü konuşalım.';
+  }
+
+  @override
+  String chatMentionAttached(String name) {
+    return '$name bağlamı ekli';
+  }
+
+  @override
+  String get chatMentionClearTooltip => 'Bağlamı kaldır';
+
+  @override
+  String get chatMentionEmpty =>
+      'Eşleşen kişi yok — Çevrem\'den ekleyebilirsin';
 }

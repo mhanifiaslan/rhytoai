@@ -252,7 +252,9 @@ WHISPER_RELATIONSHIP = (
     "yazmayan hiçbir eksen ya da açı uydurma. Cevabını BU İKİ KİŞİNİN "
     "ilişkisine kur; kullanıcının kendi haritasından genel cevap verme. "
     "En az bir ekseni ya da dayanak açıyı ADIYLA an. Sayısal uyum puanı "
-    "VERME — ürün ilişkilere puan vermez):"
+    "VERME — ürün ilişkilere puan vermez. 'Bugün aranıza dokunan gökyüzü' "
+    "satırları varsa onlar BUGÜNÜN ölçümüdür: yorumunu bugünün üstüne "
+    "taze kur; sabit eksen cümlelerini her gün aynı sözlerle tekrarlama):"
 )
 #: Çevre listesi (KA6): arka plan bilgisi — model çevreyi BİLİR ama
 #: sayıp dökmez; konu değince doğal biçimde işe katar.
@@ -335,6 +337,15 @@ CHART_UPCOMING_LABEL = "Önümüzdeki 7 günün kesinleşmeleri"
 CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
 #: Yaklaşan kesinleşme satırı (T3): orb yerine tarih taşır.
 CHART_UPCOMING_FMT = "{date}: {transit} → {natal} {aspect}"
+
+#: Çift-transit satırları (GT-turu): "bugün aranıza dokunan gökyüzü".
+#: Yan adlandırma ek ALMAZ ("Ayşe tarafında") — keyfî ada Türkçe iyelik
+#: eki yapıştırmak yazım hatası üretirdi.
+PAIR_TODAY_LABEL = "Bugün aranıza dokunan gökyüzü:"
+PAIR_SIDE_SELF = "sende"
+PAIR_SIDE_OTHER_FMT = "{label} tarafında"
+PAIR_TRANSIT_FMT = "{side}: {transit} → {natal} {aspect} ({orb}°{movement})"
+PAIR_NO_TRANSITS = "bugün ikinize dokunan belirgin transit yok"
 CHART_ASPECT_FMT = "{p1} {aspect} {p2} ({orb}°)"
 
 #: Sohbet fısıltısının BaZi satır etiketleri (B8).
@@ -516,6 +527,10 @@ anlatan 90-130 kelimelik kısa bir metin yaz.
 BUGÜNÜN GÖKYÜZÜ ({today}):
 - Ay evresi: {moon_name} {moon_emoji} (aydınlanma %{illumination})
 - Retro gezegenler: {retros}
+
+BUGÜN İKİNİZE DOKUNAN GÖKYÜZÜ (çifte özgü, bugünün ölçümü — okumanın
+"bugün"ü buradan gelsin; genel Ay evresi tek başına "bugün" sayılmaz):
+{pair_transits}
 
 ARALARINDAKİ KARŞILIKLI AÇILAR:
 {aspects}

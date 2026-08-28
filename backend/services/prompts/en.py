@@ -270,7 +270,9 @@ WHISPER_RELATIONSHIP = (
     "answer on THIS relationship between these two people, not on the "
     "reader's own chart in general. Name at least one axis or basis aspect. "
     "Do NOT give a numeric compatibility score — this product does not "
-    "score relationships):"
+    "score relationships. If 'Today's sky touching the two of you' lines "
+    "are present, they are TODAY'S measurement: build your reading on "
+    "today; never repeat the static axis wording day after day):"
 )
 #: Circle roster (KA6): background knowledge — the model KNOWS the circle
 #: but never recites it; it weaves it in when the topic touches someone.
@@ -354,6 +356,13 @@ CHART_UPCOMING_LABEL = "Perfections in the next 7 days"
 #: Transit line: "Saturn → Sun opposition (0.8°)". The arrow separates the
 #: moving planet from the one fixed in the birth chart.
 CHART_TRANSIT_FMT = "{transit} → {natal} {aspect} ({orb}°)"
+#: Pair-transit lines (GT round): "today's sky touching the two of you".
+PAIR_TODAY_LABEL = "Today's sky touching the two of you:"
+PAIR_SIDE_SELF = "for you"
+PAIR_SIDE_OTHER_FMT = "for {label}"
+PAIR_TRANSIT_FMT = "{side}: {transit} → {natal} {aspect} ({orb}°{movement})"
+PAIR_NO_TRANSITS = "no notable transit touching the two of you today"
+
 #: Upcoming perfection line (T3): carries a date instead of an orb.
 CHART_UPCOMING_FMT = "{date}: {transit} → {natal} {aspect}"
 CHART_ASPECT_FMT = "{p1} {aspect} {p2} ({orb}°)"
@@ -539,6 +548,11 @@ TASK: Write 90-130 words on the state of the dynamic between {name_a} and
 TODAY'S SKY ({today}):
 - Moon phase: {moon_name} {moon_emoji} ({illumination}% illuminated)
 - Retrograde planets: {retros}
+
+TODAY'S SKY TOUCHING THE TWO OF THEM (pair-specific, today's measurement —
+build the "today" of the reading on THIS; the moon phase alone is not
+"today"):
+{pair_transits}
 
 CROSS-ASPECTS BETWEEN THEM:
 {aspects}

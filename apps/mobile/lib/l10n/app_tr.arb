@@ -1216,5 +1216,14 @@
   "relationSibling": "Kardeşim",
   "relationFriend": "Arkadaşım",
   "relationWork": "İş arkadaşım",
-  "relationOther": "Yakınım"
+  "relationOther": "Yakınım",
+
+  "relationshipTodayLabel": "BUGÜN ARANIZA DOKUNAN GÖKYÜZÜ",
+  "relationshipTodayQuiet": "Bugün aranıza dokunan belirgin bir transit yok — sakin bir gün.",
+  "relationshipTodayAskPrefill": "Bugün {name} ile aramıza dokunan gökyüzünü konuşalım.",
+  "@relationshipTodayAskPrefill": { "placeholders": { "name": { "type": "String" } } },
+  "chatMentionAttached": "{name} bağlamı ekli",
+  "@chatMentionAttached": { "placeholders": { "name": { "type": "String" } } },
+  "chatMentionClearTooltip": "Bağlamı kaldır",
+  "chatMentionEmpty": "Eşleşen kişi yok — Çevrem'den ekleyebilirsin"
 }

@@ -2574,4 +2574,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get relationOther => 'Close to me';
+
+  @override
+  String get relationshipTodayLabel => 'TODAY\'S SKY BETWEEN YOU';
+
+  @override
+  String get relationshipTodayQuiet =>
+      'No notable transit touches the two of you today — a quiet day.';
+
+  @override
+  String relationshipTodayAskPrefill(String name) {
+    return 'Let\'s talk about today\'s sky touching me and $name.';
+  }
+
+  @override
+  String chatMentionAttached(String name) {
+    return 'Context attached: $name';
+  }
+
+  @override
+  String get chatMentionClearTooltip => 'Remove context';
+
+  @override
+  String get chatMentionEmpty => 'No match — add people from My Circle';
 }

@@ -230,6 +230,23 @@ korpusa girdi; getirme kullanıcının haritasıyla kişiselleşti.
 
 Marj matematiği değişmedi: sohbet turu ~$0,0020 → ~$0,0021.
 
+## 6g. GT-turu: çift-transit ölçümü + sohbette @-bahsetme — 2026-08-28
+
+Kök neden: ilişki katmanında SIFIR tarih farkındalığı vardı — fısıltı her
+gün aynı eksen satırlarını taşıyor, "günlük" ikili okumanın bugün girdisi
+bile herkese aynı Ay evresiydi. Onarım LLM'siz: her çift için "bugün
+aranıza dokunan gökyüzü" ölçümü (`pair_transits`).
+
+| Kalem | Değişim | Not |
+|---|---|---|
+| Çift-transit ölçümü | **$0** | LLM'siz efemeris (emsal: §1 ilişki eksenleri); `pair-transits-{v}-{çift}-{gün}` 36s önbellek; hacim kişi kontenjanı (1/10) + arkadaş sayısıyla sınırlı CPU |
+| Sohbet fısıltısı | +~80 girdi token | yalnız ilişki bağlamı AKTİFKEN (tavan 600→900 kr); taze AI yorumu zaten ödenen sohbet çağrısından gelir |
+| Dyad okuması | **değişmedi** (3 jeton) | prompt çifte özgü "bugün" kazandı — aynı çağrı, gerçek günlük içerik |
+| İlişki ekranı şeridi | **$0** | ölçüm ücretsiz katmana da görünür ("hesap bedava, yorum paralı") |
+| @-bahsetme | **$0** | tamamen istemci; sunucuya yalnız mevcut kimlik alanları gider |
+
+Marj matematiği değişmedi.
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

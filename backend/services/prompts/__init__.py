@@ -703,6 +703,47 @@ def localize_relationship_axes(lang: str | None, data: dict | None,
     return sonuc
 
 
+#: Destekleyici sayılan açılar — şeritteki renklendirme dayanak
+#: satırlarının idiomunu izler (lilac/copper).
+_SUPPORTIVE_ASPECTS = frozenset(("conjunction", "trine", "sextile"))
+
+
+def localize_pair_transits(lang: str | None, data: dict | None,
+                           other_label: str) -> dict:
+    """Çift-transit ölçümünü (GT-turu) isteğin diline çevirir.
+
+    Her vuruş hem alanlarıyla hem hazır `text` satırıyla döner; mobil
+    şerit sunucu metnini olduğu gibi çizer (yan etiketi kişi yolunda
+    ilişki etiketidir — gerçek ad sunucuda yok).
+    """
+    if not data:
+        return {}
+    p = get(lang)
+
+    def vurus(v: dict) -> dict:
+        yan = (p.PAIR_SIDE_SELF if v.get("side") == "user"
+               else p.PAIR_SIDE_OTHER_FMT.format(label=other_label))
+        hareket = v.get("movement")
+        hareket_yerel = p.MOVEMENT_NAMES.get(hareket, "") if hareket else ""
+        return {**v,
+                "side_label": yan,
+                "transit_local": planet_name(lang, v.get("transit")),
+                "natal_local": planet_name(lang, v.get("natal")),
+                "aspect_local": aspect_name(lang, v.get("aspect")),
+                "movement_local": hareket_yerel,
+                "supportive": v.get("aspect") in _SUPPORTIVE_ASPECTS,
+                "text": p.PAIR_TRANSIT_FMT.format(
+                    side=yan,
+                    transit=planet_name(lang, v.get("transit")),
+                    natal=planet_name(lang, v.get("natal")),
+                    aspect=aspect_name(lang, v.get("aspect")),
+                    orb=v.get("orb"),
+                    movement=f", {hareket_yerel}" if hareket_yerel else "")}
+
+    return {"date": data.get("date"),
+            "hits": [vurus(v) for v in (data.get("hits") or [])]}
+
+
 def localize_synastry(lang: str | None, synastry: dict | None) -> dict:
     """Sinastri çıktısındaki iki kişinin nokta adlarını ve açıları çevirir."""
     if not synastry:

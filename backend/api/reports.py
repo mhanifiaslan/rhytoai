@@ -507,6 +507,19 @@ def dyad(req: RelationshipRequest,
     synastry = astro_service.get_synastry(
         profile_service.birth_kwargs(me), karsi.birth)
     sky = prompts.localize_sky(lang, get_sky_now())
+    # GT5: çifte özgü BUGÜN prompt'a girer — "günlük" okuma artık gerçekten
+    # çift için günlük (eskiden tek günlük girdi herkese aynı Ay evresiydi).
+    # Uç kurar, servis biçimler; ölçüm düşerse okuma bugünsüz üretilir.
+    cift_satirlar = ""
+    try:
+        gunluk = synastry_service.pair_transits(
+            user.uid, karsi, today=entitlements.user_local_date(user.uid))
+        cift_satirlar = "\n".join(
+            "- " + s for s in synastry_service.pair_transit_lines(
+                (gunluk or {}).get("hits") or [], karsi.label, lang))
+    except Exception as exc:
+        logger.warning("Dyad çift transiti üretilemedi (%s): %s",
+                       user.uid, exc)
     # Bedeli İSTEYEN taraf öder; arkadaş aynı gün içinde aynı okumayı
     # önbellekten ücretsiz görür (anahtar çift bazlı).
     report = report_service.dyad_reading(
@@ -515,6 +528,7 @@ def dyad(req: RelationshipRequest,
         synastry, sky, lang=lang,
         spend=wallet.spender(user.uid, "dyad", lang=lang),
         refund=lambda: wallet.refund_spend(user.uid, "dyad"),
+        pair_transits=cift_satirlar,
     )
 
     return {"status": "success", "data": {
@@ -607,6 +621,21 @@ def relationship(req: RelationshipRequest,
 
         veri = prompts.localize_relationship_axes(lang, eksenler,
                                                   karsi.relation)
+
+        # GT3: bugünün çifte özgü gökyüzü — ÖLÇÜMDÜR ve abonelik dalından
+        # ÖNCE eklenir: ücretsiz katman da görür ("hesap bedava, yorum
+        # paralı"). Ölçüm düşerse yanıt today'siz döner, ekran şeridi
+        # gizler — uç düşmez.
+        try:
+            gunluk = synastry_service.pair_transits(
+                user.uid, karsi,
+                today=entitlements.user_local_date(user.uid))
+            if gunluk is not None:
+                veri["today"] = prompts.localize_pair_transits(
+                    lang, gunluk, karsi.label)
+        except Exception as exc:
+            logger.warning("Çift transit ölçümü üretilemedi (%s): %s",
+                           user.uid, exc)
 
         if entitlements.is_subscriber(user.uid):
             okuma = report_service.relationship_reading(

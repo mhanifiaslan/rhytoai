@@ -119,6 +119,9 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 85 | Sohbet çevresi (KA6): ana sekmeden "eşimle aram nasıl?" sorusu eşin burcunu ve ölçülen eksenleri anan cevap alıyor; cihazdaki adla sorunca da ("Ayşe nasıl?") aynı bağlam geliyor; ad sunucu loglarında YOK | ⬜ | 1.9.0+25 + sunucu |
 | 86 | Sohbet derinliği (KA8): "bu hafta beni ne bekliyor?" yaklaşan kesinleşmelere dayanan cevap alıyor; konuşma listesinden yeniden açılan kişi-bağlamlı sohbet bağlamını koruyor | ⬜ | 1.9.0+25 + sunucu |
 | 87 | Kitap korpusu (RD): "param neden birikmiyor" / "babamla aram düzelir mi" soruları haritaya özgü, kadim kaynaktan beslenen DERİN cevap alıyor; cevapta kitap/yazar adı GEÇMİYOR; ölüm/hastalık hükmü sızmıyor | ⬜ | sunucu (RD-turu) |
+| 88 | Günlük çift ölçümü (GT): ilişki ekranında (arkadaş VE Çevrem kişisi) "Bugün aranıza dokunan gökyüzü" şeridi gerçek ölçümle; ertesi gün İÇERİK DEĞİŞİYOR; sakin günde dürüst satır; ücretsiz hesapta şerit görünür, AI okuma kilitli | ⬜ | 1.10.0+26 + sunucu |
+| 89 | Taze ilişki sohbeti (GT): "eşimle aram bugün nasıl?" cevabı BUGÜNÜN transitine dayanıyor; ertesi gün aynı soru farklı dayanak anıyor; dyad okuması çifte özgü "bugün" içeriyor | ⬜ | sunucu |
+| 90 | @-bahsetme (GT): sohbette '@' yazınca kişiler+arkadaşlar listeleniyor; seçim adı metne yazıyor, "bağlamı ekli" çipi çıkıyor; cevap o kişinin ölçümüne dayanıyor; ✕ bağlamı düşürüyor; kişi ADI sunucu loglarında yok | ⬜ | 1.10.0+26 |
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,

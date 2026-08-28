@@ -7,9 +7,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/api.dart';
 import '../../core/conversations.dart';
+import '../../core/friends.dart';
 import '../../core/people.dart';
 import '../../core/sound.dart';
 import '../../core/wallet.dart';
+import '../people/person_form_screen.dart' show relationIcon, relationLabel;
+import 'mention.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
@@ -77,6 +80,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// Arşiv tohumu yükleniyor mu (yalnızca var olan konu açılırken).
   bool _seeding = false;
 
+  /// @-bahsetme durumu (GT6): mesaj başına TEK bağlam; ikinci seçim
+  /// ilkini değiştirir; ✕ temizler; başarılı gönderimde sıfırlanır.
+  /// Metinden adı elle silmek çipi otomatik DÜŞÜRMEZ (✕ kaçış yolu —
+  /// belgelenen davranış).
+  String? _mentionPersonId;
+  String? _mentionFriendUid;
+  String? _mentionName;
+  MentionToken? _activeMention;
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +96,48 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (_conversationId != null) _seed();
     final tohum = widget.initialText;
     if (tohum != null && tohum.isNotEmpty) _controller.text = tohum;
+    // Dinleyici girece hareketlerini de yakalar — FocusNode gerekmez.
+    _controller.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    final secim = _controller.selection;
+    final belirtec = secim.isCollapsed
+        ? activeMentionToken(_controller.text, secim.end)
+        : null;
+    if (belirtec?.start != _activeMention?.start ||
+        belirtec?.query != _activeMention?.query) {
+      setState(() => _activeMention = belirtec);
+    }
+  }
+
+  void _selectMention(MentionCandidate aday) {
+    final belirtec = _activeMention;
+    if (belirtec == null) return;
+    HapticFeedback.selectionClick();
+    final metin = _controller.text;
+    final girece = _controller.selection.end;
+    final yeni = metin.replaceRange(belirtec.start, girece,
+        '${aday.display} ');
+    _controller.value = TextEditingValue(
+      text: yeni,
+      selection: TextSelection.collapsed(
+          offset: belirtec.start + aday.display.length + 1),
+    );
+    setState(() {
+      _mentionPersonId = aday.personId;
+      _mentionFriendUid = aday.friendUid;
+      _mentionName = aday.display;
+      _activeMention = null;
+    });
+  }
+
+  void _clearMention() {
+    setState(() {
+      _mentionPersonId = null;
+      _mentionFriendUid = null;
+      _mentionName = null;
+    });
   }
 
   /// Arşivden TEK SEFERLİK tohum. Stream değil — sunucu her turu saniyeler
@@ -158,8 +212,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // karşı taranır — "Ayşe'yle aram nasıl?" ana sekmeden sorulsa da
       // doğru kişinin ölçümü sohbete girer. Ad sunucuya GİTMEZ, yalnız
       // kimlik gider (gizlilik kuralı: etiket cihazda kalır).
+      // GT6: @-bahsetme her şeyi döver — açık niyet sezgiden önce gelir.
       String? adEslesen;
-      if (widget.friendUid == null && widget.personId == null) {
+      if (widget.friendUid == null && widget.personId == null &&
+          _mentionPersonId == null && _mentionFriendUid == null) {
         final kisiler = ref.read(peopleProvider).value ?? const <Person>[];
         adEslesen = matchPersonIdByLabel(text, kisiler);
       }
@@ -167,16 +223,19 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         'history': son20,
         'message': text,
         'conversation_id': _conversationId,
-        // R4-2: arkadaş bağlamı bu konuşmanın HER mesajıyla gider —
-        // "peki ya tartıştığımızda?" gibi takip soruları da Erkan'la
-        // ölçülen eksenler üzerinden cevaplanır.
-        if (widget.friendUid != null) 'friend_uid': widget.friendUid,
-        if (widget.personId != null) 'person_id': widget.personId,
-        if (widget.personId == null && adEslesen != null)
-          'person_id': adEslesen,
+        // R4-2/GT6: bağlam alanları tek yerde kurulur (test edilebilir
+        // saf fonksiyon); öncelik: bahsetme > ekran > ad eşlemesi.
+        ...chatContextFields(
+          mentionPersonId: _mentionPersonId,
+          mentionFriendUid: _mentionFriendUid,
+          widgetPersonId: widget.personId,
+          widgetFriendUid: widget.friendUid,
+          labelMatch: adEslesen,
+        ),
         // KA-turu: check-in cevabı tek mesajlık da olsa hafızaya işlensin.
         if (widget.source != null) 'source': widget.source,
       });
+      if (_mentionName != null) _clearMention();
       final veri = response.data as Map;
       setState(() {
         _messages.add((sender: 'AI', text: veri['reply'] ?? ''));
@@ -202,6 +261,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void dispose() {
     // Sızıntı düzeltmesi: her açılış/kapanışta iki controller askıda
     // kalıyordu.
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -354,22 +414,62 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   },
                 ),
         ),
-        // Öneri çipleri
+        // Öneri çipleri — aktif '@' varken bant BAHSETME adaylarına
+        // dönüşür (GT6): kişiler önce, sonra kabul edilmiş arkadaşlar.
+        // Uygulamada Overlay deseni yok; bant değişimi yeterli ve klavye/
+        // girece dokunmaz.
         SizedBox(
           height: 42,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _suggestions(l10n).length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (_, i) => Center(
-              child: SuggestionChip(
-                text: _suggestions(l10n)[i],
-                onTap: () => _send(_suggestions(l10n)[i]),
+          child: _activeMention != null
+              ? _MentionBand(
+                  query: _activeMention!.query,
+                  onSelect: _selectMention,
+                )
+              : ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _suggestions(l10n).length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) => Center(
+                    child: SuggestionChip(
+                      text: _suggestions(l10n)[i],
+                      onTap: () => _send(_suggestions(l10n)[i]),
+                    ),
+                  ),
+                ),
+        ),
+        // Ekli bağlam çipi: bahsedilen kişi/arkadaş bu MESAJA iliştirildi.
+        if (_mentionName != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: RythoColors.lilac.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                      color: RythoColors.lilac.withValues(alpha: 0.34)),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(l10n.chatMentionAttached(_mentionName!),
+                      style: RythoType.dataSmall
+                          .copyWith(color: RythoColors.lilac)),
+                  const SizedBox(width: 6),
+                  Pressable(
+                    onTap: _clearMention,
+                    child: Tooltip(
+                      message: l10n.chatMentionClearTooltip,
+                      child: const Icon(Icons.close_rounded,
+                          size: 14, color: RythoColors.lilac),
+                    ),
+                  ),
+                ]),
               ),
             ),
           ),
-        ),
         const SizedBox(height: 8),
         // Giriş alanı: + / metin / degrade gönder
         Padding(
@@ -540,6 +640,54 @@ class _EmptyState extends StatelessWidget {
           .animate()
           .fadeIn(duration: 400.ms)
           .slideY(begin: 0.06, curve: Curves.easeOutCubic),
+    );
+  }
+}
+
+/// Aktif '@' sorgusuna göre bahsetme adayları bandı (GT6).
+///
+/// Öneri çipi bandının yerine geçer (aynı 42px yükseklik) — Overlay yok,
+/// klavye ve girece dokunulmaz. Kişiler önce (ilişki ikonuyla), sonra
+/// kabul edilmiş arkadaşlar ('@' önekiyle).
+class _MentionBand extends ConsumerWidget {
+  const _MentionBand({required this.query, required this.onSelect});
+
+  final String query;
+  final ValueChanged<MentionCandidate> onSelect;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final kisiler = ref.watch(peopleProvider).value ?? const <Person>[];
+    final arkadaslar = ref.watch(friendsProvider).value ?? const <Friend>[];
+    final adaylar = mentionCandidates(
+      query, kisiler, arkadaslar,
+      (k) => k.label ?? relationLabel(l10n, k.relation),
+    );
+    if (adaylar.isEmpty) {
+      return Center(
+        child: Text(l10n.chatMentionEmpty,
+            style: RythoType.dataSmall
+                .copyWith(color: RythoColors.parchmentDim)),
+      );
+    }
+    return ListView.separated(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      itemCount: adaylar.length,
+      separatorBuilder: (_, _) => const SizedBox(width: 8),
+      itemBuilder: (_, i) {
+        final aday = adaylar[i];
+        final onek = aday.relation != null
+            ? '${relationIcon(aday.relation!)} '
+            : '@ ';
+        return Center(
+          child: SuggestionChip(
+            text: '$onek${aday.display}',
+            onTap: () => onSelect(aday),
+          ),
+        );
+      },
     );
   }
 }

@@ -319,7 +319,8 @@ def dyad_reading(uid_a: str, pair_key: str, name_a: str, name_b: str,
                  lang: str | None = None,
                  spend: Callable[[], None] | None = None,
                  refund: Callable[[], None] | None = None,
-                 today: dt.date | None = None) -> dict[str, Any]:
+                 today: dt.date | None = None,
+                 pair_transits: str = "") -> dict[str, Any]:
     """İki arkadaş için GÜNLÜK ikili dinamik okuması.
 
     Kalıcı bir uyum skoru üretilmez. Gerekçe iki katlı: skor ölçüm değil
@@ -380,6 +381,10 @@ def dyad_reading(uid_a: str, pair_key: str, name_a: str, name_b: str,
         moon_name=moon.get("name"), moon_emoji=moon.get("emoji"),
         illumination=moon.get("illumination"), retros=retros,
         aspects=aspects, axes=eksen_ozeti or p.NO_ASPECTS, rag=rag,
+        # GT5: çifte özgü BUGÜN — eskiden okumanın tek günlük girdisi
+        # herkese aynı Ay evresi + retro listesiydi; "günlük" okuma
+        # aslında çift için günlük değildi (cihaz bulgusu).
+        pair_transits=pair_transits or p.PAIR_NO_TRANSITS,
     )
     fallback = p.DYAD_FALLBACK.format(
         name_a=name_a, name_b=name_b, moon_name=moon.get("name") or "-")

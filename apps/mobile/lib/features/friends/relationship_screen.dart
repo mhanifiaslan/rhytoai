@@ -60,6 +60,10 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
   String? _reading;
   bool _readingLocked = false;
 
+  /// Bugün aranıza dokunan gökyüzü (GT-turu) — LLM'siz günlük ölçüm;
+  /// ücretsiz katmanda da görünür ("hesap bedava, yorum paralı").
+  Map<String, dynamic>? _today;
+
   @override
   void initState() {
     super.initState();
@@ -88,6 +92,9 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
         _reason = data['reason'] as String?;
         _reading = data['reading'] as String?;
         _readingLocked = data['reading_locked'] == true;
+        _today = data['today'] is Map
+            ? Map<String, dynamic>.from(data['today'] as Map)
+            : null;
       });
     } catch (e) {
       if (mounted) setState(() => _error = friendlyError(e));
@@ -143,6 +150,29 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
     } else {
       var stagger = 0;
       govde = Column(children: [
+        // GT4: BUGÜNÜN çifte özgü ölçümü — eksenlerin ÜSTÜNDE, çünkü
+        // eksenler zemin, bu şerit gündür. Ücretsiz katman da görür.
+        if (_today != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+                RythoSpace.lg, 0, RythoSpace.lg, RythoSpace.sm),
+            child: _TodayPanel(
+              today: _today!,
+              onAsk: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    friendUid: widget.friend?.uid,
+                    personId: widget.person?.id,
+                    initialText:
+                        l10n.relationshipTodayAskPrefill(_karsiAd(l10n)),
+                  ),
+                ));
+              },
+            ),
+          )
+              .animate(delay: Duration(milliseconds: 70 * stagger++))
+              .fadeIn(duration: 360.ms)
+              .slideY(begin: 0.06, curve: Curves.easeOutCubic),
         for (final eksen in _axes)
           _AxisCard(
             eksen: eksen,
@@ -188,9 +218,68 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
 
     return CosmicScaffold(
       appBar: AppBar(title: Text(l10n.relationshipTitle(_karsiAd(l10n)))),
-      body: ListView(
-        padding: const EdgeInsets.only(bottom: 40),
-        children: [const SizedBox(height: RythoSpace.sm), govde],
+      // GT4: günlük şerit geldiğine göre ekran artık "bugüne" bağlı —
+      // aşağı çekince tazelenir (sky_screen deseni).
+      body: RefreshIndicator(
+        color: RythoColors.magenta,
+        backgroundColor: RythoColors.inkLight,
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.only(bottom: 40),
+          children: [const SizedBox(height: RythoSpace.sm), govde],
+        ),
+      ),
+    );
+  }
+}
+
+/// "Bugün aranıza dokunan gökyüzü" şeridi (GT-turu) — friend_detail'deki
+/// `_DyadPanel` kabuğunun ölçüm hali. Satırlar SUNUCUDA yerelleştirilmiş
+/// gelir (`text`); destekleyici açı lila, zorlayıcı bakır (dayanak satırı
+/// idiomu). Boş günde dürüst "sakin gün" satırı — panel gizlenmez, çünkü
+/// "ölçüldü ve bugün bir şey yok" da bir bilgidir.
+class _TodayPanel extends StatelessWidget {
+  const _TodayPanel({required this.today, required this.onAsk});
+
+  final Map<String, dynamic> today;
+  final VoidCallback onAsk;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final hits = [
+      for (final v in (today['hits'] as List? ?? const []))
+        Map<String, dynamic>.from(v as Map),
+    ];
+    return GlassPanel(
+      label: l10n.relationshipTodayLabel,
+      glow: true,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hits.isEmpty)
+            Text(l10n.relationshipTodayQuiet,
+                style: RythoText.body(12.5,
+                    color: RythoColors.parchmentDim, height: 1.5))
+          else
+            for (final v in hits)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Text('• ${v['text'] ?? ''}',
+                    style: RythoText.mono(11.5,
+                        color: v['supportive'] == true
+                            ? RythoColors.lilac
+                            : RythoColors.copper)),
+              ),
+          const SizedBox(height: 6),
+          Pressable(
+            onTap: onAsk,
+            child: Text('✦ ${l10n.signalAsk} →',
+                style: RythoText.body(12.5,
+                    color: RythoColors.goldBright, w: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }

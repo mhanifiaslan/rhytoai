@@ -1133,5 +1133,14 @@
   "relationSibling": "My sibling",
   "relationFriend": "My friend",
   "relationWork": "My colleague",
-  "relationOther": "Close to me"
+  "relationOther": "Close to me",
+
+  "relationshipTodayLabel": "TODAY'S SKY BETWEEN YOU",
+  "relationshipTodayQuiet": "No notable transit touches the two of you today — a quiet day.",
+  "relationshipTodayAskPrefill": "Let's talk about today's sky touching me and {name}.",
+  "@relationshipTodayAskPrefill": { "placeholders": { "name": { "type": "String" } } },
+  "chatMentionAttached": "Context attached: {name}",
+  "@chatMentionAttached": { "placeholders": { "name": { "type": "String" } } },
+  "chatMentionClearTooltip": "Remove context",
+  "chatMentionEmpty": "No match — add people from My Circle"
 }

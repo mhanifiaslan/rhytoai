@@ -319,8 +319,124 @@ def cached_axes(uid: str, friend_uid: str) -> dict[str, Any] | None:
     return axes_for(uid, karsi)
 
 
+# ---------------------------------------------------------------------------
+# Günlük çift-transit ölçümü (GT-turu)
+#
+# Cihaz bulgusu: ilişki katmanında SIFIR tarih farkındalığı vardı — fısıltı
+# her gün bayt-aynı eksen satırlarını taşıyor, ücretli günlük okumanın
+# "bugün" girdisi bile çifte özgü değildi (herkese aynı Ay evresi). Bu
+# katman LLM'SİZ ölçümdür ($0, maliyet belgesi emsali): bugünün gökyüzünün
+# İKİ haritanın ilişkiyle ilgili natal noktalarına değdiği yerler.
+# ---------------------------------------------------------------------------
+
+#: Taraf başına ve toplamda en çok kaç vuruş. Fısıltı ve şerit kompakt
+#: kalmalı; dönemin temasını 3-4 vuruş zaten anlatıyor.
+PAIR_TRANSIT_PER_SIDE = 2
+PAIR_TRANSIT_CAP = 4
+
+#: Günlük önbellek ömrü (`transit-facts-v2` emsali: 36 saat — gün dönümü
+#: taşmalarına pay bırakır).
+PAIR_TTL_SECONDS = 36 * 3600
+
+
+def pair_transits(uid: str, other: Counterpart,
+                  today=None) -> dict[str, Any] | None:
+    """Bugün ÇİFTE dokunan gökyüzü — LLM'siz, gün-anahtarlı önbellekli.
+
+    Her taraf için bugünün transitleri hesaplanır ve ilişkiyle İLGİLİ
+    natal noktalara süzülür: kişisel noktalar (`_KISISEL`) + o tarafın
+    eksen dayanaklarında adı geçen noktalar (eksenleri taşıyan
+    Jüpiter/Satürn gibi ağır noktalar da böylece girer). Süzgeç doktrini
+    `chart_context.filter_transit_hits`ten gelir — tek yerde yaşar.
+
+    Dönen: ``{"date": iso, "hits": [{side: "user"|"other", transit,
+    natal, aspect, orb, movement}]}``; kullanıcının doğum verisi yoksa
+    None. Uçlar `today`e kullanıcının yerel gününü geçirir (dyad emsali);
+    fısıltı yolu varsayılanla çalışır — gece yarısı sınırında en kötü
+    bir fazla önbellek satırı.
+    """
+    import datetime as dt
+
+    from core import cache
+    from services import astro_service, chart_context, profile_service
+
+    me = profile_service.get_profile(uid)
+    if not me or not chart_context.has_birth_data(me):
+        return None
+
+    gun = (today or dt.date.today()).isoformat()
+    anahtar = f"pair-transits-{SYNASTRY_CALC_VERSION}-{other.key}-{gun}"
+    mevcut = cache.get(anahtar)
+    if mevcut is not None:
+        return mevcut
+
+    eksenler = axes_for(uid, other) or {}
+    kullanici_nokta = set(_KISISEL)
+    karsi_nokta = set(_KISISEL)
+    for e in eksenler.get("axes") or []:
+        for b in e.get("basis") or []:
+            if b.get("p1"):
+                kullanici_nokta.add(b["p1"])
+            if b.get("p2"):
+                karsi_nokta.add(b["p2"])
+
+    vuruslar: list[dict[str, Any]] = []
+    taraflar = (
+        ("user", profile_service.birth_kwargs(me), frozenset(kullanici_nokta)),
+        ("other", other.birth, frozenset(karsi_nokta)),
+    )
+    for taraf, birth, noktalar in taraflar:
+        try:
+            ham = astro_service.get_transits(
+                **astro_service.subject_kwargs(birth),
+                hour_known=astro_service.hour_is_known(birth))
+        except Exception as exc:
+            logger.warning("Çift transiti hesaplanamadı (%s/%s): %s",
+                           uid, taraf, exc)
+            continue
+        for v in chart_context.filter_transit_hits(
+                ham.get("aspects_to_natal", []), natal_points=noktalar,
+                cap=PAIR_TRANSIT_PER_SIDE):
+            vuruslar.append({**v, "side": taraf})
+
+    # Birleşimde de yavaş-önce: dönemi işaretleyen Satürn/Plüton vuruşu,
+    # hangi tarafta olursa olsun Merkür'ün önüne geçer.
+    vuruslar.sort(key=lambda v: (
+        0 if chart_context.is_slow_mover(v["transit"]) else 1, v["orb"]))
+    sonuc = {"date": gun, "hits": vuruslar[:PAIR_TRANSIT_CAP]}
+    cache.set(anahtar, sonuc, ttl_seconds=PAIR_TTL_SECONDS, owner_uid=uid)
+    return sonuc
+
+
+def pair_transit_lines(hits: list[dict[str, Any]], other_label: str,
+                       lang: str) -> list[str]:
+    """Vuruşları isteğin dilinde tek satırlara çevirir (fısıltı + dyad ortak).
+
+    Yan adlandırma ek almaz ("{label} tarafında") — keyfî bir ada Türkçe
+    iyelik eki yapıştırmak yazım hatası üretirdi.
+    """
+    from services import prompts
+
+    p = prompts.get(lang)
+    satirlar = []
+    for v in hits or []:
+        yan = (p.PAIR_SIDE_SELF if v.get("side") == "user"
+               else p.PAIR_SIDE_OTHER_FMT.format(label=other_label))
+        hareket = ""
+        if v.get("movement"):
+            hareket = ", " + p.MOVEMENT_NAMES.get(v["movement"],
+                                                  v["movement"])
+        satirlar.append(p.PAIR_TRANSIT_FMT.format(
+            side=yan,
+            transit=prompts.planet_name(lang, v.get("transit")),
+            natal=prompts.planet_name(lang, v.get("natal")),
+            aspect=prompts.aspect_name(lang, v.get("aspect")),
+            orb=v.get("orb"), movement=hareket))
+    return satirlar
+
+
 def relationship_whisper(uid: str, friend_uid: str, lang: str,
-                         max_chars: int = 600) -> str:
+                         max_chars: int = 900) -> str:
     """Arkadaş için sohbet bağlamı (R4-2) — `whisper_for`'un ince sarmalı."""
     karsi = friend_counterpart(uid, friend_uid)
     if karsi is None:
@@ -333,7 +449,7 @@ def relationship_whisper(uid: str, friend_uid: str, lang: str,
 
 
 def whisper_for(uid: str, other: Counterpart, lang: str,
-                max_chars: int = 600) -> str:
+                max_chars: int = 900) -> str:
     """Sohbet için kompakt ilişki bağlamı (R4-2, P-turu'nda genelleşti).
 
     Cihaz bulgusu: arkadaşla ilgili soruda model bağlamsız kaldığı için
@@ -372,6 +488,22 @@ def whisper_for(uid: str, other: Counterpart, lang: str,
             satir += (f" ({kanit['p1_local']} {kanit['aspect_local']} "
                       f"{kanit['p2_local']}, orb {kanit['orb']}°)")
         satirlar.append(satir)
+
+    # GT2: BUGÜNÜN çifte özgü gökyüzü — fısıltı artık her gün taze veri
+    # taşır (eskiden bu blok bayt-aynıydı ve model her gün aynı ilişki
+    # cümlelerini kuruyordu). Ölçüm düşerse fısıltı eksensiz değil,
+    # yalnız bugünsüz kalır.
+    try:
+        gunluk = pair_transits(uid, other)
+    except Exception as exc:
+        logger.warning("Çift transit fısıltıya eklenemedi (%s): %s",
+                       uid, exc)
+        gunluk = None
+    if gunluk and gunluk.get("hits"):
+        p = prompts.get(lang)
+        satirlar.append(p.PAIR_TODAY_LABEL)
+        satirlar += ["  - " + s for s in pair_transit_lines(
+            gunluk["hits"], other.label, lang)]
 
     metin = "\n".join(satirlar)
     if other.relation:
