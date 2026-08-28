@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/discovery.dart';
 import '../../core/motivation.dart';
 import '../../core/providers.dart';
 import '../../core/sound.dart';
@@ -70,6 +73,10 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   /// oynar. Null: kutlanacak bir şey yok.
   int? _streakYeni;
 
+  /// Keşif halkası BU oturumda 3/3'e ulaştı (OB4) — yıldız patlaması bir
+  /// kez oynar.
+  bool _kesifKutlama = false;
+
   String _greeting(AppLocalizations l10n) {
     final hour = DateTime.now().hour;
     if (hour >= 5 && hour < 12) return l10n.greetingMorning;
@@ -86,6 +93,8 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
   void _touchStreak(Map<String, dynamic> profile) {
     if (_streakTouched) return;
     _streakTouched = true;
+    // OB4: günün gökyüzünü açmak keşif halkasının ilk dilimi.
+    ref.read(discoveryProvider.notifier).mark(DiscoveryTask.daily);
     final onceki = (profile['streakCount'] as num?)?.toInt() ?? 0;
     DailyStreak.touch(profile).then<void>((yeni) {
       if (!mounted || yeni <= onceki) return;
@@ -147,6 +156,18 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
     final daily = ref.watch(dailyReadingProvider);
     final profile = ref.watch(profileProvider).value ?? {};
     if (profile.isNotEmpty) _touchStreak(profile);
+
+    // OB4: 3/3 kutlaması — günde bir (bayrak notifier'da). Ses + snackbar
+    // burada, halka üstündeki yıldız patlaması _kesifKutlama ile çizimde.
+    final kesif = ref.watch(discoveryProvider);
+    ref.listen(discoveryProvider, (once, simdi) {
+      if (!simdi.justCompleted || _kesifKutlama) return;
+      ref.read(discoveryProvider.notifier).ackCelebration();
+      setState(() => _kesifKutlama = true);
+      SoundFx.success();
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.discoveryComplete)));
+    });
 
     final sunSign = profile['sunSign'] as String?;
     final userSignIndex = signIndexOf(sunSign);
@@ -257,6 +278,8 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                         .format(DateTime.now()),
                     style: RythoType.dataSmall,
                   ),
+                  const SizedBox(width: RythoSpace.sm),
+                  _DiscoveryRing(state: kesif, celebrate: _kesifKutlama),
                   const SizedBox(width: RythoSpace.sm),
                   _StreakRozet(streak: streak, celebrate: _streakYeni),
                 ]),
@@ -394,6 +417,106 @@ class _StreakRozet extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Günlük keşif halkası (OB4) — üç dilim: gökyüzü · sohbet · çevre.
+///
+/// Dolmuş dilim altın, boş dilim cam çizgisi. 3/3'te bir kez yıldız
+/// patlamasıyla kutlanır ([celebrate]; ses ve snackbar SkyScreen'de).
+/// Cihaz-yerel bir ritüel göstergesidir; dokunulmaz, yalnız anlatır
+/// (Tooltip). [reduceMotion] kutlama animasyonunu kapatır.
+class _DiscoveryRing extends StatelessWidget {
+  const _DiscoveryRing({required this.state, this.celebrate = false});
+
+  final DiscoveryState state;
+  final bool celebrate;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final halka = Tooltip(
+      message: l10n.discoveryRingTooltip,
+      child: SizedBox(
+        width: 26,
+        height: 26,
+        child: CustomPaint(
+          painter: _DiscoveryRingPainter(
+            mask: state.mask,
+            done: RythoColors.goldBright,
+            empty: RythoColors.glassStroke,
+          ),
+          child: state.complete
+              ? const Center(
+                  child: Text('✦',
+                      style:
+                          TextStyle(fontSize: 9, color: RythoColors.goldBright)))
+              : null,
+        ),
+      ),
+    );
+    if (!celebrate || reduceMotion(context)) return halka;
+    return Stack(
+      alignment: Alignment.center,
+      clipBehavior: Clip.none,
+      children: [
+        const Positioned.fill(
+          child: OverflowBox(
+            maxWidth: 100,
+            maxHeight: 100,
+            child: StarBurst(size: 100, particles: 12),
+          ),
+        ),
+        halka
+            .animate(key: const ValueKey('kesif-33'))
+            .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(1.25, 1.25),
+                duration: const Duration(milliseconds: 250),
+                curve: RythoMotion.pop)
+            .then()
+            .scale(
+                begin: const Offset(1, 1),
+                end: const Offset(0.8, 0.8),
+                duration: const Duration(milliseconds: 250),
+                curve: RythoMotion.settle),
+      ],
+    );
+  }
+}
+
+class _DiscoveryRingPainter extends CustomPainter {
+  const _DiscoveryRingPainter(
+      {required this.mask, required this.done, required this.empty});
+
+  final int mask;
+  final Color done;
+  final Color empty;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final merkez = Offset(size.width / 2, size.height / 2);
+    final yaricap = size.width / 2 - 2;
+    const dilim = 2 * math.pi / 3;
+    const bosluk = 0.30; // radyan — dilimler ayrışsın
+    for (var i = 0; i < 3; i++) {
+      final boya = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.6
+        ..strokeCap = StrokeCap.round
+        ..color = (mask & (1 << i)) != 0 ? done : empty;
+      canvas.drawArc(
+        Rect.fromCircle(center: merkez, radius: yaricap),
+        -math.pi / 2 + i * dilim + bosluk / 2,
+        dilim - bosluk,
+        false,
+        boya,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DiscoveryRingPainter old) =>
+      old.mask != mask || old.done != done || old.empty != empty;
 }
 
 /// Üst şerit: degrade halkalı avatar + selamlama + jeton hapı + sohbet ikonu.

@@ -51,7 +51,9 @@ REACTION_EMOJIS = {
     "shine": "✨",
     "keep_going": "💪",
     "congrats": "🎉",
-    "same_frequency": "🌊",
+    # OB5 onarımı: burası 🌊 idi, mobil picker 🛰️ gösteriyor — kullanıcının
+    # BASTIĞI emoji kanonik olandır; alıcı farklı bir emoji görmemeli.
+    "same_frequency": "🛰️",
     "good_night": "🌙",
     "check_today": "👀",
     # R3-4 genişlemesi — mobil kReactions + firestore.rules ile aynı küme.
@@ -148,7 +150,7 @@ class RunResult(BaseModel):
 
 
 @router.post("/run", response_model=RunResult)
-def run(type: Literal["daily", "checkin", "streak"] = "daily",
+def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
         dry_run: bool = False,
         force: bool = False,
         ignore_dedupe: bool = False,
@@ -232,6 +234,16 @@ def run(type: Literal["daily", "checkin", "streak"] = "daily",
                 govde = notification_service.daily_push_body(
                     sign, sky_by_lang[lang], lang, gun)
                 veri = {"type": "daily", "sign": sign}
+        elif type == "midday":
+            # OB3: öğle ölçülü slotu — yalnız BUGÜN gerçekten bir olay
+            # varsa gider (kendi haritasında kesinleşme ya da önbellekli
+            # çift ânı); yoksa kullanıcı sessizce atlanır. LLM yakmaz.
+            ogle = notification_service.midday_push(
+                profil, lang, today=yerel.date())
+            if ogle is None:
+                atlanan["olay-yok"] = atlanan.get("olay-yok", 0) + 1
+                continue
+            baslik, govde, veri = ogle
         elif type == "checkin":
             # KA4: günün önemli sinyaline bağlı kişisel soru — yalnız
             # sabah paketinde soru YAZILMIŞSA gider; LLM çağrılmaz.
@@ -336,3 +348,96 @@ def reaction(req: ReactionPush,
         data={"type": "friend", "fromUid": user.uid},
     )])
     return {"status": "ok", "sent": sonuc.sent}
+
+
+class InvitePush(BaseModel):
+    friend_uid: str = Field(min_length=1, max_length=128)
+
+
+def _event_push(alici_uid: str, gonderen_uid: str, tur: str,
+                baslik_sablonu: str, govde_sablonu: str) -> dict[str, Any]:
+    """Davet/kabul push'unun ortak kuyruğu (OB2).
+
+    Doğrulama ÇAĞIRANDA biter; buradan sonrası asla raise etmez — davet
+    Firestore'a zaten yazıldı, push üstüne eklenen bir şeydir (tepki
+    ucuyla aynı sözleşme). Tekrar koruması alıcının dokümanında
+    ``{tur}LastSent`` günüyle: aynı çift aynı gün en fazla bir push
+    (davet geri çek-tekrar gönder spam'ine karşı ikinci hat; birinci
+    hat çağırandaki gerçek-kenar doğrulaması).
+    """
+    alici = profile_service.get_profile(alici_uid) or {}
+    alici["uid"] = alici_uid
+
+    gonder, gerekce = notification_service.can_send_event(alici, "friend")
+    if not gonder:
+        logger.info("Davet bildirimi atlandi (%s/%s): %s",
+                    tur, alici_uid, gerekce)
+        return {"status": "skipped", "reason": gerekce}
+
+    gun = notification_service.local_now(alici).date().isoformat()
+    if notification_service.already_sent(alici_uid, tur, gun):
+        logger.info("Davet bildirimi atlandi (%s/%s): zaten-gonderildi",
+                    tur, alici_uid)
+        return {"status": "skipped", "reason": "zaten-gonderildi"}
+
+    gonderen = profile_service.get_profile(gonderen_uid) or {}
+    ad = gonderen.get("displayName") or gonderen.get("username") or "…"
+    alici_dili = notification_service.profile_language(alici)
+    p = prompts.get(alici_dili)
+
+    sonuc = push_service.send([push_service.Message(
+        uid=alici_uid, token=alici["fcmToken"],
+        title=getattr(p, baslik_sablonu).format(name=ad),
+        body=getattr(p, govde_sablonu),
+        # `type=friend`: dokununca Çevrem sekmesi açılır — gelen davet /
+        # yeni arkadaş orada en üstte, mobilde yeni tüketici gerekmez.
+        data={"type": "friend", "fromUid": gonderen_uid},
+    )])
+    if sonuc.sent:
+        notification_service.mark_sent(alici_uid, tur, gun)
+    return {"status": "ok", "sent": sonuc.sent}
+
+
+@router.post("/invite")
+def invite(req: InvitePush,
+           user: AuthUser = Depends(get_current_user),
+           lang: str = Depends(get_language)):
+    """Arkadaş daveti gönderilince karşı tarafa push (OB2).
+
+    Davet akışı bugüne dek tamamen sessizdi: istemci Firestore'a kenarları
+    yazar, karşı taraf ancak uygulamayı açınca görürdü. Bu uç istemciden
+    sonra çağrılır ve istemciye güvenmez: alıcının ağacında GERÇEK bir
+    ``incoming`` kenarı olmalı — firestore.rules o kenarı yalnız gerçek
+    davet akışının kurmasına izin verdiği için "davet etmeden push atma"
+    vektörü kaynağında kapalı.
+    """
+    if req.friend_uid == user.uid:
+        raise HTTPException(status_code=400, detail=text("dyad.self", lang))
+
+    if not profile_service.has_pending_invite(user.uid, req.friend_uid):
+        raise HTTPException(status_code=403, detail=text("invite.none", lang))
+
+    return _event_push(req.friend_uid, user.uid, f"invite-{user.uid}",
+                       "PUSH_INVITE_TITLE", "PUSH_INVITE_BODY")
+
+
+@router.post("/invite-accepted")
+def invite_accepted(req: InvitePush,
+                    user: AuthUser = Depends(get_current_user),
+                    lang: str = Depends(get_language)):
+    """Davet kabul edilince daveti GÖNDERENE push (OB2).
+
+    Kabulden sonra iki kenar da ``accepted`` olduğu için yönün kim davet
+    etti tarafı ispatlanamaz (bilinen sınır); ``are_friends`` çift taraflı
+    doğrulaması + çift-başına-günlük tekrar koruması bunu zararsız kılar.
+    """
+    if req.friend_uid == user.uid:
+        raise HTTPException(status_code=400, detail=text("dyad.self", lang))
+
+    if not profile_service.are_friends(user.uid, req.friend_uid):
+        raise HTTPException(status_code=403,
+                            detail=text("dyad.not_friends", lang))
+
+    return _event_push(req.friend_uid, user.uid, f"accept-{user.uid}",
+                       "PUSH_INVITE_ACCEPTED_TITLE",
+                       "PUSH_INVITE_ACCEPTED_BODY")

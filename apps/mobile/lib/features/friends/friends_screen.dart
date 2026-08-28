@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -25,7 +27,7 @@ import 'contacts_screen.dart' show ContactsScreen;
 import 'friend_detail_screen.dart' show FriendDetailScreen, reactionLabel;
 import 'reaction_sheet.dart' show showReactionSheet;
 import 'relationship_screen.dart' show RelationshipScreen;
-import '../../core/api.dart' show friendlyError;
+import '../../core/api.dart' show apiProvider, friendlyError;
 import '../../l10n/app_localizations.dart';
 
 /// ARKADAŞLAR — serbest metin içermeyen sosyal katman.
@@ -537,13 +539,13 @@ class _FriendTile extends ConsumerWidget {
   }
 }
 
-class _RequestTile extends StatelessWidget {
+class _RequestTile extends ConsumerWidget {
   const _RequestTile({required this.friend});
 
   final Friend friend;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     return GlassPanel(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
@@ -559,7 +561,13 @@ class _RequestTile extends StatelessWidget {
           width: 104,
           child: GoldButton(
             text: l10n.accept,
-            onPressed: () => acceptFriendRequest(friend.uid),
+            onPressed: () {
+              // Kabul push'u (OB2): Firestore yazımı bitince daveti
+              // GÖNDERENE haber ver. UI beklemez; hata yutulur.
+              final dio = ref.read(apiProvider);
+              unawaited(acceptFriendRequest(friend.uid)
+                  .then((_) => notifyInviteAccepted(dio, friend.uid)));
+            },
           ),
         ),
       ]),
@@ -869,7 +877,7 @@ Future<void> _showAddFriendSheet(BuildContext context, String myUsername,
   );
 }
 
-class _AddFriendSheet extends StatefulWidget {
+class _AddFriendSheet extends ConsumerStatefulWidget {
   const _AddFriendSheet({required this.myUsername, this.prefill});
 
   final String myUsername;
@@ -878,10 +886,10 @@ class _AddFriendSheet extends StatefulWidget {
   final String? prefill;
 
   @override
-  State<_AddFriendSheet> createState() => _AddFriendSheetState();
+  ConsumerState<_AddFriendSheet> createState() => _AddFriendSheetState();
 }
 
-class _AddFriendSheetState extends State<_AddFriendSheet> {
+class _AddFriendSheetState extends ConsumerState<_AddFriendSheet> {
   final _controller = TextEditingController();
   String? _message;
   bool _busy = false;
@@ -904,6 +912,7 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
     final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final dio = ref.read(apiProvider);
 
     setState(() {
       _busy = true;
@@ -921,6 +930,9 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
         return;
       }
       await sendFriendRequest(uid);
+      // Davet push'u (OB2): kenarlar yazıldıktan SONRA — sunucu gerçek
+      // `incoming` kenarını doğruluyor. Ateşle-unut; UI beklemez.
+      unawaited(notifyInvite(dio, uid));
       Analytics.friendInviteSent();
       if (!mounted) return;
       navigator.pop();

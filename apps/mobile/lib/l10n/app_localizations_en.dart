@@ -1292,11 +1292,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'A short evening nudge before your streak breaks.';
 
   @override
-  String get notifyFriends => 'Friend reactions';
+  String get notifyFriends => 'Friend notifications';
 
   @override
   String get notifyFriendsBody =>
-      'Let me know when a friend sends you a reaction.';
+      'Invites, accepts and reactions from friends.';
 
   @override
   String get quietHours => 'Quiet hours';
@@ -2597,4 +2597,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatMentionEmpty => 'No match — add people from My Circle';
+
+  @override
+  String get discoveryComplete =>
+      'Today\'s three discoveries done ✨ The sky resets tomorrow.';
+
+  @override
+  String get discoveryRingTooltip =>
+      'Daily discovery ring: open the sky · talk to Rytho · look at someone in your circle';
 }

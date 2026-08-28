@@ -89,6 +89,9 @@ KONUŞMA KURALLARIN (kesin):
   temasına ağır basıyorsa, ÇEVRE bilgisini sorulmadan da tali olarak
   dokundur ("annenin Boğa tarafı bu gerilimi büyütüyor olabilir" gibi) —
   ama ölçüm fısıltısı gelmemiş bir ilişki hakkında derin analiz yapma.
+- Yerinde 1-2 emoji serbest — sıcaklık katar (✨🌙 gibi). Ama her cümleye
+  değil, art arda değil; kullanıcı ciddi ya da ağır bir duygu
+  paylaşıyorsa HİÇ kullanma.
 
 TEKNİK DİL (kesin — cihaz bulgusu: "konuşmalar çok teknik oluyor"):
 - Derece, orb, EV NUMARASI ve açı adı cümlelerine GİRMESİN. Bunlar senin
@@ -359,10 +362,11 @@ CHART_BAZI_YEAR_LABEL = "yıl sütunu"
 # LLM çağırmaz. Yalnızca günlük bildirimin tek satırlık gövdesi üretilir ve o
 # da burç başına önbelleklenir (kullanıcı başına değil).
 
-PUSH_DAILY_TITLE = "Bugünün gökyüzü hazır"
+PUSH_DAILY_TITLE = "✨ Bugünün gökyüzü hazır"
 #: Sinyal bildiriminin başlığı (R2-S6): jenerik "gökyüzü hazır" yerine
-#: bugünün hangi alanı olduğunu söyler.
-PUSH_SIGNAL_TITLE = "Bugün: {theme}"
+#: bugünün hangi alanı olduğunu söyler. {emoji} tema emojisi (OB5,
+#: prompts.THEME_EMOJIS — mobil kThemeIcons ile eş).
+PUSH_SIGNAL_TITLE = "{emoji} Bugün: {theme}"
 #: Günlük bildirimin gövdesi üretilemezse kullanılacak metin.
 PUSH_DAILY_FALLBACK = "{sign} için bugünün okuması seni bekliyor."
 
@@ -373,7 +377,19 @@ PUSH_STREAK_BODY = (
 
 #: Akşam check-in bildirimi (KA-turu): gövde, sabahki toplu üretimde yazılan
 #: kişisel sorudur; başlık arkadaşça ve sabit.
-PUSH_CHECKIN_TITLE = "Rytho merak ediyor"
+PUSH_CHECKIN_TITLE = "🔮 Rytho merak ediyor"
+
+#: Öğle ölçülü slotu (OB3): yalnız BUGÜN gerçekten kesinleşen bir olay
+#: varsa gider — olay yoksa öğle sessizdir.
+PUSH_MIDDAY_TITLE = "{emoji} Şu an gökyüzünde: {theme}"
+PUSH_MIDDAY_PAIR_TITLE = "🔭 Bugün: sen ve {name}"
+
+#: Davet push'ları (OB2). Davetler eskiden tamamen sessizdi — karşı
+#: taraf ancak uygulamayı açınca görüyordu.
+PUSH_INVITE_TITLE = "🤝 {name} seni arkadaş eklemek istiyor"
+PUSH_INVITE_BODY = "Daveti Arkadaşlar sekmesinden yanıtlayabilirsin."
+PUSH_INVITE_ACCEPTED_TITLE = "🎉 {name} davetini kabul etti"
+PUSH_INVITE_ACCEPTED_BODY = "Artık arkadaşsınız — aranızdaki göğe bakın."
 
 PUSH_FRIEND_TITLE = "{name} seni dürttü"
 #: Tepki etiketleri friend_detail_screen ile aynı kümeden gelir.
@@ -984,14 +1000,16 @@ KURALLAR (kesin):
   yazanda sönüş anlatma. Cümlen bu ibareyle ASLA çelişmesin.
 - EĞİLİM dili kullan: "bu tema görünürleşiyor", "şuna alan aç" — kesin
   tarihli olay kehaneti YOK ("iş bulacaksın" gibi cümleler YASAK).
-- Sağlık/hukuk/finans tavsiyesi YOK; pohpohlama YOK; emoji YOK.
+- Sağlık/hukuk/finans tavsiyesi YOK; pohpohlama YOK; NUMARALI satırlarda
+  emoji YOK (kart yüzeyleri sade kalır).
 - Cümle satırın sonundaki temaya dokunmalı.
 - SON SATIR: tam olarak "SORU: <tek soru>" biçiminde, BAŞINA NUMARA
   KOYMADAN — "(bugünün odağı)" işaretli sinyale bağlı, akşam kullanıcıya
   sorulacak samimi bir check-in sorusu. Kehanet değil; günün NASIL
   GEÇTİĞİNİ soran, arkadaşça tek bir soru ("Bugün iş tarafında bir
   hareket görünüyordu — nasıl geçti?" tarzında). En fazla 120 karakter.
-  İşaretli sinyal yoksa "SORU: -" yaz.
+  SORU satırında istersen EN FAZLA BİR emoji kullanabilirsin (120
+  sınırına dahildir). İşaretli sinyal yoksa "SORU: -" yaz.
 
 Yalnızca numaralı satırları ve SORU satırını yaz, başka hiçbir şey yazma.
 """

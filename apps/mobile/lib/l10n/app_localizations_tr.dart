@@ -1291,11 +1291,11 @@ class AppLocalizationsTr extends AppLocalizations {
       'Akşam, serin kırılmadan önce kısa bir hatırlatma.';
 
   @override
-  String get notifyFriends => 'Arkadaş tepkileri';
+  String get notifyFriends => 'Arkadaş bildirimleri';
 
   @override
   String get notifyFriendsBody =>
-      'Bir arkadaşın sana tepki gönderdiğinde haber ver.';
+      'Davetler, kabuller ve tepkiler için haber ver.';
 
   @override
   String get quietHours => 'Sessiz saatler';
@@ -2585,4 +2585,12 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get chatMentionEmpty =>
       'Eşleşen kişi yok — Çevrem\'den ekleyebilirsin';
+
+  @override
+  String get discoveryComplete =>
+      'Günün üç keşfi tamam ✨ Yarın gökyüzü yeniden kurulur.';
+
+  @override
+  String get discoveryRingTooltip =>
+      'Günün keşif halkası: gökyüzünü aç · Rytho ile konuş · çevrenden birine bak';
 }

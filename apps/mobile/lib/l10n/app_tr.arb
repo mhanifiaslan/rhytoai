@@ -680,8 +680,8 @@
   "notifyDailyBody": "Sabahları bugünün gökyüzü hazır olduğunda haber ver.",
   "notifyStreak": "Seri hatırlatması",
   "notifyStreakBody": "Akşam, serin kırılmadan önce kısa bir hatırlatma.",
-  "notifyFriends": "Arkadaş tepkileri",
-  "notifyFriendsBody": "Bir arkadaşın sana tepki gönderdiğinde haber ver.",
+  "notifyFriends": "Arkadaş bildirimleri",
+  "notifyFriendsBody": "Davetler, kabuller ve tepkiler için haber ver.",
   "quietHours": "Sessiz saatler",
   "quietHoursBody": "Bu aralıkta bildirim gönderilmez.",
   "quietHoursRange": "{from}:00 – {to}:00",
@@ -1225,5 +1225,8 @@
   "chatMentionAttached": "{name} bağlamı ekli",
   "@chatMentionAttached": { "placeholders": { "name": { "type": "String" } } },
   "chatMentionClearTooltip": "Bağlamı kaldır",
-  "chatMentionEmpty": "Eşleşen kişi yok — Çevrem'den ekleyebilirsin"
+  "chatMentionEmpty": "Eşleşen kişi yok — Çevrem'den ekleyebilirsin",
+
+  "discoveryComplete": "Günün üç keşfi tamam ✨ Yarın gökyüzü yeniden kurulur.",
+  "discoveryRingTooltip": "Günün keşif halkası: gökyüzünü aç · Rytho ile konuş · çevrenden birine bak"
 }

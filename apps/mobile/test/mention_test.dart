@@ -79,6 +79,22 @@ void main() {
       final kalabalik = [for (var i = 0; i < 20; i++) _kisi('p$i', 'Ad$i')];
       expect(mentionCandidates('', kalabalik, const [], _goster).length, 8);
     });
+
+    test('alt satır malzemesi taşınır (OB1): burç ve kullanıcı adı', () {
+      const kisi = Person(
+          id: 'p9', relation: 'parent', label: 'Annem',
+          birthDate: '1960-01-01', birthCity: 'Ankara', sunSign: 'Kova ♒');
+      const dost = Friend(
+          uid: 'f9', status: FriendStatus.accepted, displayName: 'Erkan',
+          username: 'erkan42', sunSign: 'Aslan ♌');
+      final sonuc = mentionCandidates('', [kisi], [dost], _goster);
+      final k = sonuc.firstWhere((c) => c.personId == 'p9');
+      expect(k.sunSign, 'Kova ♒');
+      expect(k.relation, 'parent');
+      final f = sonuc.firstWhere((c) => c.friendUid == 'f9');
+      expect(f.sunSign, 'Aslan ♌');
+      expect(f.username, 'erkan42');
+    });
   });
 
   group('chatContextFields — öncelik tablosu', () {

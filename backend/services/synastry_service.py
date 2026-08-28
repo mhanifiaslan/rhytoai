@@ -408,6 +408,24 @@ def pair_transits(uid: str, other: Counterpart,
     return sonuc
 
 
+def pair_transits_cached(uid: str, other: Counterpart,
+                         today=None) -> dict[str, Any] | None:
+    """Bugünün çift vuruşları YALNIZ ÖNBELLEKTEN — asla hesaplamaz (OB3).
+
+    Öğle bildirimi tüm kullanıcıları tarar; her çift için efemeris
+    koşturmak toplu işte kabul edilemez. Bu okuma organiktir: çift, gün
+    içinde bir ilişki yüzeyi açıldıysa (`pair_transits` önbelleğe yazar)
+    öğlen anılabilir; açılmadıysa o gün sessizce atlanır.
+    """
+    import datetime as dt
+
+    from core import cache
+
+    gun = (today or dt.date.today()).isoformat()
+    anahtar = f"pair-transits-{SYNASTRY_CALC_VERSION}-{other.key}-{gun}"
+    return cache.get(anahtar)
+
+
 def pair_transit_lines(hits: list[dict[str, Any]], other_label: str,
                        lang: str) -> list[str]:
     """Vuruşları isteğin dilinde tek satırlara çevirir (fısıltı + dyad ortak).

@@ -203,6 +203,10 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "Bilinmeyen tepki.",
         "en": "Unknown reaction.",
     },
+    "invite.none": {
+        "tr": "Böyle bir davet görünmüyor.",
+        "en": "No such invite found.",
+    },
 
     "dyad.profile_missing": {
         "tr": "Okuma için gereken doğum kaydı bulunamadı.",

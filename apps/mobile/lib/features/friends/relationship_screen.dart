@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
+import '../../core/discovery.dart';
 import '../../core/friends.dart';
 import '../../core/people.dart';
 import '../../l10n/app_localizations.dart';
@@ -67,6 +68,8 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
   @override
   void initState() {
     super.initState();
+    // OB4: çevreden birine bakmak keşif halkasının üçüncü dilimi.
+    ref.read(discoveryProvider.notifier).mark(DiscoveryTask.circle);
     _load();
   }
 

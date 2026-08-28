@@ -39,6 +39,7 @@ DEFAULT_QUIET_TO = 8
 #: yalnızca yerel saati bu değere eşit olan kullanıcılara gönderir.
 TARGET_HOURS = {
     "daily": 9,     # sabah: günün okuması hazır
+    "midday": 13,   # öğle: yalnız BUGÜN gerçekten kesinleşen olay varsa (OB3)
     "checkin": 20,  # akşam: günün önemli sinyaline bağlı kişisel soru (KA4)
     "streak": 20,   # akşam: seri kırılmadan önce son hatırlatma (soru yoksa)
 }
@@ -160,6 +161,9 @@ def mark_sent(uid: str, tur: str, gun: str) -> None:
 #: ayrı kapatmak isterse `notifyCheckin` o zaman eklenir.
 PREF_FIELDS = {
     "daily": "notifyDaily",
+    # OB3: öğle slotu "günün okuması" ailesinden — sabahı kapatan kullanıcı
+    # öğleni de istemiyordur; ayrı bir anahtar ayar ekranını büyütürdü.
+    "midday": "notifyDaily",
     "checkin": "notifyStreak",
     "streak": "notifyStreak",
     "friend": "notifyFriends",
@@ -329,7 +333,9 @@ def signal_push(profile: dict[str, Any], lang: str,
                 return None
         p = prompts.get(lang)
         iz = signal_service.signals_fingerprint(ham)
-        return (p.PUSH_SIGNAL_TITLE.format(theme=sinyal["theme_local"]),
+        return (p.PUSH_SIGNAL_TITLE.format(
+                    emoji=prompts.theme_emoji(sinyal.get("theme")),
+                    theme=sinyal["theme_local"]),
                 govde, iz)
     except Exception as exc:
         logger.warning("Sinyal bildirimi uretilemedi (%s): %s",
@@ -359,6 +365,107 @@ def checkin_push(profile: dict[str, Any], lang: str,
         return prompts.get(lang).PUSH_CHECKIN_TITLE, soru
     except Exception as exc:
         logger.warning("Check-in bildirimi uretilemedi (%s): %s",
+                       profile.get("uid"), exc)
+        return None
+
+
+def midday_push(profile: dict[str, Any], lang: str,
+                today: dt.date | None = None
+                ) -> tuple[str, str, dict[str, str]] | None:
+    """Öğle ölçülü slotu (OB3) — yalnız gerçekten olay varsa, LLM'siz.
+
+    ``(başlık, gövde, fcm_verisi)`` döner; olay yoksa None ve çağıran o
+    kullanıcıyı "olay-yok" ile atlar — öğle bildirimi bir HAK değil,
+    ölçülmüş bir olayın haberi. Çözüm sırası:
+
+    a) **Kendi haritasında BUGÜN kesinleşen açı** (``days_to_exact == 0``,
+       sabahki paylaşımlı sinyal önbelleği): gövde sabah paketindeki
+       indeks-hizalı AI cümlesi (yalnız okunur — öğle LLM yakmaz), yoksa
+       dürüst teknik satır. Yük birebir sabahki `daily` deseni: dokununca
+       ilgili kartın dayanak sayfası açılır, mobilde SIFIR yeni tüketici.
+    b) **Çift ânı, YALNIZ ÖNBELLEK** (`pair_transits_cached` — asla
+       hesaplamaz): kabul edilmiş arkadaşlar + Çevrem kişileri taranır,
+       bugün önbelleği olan çiftlerden en dar yavaş-gezen vuruş seçilir.
+       Yük `type=friend` → Çevrem sekmesi.
+    c) Hiçbiri → None.
+    """
+    try:
+        from services import (circle_context, people_service, profile_service,
+                              signal_service, synastry_service)
+
+        today = today or dt.date.today()
+        gun = today.isoformat()
+
+        # --- a) kendi haritasında bugün kesinleşen ---
+        ham = signal_service.cached_signals(profile, today=today)
+        sinyaller = (ham or {}).get("signals") or []
+        idx = next((i for i, s in enumerate(sinyaller)
+                    if s.get("exact_on") and s.get("days_to_exact") == 0),
+                   None)
+        if ham and idx is not None:
+            p = prompts.get(lang)
+            yerel = prompts.localize_signals(lang, ham)["signals"][idx]
+            paket = signal_service.cached_insight_bundle(
+                ham, lang, generate_if_missing=False)
+            govde = ""
+            if paket and len(paket.get("insights") or []) > idx:
+                govde = paket["insights"][idx]
+                if not 0 < len(govde) <= p.SIGNAL_INSIGHT_MAX:
+                    govde = ""
+            if not govde:
+                govde = yerel["technical"]
+            if 0 < len(govde) <= max(MAX_PUSH_BODY, p.SIGNAL_INSIGHT_MAX):
+                baslik = p.PUSH_MIDDAY_TITLE.format(
+                    emoji=prompts.theme_emoji(yerel.get("theme")),
+                    theme=yerel["theme_local"])
+                veri = {"type": "daily", "route": "signal",
+                        "fp": signal_service.signals_fingerprint(ham),
+                        "idx": str(idx), "d": gun, "src": "midday"}
+                sign = profile_service.sun_sign_key(profile)
+                if sign:
+                    veri["sign"] = sign
+                return baslik, govde, veri
+
+        # --- b) çift ânı, yalnız önbellekten ---
+        uid = profile.get("uid") or ""
+        adaylar: list = []
+        for friend_uid in circle_context.list_accepted_friend_uids(uid):
+            cp = synastry_service.friend_counterpart(uid, friend_uid)
+            if cp is not None:
+                adaylar.append(cp)
+        for kayit in people_service.list_people(uid):
+            cp = synastry_service.person_counterpart(
+                uid, kayit["id"], lang=lang)
+            if cp is not None:
+                adaylar.append(cp)
+
+        from services import chart_context
+        en_iyi: tuple[tuple[int, float], Any, dict[str, Any]] | None = None
+        for cp in adaylar:
+            veri_cp = synastry_service.pair_transits_cached(uid, cp,
+                                                            today=today)
+            vuruslar = (veri_cp or {}).get("hits") or []
+            if not vuruslar:
+                continue
+            v = vuruslar[0]  # zaten yavaş-önce + dar-orb sıralı
+            sira = (0 if chart_context.is_slow_mover(v.get("transit")) else 1,
+                    float(v.get("orb") or 99.0))
+            if en_iyi is None or sira < en_iyi[0]:
+                en_iyi = (sira, cp, v)
+
+        if en_iyi is not None:
+            _, cp, v = en_iyi
+            satirlar = synastry_service.pair_transit_lines([v], cp.label,
+                                                           lang)
+            if satirlar and 0 < len(satirlar[0]) <= MAX_PUSH_BODY:
+                p = prompts.get(lang)
+                baslik = p.PUSH_MIDDAY_PAIR_TITLE.format(name=cp.label)
+                return (baslik, satirlar[0],
+                        {"type": "friend", "src": "midday", "d": gun})
+
+        return None
+    except Exception as exc:
+        logger.warning("Ogle bildirimi uretilemedi (%s): %s",
                        profile.get("uid"), exc)
         return None
 

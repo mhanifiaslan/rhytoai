@@ -437,6 +437,12 @@ PUSH_SABLONLARI = [
     "PUSH_DAILY_TITLE", "PUSH_DAILY_FALLBACK", "PUSH_STREAK_TITLE",
     "PUSH_STREAK_BODY", "PUSH_FRIEND_TITLE", "PUSH_FRIEND_BODY",
     "PUSH_DAILY_PROMPT",
+    # OB-turu: korumasiz kalan + yeni sablonlar — hepsi tr+en ve GERCEKTEN
+    # cevrilmis olmali (davet pushu Ingilizce kullaniciya Turkce gitmesin).
+    "PUSH_SIGNAL_TITLE", "PUSH_CHECKIN_TITLE",
+    "PUSH_MIDDAY_TITLE", "PUSH_MIDDAY_PAIR_TITLE",
+    "PUSH_INVITE_TITLE", "PUSH_INVITE_BODY",
+    "PUSH_INVITE_ACCEPTED_TITLE", "PUSH_INVITE_ACCEPTED_BODY",
 ]
 
 

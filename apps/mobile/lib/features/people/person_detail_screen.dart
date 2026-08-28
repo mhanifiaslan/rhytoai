@@ -16,6 +16,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api.dart';
+import '../../core/discovery.dart';
 import '../../core/people.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
@@ -82,6 +83,15 @@ class PersonDetailScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final ad = person.label ?? relationLabel(l10n, person.relation);
     final harita = ref.watch(personChartProvider(person));
+
+    // OB4: çevreden birine bakmak keşif halkasının üçüncü dilimi.
+    // build İÇİNDE provider değiştirilemez; kare sonrasına ertelenir
+    // (mark idempotent — yeniden çizimde tekrar çağrılması zararsız).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (context.mounted) {
+        ref.read(discoveryProvider.notifier).mark(DiscoveryTask.circle);
+      }
+    });
 
     return CosmicScaffold(
       appBar: AppBar(

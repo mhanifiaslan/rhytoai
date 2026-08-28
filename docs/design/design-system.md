@@ -9,8 +9,11 @@
 İlham: koyu siyah-mor uzay zemini üzerinde yumuşak yuvarlak koyu kartlar,
 mor→magenta degrade vurgular, renkli burç rozetleri, parlayan degrade merkez
 AI butonu, modern sohbet balonları ve animasyonlu ilerleme çubukları.
-Dil Türkçe; emoji bu sürümde serbesttir ama ölçülü kullanılır (rozet, çip,
-başlık vurgusu).
+Dil Türkçe; emoji bu sürümde serbesttir ama ölçülü kullanılır. OB-turu
+doktrini: **bildirim başlıkları** tema emojisi taşır (💼❤️🌙🪙 —
+`prompts.THEME_EMOJIS` = mobil `kThemeIcons`), **sohbet** yerinde 1-2
+emoji kullanabilir (ağır duygu anlarında hiç), **kart/rapor gövdeleri**
+sade kalır.
 
 ## 2. Renk paleti (`lib/theme/rytho_theme.dart` → `RythoColors`)
 
@@ -168,14 +171,25 @@ Ses seviyesi 0.3–0.5; Profil > Ayarlar > "Sesler" anahtarıyla kapatılır
   hasOnly listesine eklendi). Ana ekran açılışında `DailyStreak.touch` —
   ardışık günlerde artar, atlanınca 1'e döner. Rozet ana ekranda + Profil'de
   kart.
-- **Kişisel nudge**: `core/motivation.dart` — burç → 3 afirmasyon; gün
-  numarasıyla döngüsel seçim, günlük okuma kartının altında.
-- **Premium upsell**: ana ekrandaki degrade banner ("Yıldızların ötesine geç ✨"
-  → "Keşfet") Atlas'ın derin raporuna götürür; ödeme henüz yok.
+- **Günlük keşif halkası (OB4)**: `core/discovery.dart` — üç dilimli
+  26px halka (`_DiscoveryRing`, sky_screen), dilimler: gökyüzünü aç ·
+  Rytho ile konuş · çevrenden birine bak. Tamamen cihaz-yerel
+  (SharedPreferences `discovery-state` = "gün:mask"); 3/3'te günde bir
+  kez StarBurst + `SoundFx.success` + snackbar. Rozet/XP bilinçli yok
+  (kullanıcı kararı, v1).
+- **Hazır tepkiler**: arkadaş satırından iki dokunuşla; emoji kümesi üç
+  yerde birebir aynı (mobil `kReactions`, backend `REACTION_EMOJIS`,
+  firestore.rules) ve testle sabitli.
+
+  Not: eski "burç → 3 afirmasyon" nudge'ı kaldırılalı çok oldu —
+  `core/motivation.dart` artık yalnız seri takibi.
+- **Premium upsell**: satış mesajı `PlusLockedCard`'da, yani kullanıcının
+  kilitli içeriğe baktığı yerde yaşar (banner yok).
 
 ## 9. Yapılmayacaklar
 
 - Parşömen/altın gravür estetiğine dönüş yok; Cormorant/Spectral kullanılmaz.
 - Saf siyah (#000) veya saf beyaz büyük yüzeyler yok.
-- Emoji: rozet/çip/vurgu dışında gövde metinlerine serpiştirilmez.
+- Emoji: kart/rapor GÖVDE metinlerine serpiştirilmez (bildirim başlığı
+  ve sohbetteki ölçülü kullanım §1'deki doktrinle serbesttir).
 - Blur yalnızca alt barda; kartlarda performans için düz dolgu.

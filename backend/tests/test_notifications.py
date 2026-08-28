@@ -270,6 +270,139 @@ def test_checkin_gunun_okunmasina_bakmaz(gonderilmemis):
     assert gonder, gerekce
 
 
+# --- Ogle olculu slotu (OB3) ---
+
+def _midday_ham(gunler: int, tarih: str = "2026-06-15"):
+    """days_to_exact degistirilebilir sahte sinyal kumesi."""
+    return {
+        "generated_for": tarih,
+        "signals": [
+            {"transit": "Jupiter", "natal": "Sun", "aspect": "Trine",
+             "orb": 2.1, "theme": "career", "active": True,
+             "movement": "applying"},
+            {"transit": "Saturn", "natal": "Moon", "aspect": "Square",
+             "orb": 0.3, "theme": "inner", "active": True,
+             "exact_on": tarih, "days_to_exact": gunler},
+        ],
+    }
+
+
+def test_midday_ogle_saatinde(gonderilmemis):
+    """Hedef saat 13:00 yerel; tercih `notifyDaily` ailesinden (ayni
+    commit kurali: PREF_FIELDS'ta olmayan tur SESSIZCE gitmez)."""
+    assert ns.TARGET_HOURS["midday"] == 13
+    assert ns.PREF_FIELDS["midday"] == "notifyDaily"
+    gonder, gerekce = ns.should_send(profil(), "midday", utc(10))
+    assert gonder, gerekce
+    gonder, gerekce = ns.should_send(profil(), "midday", utc(6))
+    assert not gonder and gerekce == "saat-uygun-degil"
+    gonder, gerekce = ns.should_send(
+        profil(notifyDaily=False), "midday", utc(10))
+    assert not gonder and gerekce == "tercih-kapali"
+
+
+def test_midday_bugun_kesinlesen_kendi_haritasindan(monkeypatch):
+    """(a) dali: bugun kesinlesen sinyal varsa gövde paketteki INDEKS
+    HIZALI cümle, yuk birebir sabahki daily deseni + src=midday — mobilde
+    sifir yeni tuketici. Tum FCM degerleri dize olmali."""
+    from services import signal_service
+
+    ham = _midday_ham(gunler=0)
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    monkeypatch.setattr(
+        signal_service, "cached_insight_bundle",
+        lambda h, lang, generate_if_missing=True: {
+            "insights": ["Kariyer cümlesi.", "Bugün iç dünyanda kapanış var."],
+            "checkin_question": None,
+        })
+
+    sonuc = ns.midday_push(profil(), "tr", today=dt.date(2026, 6, 15))
+    assert sonuc is not None
+    baslik, govde, veri = sonuc
+    assert govde == "Bugün iç dünyanda kapanış var."      # idx 1, hizali
+    assert "🌙" in baslik                                  # inner temasi
+    assert veri["type"] == "daily" and veri["route"] == "signal"
+    assert veri["idx"] == "1" and veri["src"] == "midday"
+    assert veri["d"] == "2026-06-15"
+    assert all(isinstance(v, str) for v in veri.values())
+
+
+def test_midday_paketi_yalniz_okur(monkeypatch):
+    """Ogle LLM YAKMAZ: paket yoksa uretim cagrilmaz, dürüst teknik satira
+    düşülür (o da ölçülmüş veridir)."""
+    from services import signal_service
+
+    ham = _midday_ham(gunler=0)
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+
+    def uretim_yasak(*a, **k):
+        raise AssertionError("ogle yolu insight_bundle CAGIRMAMALI")
+
+    monkeypatch.setattr(signal_service, "insight_bundle", uretim_yasak)
+    monkeypatch.setattr(ns.gemini_service, "generate", uretim_yasak)
+
+    sonuc = ns.midday_push(profil(), "tr", today=dt.date(2026, 6, 15))
+    assert sonuc is not None
+    _, govde, veri = sonuc
+    assert govde and veri["src"] == "midday"   # teknik satir dolu
+
+
+def test_midday_olay_yoksa_none(monkeypatch):
+    """Kesinlesen yok + cift onbellegi bos → None; cagiran 'olay-yok' ile
+    atlar. Ogle bildirimi bir hak degil, olayin haberi."""
+    from services import circle_context, people_service, signal_service
+
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: _midday_ham(gunler=3))
+    monkeypatch.setattr(circle_context, "list_accepted_friend_uids",
+                        lambda uid, limit=5: [])
+    monkeypatch.setattr(people_service, "list_people", lambda uid: [])
+
+    assert ns.midday_push(profil(), "tr",
+                          today=dt.date(2026, 6, 15)) is None
+
+
+def test_midday_cift_ani_yalniz_onbellekten(monkeypatch):
+    """(b) dali ASLA hesaplamaz: get_transits patlasa bile onbellekli
+    vurus push uretir. Yuk type=friend → Çevrem sekmesi."""
+    from services import (astro_service, circle_context, people_service,
+                          signal_service, synastry_service)
+
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: None)
+    monkeypatch.setattr(circle_context, "list_accepted_friend_uids",
+                        lambda uid, limit=5: ["f1"])
+    monkeypatch.setattr(people_service, "list_people", lambda uid: [])
+
+    cp = synastry_service.Counterpart(
+        key="u1-f1", birth={}, label="Erkan", sun_sign="leo")
+    monkeypatch.setattr(synastry_service, "friend_counterpart",
+                        lambda uid, fuid: cp)
+    monkeypatch.setattr(
+        synastry_service, "pair_transits_cached",
+        lambda uid, other, today=None: {
+            "date": "2026-06-15",
+            "hits": [{"side": "user", "transit": "Saturn", "natal": "Venus",
+                      "aspect": "Trine", "orb": 0.8,
+                      "movement": "applying"}],
+        })
+
+    def hesap_yasak(*a, **k):
+        raise AssertionError("ogle yolu efemeris HESAPLAMAMALI")
+
+    monkeypatch.setattr(astro_service, "get_transits", hesap_yasak)
+
+    sonuc = ns.midday_push(profil(), "tr", today=dt.date(2026, 6, 15))
+    assert sonuc is not None
+    baslik, govde, veri = sonuc
+    assert "Erkan" in baslik
+    assert govde
+    assert veri["type"] == "friend" and veri["src"] == "midday"
+    assert all(isinstance(v, str) for v in veri.values())
+
+
 # --- Olay tabanli (arkadas tepkisi) ---
 
 def test_arkadas_tepkisi_sessiz_saatte_dusurulur():
@@ -470,6 +603,153 @@ def test_tepki_bildirimi_kendine_gonderilemez(monkeypatch):
 
 
 # --------------------------------------------------------------------------
+# Davet / kabul push'lari (OB2)
+# --------------------------------------------------------------------------
+
+@uygulama_gerekir
+def test_davet_bildirimi_kendine_gonderilemez():
+    with TestClient(app) as client:
+        yanit = client.post("/api/v1/notify/invite",
+                            json={"friend_uid": "dev-user"},
+                            headers={"Authorization": "Bearer test-4"})
+    assert yanit.status_code == 400
+
+
+@uygulama_gerekir
+def test_davet_bildirimi_gercek_kenar_sart(monkeypatch):
+    """Spam kapisi: alicinin agacinda GERCEK `incoming` kenari yoksa 403.
+    firestore.rules o kenari yalniz gercek davet akisinin kurmasina izin
+    verdigi icin 'davet etmeden push atma' vektoru kaynakta kapali."""
+    from services import profile_service
+
+    monkeypatch.setattr(profile_service, "has_pending_invite",
+                        lambda a, b: False)
+    with TestClient(app) as client:
+        yanit = client.post("/api/v1/notify/invite",
+                            json={"friend_uid": "kurban"},
+                            headers={"Authorization": "Bearer test-5"})
+    assert yanit.status_code == 403
+
+
+@uygulama_gerekir
+def test_davet_bildirimi_gider_ve_ayni_gun_tekrarlamaz(monkeypatch):
+    """Mutlu yol + cift-basina-gunluk tekrar korumasi: ikinci cagri
+    'skipped' doner (davet geri cek-tekrar gonder spam'ine ikinci hat)."""
+    import types
+
+    from api import notify
+    from services import profile_service, push_service
+
+    monkeypatch.setattr(profile_service, "has_pending_invite",
+                        lambda a, b: True)
+    monkeypatch.setattr(
+        profile_service, "get_profile",
+        lambda uid: profil(uid=uid, quietFrom=0, quietTo=0,
+                           displayName="Gonderen" if uid == "dev-user"
+                           else "Alici"))
+
+    gonderilenler: dict[tuple, str] = {}
+    monkeypatch.setattr(
+        ns, "already_sent",
+        lambda uid, tur, gun: gonderilenler.get((uid, tur)) == gun)
+    monkeypatch.setattr(
+        ns, "mark_sent",
+        lambda uid, tur, gun: gonderilenler.__setitem__((uid, tur), gun))
+
+    yakalanan: list = []
+
+    def sahte_send(mesajlar):
+        yakalanan.extend(mesajlar)
+        return types.SimpleNamespace(sent=len(mesajlar), failed=0, pruned=[])
+
+    monkeypatch.setattr(push_service, "send", sahte_send)
+
+    with TestClient(app) as client:
+        bir = client.post("/api/v1/notify/invite",
+                          json={"friend_uid": "alici-1"},
+                          headers={"Authorization": "Bearer test-6"})
+        iki = client.post("/api/v1/notify/invite",
+                          json={"friend_uid": "alici-1"},
+                          headers={"Authorization": "Bearer test-6"})
+
+    assert bir.json()["status"] == "ok"
+    assert iki.json()["status"] == "skipped"
+    assert iki.json()["reason"] == "zaten-gonderildi"
+    assert len(yakalanan) == 1
+    mesaj = yakalanan[0]
+    assert mesaj.data == {"type": "friend", "fromUid": "dev-user"}
+    assert "🤝" in mesaj.title and "Gonderen" in mesaj.title
+    assert notify is not None  # import dumani
+
+
+@uygulama_gerekir
+def test_davet_bildirimi_sessiz_saatte_duser(monkeypatch):
+    """Dogrulamadan sonra asla raise yok: sessiz saatte 200 + skipped —
+    davet Firestore'da zaten duruyor, push ustune eklenen bir sey."""
+    from services import profile_service
+
+    monkeypatch.setattr(profile_service, "has_pending_invite",
+                        lambda a, b: True)
+    monkeypatch.setattr(profile_service, "get_profile",
+                        lambda uid: profil(uid=uid))
+    monkeypatch.setattr(ns, "can_send_event",
+                        lambda p, tur, now_utc=None: (False, "sessiz-saat"))
+
+    with TestClient(app) as client:
+        yanit = client.post("/api/v1/notify/invite",
+                            json={"friend_uid": "alici-2"},
+                            headers={"Authorization": "Bearer test-7"})
+    assert yanit.status_code == 200
+    assert yanit.json() == {"status": "skipped", "reason": "sessiz-saat"}
+
+
+@uygulama_gerekir
+def test_kabul_bildirimi_arkadaslik_sart(monkeypatch):
+    from services import profile_service
+
+    monkeypatch.setattr(profile_service, "are_friends", lambda a, b: False)
+    with TestClient(app) as client:
+        yanit = client.post("/api/v1/notify/invite-accepted",
+                            json={"friend_uid": "yabanci"},
+                            headers={"Authorization": "Bearer test-8"})
+    assert yanit.status_code == 403
+
+
+@uygulama_gerekir
+def test_kabul_bildirimi_daveti_gonderene_gider(monkeypatch):
+    import types
+
+    from services import profile_service, push_service
+
+    monkeypatch.setattr(profile_service, "are_friends", lambda a, b: True)
+    monkeypatch.setattr(
+        profile_service, "get_profile",
+        lambda uid: profil(uid=uid, quietFrom=0, quietTo=0,
+                           displayName="Kabul-Eden" if uid == "dev-user"
+                           else "Davet-Eden"))
+    monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
+    monkeypatch.setattr(ns, "mark_sent", lambda uid, tur, gun: None)
+
+    yakalanan: list = []
+
+    def sahte_send(mesajlar):
+        yakalanan.extend(mesajlar)
+        return types.SimpleNamespace(sent=len(mesajlar), failed=0, pruned=[])
+
+    monkeypatch.setattr(push_service, "send", sahte_send)
+
+    with TestClient(app) as client:
+        yanit = client.post("/api/v1/notify/invite-accepted",
+                            json={"friend_uid": "davet-eden"},
+                            headers={"Authorization": "Bearer test-9"})
+    assert yanit.json()["status"] == "ok"
+    assert len(yakalanan) == 1
+    assert "🎉" in yakalanan[0].title
+    assert "Kabul-Eden" in yakalanan[0].title
+    assert yakalanan[0].data == {"type": "friend", "fromUid": "dev-user"}
+
+
+# --------------------------------------------------------------------------
 # Tepki kumesi istemciyle ayni mi
 # --------------------------------------------------------------------------
 
@@ -492,6 +772,45 @@ def test_tepki_etiketleri_her_dilde_tam():
     for kod in i18n.SUPPORTED:
         eksik = set(notify.REACTION_EMOJIS) - set(notify.REACTION_LABELS[kod])
         assert not eksik, f"{kod} dilinde eksik tepki etiketi: {eksik}"
+
+
+def test_tepki_emojileri_istemciyle_ayni():
+    """OB5 surtuklenme onarimi: eski test yalniz ANAHTARLARI karsilastiriyordu
+    ve same_frequency sunucuda 🌊, mobil pickerda 🛰️ idi — kullanicinin
+    BASTIGI emoji alicinin bildiriminde farkli gorunuyordu. Artik DEGERLER
+    de birebir ayni olmak zorunda (kanonik = mobil)."""
+    import pathlib
+    import re
+
+    from api import notify
+
+    dart = (pathlib.Path(__file__).resolve().parents[2] / "apps" / "mobile"
+            / "lib" / "core" / "friends.dart").read_text(encoding="utf-8")
+    blok = dart.split("kReactions = {")[1].split("};")[0]
+    istemci = dict(re.findall(r"'([a-z_]+)':\s*'([^']+)'", blok))
+    assert istemci == notify.REACTION_EMOJIS, (
+        "Tepki emojileri istemci/sunucu ayristi: "
+        f"{set(istemci.items()) ^ set(notify.REACTION_EMOJIS.items())}")
+
+
+def test_tema_emojileri_mobil_kThemeIcons_ile_ayni():
+    """PUSH_SIGNAL_TITLE/PUSH_MIDDAY_TITLE'daki tema emojisi (OB5) mobil
+    kart ikonlariyla ayni dortluden gelmeli — bildirimde 💼 gorup kartta
+    baska simge bulmak guveni kirar."""
+    import pathlib
+
+    from services import prompts
+
+    import re
+
+    assert set(prompts.THEME_EMOJIS) == {
+        "career", "relationships", "inner", "finance"}
+    dart = (pathlib.Path(__file__).resolve().parents[2] / "apps" / "mobile"
+            / "lib" / "widgets" / "basis_sheet.dart").read_text(
+                encoding="utf-8")
+    blok = dart.split("kThemeIcons = {")[1].split("};")[0]
+    istemci = dict(re.findall(r"'([a-z_]+)':\s*'([^']+)'", blok))
+    assert istemci == prompts.THEME_EMOJIS
 
 
 # --------------------------------------------------------------------------

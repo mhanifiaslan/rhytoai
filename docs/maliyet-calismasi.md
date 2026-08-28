@@ -247,6 +247,23 @@ aranıza dokunan gökyüzü" ölçümü (`pair_transits`).
 
 Marj matematiği değişmedi.
 
+## 6h. OB-turu: davet/kabul push'ları + öğle slotu + keşif halkası + emoji — 2026-08-28
+
+Kullanıcı isteği "uygulama bildirimlerle konuşmalı" — ama bu turun TAMAMI
+LLM'siz: yeni hiçbir üretim çağrısı yok.
+
+| Kalem | Değişim | Not |
+|---|---|---|
+| Davet push'u (`/notify/invite`) | **$0 LLM** | şablon metin; istek başına 2-3 Firestore okuması (`incoming` kenarı + iki profil) + 1 FCM; çift-başına-günlük tekrar koruması hacmi sınırlar |
+| Kabul push'u (`/invite-accepted`) | **$0 LLM** | aynı desen; `are_friends` çift taraflı doğrulama zaten iki okuma |
+| Öğle slotu (yerel 13:00) | **$0 LLM** | (a) sabahki paylaşımlı sinyal önbelleği + paket YALNIZ-OKUNUR (`generate_if_missing=False`); (b) çift ânı YALNIZ önbellekten (`pair_transits_cached` asla hesaplamaz); olaysız günde hiç gitmez — tarama maliyeti saatlik işin marjinal CPU'su |
+| Keşif halkası (OB4) | **$0** | tamamen cihaz-yerel SharedPreferences; sıfır sunucu trafiği |
+| Emoji geçişi (OB5) | **$0** | şablon başlıklarına sabit emoji; sohbet kuralı mevcut sistem talimatına +~30 token |
+
+Gün içi bildirim bütçesi (kullanıcı kararı): sabah 09 + öğle 13 (yalnız
+olay günleri) + akşam 20; davet/kabul olay tetikli ve bütçeye sayılmaz.
+Marj matematiği değişmedi.
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

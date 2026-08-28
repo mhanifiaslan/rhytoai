@@ -110,6 +110,9 @@ $isler = @(
     # KA4: aksam check-in sorusu. Streak'ten (:10) ONCE kosar; ayni aksam
     # ikisinden yalniz biri gider (should_send'deki karsilikli koruma).
     @{ ad = "rytho-notify-checkin"; tur = "checkin"; cron = "8 * * * *" },
+    # OB3: ogle olculu slotu (yerel 13:00) — yalniz gercekten olay olan
+    # gunlerde gider; olaysiz gun sessizdir.
+    @{ ad = "rytho-notify-midday"; tur = "midday"; cron = "12 * * * *" },
     @{ ad = "rytho-notify-streak"; tur = "streak"; cron = "10 * * * *" }
     # Sohbet arsivi temizligi (R4): 30 gundur kullanilmayan konusmalar.
     @{ ad = "rytho-cleanup"; uri = "/api/v1/maintenance/cleanup"; cron = "20 3 * * *" }

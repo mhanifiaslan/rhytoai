@@ -298,6 +298,27 @@ Future<void> notifyReaction(Dio dio, String toUid, String reaction) async {
   }
 }
 
+/// Davet push'unu tetikler (OB2) — [notifyReaction] ile aynı sözleşme:
+/// Firestore yazımından ayrı, ateşle-unut, hata yutulur. Sunucu davetin
+/// GERÇEKTEN var olduğunu (`incoming` kenarı) kendisi doğrular.
+Future<void> notifyInvite(Dio dio, String toUid) async {
+  try {
+    await dio.post('/api/v1/notify/invite', data: {'friend_uid': toUid});
+  } catch (e) {
+    debugPrint('Davet bildirimi gönderilemedi: $e');
+  }
+}
+
+/// Kabul push'unu daveti GÖNDERENE tetikler (OB2). Ateşle-unut.
+Future<void> notifyInviteAccepted(Dio dio, String toUid) async {
+  try {
+    await dio.post('/api/v1/notify/invite-accepted',
+        data: {'friend_uid': toUid});
+  } catch (e) {
+    debugPrint('Kabul bildirimi gönderilemedi: $e');
+  }
+}
+
 /// Gelen tepkiyi okundu sayıp siler.
 Future<void> dismissNudge(String nudgeId) async {
   final uid = _myUid;

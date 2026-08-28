@@ -44,14 +44,19 @@ bool _bosluk(String c) => c == ' ' || c == '\n' || c == '\t';
 /// Seçilebilir aday: kişi YA DA arkadaş (tam biri dolu).
 class MentionCandidate {
   const MentionCandidate({required this.display, this.personId, this.friendUid,
-      this.relation});
+      this.relation, this.sunSign, this.username});
 
   final String display;
   final String? personId;
   final String? friendUid;
 
-  /// Kişi adayında ilişki türü (ikon seçimi için); arkadaşta null.
+  /// Kişi adayında ilişki türü (emoji seçimi için); arkadaşta null.
   final String? relation;
+
+  /// Alt satır malzemesi (OB1): burç ve (arkadaşta) kullanıcı adı —
+  /// WhatsApp-tarzı listede ad tek başına yetmiyor, iki Ayşe ayrışmalı.
+  final String? sunSign;
+  final String? username;
 }
 
 /// Sorguya göre aday listesi. KİŞİLER ÖNCE (daha kişisel), sonra yalnız
@@ -83,12 +88,14 @@ List<MentionCandidate> mentionCandidates(
   for (final kisi in people) {
     final ad = personDisplay(kisi);
     ekle(ad, MentionCandidate(
-        display: ad, personId: kisi.id, relation: kisi.relation));
+        display: ad, personId: kisi.id, relation: kisi.relation,
+        sunSign: kisi.sunSign));
   }
   for (final arkadas in friends) {
     if (arkadas.status != FriendStatus.accepted) continue;
     ekle(arkadas.name, MentionCandidate(
-        display: arkadas.name, friendUid: arkadas.uid));
+        display: arkadas.name, friendUid: arkadas.uid,
+        sunSign: arkadas.sunSign, username: arkadas.username));
   }
 
   // Kararlı sıralama: önek eşleşenler öne; kişi/arkadaş sırası ekleme

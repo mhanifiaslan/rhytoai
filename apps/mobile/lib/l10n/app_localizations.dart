@@ -2405,13 +2405,13 @@ abstract class AppLocalizations {
   /// No description provided for @notifyFriends.
   ///
   /// In tr, this message translates to:
-  /// **'Arkadaş tepkileri'**
+  /// **'Arkadaş bildirimleri'**
   String get notifyFriends;
 
   /// No description provided for @notifyFriendsBody.
   ///
   /// In tr, this message translates to:
-  /// **'Bir arkadaşın sana tepki gönderdiğinde haber ver.'**
+  /// **'Davetler, kabuller ve tepkiler için haber ver.'**
   String get notifyFriendsBody;
 
   /// No description provided for @quietHours.
@@ -4639,6 +4639,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Eşleşen kişi yok — Çevrem\'den ekleyebilirsin'**
   String get chatMentionEmpty;
+
+  /// No description provided for @discoveryComplete.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günün üç keşfi tamam ✨ Yarın gökyüzü yeniden kurulur.'**
+  String get discoveryComplete;
+
+  /// No description provided for @discoveryRingTooltip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Günün keşif halkası: gökyüzünü aç · Rytho ile konuş · çevrenden birine bak'**
+  String get discoveryRingTooltip;
 }
 
 class _AppLocalizationsDelegate

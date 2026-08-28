@@ -52,6 +52,21 @@ IconData relationIcon(String relation) => switch (relation) {
       _ => Icons.person_outline_rounded,
     };
 
+/// Türün emoji karşılığı (OB1) — METİN bağlamları için (mention listesi
+/// gibi). `relationIcon` bir IconData'dır ve string'e basılırsa
+/// "IconData(U+0E25B)" görünür — cihazda tam bu görüldü. Tek-glif
+/// emojiler bilerek seçildi (ZWJ dizileri bazı klavye/işletim sistemi
+/// bileşimlerinde ikiye ayrılıyor).
+String relationEmoji(String relation) => switch (relation) {
+      'partner' => '💞',
+      'child' => '🧒',
+      'parent' => '🧓',
+      'sibling' => '👫',
+      'friend' => '🙋',
+      'work' => '💼',
+      _ => '✨',
+    };
+
 class PersonFormScreen extends ConsumerStatefulWidget {
   const PersonFormScreen({super.key, this.existing});
 

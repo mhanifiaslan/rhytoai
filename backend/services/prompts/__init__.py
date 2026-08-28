@@ -73,6 +73,23 @@ def sign_key_from_code(code: str | None) -> str | None:
     return _SIGN_CODE_TO_KEY.get(code) if code else None
 
 
+#: Sinyal teması -> emoji (OB5). Dil-nötr olduğu için modüllerde değil
+#: burada; mobil `kThemeIcons` (basis_sheet.dart) ile AYNI dört tema.
+#: Bildirim başlıklarında kullanılır; bilinmeyen temada yıldız.
+THEME_EMOJIS = {
+    "career": "💼",
+    "relationships": "❤️",
+    "inner": "🌙",
+    "finance": "🪙",
+}
+
+DEFAULT_THEME_EMOJI = "✨"
+
+
+def theme_emoji(theme: str | None) -> str:
+    return THEME_EMOJIS.get(theme or "", DEFAULT_THEME_EMOJI)
+
+
 def sign_name_from_code(lang: str | None, code: str | None) -> str:
     """kerykeion burç kodunun (``Leo``, ``Ari``) o dildeki adı."""
     if not code:

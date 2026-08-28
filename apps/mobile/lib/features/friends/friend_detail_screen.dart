@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/analytics.dart';
 import '../../core/api.dart';
+import '../../core/discovery.dart';
 import '../../core/friends.dart';
 import '../../core/sound.dart';
 import '../../l10n/app_localizations.dart';
@@ -41,6 +42,8 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
   @override
   void initState() {
     super.initState();
+    // OB4: çevreden birine bakmak keşif halkasının üçüncü dilimi.
+    ref.read(discoveryProvider.notifier).mark(DiscoveryTask.circle);
     _loadDyad();
   }
 

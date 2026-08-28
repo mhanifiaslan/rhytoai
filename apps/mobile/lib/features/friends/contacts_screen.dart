@@ -12,12 +12,14 @@
 /// (bkz. core/contact_match.dart). Bu ekran hiçbir ad yüklemez.
 library;
 
+import 'dart:async' show unawaited;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/analytics.dart';
-import '../../core/api.dart' show friendlyError;
+import '../../core/api.dart' show apiProvider, friendlyError;
 import '../../core/city_directory.dart' show foldTurkish;
 import '../../core/contact_match.dart';
 import '../../core/deep_links.dart' show inviteLinkFor;
@@ -250,9 +252,12 @@ class _AktifSatirState extends ConsumerState<_AktifSatir> {
   Future<void> _ekle() async {
     final l10n = AppLocalizations.of(context);
     final mesajci = ScaffoldMessenger.of(context);
+    final dio = ref.read(apiProvider);
     setState(() => _mesgul = true);
     try {
       await sendFriendRequest(widget.kisi.match.uid);
+      // Davet push'u (OB2): kenarlar yazıldıktan sonra, ateşle-unut.
+      unawaited(notifyInvite(dio, widget.kisi.match.uid));
       if (mounted) setState(() => _gonderildi = true);
     } catch (e) {
       if (mounted) {

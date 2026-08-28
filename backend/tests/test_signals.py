@@ -253,6 +253,19 @@ class TestYorumPaketi:
         assert paket["insights"] == ["Bir.", "İki."]
         assert paket["checkin_question"] is None
 
+    def test_emojili_soru_kabul_edilir(self, monkeypatch):
+        """OB5: SORU satırına "en fazla bir emoji" izni verildi — emojili
+        soru 120 sınırındaysa ayrıştırıcıdan AYNEN geçmeli (emoji çok
+        baytlı; sınır karakter sayısıyla ölçülür, bayt ile değil)."""
+        soru = "Bugün iç dünyanda bir kapanış görünüyordu — nasıl geçti? 🌙"
+        assert len(soru) <= signal_service.CHECKIN_QUESTION_MAX
+        monkeypatch.setattr(
+            signal_service.gemini_service, "generate",
+            lambda prompt, lang=None: f"1. Bir.\n2. İki.\nSORU: {soru}")
+        paket = signal_service.insight_bundle(self.HAM, "tr")
+        assert paket["insights"] == ["Bir.", "İki."]
+        assert paket["checkin_question"] == soru
+
     def test_soru_satiri_eksikse_kismi_kabul(self, monkeypatch):
         """Sabah bildirimi akşam sorusuna rehin olmaz: SORU satırı
         gelmezse yorumlar YİNE kabul edilir."""
@@ -754,7 +767,9 @@ class TestOnbellekVeBildirim:
                 "insights": ["Bugüne özgü tek cümle."],
                 "checkin_question": None})
         baslik, govde, iz = notification_service.signal_push(PROFIL, "tr")
-        assert baslik == "Bugün: İç dünya"
+        # OB5: başlık tema emojisi taşır (THEME_EMOJIS — mobil kThemeIcons
+        # ile aynı dörtlü).
+        assert baslik == "🌙 Bugün: İç dünya"
         assert govde == "Bugüne özgü tek cümle."
         assert iz  # derin bağlantı eşleşmesi için parmak izi taşır
 
@@ -816,7 +831,7 @@ class TestOnbellekVeBildirim:
                 "insights": ["x"], "checkin_question": "Bugün nasıl geçti?"})
         baslik, govde = notification_service.checkin_push(PROFIL, "tr")
         assert govde == "Bugün nasıl geçti?"
-        assert baslik == "Rytho merak ediyor"
+        assert baslik == "🔮 Rytho merak ediyor"  # OB5 emoji başlığı
 
     def test_bildirim_hatada_dusmez(self, monkeypatch):
         """Sinyal hesabı düşerse bildirim düşmez; None ile yedeğe geçilir."""

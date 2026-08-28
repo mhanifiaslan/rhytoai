@@ -99,6 +99,9 @@ HOW YOU TALK (strict):
   unasked ("your mother's Taurus side may be feeding this friction") —
   but never do deep analysis of a relationship whose measurement
   whisper has not arrived.
+- One or two well-placed emojis are fine — they add warmth (✨🌙). But
+  not in every sentence, never several in a row, and NONE at all when
+  the reader shares something serious or emotionally heavy.
 - If you are given a "BACKGROUND WHISPER", that is your own private context.
   Never relay it as a block; at most fold one relevant detail into your own
   words.
@@ -378,10 +381,11 @@ CHART_BAZI_YEAR_LABEL = "year pillar"
 # call the LLM. Only the one-line body of the daily push is generated, and it
 # is cached per sign — not per user.
 
-PUSH_DAILY_TITLE = "Today's sky is ready"
+PUSH_DAILY_TITLE = "✨ Today's sky is ready"
 #: Signal notification title (R2-S6): says which area of life today is
-#: about, instead of a generic "your sky is ready".
-PUSH_SIGNAL_TITLE = "Today: {theme}"
+#: about. {emoji} is the theme emoji (OB5, prompts.THEME_EMOJIS —
+#: mirrors mobile kThemeIcons).
+PUSH_SIGNAL_TITLE = "{emoji} Today: {theme}"
 #: Used when the generated line is unavailable.
 PUSH_DAILY_FALLBACK = "Your reading for {sign} is waiting."
 
@@ -392,7 +396,18 @@ PUSH_STREAK_BODY = (
 
 #: Evening check-in push (KA round): the body is the personal question
 #: written in the morning batch; the title is warm and fixed.
-PUSH_CHECKIN_TITLE = "Rytho is curious"
+PUSH_CHECKIN_TITLE = "🔮 Rytho is curious"
+
+#: Midday measured slot (OB3): sent only when something really goes
+#: exact TODAY — quiet otherwise.
+PUSH_MIDDAY_TITLE = "{emoji} In the sky right now: {theme}"
+PUSH_MIDDAY_PAIR_TITLE = "🔭 Today: you and {name}"
+
+#: Invite pushes (OB2). Invites used to be completely silent.
+PUSH_INVITE_TITLE = "🤝 {name} wants to add you as a friend"
+PUSH_INVITE_BODY = "You can answer the invite from the Friends tab."
+PUSH_INVITE_ACCEPTED_TITLE = "🎉 {name} accepted your invite"
+PUSH_INVITE_ACCEPTED_BODY = "You're friends now — see the sky between you."
 
 PUSH_FRIEND_TITLE = "{name} nudged you"
 #: Reaction labels come from the same closed set as friend_detail_screen.
@@ -1025,14 +1040,16 @@ RULES (strict):
   NEVER contradict that marker.
 - Use TENDENCY language: "this theme is becoming visible", "make room
   for" — no dated event prophecy ("you will get the job" is FORBIDDEN).
-- No health/legal/financial advice; no flattery; no emoji.
+- No health/legal/financial advice; no flattery; no emoji in the
+  NUMBERED lines (card surfaces stay plain).
 - Each sentence must touch the theme at the end of its line.
 - LAST LINE: exactly "QUESTION: <one question>", with NO NUMBER in front —
   a warm check-in question tied to the signal marked "(today's focus)",
   to be asked in the evening. Not a prophecy; a friendly question about
   how the day WENT ("Something was moving on the work front today — how
-  did it go?" style). At most 120 characters. If no signal is marked,
-  write "QUESTION: -".
+  did it go?" style). At most 120 characters. The QUESTION line may carry
+  AT MOST ONE emoji (it counts toward the 120 limit). If no signal is
+  marked, write "QUESTION: -".
 
 Write only the numbered lines and the QUESTION line, nothing else.
 """

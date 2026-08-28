@@ -7,11 +7,12 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../core/api.dart';
 import '../../core/conversations.dart';
+import '../../core/discovery.dart';
 import '../../core/friends.dart';
 import '../../core/people.dart';
 import '../../core/sound.dart';
 import '../../core/wallet.dart';
-import '../people/person_form_screen.dart' show relationIcon, relationLabel;
+import '../people/person_form_screen.dart' show relationEmoji, relationLabel;
 import 'mention.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
@@ -236,6 +237,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         if (widget.source != null) 'source': widget.source,
       });
       if (_mentionName != null) _clearMention();
+      // OB4: başarılı sohbet turu keşif halkasının ikinci dilimi.
+      ref.read(discoveryProvider.notifier).mark(DiscoveryTask.chat);
       final veri = response.data as Map;
       setState(() {
         _messages.add((sender: 'AI', text: veri['reply'] ?? ''));
@@ -414,30 +417,35 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                   },
                 ),
         ),
-        // Öneri çipleri — aktif '@' varken bant BAHSETME adaylarına
-        // dönüşür (GT6): kişiler önce, sonra kabul edilmiş arkadaşlar.
-        // Uygulamada Overlay deseni yok; bant değişimi yeterli ve klavye/
-        // girece dokunmaz.
-        SizedBox(
-          height: 42,
-          child: _activeMention != null
-              ? _MentionBand(
-                  query: _activeMention!.query,
-                  onSelect: _selectMention,
-                )
-              : ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: _suggestions(l10n).length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) => Center(
-                    child: SuggestionChip(
-                      text: _suggestions(l10n)[i],
-                      onTap: () => _send(_suggestions(l10n)[i]),
-                    ),
-                  ),
+        // Öneri çipleri — aktif '@' varken bant WhatsApp-tarzı DİKEY
+        // aday listesine dönüşür (OB1; GT6'daki yatay çip "IconData(U+…)"
+        // hatasıyla birlikte gitti). Mesaj listesi Expanded'da olduğu
+        // için Overlay gerekmez: bant büyür, giriş satırı klavyenin
+        // üstünde sabit kalır.
+        if (_activeMention != null)
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxHeight: 220),
+            child: _MentionBand(
+              query: _activeMention!.query,
+              onSelect: _selectMention,
+            ),
+          )
+        else
+          SizedBox(
+            height: 42,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _suggestions(l10n).length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (_, i) => Center(
+                child: SuggestionChip(
+                  text: _suggestions(l10n)[i],
+                  onTap: () => _send(_suggestions(l10n)[i]),
                 ),
-        ),
+              ),
+            ),
+          ),
         // Ekli bağlam çipi: bahsedilen kişi/arkadaş bu MESAJA iliştirildi.
         if (_mentionName != null)
           Padding(
@@ -664,27 +672,98 @@ class _MentionBand extends ConsumerWidget {
       query, kisiler, arkadaslar,
       (k) => k.label ?? relationLabel(l10n, k.relation),
     );
-    if (adaylar.isEmpty) {
-      return Center(
-        child: Text(l10n.chatMentionEmpty,
-            style: RythoType.dataSmall
-                .copyWith(color: RythoColors.parchmentDim)),
+    return MentionCandidateList(candidates: adaylar, onSelect: onSelect);
+  }
+}
+
+/// WhatsApp-tarzı dikey aday listesi (OB1) — SAF: provider bilmez,
+/// doğrudan test edilir (GT6'daki "IconData(U+…)" hatası bandı çizen
+/// tek bir test olmadığı için sızmıştı).
+///
+/// Satır anatomisi `_PersonTile` çekirdeği: 34px daire (kişide ilişki
+/// EMOJİSİ — IconData değil; arkadaşta baş harf), ad, soluk alt satır
+/// (kişi: burç ya da ilişki adı; arkadaş: @kullanıcıadı · burç).
+class MentionCandidateList extends StatelessWidget {
+  const MentionCandidateList(
+      {super.key, required this.candidates, required this.onSelect});
+
+  final List<MentionCandidate> candidates;
+  final ValueChanged<MentionCandidate> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    if (candidates.isEmpty) {
+      return SizedBox(
+        height: 42,
+        child: Center(
+          child: Text(l10n.chatMentionEmpty,
+              style: RythoType.dataSmall
+                  .copyWith(color: RythoColors.parchmentDim)),
+        ),
       );
     }
     return ListView.separated(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: adaylar.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 8),
+      shrinkWrap: true,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      itemCount: candidates.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 2),
       itemBuilder: (_, i) {
-        final aday = adaylar[i];
-        final onek = aday.relation != null
-            ? '${relationIcon(aday.relation!)} '
-            : '@ ';
-        return Center(
-          child: SuggestionChip(
-            text: '$onek${aday.display}',
-            onTap: () => onSelect(aday),
+        final aday = candidates[i];
+        final altSatir = aday.relation != null
+            ? (aday.sunSign ?? relationLabel(l10n, aday.relation!))
+            : [
+                if (aday.username != null) '@${aday.username}',
+                if (aday.sunSign != null) aday.sunSign!,
+              ].join(' · ');
+        return Pressable(
+          onTap: () => onSelect(aday),
+          child: Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: RythoColors.inkLight.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(children: [
+              Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: RythoColors.lilac.withValues(alpha: 0.14),
+                ),
+                child: aday.relation != null
+                    ? Text(relationEmoji(aday.relation!),
+                        style: const TextStyle(fontSize: 16))
+                    : Text(
+                        aday.display.isEmpty
+                            ? '@'
+                            : aday.display[0].toUpperCase(),
+                        style: RythoText.body(14,
+                            color: RythoColors.lilac,
+                            w: FontWeight.w700)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(aday.display,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: RythoText.body(13.5, w: FontWeight.w600)),
+                    if (altSatir.isNotEmpty)
+                      Text(altSatir,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: RythoText.body(11,
+                              color: RythoColors.parchmentDim)),
+                  ],
+                ),
+              ),
+            ]),
           ),
         );
       },

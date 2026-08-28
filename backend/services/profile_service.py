@@ -163,6 +163,17 @@ def _friend_status(owner_uid: str, other_uid: str) -> str | None:
     return (snapshot.to_dict() or {}).get("status")
 
 
+def has_pending_invite(from_uid: str, to_uid: str) -> bool:
+    """`from_uid` → `to_uid` yönünde BEKLEYEN bir davet var mı? (OB2)
+
+    Davet push'unun spam kapısı: rules yalnız gerçek davet akışının
+    `users/{to}/friends/{from} = incoming` kenarını kurmasına izin
+    veriyor — kenar yoksa push da yok. Tek taraflı okuma yeter, çünkü
+    doğrulanan şey davetin VARLIĞI, arkadaşlık yetkisi değil.
+    """
+    return _friend_status(to_uid, from_uid) == "incoming"
+
+
 def are_friends(uid: str, other_uid: str) -> bool:
     """İki kullanıcı arasında **kabul edilmiş** arkadaşlık var mı?
 
