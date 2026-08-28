@@ -65,3 +65,8 @@ knowledge/raw/
 #
 # Tersini isterseniz bu satırı silip dosyayı commit'lemek yeterli.
 apps/mobile/assets/models/*.tflite
+
+# RD-turu: kitap chunk'larinin kanonik kopyasi knowledge/corpus/books/ altinda
+# (git'te); buradaki ham cikti kopyasi ~60MB tekrar olurdu. Kanit zinciri
+# README + manifest + stats + clean ile korunuyor.
+docs/rag_corpus/chunks/

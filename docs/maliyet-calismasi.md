@@ -215,6 +215,21 @@ aktif ücretsiz kullanıcıda ~$18/ay — kullanıcı onayıyla kabul edilmiş
 dönüşüm yatırımı ("kişisel astrolog" vaadinin ücretsiz vitrini). Takvim
 `line`, günlük okuma ve raporların Plus kapıları DEĞİŞMEDİ.
 
+## 6f. RD-turu: 7 kitaplık korpus + metadata'lı getirme — 2026-08-28
+
+7 kamu malı kitap (1.245 chunk × 2 dil; güvenlik süzgeciyle 1.199/dil)
+korpusa girdi; getirme kullanıcının haritasıyla kişiselleşti.
+
+| Kalem | Değişim | Not |
+|---|---|---|
+| Sohbet turu | +~125 girdi token | pasaj bütçesi 2×700→2×1.200 kr + iç kaynak etiketi (kullanıcı onayı) |
+| Rapor | +~900 token en kötü | pasaj başına 2.000 kr tavan kondu — tavansız 3× olurdu |
+| Gömme | tek seferlik ~2,3M token | ~$0,3; artımlı — sonraki eklemeler yalnız yeni parçalar |
+| İmaj | +~29MB artefakt | bilinçli: vektörler imaja gömülü, çalışma anında sıfır gömme çağrısı |
+| Getirme boost'u | **$0** | metadata karşılaştırması CPU; LLM/embedding çağrısı değişmedi |
+
+Marj matematiği değişmedi: sohbet turu ~$0,0020 → ~$0,0021.
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

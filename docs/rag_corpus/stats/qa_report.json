@@ -1,0 +1,63 @@
+{
+  "total_chunks": 1245,
+  "problems": [
+    "over max token target (>1150): ['alanleo_judge_nativity__s004__c0003', 'alanleo_judge_nativity__s004__c0014', 'alanleo_judge_nativity__s005__c0003', 'alanleo_judge_nativity__s005__c0009', 'alanleo_judge_nativity__s005__c0040', 'alanleo_judge_nativity__s007__c0005', 'alanleo_judge_nativity__s016__c0010', 'bonatti_anima_astrologiae__s000__c0005', 'bonatti_anima_astrologiae__s000__c0017', 'bonatti_anima_astrologiae__s000__c0028'] (total 42)"
+  ],
+  "problem_count": 1,
+  "token_distribution": {
+    "mean": 855.5,
+    "median": 915,
+    "min": 6,
+    "max": 1562,
+    "stdev": 225.4
+  },
+  "under_min_token_count": 6,
+  "books": [
+    {
+      "id": "alanleo_judge_nativity",
+      "chunks": 221,
+      "mean_ocr_confidence": 0.973,
+      "mean_tokens": 938.0
+    },
+    {
+      "id": "baughan_influence_stars",
+      "chunks": 38,
+      "mean_ocr_confidence": 0.98,
+      "mean_tokens": 836.6
+    },
+    {
+      "id": "bonatti_anima_astrologiae",
+      "chunks": 74,
+      "mean_ocr_confidence": 0.97,
+      "mean_tokens": 956.7
+    },
+    {
+      "id": "lilly_christian_astrology",
+      "chunks": 457,
+      "mean_ocr_confidence": 0.908,
+      "mean_tokens": 851.4
+    },
+    {
+      "id": "lilly_intro_1852",
+      "chunks": 233,
+      "mean_ocr_confidence": 0.959,
+      "mean_tokens": 830.7
+    },
+    {
+      "id": "ptolemy_tetrabiblos",
+      "chunks": 160,
+      "mean_ocr_confidence": 0.972,
+      "mean_tokens": 791.0
+    },
+    {
+      "id": "sepharial_astrology",
+      "chunks": 62,
+      "mean_ocr_confidence": 0.973,
+      "mean_tokens": 742.8
+    }
+  ],
+  "glossary_spot_check": {
+    "checked": 2103,
+    "misses": 21
+  }
+}

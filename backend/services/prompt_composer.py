@@ -28,16 +28,18 @@ from services import prompts
 #   3. 280 karakter, ortalama 907 karakterlik bir parçanın **%68'ini**
 #      atıyordu — yani doğru bulunan pasajın üçte ikisi çöpe gidiyordu.
 #
-# 700 karakter parçanın büyük kısmını taşıyor. Sohbet turuna maliyeti
-# ~210 token; harita bloğuyla birlikte bile Flash sınıfı bir modelde
-# ihmal edilebilir.
+# 700 → 1200 (RD-turu, kullanıcı kararı): kitap korpusunun parçaları
+# ~3.300 karakter — 700'lük kesim içeriğin çoğunu atıyordu. 1200, bir
+# parçanın ana fikrini bütünüyle taşıyor; tur başına ek maliyet ~+125
+# girdi token (≈ +$0,0001) — ihmal edilebilir.
 #
-# Pasaj SAYISI 2'de bırakıldı. Üçüncü kaynak odağı dağıtıyor ve persona
-# zaten "en fazla tek bir ilgili ayrıntıyı kendi cümlene sindir" diyor;
-# daha çok kaynak vermek modeli aktarmaya davet ediyor. Çeşitlilik kuralı
-# sayesinde bu 2 pasaj zaten farklı bölümlerden geliyor.
+# Pasaj SAYISI 2'de bırakıldı (kullanıcı bunu da onayladı). Üçüncü kaynak
+# odağı dağıtıyor ve persona zaten "en fazla tek bir ilgili ayrıntıyı
+# kendi cümlene sindir" diyor; daha çok kaynak vermek modeli aktarmaya
+# davet ediyor. Çeşitlilik kuralı sayesinde bu 2 pasaj zaten farklı
+# bölümlerden geliyor.
 MAX_PASSAGES = 2
-MAX_PASSAGE_CHARS = 700
+MAX_PASSAGE_CHARS = 1200
 
 # Bilgi tabanının kapsadığı kadim sistem terimleri (kök bazlı, küçük harf).
 # Mesajda bunlardan biri geçiyorsa korpus araması değerlidir.
@@ -282,11 +284,31 @@ def compose_chat_message(message: str, passages: list[dict],
     Hiçbiri yoksa mesaj olduğu gibi döner; API şeması ve model arayüzü değişmez.
     """
     whispers = []
+    p_etiket = prompts.get(lang)
     for passage in passages[:MAX_PASSAGES]:
         text = re.sub(r"\s+", " ", passage.get("text", "")).strip()
         if len(text) > MAX_PASSAGE_CHARS:
             text = text[:MAX_PASSAGE_CHARS].rsplit(" ", 1)[0] + "…"
-        if text:
+        if not text:
+            continue
+        # RD5: kitap pasajları İÇ etiket taşır (okul + dönem + otorite) —
+        # model çelişen gelenekleri ayırt edip yüksek otoriteyi izleyebilsin.
+        # Etiket YALNIZ modele; WHISPER_RAG kullanıcıya anmayı yasaklar.
+        # Kitap/yazar adı etikete BİLEREK girmez. Eski md pasajları
+        # etiketsiz kalır (kaynakta school alanı yok).
+        kaynak = passage.get("source") or {}
+        okul = kaynak.get("school_tr" if (lang or "tr") != "en"
+                          else "school")
+        if okul:
+            donem = kaynak.get("era_tr" if (lang or "tr") != "en"
+                               else "era") or ""
+            otorite = passage.get("authority") or 0
+            etiket = okul if not donem else f"{okul} · {donem}"
+            if otorite:
+                etiket += " · " + p_etiket.RAG_AUTHORITY_FMT.format(
+                    weight=otorite)
+            whispers.append(f"- [{etiket}] {text}")
+        else:
             whispers.append(f"- {text}")
 
     memory = (memory or "").strip()

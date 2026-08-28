@@ -187,7 +187,13 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         passages = []
         if should_use_rag(request.message, lang):
             sorgu = chart_query.build_query(request.message, facts, lang=lang)
-            passages = retrieve_passages(sorgu, top_k=2, lang=lang)
+            # RD3: kullanıcının konusu + GERÇEK harita faktörleri getirmeyi
+            # kişiselleştirir — aynı soruda farklı haritalar farklı
+            # pasajlar çeker (metadata'lı yeniden sıralama).
+            passages = retrieve_passages(
+                sorgu, top_k=2, lang=lang,
+                boost=chart_query.boost_hints(request.message, facts,
+                                              lang=lang))
 
         # Kullanıcı hafızası: "seni tanıyor" hissinin kaynağı burası. Okuma
         # ucuz (tek Firestore dokümanı) ve RAG'den bağımsız olarak her turda

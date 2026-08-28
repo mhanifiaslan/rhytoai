@@ -96,7 +96,16 @@ Telif RythoAI'ye aittir.
 > İkisi de aynı zemini yüzeysel biçimde kapsıyordu; bırakılsalardı aynı
 > konuda iki ayrı parça getirilir ve pasaj bütçesi boşa harcanırdı.
 
-### Tetrabiblos — `corpus/en/tetrabiblos.md` ✅ (2026-08-01)
+> **YERİNİ ALDI (RD-turu, 2026-08-28):** aşağıdaki iki Tetrabiblos girdisi
+> (`corpus/en/tetrabiblos.md` + `corpus/tr/tetrabiblos.md`) SİLİNDİ —
+> yerlerini kitap korpusundaki `ptolemy_tetrabiblos.jsonl` aldı (AYNI
+> kaynak: PG #70850 Ashmand 1822; artık tam metin ve çift dilli, TR tarafı
+> Rytho makine çevirisi). Aynı kitabın iki kopyası aramada birbirini
+> sıkıştırırdı. Girdiler tarihçe olarak korunuyor; "hariç tutulan
+> bölümler" gerekçeleri bugün yükleyicinin konu-süzgeciyle uygulanıyor
+> (aşağıda "Kitap korpusu (JSONL)").
+
+### Tetrabiblos — `corpus/en/tetrabiblos.md` ✅ (2026-08-01, SİLİNDİ 2026-08-28)
 
 | Alan | Değer |
 |---|---|
@@ -279,6 +288,31 @@ gerekiyor, o da konum istiyor.
 | Üretici | `backend/scripts/build_gazetteer.py` (doğrulamalı: 81 TR ili + Türkçe egzonimler + eski gazetteer anahtarları assert edilir; ham dump'lar `backend/data/raw/` altında, git dışı) |
 | Neden | Eski elle yazılmış sözlük 81 ilin yalnız 33'ünü tanıyordu; çözülemeyen şehir sessizce İstanbul'a düşüyordu. Kullanıcı kararı: dump indirilip kendi veritabanımıza alınır — API/ağ bağımlılığı yok |
 | Doğrulama | `tests/test_geo_service.py` |
+
+## Kitap korpusu (JSONL) — `corpus/books/*.jsonl` ✅ (RD-turu, 2026-08-28)
+
+7 kamu malı kitap; her kayıt EN + TR metni ve lisans künyesini BİRLİKTE
+taşır (`metadata.license`, `metadata.source_url`). Üretim kökeni ve tam
+istatistikler: `docs/rag_corpus/manifest.json` (repoda kanıt olarak
+durur, Docker imajına GİRMEZ). TR gövdeler kamu malı EN metinlerden
+Rytho makine çevirisidir (sözlük-çapalı); telif RythoAI'ye aittir.
+
+| id | Eser / yazar | Lisans |
+|---|---|---|
+| ptolemy_tetrabiblos | Tetrabiblos, Ptolemaios (çev. Ashmand 1822) | Kamu malı (US) — PG #70850 |
+| lilly_christian_astrology | Christian Astrology, William Lilly (1647) | Public Domain Mark — Wellcome/IA b30338724 |
+| lilly_intro_1852 | An Introduction to Astrology, Lilly (ed. Zadkiel, 1852) | Kamu malı — IA anintroductiont00zadkgoog |
+| sepharial_astrology | Astrology, Sepharial (1920) | Kamu malı (US) — PG #46963 |
+| alanleo_judge_nativity | How to Judge a Nativity, Alan Leo (1928) | Kamu malı (US, 1929 öncesi) — IA howtojudgenativi00leoa |
+| baughan_influence_stars | The Influence of the Stars, Rosa Baughan (1904) | Kamu malı (US) — PG #42889 |
+| bonatti_anima_astrologiae | Anima Astrologiae, Bonatti & Cardan (çev. Coley, 1886) | Public Domain Mark — Wellcome/IA b24884054 |
+
+**Güvenlik süzgeci (yükleyicide, `rag_service._SAFETY_DROP_TOPICS`):**
+konusu tamamen ölüm/sağlık olan parçalar korpusa hiç GİRMEZ (Tetrabiblos
+md döneminin "hariç tutulan bölümler" kuralının devamı); karışık
+etiketli parçalarda sızıntıyı prompt katmanındaki yasak-alan kuralı
+keser (WHISPER_RAG). Kitap adı/yazar adı kullanıcıya yansıtılmaz —
+pasajlar yalnız iç fısıltıdır.
 
 ## Korpus dosyası künye biçimi
 

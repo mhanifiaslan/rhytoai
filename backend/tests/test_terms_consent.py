@@ -16,7 +16,13 @@ from services import consent_service
 @pytest.fixture
 def yerel_kayit(tmp_path, monkeypatch):
     from core import config
+    from core import firestore as firestore_client
     monkeypatch.setattr(config, "CACHE_DIR", tmp_path)
+    # Test YEREL dosya yolunu doğruluyor; makinede ADC varsa gerçek
+    # Firestore istemcisi kurulur ve kayıt oraya gider — dosya hiç oluşmaz,
+    # test ortama göre kırmızı/yeşil değişirdi (RD-turu bulgusu). Depolama
+    # seçimi deterministik yapılır.
+    monkeypatch.setattr(firestore_client, "get_client", lambda: None)
     yield tmp_path
 
 

@@ -59,12 +59,41 @@ def dil_isle(lang: str, sadece_kontrol: bool) -> bool:
             logger.error("[%s] GEMINI_API_KEY yok; vektor uretilemez.", lang)
             return False
         taban = rag_service.base_for(lang)
-        yeni = taban._embed_texts([c.text for c in eksik])
-        if not yeni:
-            logger.error("[%s] Embedding uretilemedi.", lang)
-            return False
-        for chunk, emb in zip(eksik, yeni):
-            vektorler[chunk.chunk_id] = np.asarray(emb, dtype=np.float32)
+        # DILIMLI + kaldigi yerden devam (RD7): 1.200 parcalik kitap
+        # korpusu tek cagrida kota sinirina (429) takildi ve ya-hep-ya-hic
+        # yaklasimi HICBIR SEYI yazamadi. Artik her dilim ayri denenir,
+        # basarili dilimler aninda artefakta yazilir; 429'da ustel bekleme
+        # ile yeniden denenir. Betik yarim kalirsa bir sonraki kosu yalniz
+        # kalan parcalari vektorler (chunk_id artimliligi).
+        import time
+        DILIM = 128
+        BEKLEME = (15, 45, 90)  # saniye; uc denemeden sonra vazgec
+        for i in range(0, len(eksik), DILIM):
+            dilim = eksik[i:i + DILIM]
+            yeni = None
+            for deneme, bekle in enumerate((0,) + BEKLEME):
+                if bekle:
+                    logger.info("[%s] kota beklemesi %ds (deneme %d)...",
+                                lang, bekle, deneme + 1)
+                    time.sleep(bekle)
+                yeni = taban._embed_texts(
+                    [rag_service._embed_source(c) for c in dilim])
+                if yeni:
+                    break
+            if not yeni:
+                # O ana kadar biriken vektorler kaybolmasin: yaz ve cik.
+                rag_service.write_artifact(
+                    lang, {c.chunk_id: vektorler[c.chunk_id]
+                           for c in chunks if c.chunk_id in vektorler})
+                logger.error("[%s] Embedding uretilemedi (dilim %d/%d); "
+                             "kismi ilerleme yazildi, betigi yeniden "
+                             "calistir.", lang, i // DILIM + 1,
+                             -(-len(eksik) // DILIM))
+                return False
+            for chunk, emb in zip(dilim, yeni):
+                vektorler[chunk.chunk_id] = np.asarray(emb, dtype=np.float32)
+            logger.info("[%s] %d/%d vektorlendi.", lang,
+                        min(i + DILIM, len(eksik)), len(eksik))
 
     # Korpustan cikarilan parcalarin vektorleri temizlenir; aksi halde dosya
     # her duzenlemede buyur ve imaj siser.

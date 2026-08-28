@@ -11,9 +11,20 @@ from services import gemini_service, prompt_composer
 
 
 @pytest.fixture(autouse=True)
-def _kota_sifirla():
+def _kota_sifirla(monkeypatch):
     """Aynı süreçte koşan diğer test dosyalarının (test_hardening) kota
-    testlerini etkilememek için rate-limit sayaçlarını temizler."""
+    testlerini etkilememek için rate-limit sayaçlarını temizler.
+
+    Günlük ücretsiz sohbet hakkı da YAMALANIR (RD-turu bulgusu): bu makinede
+    ADC varsa testler GERÇEK Firestore'daki dev-user kota dokümanını
+    tüketiyor ve dosyadaki ~8 sohbet çağrısı 5'lik günlük hakkı aşınca
+    son testler 402 ile düşüyordu — üstelik yalnız ADC'li makinelerde
+    (testin sonucu ortama bağlıydı). Kota mantığının kendi testleri
+    entitlements tarafında; burada konu sohbet DAVRANIŞI.
+    """
+    from core import entitlements
+    monkeypatch.setattr(entitlements, "consume_quota",
+                        lambda uid, key, limit, tz=None: True)
     yield
     mw = app.middleware_stack
     while mw is not None:
@@ -87,8 +98,9 @@ def test_bilgi_sorusunda_rag_cagrilir_ve_kirpilir(monkeypatch):
     pasaj_satirlari = [s for s in msg.splitlines() if s.startswith("- x")]
     assert len(pasaj_satirlari) == 2, "en fazla 2 pasaj eklenmeli"
     for satir in pasaj_satirlari:
-        # "- " öneki ve kırpma göstergesi "…" haricinde sınıra uymalı
-        assert len(satir) <= prompt_composer.MAX_PASSAGE_CHARS + 4, (
+        # "- " öneki, iç kaynak etiketi (RD5, ≤64 kr) ve kırpma "…"
+        # haricinde sınıra uymalı.
+        assert len(satir) <= prompt_composer.MAX_PASSAGE_CHARS + 64, (
             f"pasaj kırpılmamış: {len(satir)} karakter")
 
 

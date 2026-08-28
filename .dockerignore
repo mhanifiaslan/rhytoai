@@ -1,0 +1,14 @@
+# Docker bağlamına girmemesi gerekenler (RD-turu).
+#
+# Bağlam repo kökü (cloudbuild.yaml: docker build -f backend/Dockerfile .).
+# `docs/` zaten COPY edilmiyor ama bağlama arşivlenip Cloud Build'e
+# yükleniyordu — 42MB'lık rag_corpus çıktısı her deploy'u şişirirdi.
+# `knowledge/raw/` imaja KOPYALANIYORDU (COPY knowledge/) ve çalışma
+# anında hiç okunmuyor: 1,4MB ölü ağırlık.
+docs/
+knowledge/raw/
+apps/
+.git/
+**/.venv/
+**/__pycache__/
+**/build/

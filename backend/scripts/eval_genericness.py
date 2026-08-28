@@ -80,6 +80,9 @@ SORULAR = [
     "İlişkimde neden hep aynı yere geliyorum?",
     "Kafam çok dağınık, odaklanamıyorum",
     "Mizacım neden böyle?",
+    # RD-turu: kitap korpusunun en güçlü iki alanı — para ve aile.
+    "Param neden hiç birikmiyor?",
+    "Babamla aram düzelir mi?",
 ]
 
 #: Yagcilik kaliplari. Urun ilkesi: "surekli hos sozler soyleyerek degil,

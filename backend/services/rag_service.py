@@ -67,10 +67,17 @@ _QUERY_CACHE_MAX = 128
 #: Anlamsal aramada bir pasajın "ilgili" sayılması için gereken en düşük
 #: kosinüs skoru.
 #:
-#: Ölçülerek konuldu. Korpusta karşılığı olan sorgular 0,71–0,84 arasında
-#: skor alıyor; hiç ilgisi olmayanlar ("wifi şifremi nasıl sıfırlarım",
-#: "arabamın lastiği patladı") 0,49–0,56'da kalıyor. 0,62 iki kümenin
-#: arasındaki boşluğa düşüyor ve iki tarafa da pay bırakıyor.
+#: Ölçülerek konuldu ve kitap korpusuyla YENİDEN ölçüldü (RD4,
+#: scripts/calibrate_rag.py — 2026-08-28, 1.253 TR / 1.255 EN parça):
+#: gerçek üretim sorgu biçimleri (mesaj + tohum + harita faktörleri ve
+#: rapor tohum kombinasyonları) TR'de 0,635–0,780, EN'de 0,629–0,853
+#: skor alıyor; alakasız sorular ("wifi şifremi nasıl sıfırlarım",
+#: "yarın hava yağmurlu mu") 0,46–0,589'da kalıyor. 0,62 iki kümenin
+#: arasında: en dar kenarlar sinastri TR 0,635 (+0,015) ve alakasız
+#: tavan 0,589 (−0,031). ÇIPLAK tek tohum ("Evlilik, ortaklık, bağ")
+#: 0,52'ye düşebilir ama üretimde hiçbir sorgu çıplak tek tohum değil.
+#: Sohbette ikinci savunma hattı zaten var: should_use_rag alakasız kısa
+#: mesajları getirmeye hiç göndermez.
 #:
 #: Eşik olmadan alakasız bir soruda en yakın pasaj yine dönüyordu: model
 #: kadim bir metni ilgisiz bir konuya bağlamaya çalışıyor ve cevap
@@ -171,10 +178,30 @@ class Chunk:
     #: Metnin sağlaması. Vektör önbelleği buna göre anahtarlanır: metin
     #: değişmedikçe vektör yeniden üretilmez, parça yer değiştirse bile.
     chunk_id: str = ""
+    # -- RD-turu: kitap korpusu (JSONL) meta alanları; md parçalarında boş --
+    #: Gömülecek metin. Kitap korpusunda `text`ten AYRIDIR (TR başlık +
+    #: anahtar kelimeler + gövde); boşsa `text` gömülür — md yolu değişmez
+    #: ve eski chunk_id'ler bayt aynı kalır (artımlı gömme korunur).
+    embed_text: str = ""
+    #: Konu etiketleri (finance, career, marriage...) — sohbet konusu
+    #: eşleşmesinde boost için.
+    topics: tuple[str, ...] = ()
+    #: Parçanın andığı gezegen/burç/ev varlıkları — kullanıcının GERÇEK
+    #: yerleşimleriyle eşleşince boost (kişiselleştirilmiş getirme).
+    planets: frozenset = frozenset()
+    signs: frozenset = frozenset()
+    houses: frozenset = frozenset()
+    #: Kaynağın otorite ağırlığı (3-5) — beraberlik bozucu.
+    authority: int = 0
 
 
 def _chunk_id(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()[:24]
+
+
+def _embed_source(c: Chunk) -> str:
+    """Parçanın GÖMÜLECEK metni — kitap korpusunda ayrı, md'de `text`."""
+    return c.embed_text or c.text
 
 
 def _tokenize(text: str) -> set[str]:
@@ -295,9 +322,119 @@ def _split_body(body: str) -> list[str]:
     return [p for p in parcalar if p]
 
 
+#: Kitap korpusu (RD-turu): dil-nötr JSONL dosyaları — her kayıtta EN ve
+#: TR metin birlikte durur, yükleyici dile göre alan seçer.
+_BOOKS_DIR_NAME = "books"
+
+#: Konusu TAMAMEN bu kümeden oluşan parça korpusa GİRMEZ (kullanıcı
+#: kararı, RD-turu): ölüm/sağlık hükümleri ürünün yasak alanı. Karışık
+#: etiketli parçalar (ör. career+death) girer; prompt katmanındaki
+#: yasak-alan kuralı (WHISPER_RAG v2) sızıntıyı orada keser.
+_SAFETY_DROP_TOPICS = frozenset({"death", "health"})
+
+#: Gömme girdisi savunma tavanı (~1.700 token). Korpusun en büyük embed
+#: metni ~6.6K kr — bugün sınır aşılmıyor; bu, gelecekteki bir kitap
+#: eklemesinin gömme API'sini sessizce kırmasına karşı emniyet.
+_MAX_EMBED_CHARS = 7000
+
+#: Yeniden sıralama ekleri (RD3). Kosinüs ölçeği ~0.6-0.85; ekler bir
+#: yakın-beraberliği çevirebilecek ama iyi eşleşmiş bir parçayı konu
+#: dışı bir parçaya YENİLETMEYECEK kadar küçük tutulur. Eşik HAM skora
+#: uygulandığı için boost alakasızı geri getiremez.
+_BOOST_TOPIC = 0.03
+_BOOST_PLANET = 0.02
+_BOOST_HOUSE = 0.02
+_BOOST_SIGN = 0.01
+_BOOST_AUTHORITY = 0.002   # × authority (3-5) → +0.006..+0.010
+_BOOST_CAP = 0.08
+
+_HOUSE_RE = re.compile(r"^(\d{1,2})(st|nd|rd|th)\s+House$", re.IGNORECASE)
+
+
+def _normalize_house(raw: object) -> int | None:
+    """Korpusun "10th House" biçimini motorun ev numarasına çevirir."""
+    m = _HOUSE_RE.match(str(raw).strip())
+    if not m:
+        return None
+    n = int(m.group(1))
+    return n if 1 <= n <= 12 else None
+
+
+def _load_book_chunks(lang: str) -> list[Chunk]:
+    """`knowledge/corpus/books/*.jsonl` kitap parçalarını yükler (RD1).
+
+    Kayıt şeması `docs/rag_corpus/README.md`'de. Dil başına seçim:
+    tr → ``text_tr`` + ``embedding_text_tr``, en → ``text`` +
+    ``embedding_text``. ``doc = source_id``, ``title = heading`` —
+    (doc, title) çeşitlilik anahtarı bölüm bazında çalışır ve iki Lilly
+    kitabı ayrışır.
+    """
+    books_dir = config.KNOWLEDGE_DIR / "corpus" / _BOOKS_DIR_NAME
+    chunks: list[Chunk] = []
+    if not books_dir.is_dir():
+        return chunks
+    tr_mi = (lang or i18n.DEFAULT) != "en"
+
+    for jl in sorted(books_dir.glob("*.jsonl")):
+        try:
+            satirlar = jl.read_text(encoding="utf-8").splitlines()
+        except Exception as exc:
+            logger.warning("Kitap korpusu okunamadı (%s): %s", jl.name, exc)
+            continue
+        for satir in satirlar:
+            satir = satir.strip()
+            if not satir:
+                continue
+            try:
+                kayit = json.loads(satir)
+            except ValueError:
+                logger.warning("Bozuk JSONL satırı atlandı (%s)", jl.name)
+                continue
+            m = kayit.get("metadata") or {}
+            metin = str(kayit.get("text_tr" if tr_mi else "text") or "").strip()
+            embed = str(kayit.get("embedding_text_tr" if tr_mi
+                                  else "embedding_text") or "").strip()
+            if len(metin) < MIN_CHUNK_CHARS:
+                continue
+            konular = tuple(str(t) for t in (m.get("topic") or [])
+                            if isinstance(t, (str, int)))
+            # Güvenlik süzgeci: konusu YALNIZ ölüm/sağlık olan parça girmez.
+            if konular and set(konular) <= _SAFETY_DROP_TOPICS:
+                continue
+            if not embed:
+                embed = metin
+            if len(embed) > _MAX_EMBED_CHARS:
+                kesme = embed.rfind(" ", 0, _MAX_EMBED_CHARS)
+                embed = embed[:kesme if kesme > 0 else _MAX_EMBED_CHARS]
+            evler = frozenset(
+                n for n in (_normalize_house(h)
+                            for h in (m.get("entity_house") or []))
+                if n is not None)
+            chunks.append(Chunk(
+                doc=str(m.get("source_id") or jl.stem),
+                title=str(m.get("heading") or "").strip() or jl.stem,
+                text=metin,
+                keywords=_tokenize(embed),
+                source={k: str(m.get(k)) for k in (
+                    "source", "author", "translator", "license",
+                    "source_url", "school", "school_tr", "era", "era_tr",
+                    "tradition") if m.get(k)},
+                chunk_id=_chunk_id(embed),
+                embed_text=embed,
+                topics=konular,
+                planets=frozenset(str(p) for p in
+                                  (m.get("entity_planet") or [])),
+                signs=frozenset(str(s) for s in
+                                (m.get("entity_sign") or [])),
+                houses=evler,
+                authority=int(m.get("authority_weight") or 0),
+            ))
+    return chunks
+
+
 def _load_chunks(lang: str) -> list[Chunk]:
     corpus_dir = _corpus_dir(lang)
-    chunks: list[Chunk] = []
+    chunks: list[Chunk] = _load_book_chunks(lang)
     if not corpus_dir.exists():
         logger.warning("Korpus dizini bulunamadı: %s", corpus_dir)
         return chunks
@@ -429,7 +566,7 @@ class _KnowledgeBase:
                 "Vektör artefaktı korpusla uyumsuz (%s): %d/%d parça eksik. "
                 "scripts/build_embeddings.py çalıştırılmalı.",
                 self.lang, len(eksik), len(chunks))
-            yeni = self._embed_texts([c.text for c in eksik])
+            yeni = self._embed_texts([_embed_source(c) for c in eksik])
             if yeni:
                 for chunk, emb in zip(eksik, yeni):
                     vektorler[chunk.chunk_id] = np.asarray(emb,
@@ -501,18 +638,32 @@ class _KnowledgeBase:
         return bool(chunks) and self._matrix is not None \
             and len(self._matrix) == len(chunks)
 
-    def search(self, query: str, top_k: int = 3) -> list[dict]:
+    def search(self, query: str, top_k: int = 3,
+               boost: dict | None = None) -> list[dict]:
+        """Arama + metadata'lı yeniden sıralama (RD3).
+
+        ``boost`` = ``{"topics": set, "planets": set, "houses": set,
+        "signs": set}`` — sohbet katmanı kullanıcının GERÇEK harita
+        faktörlerini geçirir; eşleşen parçalar küçük ekler alır. Sıra
+        önemli: alaka eşiği HAM kosinüse uygulanır (boost alakasız bir
+        parçayı diriltemez), ekler sonra biner. Anahtar-kelime yedeğinde
+        boost yok (farklı skor ölçeği). Ölüm/sağlık konularına boost
+        yapısal olarak imkânsız — konu haritası onları hiç üretmez
+        (chart_query._CHAT_TO_CORPUS_TOPICS).
+        """
         chunks = self._ensure_loaded()
         if not chunks:
             return []
 
         skorlar = None
         taban = 0.0
+        vektor_modu = False
         if self.semantic_ready():
             q = self._embed_query(query)
             if q is not None and len(q) == self._matrix.shape[1]:
                 skorlar = self._matrix @ q
                 taban = _MIN_RELEVANCE
+                vektor_modu = True
 
         if skorlar is None:
             q_tokens = _tokenize(query)
@@ -527,6 +678,31 @@ class _KnowledgeBase:
         aday = np.argpartition(-skorlar, havuz - 1)[:havuz]
         aday = aday[np.argsort(-skorlar[aday])]
         aday = [i for i in aday if float(skorlar[i]) > taban]
+
+        if vektor_modu and aday:
+            skorlar = skorlar.astype(np.float32).copy()
+            b = boost or {}
+            b_konu = set(b.get("topics") or ())
+            b_gezegen = set(b.get("planets") or ())
+            b_ev = set(b.get("houses") or ())
+            b_burc = set(b.get("signs") or ())
+            for i in aday:
+                c = chunks[i]
+                ek = 0.0
+                if b_konu and b_konu & set(c.topics):
+                    ek += _BOOST_TOPIC
+                if b_gezegen and b_gezegen & c.planets:
+                    ek += _BOOST_PLANET
+                if b_ev and b_ev & c.houses:
+                    ek += _BOOST_HOUSE
+                if b_burc and b_burc & c.signs:
+                    ek += _BOOST_SIGN
+                # Otorite her zaman küçük bir öncelik verir (beraberlik
+                # bozucu ölçek): 5/5 kaynak +0.010, 3/5 +0.006.
+                ek += _BOOST_AUTHORITY * c.authority
+                if ek:
+                    skorlar[i] += min(ek, _BOOST_CAP)
+            aday.sort(key=lambda i: -float(skorlar[i]))
 
         # Bölüm çeşitliliği: kitap korpusu geldiğinde ilk iki sonucun ikisi de
         # AYNI bölümden çıkıyordu (uzun bölümler çok parçaya bölündüğü için
@@ -551,7 +727,9 @@ class _KnowledgeBase:
 
         return [{"doc": chunks[i].doc, "title": chunks[i].title,
                  "text": chunks[i].text, "score": round(float(skorlar[i]), 3),
-                 "source": chunks[i].source}
+                 "source": chunks[i].source,
+                 "topics": list(chunks[i].topics),
+                 "authority": chunks[i].authority}
                 for i in secilen]
 
     def diagnostics(self) -> dict:
@@ -598,16 +776,33 @@ def diagnostics() -> dict:
     return {kod: base_for(kod).diagnostics() for kod in i18n.SUPPORTED}
 
 
+#: Rapor bağlamında pasaj başına tavan (RD6). Kitap parçaları ~3.3-6.4K
+#: karakter; kırpılmasa top_k=3 rapor girdisini üçe katlardı.
+_MAX_CONTEXT_PASSAGE_CHARS = 2000
+
+
 def retrieve_context(query: str, top_k: int = 3, lang: str | None = None) -> str:
     """Sorguya en uygun kadim metin pasajlarını prompt bağlamı olarak döndürür."""
     results = base_for(lang).search(query, top_k=top_k)
     if not results:
         return ""
-    parts = [f"[Kaynak: {r['doc']} / {r['title']}]\n{r['text']}" for r in results]
+    parts = []
+    for r in results:
+        metin = r["text"]
+        if len(metin) > _MAX_CONTEXT_PASSAGE_CHARS:
+            kesme = metin.rfind(" ", 0, _MAX_CONTEXT_PASSAGE_CHARS)
+            metin = metin[:kesme if kesme > 0
+                          else _MAX_CONTEXT_PASSAGE_CHARS] + "…"
+        parts.append(f"[Kaynak: {r['doc']} / {r['title']}]\n{metin}")
     return "\n\n---\n\n".join(parts)
 
 
 def retrieve_passages(query: str, top_k: int = 2,
-                      lang: str | None = None) -> list[dict]:
-    """Sohbet için ham pasaj listesi (prompt_composer kırpar ve harmanlar)."""
-    return base_for(lang).search(query, top_k=top_k)
+                      lang: str | None = None,
+                      boost: dict | None = None) -> list[dict]:
+    """Sohbet için ham pasaj listesi (prompt_composer kırpar ve harmanlar).
+
+    ``boost``: kullanıcının konu + gerçek harita faktörleri
+    (`chart_query.boost_hints`) — kişiselleştirilmiş getirme (RD3).
+    """
+    return base_for(lang).search(query, top_k=top_k, boost=boost)

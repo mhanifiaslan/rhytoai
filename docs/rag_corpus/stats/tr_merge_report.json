@@ -1,0 +1,50 @@
+{
+  "total_chunks": 1245,
+  "total_translations": 1245,
+  "conflicting_duplicates": 1,
+  "missing_tr_total": 0,
+  "per_book": [
+    {
+      "id": "alanleo_judge_nativity",
+      "chunks": 221,
+      "missing_tr": 0,
+      "missing_ids": []
+    },
+    {
+      "id": "baughan_influence_stars",
+      "chunks": 38,
+      "missing_tr": 0,
+      "missing_ids": []
+    },
+    {
+      "id": "bonatti_anima_astrologiae",
+      "chunks": 74,
+      "missing_tr": 0,
+      "missing_ids": []
+    },
+    {
+      "id": "lilly_christian_astrology",
+      "chunks": 457,
+      "missing_tr": 0,
+      "missing_ids": []
+    },
+    {
+      "id": "lilly_intro_1852",
+      "chunks": 233,
+      "missing_tr": 0,
+      "missing_ids": []
+    },
+    {
+      "id": "ptolemy_tetrabiblos",
+      "chunks": 160,
+      "missing_tr": 0,
+      "missing_ids": []
+    },
+    {
+      "id": "sepharial_astrology",
+      "chunks": 62,
+      "missing_tr": 0,
+      "missing_ids": []
+    }
+  ]
+}

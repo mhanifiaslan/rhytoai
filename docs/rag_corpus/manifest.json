@@ -1,0 +1,259 @@
+{
+  "corpus": "Rytho astrology RAG corpus",
+  "built_utc": "2026-08-18T18:48:26+00:00",
+  "chunking": {
+    "target_tokens": 800,
+    "max_tokens": 1150,
+    "min_tokens": 120,
+    "overlap_ratio": 0.15,
+    "boundary": "section/chapter aware, sentence aligned",
+    "token_counter": "calibrated estimate (~4.1 chars/token on this corpus)"
+  },
+  "languages": {
+    "body": "en+tr",
+    "metadata": "tr+en"
+  },
+  "books": [
+    {
+      "id": "ptolemy_tetrabiblos",
+      "status": "ok",
+      "title": "Tetrabiblos (Quadripartite)",
+      "title_tr": "Tetrabiblos — Dört Kitap",
+      "author": "Claudius Ptolemy",
+      "year": 1822,
+      "school": "Hellenistic",
+      "era": "2nd century (1822 translation)",
+      "license": "Public domain (US) — Project Gutenberg eBook #70850",
+      "source_url": "https://www.gutenberg.org/ebooks/70850",
+      "clean_chars": 505250,
+      "sections": 71,
+      "chunks": 160,
+      "tokens_total": 126555,
+      "tokens_mean": 791.0,
+      "tokens_min": 122,
+      "tokens_max": 1307,
+      "processing": {
+        "confidence_before": 0.964,
+        "dropped_ranges": [
+          6334
+        ],
+        "ocr": "clean (proofread transcription)",
+        "confidence_after": 0.966
+      }
+    },
+    {
+      "id": "lilly_christian_astrology",
+      "status": "ok",
+      "title": "Christian Astrology",
+      "title_tr": "Hristiyan Astrolojisi",
+      "author": "William Lilly",
+      "year": 1647,
+      "school": "Traditional / Horary",
+      "era": "17th century",
+      "license": "Public Domain Mark — Wellcome Collection scan via Internet Archive (b30338724)",
+      "source_url": "https://archive.org/details/b30338724",
+      "clean_chars": 1413193,
+      "sections": 132,
+      "chunks": 457,
+      "tokens_total": 389071,
+      "tokens_mean": 851.4,
+      "tokens_min": 6,
+      "tokens_max": 1562,
+      "processing": {
+        "confidence_before": 0.791,
+        "head_cut_chars": 96989,
+        "long_s_density": 0.03886,
+        "ocr": "OCR — long-s, ct/st ligatures and typography normalised",
+        "headings_inserted": 3,
+        "runons_split": 1033,
+        "noisy_blocks_dropped": 7957,
+        "agent_corrections_applied": 430,
+        "agent_corrections_unmatched": 1466,
+        "agent_wordmap_applied": 9552,
+        "runons_split_2": 184,
+        "confidence_after": 0.917
+      }
+    },
+    {
+      "id": "sepharial_astrology",
+      "status": "ok",
+      "title": "Astrology: How to Make and Read Your Own Horoscope",
+      "title_tr": "Astroloji: Kendi Haritanı Nasıl Kurar ve Yorumlarsın",
+      "author": "Sepharial (Walter Gorn Old)",
+      "year": 1920,
+      "school": "Modern / Theosophical",
+      "era": "early 20th century",
+      "license": "Public domain (US) — Project Gutenberg eBook #46963",
+      "source_url": "https://www.gutenberg.org/ebooks/46963",
+      "clean_chars": 202594,
+      "sections": 33,
+      "chunks": 62,
+      "tokens_total": 46055,
+      "tokens_mean": 742.8,
+      "tokens_min": 36,
+      "tokens_max": 1221,
+      "processing": {
+        "confidence_before": 0.973,
+        "ocr": "clean (proofread transcription)",
+        "confidence_after": 0.982
+      }
+    },
+    {
+      "id": "alanleo_judge_nativity",
+      "status": "ok",
+      "title": "How to Judge a Nativity",
+      "title_tr": "Bir Doğum Haritası Nasıl Yorumlanır",
+      "author": "Alan Leo",
+      "year": 1928,
+      "school": "Modern / Theosophical",
+      "era": "early 20th century",
+      "license": "Public domain (US, pre-1929) — Internet Archive howtojudgenativi00leoa",
+      "source_url": "https://archive.org/details/howtojudgenativi00leoa",
+      "clean_chars": 795871,
+      "sections": 21,
+      "chunks": 221,
+      "tokens_total": 207301,
+      "tokens_mean": 938.0,
+      "tokens_min": 205,
+      "tokens_max": 1231,
+      "processing": {
+        "confidence_before": 0.96,
+        "dropped_ranges": [
+          7125
+        ],
+        "head_cut_chars": 786,
+        "long_s_density": 0.00033,
+        "ocr": "OCR — lightly normalised",
+        "runons_split": 141,
+        "noisy_blocks_dropped": 421,
+        "confidence_after": 0.971
+      }
+    },
+    {
+      "id": "baughan_influence_stars",
+      "status": "ok",
+      "title": "The Influence of the Stars: A Book of Old World Lore",
+      "title_tr": "Yıldızların Etkisi",
+      "author": "Rosa Baughan",
+      "year": 1904,
+      "school": "Victorian revival",
+      "era": "19th–20th century",
+      "license": "Public domain (US) — Project Gutenberg eBook #42889",
+      "source_url": "https://www.gutenberg.org/ebooks/42889",
+      "clean_chars": 121482,
+      "sections": 14,
+      "chunks": 38,
+      "tokens_total": 31790,
+      "tokens_mean": 836.6,
+      "tokens_min": 224,
+      "tokens_max": 1061,
+      "processing": {
+        "confidence_before": 0.973,
+        "ocr": "clean (proofread transcription)",
+        "limited_start": "CHAPTER I.",
+        "limited_stop": "CHAPTER XV.",
+        "confidence_after": 0.979
+      }
+    },
+    {
+      "id": "bonatti_anima_astrologiae",
+      "status": "ok",
+      "title": "Anima Astrologiae, or The Astrologer's Guide",
+      "title_tr": "Anima Astrologiae — Astroloğun Rehberi",
+      "author": "Guido Bonatti & Jerome Cardan",
+      "year": 1886,
+      "school": "Medieval — Arabic-Latin transmission",
+      "era": "13th century (1886 English edition)",
+      "license": "Public Domain Mark — Wellcome Collection scan via Internet Archive (b24884054); 1886 edition",
+      "source_url": "https://archive.org/details/b24884054",
+      "clean_chars": 258205,
+      "sections": 2,
+      "chunks": 74,
+      "tokens_total": 70798,
+      "tokens_mean": 956.7,
+      "tokens_min": 227,
+      "tokens_max": 1248,
+      "processing": {
+        "confidence_before": 0.964,
+        "head_cut_chars": 39619,
+        "long_s_density": 8e-05,
+        "ocr": "OCR — lightly normalised",
+        "runons_split": 93,
+        "noisy_blocks_dropped": 722,
+        "confidence_after": 0.972
+      }
+    },
+    {
+      "id": "lilly_intro_1852",
+      "status": "ok",
+      "title": "An Introduction to Astrology",
+      "title_tr": "Astrolojiye Giriş (Lilly, 1852 baskısı)",
+      "author": "William Lilly",
+      "year": 1852,
+      "school": "Traditional / Horary",
+      "era": "17th century (1852 edition)",
+      "license": "Public domain (1852 edition). Internet Archive rights: NOT_IN_COPYRIGHT. Scan produced by Google Books — the underlying 1852 text is public domain; Google's scanning terms are not a copyright restriction on it.",
+      "source_url": "https://archive.org/details/anintroductiont00zadkgoog",
+      "clean_chars": 713868,
+      "sections": 68,
+      "chunks": 233,
+      "tokens_total": 193550,
+      "tokens_mean": 830.7,
+      "tokens_min": 87,
+      "tokens_max": 1203,
+      "processing": {
+        "confidence_before": 0.939,
+        "head_cut_chars": 46546,
+        "long_s_density": 8e-05,
+        "ocr": "OCR — lightly normalised",
+        "runons_split": 217,
+        "noisy_blocks_dropped": 2845,
+        "confidence_after": 0.961
+      }
+    }
+  ],
+  "totals": {
+    "books_ok": 7,
+    "chunks": 1245,
+    "tokens": 1065120
+  },
+  "translation": {
+    "method": "agent-based batch translation (glossary-anchored, ~15 chunks/batch), 1 chunk hand-fixed after QA (incomplete first pass)",
+    "total_chunks": 1245,
+    "total_translations": 1245,
+    "missing_tr": 0,
+    "glossary_terms": 76,
+    "fields_added": [
+      "text_tr",
+      "embedding_text_tr"
+    ]
+  },
+  "qa": {
+    "run_utc": "2026-08-28T05:59:49+00:00",
+    "total_chunks": 1245,
+    "problems_found_and_status": [
+      "42/1245 chunks (3.4%) exceed the 1150-token ceiling (max 1562) — pre-existing chunking-calibration variance from the estimator vs. true tokenizer, not a translation defect; left as-is to avoid invalidating the completed translation-to-chunk-id mapping.",
+      "1 chunk had an incomplete first-pass translation (dropped an embedded second chapter) — hand-identified via EN/TR length-ratio check and re-translated in full; now resolved."
+    ],
+    "token_distribution": {
+      "mean": 855.5,
+      "median": 915,
+      "min": 6,
+      "max": 1562,
+      "stdev": 225.4
+    },
+    "glossary_spot_check": {
+      "checked": 2103,
+      "misses": 21
+    },
+    "per_book_ocr_confidence": {
+      "alanleo_judge_nativity": 0.973,
+      "baughan_influence_stars": 0.98,
+      "bonatti_anima_astrologiae": 0.97,
+      "lilly_christian_astrology": 0.908,
+      "lilly_intro_1852": 0.959,
+      "ptolemy_tetrabiblos": 0.972,
+      "sepharial_astrology": 0.973
+    }
+  }
+}

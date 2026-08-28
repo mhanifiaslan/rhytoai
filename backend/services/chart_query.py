@@ -127,6 +127,20 @@ _MAX_TRANSITS = 1
 #: haritanın büyük üçlüsünü taşır.
 _DEFAULT_TOPIC = "self"
 
+#: Sohbet konusu -> kitap korpusu konu etiketleri (RD3). `death`/`health`
+#: BİLEREK yok: yeniden sıralama o konulara yapısal olarak yönelemez
+#: (ürün kuralı — ölüm/sağlık hükümleri yasak alan).
+_CHAT_TO_CORPUS_TOPICS = {
+    "money": ("finance",),
+    "vocation": ("career",),
+    "relationship": ("marriage", "friends_enemies"),
+    "family": ("parents_family", "children"),
+    "temperament": ("character",),
+    "mind": ("character", "synthesis"),
+    "timing": ("directions", "transits"),
+    "travel": ("travel",),
+}
+
 
 def _lang_key(lang: str | None) -> str:
     return lang if lang in _TOPIC_SEEDS else "tr"
@@ -187,6 +201,39 @@ def _relevant_aspects(facts: dict, konular: list[str]) -> list[dict]:
     # Konuyla ilgili açı yoksa en sıkı açı yine anlamlı: haritanın en baskın
     # gerilimi her konuya sızar.
     return (ilgili or acilar)[:_MAX_ASPECTS]
+
+
+def boost_hints(message: str, facts: dict | None,
+                lang: str | None = None) -> dict | None:
+    """Kişiselleştirilmiş getirme ipuçları (RD3) — `retrieve_passages`e gider.
+
+    Konular sohbet→korpus haritasından; gezegen/ev/burç kullanıcının
+    GERÇEK yerleşimlerinden (`_relevant_placements`) gelir — kitap
+    korpusundaki parçalar bu varlıkları metadata olarak taşıyor ve
+    eşleşenler küçük skor eki alıyor. Konu yoksa None: boost'suz arama
+    bugünkü davranışın aynısı.
+
+    Burç adları korpus biçimine çevrilir ("cancer" → "Cancer");
+    gezegen anahtarları zaten birebir aynı.
+    """
+    from services.prompt_composer import detect_topics
+    konular = detect_topics(message, lang)
+    if not konular:
+        return None
+    korpus_konulari: set[str] = set()
+    for k in konular:
+        korpus_konulari.update(_CHAT_TO_CORPUS_TOPICS.get(k, ()))
+    ipucu: dict = {"topics": korpus_konulari,
+                   "planets": set(), "houses": set(), "signs": set()}
+    if facts:
+        for y in _relevant_placements(facts, konular):
+            if y.get("planet"):
+                ipucu["planets"].add(str(y["planet"]))
+            if isinstance(y.get("house"), int):
+                ipucu["houses"].add(y["house"])
+            if y.get("sign"):
+                ipucu["signs"].add(str(y["sign"]).capitalize())
+    return ipucu
 
 
 def build_query(message: str, facts: dict | None,
