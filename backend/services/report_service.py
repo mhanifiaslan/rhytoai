@@ -46,7 +46,8 @@ def _cached_generate(cache_key: str, prompt: str, fallback: str,
                      owner_uid: str | None = None,
                      spend: Callable[[], None] | None = None,
                      refund: Callable[[], None] | None = None,
-                     facts: dict[str, Any] | None = None) -> dict[str, Any]:
+                     facts: dict[str, Any] | None = None,
+                     feature: str | None = None) -> dict[str, Any]:
     """Üretimi önbellekli çalıştırır.
 
     ``owner_uid`` KİŞİYE ÖZEL üretimlerde verilir (günlük okuma, natal, BaZi,
@@ -71,10 +72,12 @@ def _cached_generate(cache_key: str, prompt: str, fallback: str,
     if spend is not None:
         spend()
 
-    text = gemini_service.generate(prompt, lang=lang)
+    text = gemini_service.generate(prompt, lang=lang,
+                                   feature=feature, uid=owner_uid)
     if text:
         def yeniden(duzelti: str) -> str | None:
-            return gemini_service.generate(duzelti, lang=lang)
+            return gemini_service.generate(duzelti, lang=lang,
+                                           feature=feature, uid=owner_uid)
         text, grounded = fact_guard.enforce(
             text, prompt, lang=lang, regenerate=yeniden, facts=facts)
 
@@ -206,7 +209,7 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
         ascendant=ascendant or "-",
     )
     return _cached_generate(cache_key, prompt, fallback, lang=lang,
-                            owner_uid=user_id, facts=natal)
+                            owner_uid=user_id, facts=natal, feature="daily")
 
 
 #: Dönem -> önbellek TTL'i. Anahtar tarih kovası içerdiği için TTL'in tek
@@ -299,6 +302,7 @@ def horoscope_reading(sign: str, period: str, sky: dict[str, Any],
     result = _cached_generate(
         cache_key, prompt, fallback,
         ttl_seconds=_HOROSCOPE_TTL.get(period, 24 * 3600), lang=lang,
+        feature="horoscope",
     )
     result["generated_for"] = bucket
     return result
@@ -400,7 +404,8 @@ def dyad_reading(uid_a: str, pair_key: str, name_a: str, name_b: str,
     # Zaten 24 saatlik ömrü var, kalan taraf için de kısa sürede düşer.
     result = _cached_generate(cache_key, prompt, fallback,
                               ttl_seconds=24 * 3600, lang=lang,
-                              owner_uid=uid_a, spend=spend, refund=refund)
+                              owner_uid=uid_a, spend=spend, refund=refund,
+                              feature="dyad")
     result["generated_for"] = today.isoformat()
     return result
 
@@ -490,7 +495,7 @@ def relationship_reading(uid: str, pair_key: str, me_name: str,
 
     sonuc = _cached_generate(cache_key, prompt, fallback,
                              ttl_seconds=30 * 24 * 3600, lang=lang,
-                             owner_uid=uid)
+                             owner_uid=uid, feature="relationship")
     cozum = parse_relationship_reading(sonuc["text"])
 
     # Biçimi tutmayan üretim 30 GÜN KİLİTLENMESİN.
@@ -665,7 +670,7 @@ def natal_report(user_id: str, natal: dict[str, Any],
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang,
                             owner_uid=user_id, spend=spend, refund=refund,
-                            facts=natal)
+                            facts=natal, feature="natal")
 
 
 def solar_return_report(user_id: str, sr: dict[str, Any],
@@ -724,7 +729,7 @@ def solar_return_report(user_id: str, sr: dict[str, Any],
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=90 * 24 * 3600, lang=lang,
                             owner_uid=user_id, spend=spend, refund=refund,
-                            facts=sr)
+                            facts=sr, feature="solar_return")
 
 
 def progressions_report(user_id: str, prog: dict[str, Any],
@@ -794,7 +799,8 @@ def progressions_report(user_id: str, prog: dict[str, Any],
         prog_moon_next=doldur["prog_moon_next"])
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang,
-                            owner_uid=user_id, spend=spend, refund=refund)
+                            owner_uid=user_id, spend=spend, refund=refund,
+                            feature="progressions")
 
 
 def firasa_report(user_id: str, ratios: dict[str, Any],
@@ -840,7 +846,7 @@ def firasa_report(user_id: str, ratios: dict[str, Any],
     return _cached_generate(cache_key, prompt, p.FIRASA_FALLBACK,
                             ttl_seconds=7 * 24 * 3600,
                             lang=lang, owner_uid=user_id,
-                            spend=spend, refund=refund)
+                            spend=spend, refund=refund, feature="face")
 
 
 def bazi_report(user_id: str, bazi: dict[str, Any],
@@ -976,7 +982,8 @@ def bazi_report(user_id: str, bazi: dict[str, Any],
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang,
-                            owner_uid=user_id, spend=spend, refund=refund)
+                            owner_uid=user_id, spend=spend, refund=refund,
+                            feature="bazi")
 
 
 #: Soru kapısının olası hükümleri (R11). VALID dışındakiler çekimi durdurur.
@@ -1011,6 +1018,7 @@ def iching_question_verdict(question: str, lang: str | None = None) -> str:
 
     ham = gemini_service.extract_json(
         prompts.get(lang).ICHING_QUESTION_GATE.format(question=question),
+        feature="iching_verdict",
         schema={
             "type": "object",
             "properties": {"verdict": {
@@ -1165,7 +1173,7 @@ def iching_reading(user_id: str, cast: dict[str, Any],
     )
     return _cached_generate(cache_key, prompt, fallback, ttl_seconds=3600,
                             lang=lang, owner_uid=user_id,
-                            spend=spend, refund=refund)
+                            spend=spend, refund=refund, feature="iching")
 
 
 def birth_hexagram_report(user_id: str, konum: dict[str, Any],
@@ -1241,7 +1249,8 @@ def birth_hexagram_report(user_id: str, konum: dict[str, Any],
         unicode=hexagram["unicode"], judgment=hexagram["judgment"])
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=30 * 24 * 3600, lang=lang,
-                            owner_uid=user_id, spend=spend, refund=refund)
+                            owner_uid=user_id, spend=spend, refund=refund,
+                            feature="birth_hexagram")
 
 
 def synastry_report(user_id: str, synastry: dict[str, Any],
@@ -1300,4 +1309,5 @@ def synastry_report(user_id: str, synastry: dict[str, Any],
     )
     return _cached_generate(cache_key, prompt, fallback,
                             ttl_seconds=7 * 24 * 3600, lang=lang,
-                            owner_uid=user_id, spend=spend, refund=refund)
+                            owner_uid=user_id, spend=spend, refund=refund,
+                            feature="synastry")

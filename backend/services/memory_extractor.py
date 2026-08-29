@@ -156,7 +156,8 @@ def extract_and_store(uid: str, history: list[dict[str, Any]],
             kategoriler=", ".join(memory_service.CATEGORIES),
             konusma=_conversation_text(history, last_message),
         )
-        raw = gemini_service.extract_json(prompt, schema=_SCHEMA)
+        raw = gemini_service.extract_json(prompt, schema=_SCHEMA,
+                                          feature="memory_extract", uid=uid)
         if not raw:
             return None
 

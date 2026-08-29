@@ -149,6 +149,39 @@ class RunResult(BaseModel):
     skipped: dict[str, int]
 
 
+def _kosu_kaydet(type_: str, gun: str, sonuc: RunResult,
+                 now_utc: dt.datetime) -> None:
+    """Koşu sonucunu kalıcılaştırır (AP-turu) — panel "bildirim sağlığı".
+
+    Eskiden RunResult yalnız HTTP yanıtı olarak Cloud Scheduler'a dönüp
+    kayboluyordu. Doküman kimliği deterministik ``{gün}-{tür}``; zamanlayıcı
+    SAATTE BİR koştuğu için sayılar Increment ile BİRİKİR (set ezseydi gün
+    toplamı son saatin sayısına inerdi). Best-effort: yazım düşerse koşu
+    düşmez. dry_run buraya hiç uğramaz (prova iz bırakmaz).
+    """
+    try:
+        client = firestore_client.get_client()
+        if client is None:
+            return
+        from google.cloud import firestore as gcf
+        client.collection("notifyRuns").document(f"{gun}-{type_}").set({
+            "date": gun,
+            "type": type_,
+            "runs": gcf.Increment(1),
+            "scanned": gcf.Increment(sonuc.scanned),
+            "queued": gcf.Increment(sonuc.queued),
+            "sent": gcf.Increment(sonuc.sent),
+            "failed": gcf.Increment(sonuc.failed),
+            "pruned": gcf.Increment(sonuc.pruned),
+            "skipped": {k: gcf.Increment(v) for k, v in sonuc.skipped.items()},
+            "lastStatus": sonuc.status,
+            "lastRunAt": now_utc,
+        }, merge=True)
+    except Exception as exc:
+        logger.warning("Bildirim koşusu kaydedilemedi (%s/%s): %s",
+                       gun, type_, exc)
+
+
 @router.post("/run", response_model=RunResult)
 def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
         dry_run: bool = False,
@@ -308,11 +341,13 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
                 type, taranan, len(mesajlar), sonuc.sent, sonuc.failed,
                 len(sonuc.pruned), atlanan)
 
-    return RunResult(
+    yanit = RunResult(
         status="ok", type=type, scanned=taranan, queued=len(mesajlar),
         sent=sonuc.sent, failed=sonuc.failed, pruned=len(sonuc.pruned),
         skipped=atlanan,
     )
+    _kosu_kaydet(type, now_utc.date().isoformat(), yanit, now_utc)
+    return yanit
 
 
 class ReactionPush(BaseModel):

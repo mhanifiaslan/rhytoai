@@ -55,11 +55,18 @@ class SahteDoc:
 
 
 class SahteKoleksiyon:
+    _oto_sayac = 0
+
     def __init__(self, depo: dict, yol: str):
         self._depo = depo
         self._yol = yol
 
-    def document(self, ad):
+    def document(self, ad=None):
+        # Gerçek istemcide argümansız document() otomatik kimlik üretir —
+        # debit defteri (AP-turu) bu yolu kullanıyor.
+        if ad is None:
+            SahteKoleksiyon._oto_sayac += 1
+            ad = f"oto-{SahteKoleksiyon._oto_sayac}"
         return SahteDoc(self._depo, f"{self._yol}/{ad}")
 
 
@@ -103,6 +110,12 @@ def _cuzdan_yaz(depo, uid="u1", **alanlar):
 
 def _cuzdan(depo, uid="u1"):
     return depo.get(f"users/{uid}/private/wallet", {})
+
+
+def _defter(depo, uid="u1"):
+    """Ledger kayıtları (yazım sırasıyla — sahte depo dict'i eklemeli)."""
+    onek = f"users/{uid}/private/wallet/ledger/"
+    return [v for k, v in depo.items() if k.startswith(onek)]
 
 
 def _abone_yap(monkeypatch, expires: dt.datetime):
@@ -236,6 +249,85 @@ def test_llm_iadesi_purchased_a_gider(depo, monkeypatch):
     _cuzdan_yaz(depo, allowance=0, allowanceExpiresAt=None, purchased=0)
     wallet.refund_spend("u1", "natal")
     assert _cuzdan(depo)["purchased"] == 5
+
+
+# ---------------------------------------------------------------------------
+# Harcama defteri (AP-turu) — debit kayıtları bakiye mutasyonunu aynalar
+# ---------------------------------------------------------------------------
+# Not: sahte `transactional → kimlik` indirgemesi (fixture) gerçek retry
+# semantiğini göremez; çift-yazım güvencesi gerçek kütüphanenin transaction
+# TAMPONUNDAN gelir (yazımlar yalnız başarılı commit'te işlenir ve her
+# retry gövdeyi — ledger_ref dahil — sıfırdan kurar).
+
+def test_harcama_defterde_kirilimla_izlenir(depo, monkeypatch):
+    """Debit kaydı: feature + tutar + allowance/purchased kırılımı."""
+    _abone_yap(monkeypatch, _DONEM)
+    _cuzdan_yaz(depo, allowance=2, allowanceExpiresAt=_DONEM, purchased=3)
+
+    wallet.spend("u1", "dyad")  # bedel 3: 2 allowance + 1 purchased
+
+    kayitlar = _defter(depo)
+    assert len(kayitlar) == 1
+    kayit = kayitlar[0]
+    assert kayit["type"] == "debit"
+    assert kayit["feature"] == "dyad"
+    assert kayit["amount"] == 3
+    assert kayit["allowancePart"] == 2
+    assert kayit["purchasedPart"] == 1
+
+
+def test_kuru_calismada_da_debit_yazilir(depo, monkeypatch):
+    """ENFORCE=0'da YETERLİ bakiye DÜŞÜYOR (kod gerçeği) — defter bakiye
+    mutasyonunu aynalar, bayraktan bağımsız."""
+    monkeypatch.setattr(wallet, "TOKENS_ENFORCE", False)
+    _abone_yap(monkeypatch, _DONEM)
+    _cuzdan_yaz(depo, allowance=10, allowanceExpiresAt=_DONEM, purchased=0)
+
+    wallet.spend("u1", "chat")
+
+    assert _cuzdan(depo)["allowance"] == 9
+    assert [k["type"] for k in _defter(depo)] == ["debit"]
+
+
+def test_yetersiz_bakiyede_defter_bos_kalir(depo, monkeypatch):
+    """Bakiye yetmeyip yazım olmayan yol (kuru çalışmada bile) hiçbir
+    ledger kaydı üretmez — düşmeyen jetonun izi olmaz."""
+    monkeypatch.setattr(wallet, "TOKENS_ENFORCE", False)
+    _abone_yap(monkeypatch, _DONEM)
+    _cuzdan_yaz(depo, allowance=1, allowanceExpiresAt=_DONEM, purchased=0)
+
+    wallet.spend("u1", "natal")  # bedel 5 > 1; ENFORCE=0 → fırlatmaz
+
+    assert _cuzdan(depo)["allowance"] == 1
+    assert _defter(depo) == []
+
+
+def test_llm_iadesi_deftere_yazilir(depo):
+    wallet.refund_spend("u1", "natal")
+    kayitlar = _defter(depo)
+    assert len(kayitlar) == 1
+    assert kayitlar[0]["type"] == "spend_refund"
+    assert kayitlar[0]["feature"] == "natal"
+    assert kayitlar[0]["amount"] == 5
+
+
+def test_admin_kredisi_defter_ve_bakiye(depo):
+    """credit_admin: purchased artar; kayıt gerekçe + adminUid taşır.
+    Bilinçli olarak İDEMPOTENT DEĞİL — çift tıklama koruması panelde."""
+    wallet.credit_admin("u1", 50, "paket gelmedi, telafi", "admin-1")
+    wallet.credit_admin("u1", 50, "paket gelmedi, telafi", "admin-1")
+
+    assert _cuzdan(depo)["purchased"] == 100  # iki ayrı olay
+    kayitlar = [k for k in _defter(depo) if k["type"] == "admin"]
+    assert len(kayitlar) == 2
+    assert kayitlar[0]["reason"] == "paket gelmedi, telafi"
+    assert kayitlar[0]["adminUid"] == "admin-1"
+
+
+def test_admin_kredisi_pozitif_sart(depo):
+    assert wallet.credit_admin("u1", 0, "sebep", "admin-1") is False
+    assert wallet.credit_admin("u1", -5, "sebep", "admin-1") is False
+    assert _cuzdan(depo) == {}
 
 
 # ---------------------------------------------------------------------------

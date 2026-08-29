@@ -167,8 +167,17 @@ def get_wallet(uid: str) -> dict[str, Any]:
 # Harcama
 # ---------------------------------------------------------------------------
 
-def _spend_txn(transaction, ref, uid: str, cost: int) -> bool:
-    """Transaction gövdesi: oku, gerekirse dönemi tazele, düş, yaz."""
+def _spend_txn(transaction, ref, uid: str, feature: str, cost: int) -> bool:
+    """Transaction gövdesi: oku, gerekirse dönemi tazele, düş, yaz.
+
+    Başarılı düşüm deftere de yazılır (type=debit): "kim, neye, kaç jeton"
+    sorusunun kalıcı cevabı. Defter bakiye MUTASYONUNU aynalar — kuru
+    çalışma bayrağından bağımsızdır, çünkü ENFORCE=0'da da bakiye düşer
+    (bayrak yalnız yetersiz-bakiye reddini bastırır). Yazım transaction
+    tamponunda biriktiği için retry çift kayıt üretemez: her deneme
+    gövdeyi (ve ledger_ref'i) sıfırdan kurar, tampon yalnız başarılı
+    commit'te işlenir.
+    """
     snapshot = ref.get(transaction=transaction)
     data = (snapshot.to_dict() or {}) if snapshot.exists else {}
 
@@ -204,6 +213,15 @@ def _spend_txn(transaction, ref, uid: str, cost: int) -> bool:
         "purchased": purchased,
         "updatedAt": _now(),
     })
+    ledger_ref = ref.collection("ledger").document()
+    transaction.set(ledger_ref, {
+        "type": "debit",
+        "feature": feature,
+        "amount": cost,
+        "allowancePart": dusen,
+        "purchasedPart": cost - dusen,
+        "at": _now(),
+    })
     return True
 
 
@@ -230,7 +248,7 @@ def spend(uid: str, feature: str, *, lang: str = DEFAULT_LANG) -> None:
 
         @gcf.transactional
         def _run(txn):
-            return _spend_txn(txn, ref, uid, cost)
+            return _spend_txn(txn, ref, uid, feature, cost)
 
         yeterli = _run(transaction)
     except Exception as exc:
@@ -272,6 +290,16 @@ def refund_spend(uid: str, feature: str) -> None:
                 merge=True)
     except Exception as exc:
         logger.warning("Token iadesi yapılamadı (%s/%s): %s", uid, feature, exc)
+        return
+    try:
+        # İade defteri: bakiye artışının izi. Ayrı try — defter düşerse
+        # iade YAPILDI, yalnız iz eksik kalır; log bunu doğru söylemeli.
+        ref.collection("ledger").document().set({
+            "type": "spend_refund", "feature": feature,
+            "amount": cost, "at": _now(),
+        })
+    except Exception as exc:
+        logger.warning("İade defteri yazılamadı (%s/%s): %s", uid, feature, exc)
 
 
 def spender(uid: str, feature: str, *, lang: str = DEFAULT_LANG) -> Callable[[], None]:
@@ -442,6 +470,46 @@ def credit_promo(uid: str, code: str, amount: int) -> bool:
     return islendi
 
 
+def credit_admin(uid: str, amount: int, reason: str, admin_uid: str) -> bool:
+    """Panelden elle kredi (AP-turu) — credit_promo'nun denetimli varyantı.
+
+    Gerekçe ZORUNLU (uç Pydantic'te de zorlar): "neden verildi" sorusunun
+    cevabı defterde durur. Bilinçli olarak İDEMPOTENT DEĞİL — her elle
+    kredi ayrı bir olaydır; çift tıklama koruması panelde (buton kilidi +
+    onay). Firestore yoksa hata fırlatılır: para kaybolmaz, admin hatayı
+    görür (credit_pack duruşu).
+    """
+    if amount <= 0:
+        return False
+    ref = _wallet_ref(uid)
+    if ref is None:
+        raise RuntimeError("Firestore erisilemiyor; kredi verilemedi.")
+
+    import uuid
+
+    ledger_ref = ref.collection("ledger").document(f"admin-{uuid.uuid4().hex}")
+
+    from google.cloud import firestore as gcf
+
+    client = firestore_client.get_client()
+    transaction = client.transaction()
+
+    @gcf.transactional
+    def _run(txn) -> None:
+        snapshot = ref.get(transaction=txn)
+        data = (snapshot.to_dict() or {}) if snapshot.exists else {}
+        txn.set(ref, {**data,
+                      "purchased": int(data.get("purchased", 0)) + amount,
+                      "updatedAt": _now()})
+        txn.set(ledger_ref, {"type": "admin", "amount": amount,
+                             "reason": reason, "adminUid": admin_uid,
+                             "at": _now()})
+
+    _run(transaction)
+    logger.info("Admin kredisi: uid=%s +%d (%s)", uid, amount, admin_uid)
+    return True
+
+
 def debit_refund(uid: str, product_id: str, event_id: str) -> bool:
     """Paket iadesini bakiyeden düşer (0'da kelepçe), defterle idempotent."""
     amount = TOKEN_PACKS.get(product_id)
@@ -515,6 +583,10 @@ def transfer_wallet(client, sources: list[str], targets: list[str]) -> None:
     Yalnızca [_WALLET_FIELDS] taşınır ve kaynakta bu alanlardan hiçbiri
     yoksa hedefe HİÇ yazılmaz: cüzdanı olmayan bir kimlikten devir, hedefin
     mevcut cüzdanını sıfırlamamalı.
+
+    Bilinen sınır (AP-turu): ledger alt koleksiyonu TAŞINMAZ — kredi
+    geçmişi eski uid'de kalır, hedefte idempotency işaretleri sıfırlanır.
+    Devir nadir bir olaydır; defter birleştirme ayrı bir iş.
     """
     def _ref(uid: str):
         return (client.collection("users").document(uid)

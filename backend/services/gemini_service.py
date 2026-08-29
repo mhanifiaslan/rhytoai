@@ -7,9 +7,10 @@ iletişimi ve persona yönetiminden sorumludur.
 from __future__ import annotations
 
 import logging
+import time
 
 from core import config, i18n
-from services import prompts
+from services import prompts, usage_service
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +144,8 @@ _REPORT_RETRY_TOKENS = 8192
 
 
 def generate(prompt: str, temperature: float = 0.9,
-             lang: str | None = None) -> str | None:
+             lang: str | None = None, *,
+             feature: str | None = None, uid: str | None = None) -> str | None:
     """Tek atımlık üretim. Başarısız olursa None döner (çağıran fallback verir).
 
     Persona dile göre seçilir: İngilizce yorum Türkçe persona ile üretilirse
@@ -172,10 +174,16 @@ def generate(prompt: str, temperature: float = 0.9,
     for deneme, ek in enumerate(({"max_output_tokens": 2048},
                                  {"max_output_tokens": _REPORT_RETRY_TOKENS})):
         try:
+            basla = time.monotonic()
             response = client.models.generate_content(
                 model=config.GEMINI_MODEL, contents=prompt,
                 config={**temel, **ek},
             )
+            # Her GERÇEK çağrı ayrı kayıt — kesilme retry'ı da faturalanır.
+            usage_service.record(feature or "generate", config.GEMINI_MODEL,
+                                 response,
+                                 int((time.monotonic() - basla) * 1000),
+                                 uid=uid)
             metin, kesildi = _read_response(response)
             if metin and not kesildi:
                 return metin
@@ -192,7 +200,8 @@ def generate(prompt: str, temperature: float = 0.9,
     return None
 
 
-def extract_json(prompt: str, schema: dict | None = None) -> str | None:
+def extract_json(prompt: str, schema: dict | None = None, *,
+                 feature: str | None = None, uid: str | None = None) -> str | None:
     """Persona'sız, düşük sıcaklıkta yapılandırılmış üretim.
 
     Olgu çıkarımı gibi işler için: Rytho personası (sıcak, edebi, "sen" dili)
@@ -206,9 +215,13 @@ def extract_json(prompt: str, schema: dict | None = None) -> str | None:
         cfg: dict = {"temperature": 0.1, "response_mime_type": "application/json"}
         if schema is not None:
             cfg["response_schema"] = schema
+        basla = time.monotonic()
         response = client.models.generate_content(
             model=config.GEMINI_MODEL, contents=prompt, config=cfg
         )
+        usage_service.record(feature or "extract_json", config.GEMINI_MODEL,
+                             response,
+                             int((time.monotonic() - basla) * 1000), uid=uid)
         if response and response.text:
             return response.text.strip()
     except Exception as exc:
@@ -217,7 +230,8 @@ def extract_json(prompt: str, schema: dict | None = None) -> str | None:
 
 
 def chat(history: list[dict], user_message: str,
-         lang: str | None = None) -> str | None:
+         lang: str | None = None, *,
+         feature: str = "chat", uid: str | None = None) -> str | None:
     """Çok turlu sohbet. history: [{'sender': 'USER'|'AI', 'text': ...}]
 
     Persona kuralları her turda mesaja gömülmez; system_instruction olarak
@@ -257,9 +271,15 @@ def chat(history: list[dict], user_message: str,
             **_CHAT_CONFIG_VARIANTS[idx],
         }
         try:
+            basla = time.monotonic()
             response = client.models.generate_content(
                 model=config.GEMINI_MODEL, contents=contents, config=cfg,
             )
+            # İstisnayla düşen varyantta response yok → kayıt da yok
+            # (faturalanmadı sayılır); dönen her yanıt ise paradır.
+            usage_service.record(feature, config.GEMINI_MODEL, response,
+                                 int((time.monotonic() - basla) * 1000),
+                                 uid=uid)
             metin, kesildi = _read_response(response)
             if metin and not kesildi:
                 _variant_state["preferred"] = idx

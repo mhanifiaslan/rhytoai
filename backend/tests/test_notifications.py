@@ -617,6 +617,87 @@ def test_gecici_fcm_hatasi_gunu_yakmaz(monkeypatch):
     assert isaretlenen == ["tamam"]
 
 
+# --- Koşu kaydı (AP-turu): notifyRuns kalıcılaşır, dry_run iz bırakmaz ---
+
+class _KosuDoc:
+    def __init__(self, depo, kimlik):
+        self._depo = depo
+        self._kimlik = kimlik
+
+    def set(self, veri, merge=False):
+        self._depo.append((self._kimlik, veri, merge))
+
+
+class _KosuKoleksiyon:
+    def __init__(self, depo):
+        self._depo = depo
+
+    def document(self, kimlik):
+        return _KosuDoc(self._depo, kimlik)
+
+
+class _KosuClient:
+    def __init__(self, depo):
+        self._depo = depo
+
+    def collection(self, ad):
+        assert ad == "notifyRuns"
+        return _KosuKoleksiyon(self._depo)
+
+
+def _kosu_ortami(monkeypatch, yazilan):
+    from api import notify
+    from services import push_service
+
+    monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
+    monkeypatch.setattr(notify, "_iter_profiles", lambda: iter([
+        profil(uid="tamam", quietFrom=0, quietTo=0)]))
+    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
+    monkeypatch.setattr(ns, "last_daily_sent", lambda uid: None)
+    monkeypatch.setattr(
+        ns, "signal_push",
+        lambda p, lang, today=None, onceki=None: (
+            "Başlık", "Gövde.", "iz", 0, {}))
+    monkeypatch.setattr(ns, "mark_sent",
+                        lambda uid, tur, gun, extra=None: None)
+    monkeypatch.setattr(push_service, "send", lambda m: push_service.SendResult(
+        sent=len(m), failed=0, pruned=[], failed_uids=[]))
+    monkeypatch.setattr(notify.firestore_client, "get_client",
+                        lambda: _KosuClient(yazilan))
+
+
+@uygulama_gerekir
+def test_kosu_kaydi_increment_ile_birikir(monkeypatch):
+    """RunResult artık kaybolmaz: {gün}-{tür} dokümanına Increment+merge
+    yazılır — saatlik koşular gün toplamını ezmez, biriktirir."""
+    yazilan: list = []
+    _kosu_ortami(monkeypatch, yazilan)
+    with TestClient(app) as client:
+        client.post("/api/v1/notify/run?type=daily&force=true",
+                    headers={"Authorization": "dogru"})
+
+    assert len(yazilan) == 1
+    kimlik, veri, merge = yazilan[0]
+    assert kimlik.endswith("-daily")
+    assert merge is True
+    assert veri["type"] == "daily"
+    assert veri["runs"].value == 1
+    assert veri["sent"].value == 1
+    assert veri["lastStatus"] == "ok"
+
+
+@uygulama_gerekir
+def test_dry_run_kosu_kaydi_birakmaz(monkeypatch):
+    """Prova iz bırakmaz — dry_run panelin sağlık sayılarını şişiremez."""
+    yazilan: list = []
+    _kosu_ortami(monkeypatch, yazilan)
+    with TestClient(app) as client:
+        client.post("/api/v1/notify/run?type=daily&force=true&dry_run=true",
+                    headers={"Authorization": "dogru"})
+    assert yazilan == []
+
+
 # --- Olay tabanli (arkadas tepkisi) ---
 
 def test_arkadas_tepkisi_sessiz_saatte_dusurulur():

@@ -230,7 +230,7 @@ class TestYorumPaketi:
     def test_dogru_bicim_paket_doner(self, monkeypatch):
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: ("1. Birinci yorum.\n2. İkinci yorum."
+            lambda prompt, lang=None, **_: ("1. Birinci yorum.\n2. İkinci yorum."
                                        "\nSORU: Bugün nasıl geçti?"))
         paket = signal_service.insight_bundle(self.HAM, "tr")
         assert paket == {"insights": ["Birinci yorum.", "İkinci yorum."],
@@ -243,7 +243,7 @@ class TestYorumPaketi:
         kullanıcı ekranda gördü. Önek soyulmuş hâl de soru sayılmalı."""
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: ("1. Bir.\n2. İki."
+            lambda prompt, lang=None, **_: ("1. Bir.\n2. İki."
                                        "\n3. SORU: Bugün nasıl geçti?"))
         paket = signal_service.insight_bundle(self.HAM, "tr")
         assert paket["insights"] == ["Bir.", "İki."]
@@ -252,7 +252,7 @@ class TestYorumPaketi:
     def test_soru_tire_ise_none(self, monkeypatch):
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: "1. Bir.\n2. İki.\nSORU: -")
+            lambda prompt, lang=None, **_: "1. Bir.\n2. İki.\nSORU: -")
         paket = signal_service.insight_bundle(self.HAM, "tr")
         assert paket["insights"] == ["Bir.", "İki."]
         assert paket["checkin_question"] is None
@@ -265,7 +265,7 @@ class TestYorumPaketi:
         assert len(soru) <= signal_service.CHECKIN_QUESTION_MAX
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: f"1. Bir.\n2. İki.\nSORU: {soru}")
+            lambda prompt, lang=None, **_: f"1. Bir.\n2. İki.\nSORU: {soru}")
         paket = signal_service.insight_bundle(self.HAM, "tr")
         assert paket["insights"] == ["Bir.", "İki."]
         assert paket["checkin_question"] == soru
@@ -274,7 +274,7 @@ class TestYorumPaketi:
         """Sabah bildirimi akşam sorusuna rehin olmaz: SORU satırı
         gelmezse yorumlar YİNE kabul edilir."""
         monkeypatch.setattr(signal_service.gemini_service, "generate",
-                            lambda prompt, lang=None: "1. Bir.\n2. İki.")
+                            lambda prompt, lang=None, **_: "1. Bir.\n2. İki.")
         paket = signal_service.insight_bundle(self.HAM, "tr")
         assert paket["insights"] == ["Bir.", "İki."]
         assert paket["checkin_question"] is None
@@ -283,20 +283,20 @@ class TestYorumPaketi:
         uzun_soru = "SORU: " + "s" * 200
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: f"1. Bir.\n2. İki.\n{uzun_soru}")
+            lambda prompt, lang=None, **_: f"1. Bir.\n2. İki.\n{uzun_soru}")
         paket = signal_service.insight_bundle(self.HAM, "tr")
         assert paket["insights"] == ["Bir.", "İki."]
         assert paket["checkin_question"] is None
 
     def test_satir_sayisi_tutmazsa_none(self, monkeypatch):
         monkeypatch.setattr(signal_service.gemini_service, "generate",
-                            lambda prompt, lang=None: "1. Tek satır.")
+                            lambda prompt, lang=None, **_: "1. Tek satır.")
         assert signal_service.insight_bundle(self.HAM, "tr") is None
 
     def test_asiri_uzun_satir_none(self, monkeypatch):
         uzun = "1. " + "ç" * 200 + "\n2. Kısa."
         monkeypatch.setattr(signal_service.gemini_service, "generate",
-                            lambda prompt, lang=None: uzun)
+                            lambda prompt, lang=None, **_: uzun)
         assert signal_service.insight_bundle(self.HAM, "tr") is None
 
     def test_prompt_hareket_ve_odak_isaretleri_tasir(self, monkeypatch):
@@ -305,7 +305,7 @@ class TestYorumPaketi:
         işaretini koyar."""
         yakalanan = {}
 
-        def sahte(prompt, lang=None):
+        def sahte(prompt, lang=None, **_):
             yakalanan["prompt"] = prompt
             return "1. Bir.\n2. İki.\nSORU: -"
 
@@ -327,7 +327,7 @@ class TestYorumPaketi:
         assert signal_service.significant_signal(odaksiz) is None
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: "1. Bir.\nSORU: Nasıl geçti?")
+            lambda prompt, lang=None, **_: "1. Bir.\nSORU: Nasıl geçti?")
         paket = signal_service.insight_bundle(odaksiz, "tr")
         assert paket["insights"] == ["Bir."]
         assert paket["checkin_question"] is None
@@ -375,7 +375,7 @@ class TestPaketOnbellegi:
         self._bellek(monkeypatch)
         sayac = {"n": 0}
 
-        def sahte(prompt, lang=None):
+        def sahte(prompt, lang=None, **_):
             sayac["n"] += 1
             return "1. Bir.\n2. İki.\nSORU: Nasıl geçti?"
 
@@ -389,7 +389,7 @@ class TestPaketOnbellegi:
         self._bellek(monkeypatch)
         sayac = {"n": 0}
 
-        def sahte(prompt, lang=None):
+        def sahte(prompt, lang=None, **_):
             sayac["n"] += 1
             return "1. Bir.\n2. İki.\nSORU: -"
 
@@ -401,7 +401,7 @@ class TestPaketOnbellegi:
     def test_basarisizlik_kisa_ttl_ile_yazilir(self, monkeypatch):
         depo, ttl = self._bellek(monkeypatch)
         monkeypatch.setattr(signal_service.gemini_service, "generate",
-                            lambda prompt, lang=None: "bozuk çıktı")
+                            lambda prompt, lang=None, **_: "bozuk çıktı")
         assert signal_service.cached_insight_bundle(self.HAM, "tr") is None
         anahtar = next(iter(depo))
         assert depo[anahtar].get("failed") is True
@@ -410,7 +410,7 @@ class TestPaketOnbellegi:
         depo.clear(); ttl.clear()
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: "1. Bir.\n2. İki.\nSORU: -")
+            lambda prompt, lang=None, **_: "1. Bir.\n2. İki.\nSORU: -")
         assert signal_service.cached_insight_bundle(self.HAM, "tr")
         anahtar = next(iter(depo))
         assert ttl[anahtar] == signal_service.BUNDLE_TTL_OK
@@ -450,7 +450,7 @@ class TestTakvimYorumu:
     def test_dogru_bicimde_parmak_izine_eslenir(self, monkeypatch):
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: "1. Birinci.\n2. İkinci.\n3. Üçüncü.")
+            lambda prompt, lang=None, **_: "1. Birinci.\n2. İkinci.\n3. Üçüncü.")
         yorumlar = signal_service.calendar_insights(self.OLAYLAR, "tr")
         assert len(yorumlar) == 3
         for o, beklenen in zip(self.OLAYLAR[:3],
@@ -460,7 +460,7 @@ class TestTakvimYorumu:
     def test_istasyon_ve_temasiz_olay_promptan_cikar(self, monkeypatch):
         yakalanan = {}
 
-        def sahte_uret(prompt, lang=None):
+        def sahte_uret(prompt, lang=None, **_):
             yakalanan["prompt"] = prompt
             return "1. Birinci.\n2. İkinci.\n3. Üçüncü."
 
@@ -471,20 +471,20 @@ class TestTakvimYorumu:
 
     def test_satir_sayisi_tutmazsa_none(self, monkeypatch):
         monkeypatch.setattr(signal_service.gemini_service, "generate",
-                            lambda prompt, lang=None: "1. Tek satır.")
+                            lambda prompt, lang=None, **_: "1. Tek satır.")
         assert signal_service.calendar_insights(self.OLAYLAR, "tr") is None
 
     def test_asiri_uzun_satir_none(self, monkeypatch):
         uzun = "1. " + "ç" * 200 + "\n2. Kısa.\n3. Kısa."
         monkeypatch.setattr(signal_service.gemini_service, "generate",
-                            lambda prompt, lang=None: uzun)
+                            lambda prompt, lang=None, **_: uzun)
         assert signal_service.calendar_insights(self.OLAYLAR, "tr") is None
 
     def test_temali_olay_yoksa_cagirmadan_none(self, monkeypatch):
         """Yalnız istasyon varsa LLM'e hiç gidilmez — boşuna harcama yok."""
         cagrildi = {"n": 0}
 
-        def sahte_uret(prompt, lang=None):
+        def sahte_uret(prompt, lang=None, **_):
             cagrildi["n"] += 1
             return "1. x"
 
@@ -503,7 +503,7 @@ class TestTakvimYorumu:
                "theme": "inner"} for i in range(30)]
         yakalanan = {}
 
-        def sahte_uret(prompt, lang=None):
+        def sahte_uret(prompt, lang=None, **_):
             yakalanan["prompt"] = prompt
             n = signal_service.CALENDAR_INSIGHT_MAX_EVENTS
             return "\n".join(f"{i}. Yorum {i}." for i in range(1, n + 1))
@@ -534,7 +534,7 @@ class TestTakvimYorumu:
         ]
         monkeypatch.setattr(
             signal_service.gemini_service, "generate",
-            lambda prompt, lang=None: "\n".join(
+            lambda prompt, lang=None, **_: "\n".join(
                 f"{i}. Bu olaya özgü {i}. cümle." for i in range(1, 6)))
         yorumlar = signal_service.calendar_insights(genis_takvim, "tr")
         assert len(yorumlar) == 5

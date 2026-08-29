@@ -202,6 +202,42 @@ def test_toplama_sayilari(sahte, monkeypatch):
     assert d["social"]["friendships"] == 1  # 2 doküman / 2
 
 
+def test_toplama_ap_ekleri(sahte, monkeypatch):
+    """AP-turu: jeton akışı (debit ledger), AI kullanımı (usageEvents),
+    bildirim koşuları (notifyRuns) ve platform kırılımı dokümana girer."""
+    sahte._veriler["cg:ledger"] = [
+        ("l1", {"type": "debit", "feature": "chat", "amount": 1,
+                "at": _SIMDI}),
+        ("l2", {"type": "debit", "feature": "natal", "amount": 5,
+                "at": _SIMDI}),
+        ("l3", {"type": "credit", "productId": "rytho_tokens_small",
+                "amount": 100, "at": _SIMDI}),
+        # Dün kalan kayıt gün dilimine GİRMEZ.
+        ("l0", {"type": "debit", "feature": "chat", "amount": 9,
+                "at": _SIMDI - dt.timedelta(days=2)}),
+    ]
+    sahte._veriler["usageEvents"] = [
+        ("u1", {"day": _BUGUN, "feature": "chat", "estCostUsd": 0.002}),
+        ("u2", {"day": _BUGUN, "feature": "natal", "estCostUsd": 0.0033}),
+        ("u3", {"day": "2020-01-01", "feature": "chat",
+                "estCostUsd": 9.9}),  # başka gün — girmez
+    ]
+    sahte.yazilan[("notifyRuns", f"{_BUGUN}-daily")] = {
+        "sent": 4, "failed": 1, "skipped": {"sessiz-saat": 2, "tercih": 1}}
+
+    d = stats_service.collect()
+
+    assert d["tokens"]["spentToday"] == {"chat": 1, "natal": 5}
+    assert d["tokens"]["spentTotalToday"] == 6
+    assert d["tokens"]["creditedToday"] == 100
+    assert d["ai"]["callsToday"] == 2
+    assert d["ai"]["estCostToday"] == pytest.approx(0.0053)
+    assert d["ai"]["byFeature"] == {"chat": 1, "natal": 1}
+    assert d["notify"]["daily"] == {"sent": 4, "failed": 1,
+                                    "skippedTotal": 3}
+    assert d["users"]["byPlatform"] == {"bilinmiyor": 3}
+
+
 def test_toplama_idempotent(sahte):
     stats_service.collect()
     stats_service.collect()

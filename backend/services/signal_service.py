@@ -388,7 +388,8 @@ def calendar_insights(events: list[dict[str, Any]],
     prompt = p.CALENDAR_INSIGHTS_PROMPT.format(
         count=len(ilgili), lines="\n".join(satirlar))
     try:
-        metin = (gemini_service.generate(prompt, lang=lang) or "").strip()
+        metin = (gemini_service.generate(prompt, lang=lang,
+                                         feature="calendar") or "").strip()
     except Exception as exc:
         logger.warning("Takvim yorumu üretilemedi: %s", exc)
         return None
@@ -536,7 +537,8 @@ def insight_bundle(ham: dict[str, Any], lang: str,
     if avoid:
         prompt += "\n" + p.SIGNALS_AVOID_BLOCK.format(prev=avoid)
     try:
-        metin = (gemini_service.generate(prompt, lang=lang) or "").strip()
+        metin = (gemini_service.generate(prompt, lang=lang,
+                                         feature="signal") or "").strip()
     except Exception as exc:
         logger.warning("Sinyal yorumu üretilemedi: %s", exc)
         return None

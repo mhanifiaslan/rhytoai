@@ -112,6 +112,7 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
     streak_kovalar = {k: 0 for k in _STREAK_KOVALARI}
     dil: dict[str, int] = {}
     saat_dilimi: dict[str, int] = {}
+    platformlar: dict[str, int] = {}
     for veri in _iter_users(client):
         toplam += 1
         if veri.get("onboardingCompleted") is True:
@@ -134,6 +135,10 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
         dil[d] = dil.get(d, 0) + 1
         tz = str(veri.get("timezone") or "-")
         saat_dilimi[tz] = saat_dilimi.get(tz, 0) + 1
+        # Platform aynası (AP-turu, core/device._claim yazar); alanı
+        # olmayan eski kullanıcılar dürüstçe "bilinmiyor".
+        pf = str(veri.get("platform") or "bilinmiyor")
+        platformlar[pf] = platformlar.get(pf, 0) + 1
 
     # ---- Abonelikler: HAM collection-group sorgusu (is_subscriber YASAK) ----
     aktif = 0
@@ -189,6 +194,71 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
         logger.warning("Gelir sorgusu düştü: %s", exc)
         brut = -1.0
 
+    # ---- Jeton akışı: cüzdan defterinin gün dilimi (AP-turu) ----
+    # collection_group("ledger") fieldOverride indeksi ister (infra/
+    # firestore.indexes.json); indeks henüz kurulmadıysa sorgu düşer ve
+    # mevcut duruşla boş/None yazılır — toplama işi düşmez.
+    jeton_harcanan: dict[str, int] = {}
+    jeton_harcanan_toplam = -1
+    jeton_kredi_toplam = -1
+    try:
+        harcanan_toplam = 0
+        kredi_toplam = 0
+        for anlik in (client.collection_group("ledger")
+                      .where(filter=FieldFilter("at", ">=", gun_bas))
+                      .where(filter=FieldFilter("at", "<", gun_son))
+                      .stream()):
+            veri = anlik.to_dict() or {}
+            adet = int(veri.get("amount") or 0)
+            if veri.get("type") == "debit":
+                harcanan_toplam += adet
+                oz = str(veri.get("feature") or "unknown")
+                jeton_harcanan[oz] = jeton_harcanan.get(oz, 0) + adet
+            elif veri.get("type") in ("credit", "promo", "admin"):
+                kredi_toplam += adet
+        jeton_harcanan_toplam = harcanan_toplam
+        jeton_kredi_toplam = kredi_toplam
+    except Exception as exc:
+        logger.warning("Ledger sorgusu düştü (indeks?): %s", exc)
+
+    # ---- AI kullanımı: usageEvents gün eşitliği (AP-turu) ----
+    ai_cagri = -1
+    ai_maliyet = -1.0
+    ai_ozellik: dict[str, int] = {}
+    try:
+        cagri = 0
+        maliyet = 0.0
+        for anlik in (client.collection("usageEvents")
+                      .where(filter=FieldFilter("day", "==", tarih_str))
+                      .stream()):
+            veri = anlik.to_dict() or {}
+            cagri += 1
+            maliyet += float(veri.get("estCostUsd") or 0)
+            oz = str(veri.get("feature") or "unknown")
+            ai_ozellik[oz] = ai_ozellik.get(oz, 0) + 1
+        ai_cagri = cagri
+        ai_maliyet = round(maliyet, 6)
+    except Exception as exc:
+        logger.warning("usageEvents sorgusu düştü: %s", exc)
+
+    # ---- Bildirim koşuları: notifyRuns {gün}-{tür} (AP-turu) ----
+    bildirim: dict[str, Any] = {}
+    try:
+        for tur in ("daily", "midday", "checkin", "streak"):
+            anlik = (client.collection("notifyRuns")
+                     .document(f"{tarih_str}-{tur}").get())
+            if getattr(anlik, "exists", False):
+                veri = anlik.to_dict() or {}
+                bildirim[tur] = {
+                    "sent": int(veri.get("sent") or 0),
+                    "failed": int(veri.get("failed") or 0),
+                    "skippedTotal": sum(
+                        int(v or 0)
+                        for v in (veri.get("skipped") or {}).values()),
+                }
+    except Exception as exc:
+        logger.warning("notifyRuns okunamadı: %s", exc)
+
     # ---- Hafif sayımlar: count() aggregation ----
     arkadaslik = _count(
         client.collection_group("friends")
@@ -216,6 +286,7 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
             "streakBuckets": streak_kovalar,
             "byLanguage": dil,
             "byTimezone": saat_dilimi,
+            "byPlatform": platformlar,
         },
         "subs": {
             "active": aktif,
@@ -238,6 +309,19 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
             "aiCacheCount": onbellek,
             "conversationsCount": konusma,
         },
+        # AP-turu ekleri. Eski dokümanlarda bu anahtarlar yok; panel
+        # yokluğu "—" gösterir (geriye uyum sözleşmesi).
+        "tokens": {
+            "spentToday": jeton_harcanan,
+            "spentTotalToday": jeton_harcanan_toplam,
+            "creditedToday": jeton_kredi_toplam,
+        },
+        "ai": {
+            "callsToday": ai_cagri,
+            "estCostToday": ai_maliyet,
+            "byFeature": ai_ozellik,
+        },
+        "notify": bildirim,
     }
 
     client.collection("adminStats").document(tarih_str).set(dokuman)

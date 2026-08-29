@@ -322,7 +322,8 @@ def chat(request: ChatRequest, background: BackgroundTasks,
             # şikâyetinin en ağır hâli. Sessiz kalmasın (KA8).
             logger.info("Sohbet SIFIR fısıltıyla gitti (%s)", user.uid)
 
-        reply = gemini_service.chat(history, message, lang=lang)
+        reply = gemini_service.chat(history, message, lang=lang,
+                                    feature="chat", uid=user.uid)
         if reply is None:
             # Kullanıcı almadığı yanıta ödemez.
             if token_harcandi:
@@ -334,7 +335,9 @@ def chat(request: ChatRequest, background: BackgroundTasks,
             # jeton ikinci kez düşülmez.
             from services import fact_guard
             def yeniden(duzelti: str) -> str | None:
-                return gemini_service.chat(history, duzelti, lang=lang)
+                # Bekçi yeniden üretimi de "chat" — aynı turun maliyeti.
+                return gemini_service.chat(history, duzelti, lang=lang,
+                                           feature="chat", uid=user.uid)
             # `facts=` ŞART (KA8): verilmeyince bekçi dayanağı prompt
             # METNİNDEN yeniden çıkarıyordu — R8'in kapattığı kırılganlık.
             # Sonuç: doğru konumlar "uydurma" damgası yiyip boşa yeniden

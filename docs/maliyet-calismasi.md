@@ -289,9 +289,20 @@ açı ağı) da maliyetsiz: yalnız yerelleştirme sözleşmesi düzeldi.
 
 ## 7. İzlenecek metrikler (canlıda)
 
+**AP-turu (2026-08-29) itibarıyla bu bölümdeki tahminler CANLI ÖLÇÜMLE
+doğrulanabilir:** her gerçek LLM çağrısı `usageEvents`'e token sayıları +
+tahmini maliyetle yazılıyor (usage_service; girdi $0,30/M, çıktı+düşünme
+$2,50/M), her jeton düşümü cüzdan defterine `debit` olarak işleniyor.
+Panel → AI sekmesi günlük çağrı/maliyet eğrilerini, Ekonomi sekmesi
+jeton akışını gösterir; adminStats'a `ai.estCostToday` ve
+`tokens.spentTotalToday` günlük özetleri düşer. Önbellek isabetleri
+usageEvents'e HİÇ girmez — "isabet = sıfır maliyet" varsayımı böylece
+yapısal olarak doğru.
+
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist
   notu) ve `TOKENS kuru-çalışma` logunun SIFIRLANDIĞI (enforce kanıtı).
-- Abone başına aylık jeton tüketimi dağılımı (adminStats'a eklenebilir).
+- Abone başına aylık jeton tüketimi dağılımı (~~adminStats'a
+  eklenebilir~~ AP-turu: `tokens.spentToday` özellik kırılımıyla eklendi).
 - Ücretsiz→abone dönüşüm oranı (%3 eşiği ücretsiz katman maliyetinin
   dengesi).
 - Kur 45+₺/$ kalıcılaşırsa: fiyat merdiveni adım 2 öne çekilir.

@@ -1,5 +1,6 @@
-/* Panel API katmanı (W6): her veri backend'den, Firestore'a doğrudan
-   erişim YOK (kurallar kapalı kalır). Kimlik: Firebase ID token. */
+/* Panel API katmanı (W6 + AP sertleştirmesi): her veri backend'den,
+   Firestore'a doğrudan erişim YOK (kurallar kapalı kalır). Kimlik:
+   Firebase ID token. */
 (function () {
   'use strict';
 
@@ -9,17 +10,51 @@
     var kullanici = firebase.auth().currentUser;
     if (!kullanici) throw new Error('oturum-yok');
     var token = await kullanici.getIdToken();
-    var yanit = await fetch(BACKEND + yol, Object.assign({
-      headers: { 'Authorization': 'Bearer ' + token,
-                 'Content-Type': 'application/json' }
-    }, secenekler || {}));
+    secenekler = secenekler || {};
+    // Başlıklar AYRI birleştirilir: Object.assign(secenekler) çağıranın
+    // headers'ı verdiği anda Authorization'ı eziyordu (eski kusur).
+    var basliklar = Object.assign({
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    }, secenekler.headers || {});
+    var yanit;
+    try {
+      yanit = await fetch(BACKEND + yol,
+        Object.assign({}, secenekler, { headers: basliklar }));
+    } catch (aghata) {
+      throw new Error('ag-hatasi');
+    }
     if (yanit.status === 401 || yanit.status === 403) {
       // Yetki düştü: oturumu kapat, jenerik görünüme dön.
       window.RY.yetkisiz();
       throw new Error('yetkisiz');
     }
-    if (!yanit.ok) throw new Error('api-' + yanit.status);
+    if (!yanit.ok) {
+      var hata = new Error('api-' + yanit.status);
+      hata.durum = yanit.status;
+      try {
+        var govde = await yanit.json();
+        if (govde && govde.detail) {
+          hata.detay = typeof govde.detail === 'string'
+            ? govde.detail : JSON.stringify(govde.detail);
+        }
+      } catch (yok) { /* gövdesiz hata */ }
+      throw hata;
+    }
     return yanit.json();
+  }
+
+  /* Ham hata → yöneticinin okuyacağı cümle. */
+  function hataMetni(hata) {
+    if (!hata) return 'Bilinmeyen hata.';
+    if (hata.message === 'ag-hatasi') {
+      return 'Bağlantı kurulamadı — ağını kontrol edip tekrar dene.';
+    }
+    if (hata.message === 'oturum-yok') return 'Oturum bulunamadı.';
+    if (hata.detay) return hata.detay;
+    if (hata.durum === 404) return 'Kayıt bulunamadı.';
+    if (hata.durum >= 500) return 'Sunucu hatası — birazdan tekrar dene.';
+    return 'Veri alınamadı (' + (hata.message || hata) + ').';
   }
 
   window.RY = window.RY || {};
@@ -28,9 +63,14 @@
     return apiIste(yol, { method: 'POST',
                           body: govde ? JSON.stringify(govde) : undefined });
   };
+  window.RY.patch = function (yol, govde) {
+    return apiIste(yol, { method: 'PATCH',
+                          body: JSON.stringify(govde || {}) });
+  };
   // Sağlık uçları herkese açık — token gerekmez.
   window.RY.saglik = function (yol) {
     return fetch(BACKEND + yol).then(function (y) { return y.json(); });
   };
+  window.RY.hataMetni = hataMetni;
   window.RY.BACKEND = BACKEND;
 })();

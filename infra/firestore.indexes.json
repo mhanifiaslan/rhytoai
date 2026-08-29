@@ -1,5 +1,5 @@
 {
-  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil. --- W5 ekleri: 'private' composite indeksi admin istatistiğinin aktif abone sorgusu için (collection-group, active==true && expiresAt>now; 'active' alanı private altında yalnız subscription dokümanında var, o yüzden yalnız onlar eşleşir). 'friends.status' override'ı kabul edilmiş arkadaşlık sayımı için.",
+  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil. --- W5 ekleri: 'private' composite indeksi admin istatistiğinin aktif abone sorgusu için (collection-group, active==true && expiresAt>now; 'active' alanı private altında yalnız subscription dokümanında var, o yüzden yalnız onlar eşleşir). 'friends.status' override'ı kabul edilmiş arkadaşlık sayımı için. --- AP-turu ekleri: 'usageEvents' composite'i Kullanıcı 360'ın uid+at sorgusu için; 'ledger.at' override'ı adminStats'ın günlük jeton-akışı collection-group sorgusu için (ledger = users/*/private/wallet/ledger).",
   "indexes": [
     {
       "collectionGroup": "private",
@@ -7,6 +7,14 @@
       "fields": [
         { "fieldPath": "active", "order": "ASCENDING" },
         { "fieldPath": "expiresAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "usageEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uid", "order": "ASCENDING" },
+        { "fieldPath": "at", "order": "DESCENDING" }
       ]
     }
   ],
@@ -21,6 +29,13 @@
     {
       "collectionGroup": "friends",
       "fieldPath": "status",
+      "indexes": [
+        { "queryScope": "COLLECTION_GROUP", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "ledger",
+      "fieldPath": "at",
       "indexes": [
         { "queryScope": "COLLECTION_GROUP", "order": "ASCENDING" }
       ]

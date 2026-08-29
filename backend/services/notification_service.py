@@ -332,7 +332,8 @@ def daily_push_body(sign: str, sky: dict[str, Any], lang: str,
         illumination=moon.get("illumination"), retros=retros,
     )
 
-    metin = (gemini_service.generate(prompt, lang=lang) or "").strip()
+    metin = (gemini_service.generate(prompt, lang=lang,
+                                     feature="push_daily") or "").strip()
     # Model bazen tırnak içinde döndürüyor; bildirimde tırnak görünmemeli.
     metin = metin.strip('"').strip("'").strip()
     if not metin or len(metin) > MAX_PUSH_BODY:

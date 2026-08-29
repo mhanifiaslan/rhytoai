@@ -435,7 +435,7 @@ class TestSoruHukmu:
         cache._memory.clear()
         cagri = {"n": 0}
 
-        def sahte(prompt, schema=None):
+        def sahte(prompt, schema=None, **_):
             cagri["n"] += 1
             return cevap
 

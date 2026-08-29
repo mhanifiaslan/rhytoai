@@ -168,6 +168,20 @@ deploy-backend.ps1'e kalıcı yazılacak.
   claim'inden gelir (aslan.mh@gmail.com'a basıldı). Yeni admin eklemek:
   `backend/.venv/Scripts/python tools/set_admin.py --email <eposta>`
   (claim ≤1 saat / çıkış-giriş sonrası yansır).
+- **Panel v2 (AP-turu, 2026-08-29):** baştan tasarlandı — yan menü + 6
+  bölüm: Genel Bakış (KPI + eğriler), Kullanıcılar (aramalı liste +
+  Kullanıcı 360: abonelik/cüzdan/kullanım/bildirim + zaman çizelgesi +
+  ZORUNLU gerekçeli elle jeton kredisi), Ekonomi (gelir + jeton akışı +
+  salt-okur bedel tablosu), AI Kullanımı (çağrı/token/maliyet
+  telemetrisi), Ortaklar (+pasifleştir), Sistem (bildirim sağlığı +
+  denetim izi). Yeni sunucu koleksiyonları: `usageEvents` (LLM çağrısı
+  başına token/maliyet), `notifyRuns` (koşu sonuçları), `adminAudit`
+  (yazan admin eylemleri), cüzdan defterine `debit`/`spend_refund`/
+  `admin` kayıtları. Yeni uçlar `/admin/users*`, `/admin/usage`,
+  `/admin/notify-runs`, `/admin/audit`. İndeks: usageEvents(uid,at)
+  composite + ledger.at collection-group override (deploy edildi).
+  Mahremiyet çizgisi: panel sohbet/hafıza İÇERİĞİNİ ve fcmToken
+  değerini ASLA görmez — yalnız sayılar.
 - **İstatistikler:** her gece 02:40 UTC `rytho-stats` işi `adminStats/`
   dokümanını üretir; panel Genel Bakış'tan "Topla" ile elle de tetiklenir.
 - **Ortak kodları:** panel > Ortaklar: ortak ekle → kod üret (bonus jeton +

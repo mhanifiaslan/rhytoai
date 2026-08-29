@@ -17,12 +17,37 @@ from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
 from core import config, firestore as firestore_client
+from core import wallet
 from core.auth import AuthUser, get_current_user, require_admin
 from core.i18n import get_language
-from services import partner_service, stats_service
+from services import admin_service, partner_service, stats_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+def _audit(user: AuthUser, action: str, target_uid: str | None = None,
+           params: dict[str, Any] | None = None) -> None:
+    """Denetim izi (AP-turu): admin'in YAZAN eylemleri kalıcı kayda düşer.
+
+    Salt-okur uçlar audit'lenmez (gürültü). Best-effort — iz yazılamadı
+    diye eylem geri alınmaz; tek sahipli üründe iz "kim"den çok "ne
+    zaman/ne" sorusuna cevaptır ve ileride çoklu admin gelirse hazırdır.
+    """
+    try:
+        client = firestore_client.get_client()
+        if client is None:
+            return
+        client.collection("adminAudit").document().set({
+            "adminUid": user.uid,
+            "adminEmail": getattr(user, "email", None),
+            "action": action,
+            "targetUid": target_uid,
+            "params": params or {},
+            "at": dt.datetime.now(dt.timezone.utc),
+        })
+    except Exception as exc:
+        logger.warning("Denetim izi yazılamadı (%s): %s", action, exc)
 
 
 def _scheduler_gecerli(authorization: str | None) -> bool:
@@ -54,6 +79,7 @@ async def collect(
 
     İdempotent: aynı günün tekrarı dokümanı ezer, birikmez.
     """
+    kullanici: AuthUser | None = None
     if not _scheduler_gecerli(authorization):
         kimlik_bilgisi = None
         if authorization and authorization.startswith("Bearer "):
@@ -69,6 +95,10 @@ async def collect(
         dokuman = stats_service.collect(tarih)
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+    if kullanici is not None:
+        # Yalnız admin kapısından geçen elle tetikleme iz bırakır;
+        # scheduler'ın gecelik koşusu rutindir, denetim izi değil.
+        _audit(kullanici, "stats.collect", params={"date": dokuman["date"]})
     return {"status": "ok", "date": dokuman["date"],
             "durationMs": dokuman["durationMs"]}
 
@@ -162,6 +192,84 @@ def revenue(days: int = Query(default=90, ge=1, le=365),
 
 
 # ---------------------------------------------------------------------------
+# Kullanıcılar + kullanım + sistem okumaları (AP-turu) — hepsi require_admin
+# ---------------------------------------------------------------------------
+
+class CreditCreate(BaseModel):
+    """Elle kredi: tutar pozitif, gerekçe ZORUNLU (denetim + defter)."""
+    amount: int = Field(gt=0, le=5000)
+    reason: str = Field(min_length=3, max_length=300)
+
+
+@router.get("/users")
+def users(query: str = Query(default="", max_length=120),
+          sort: str = Query(default="createdAt"),
+          limit: int = Query(default=50, ge=1, le=200),
+          user: AuthUser = Depends(require_admin)):
+    try:
+        satirlar = admin_service.list_users(query=query, sort=sort,
+                                            limit=limit)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return {"status": "ok", "users": satirlar}
+
+
+@router.get("/users/{uid}")
+def user_detail(uid: str, user: AuthUser = Depends(require_admin)):
+    try:
+        detay = admin_service.user_360(uid)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    if detay is None:
+        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+    return {"status": "ok", **detay}
+
+
+@router.post("/users/{uid}/credit")
+def user_credit(uid: str, req: CreditCreate,
+                user: AuthUser = Depends(require_admin)):
+    """Cüzdana admin kredisi — destek aracı ("paket geldi, bakiye gelmedi").
+
+    Yalnız POZİTİF tutar: düşüm ayrı bir iştir ve bilerek yok (yanlışlıkla
+    kullanıcı bakiyesi silinmesin). Defter + denetim izi birlikte yazılır.
+    """
+    try:
+        wallet.credit_admin(uid, req.amount, req.reason, user.uid)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    _audit(user, "user.credit", target_uid=uid,
+           params={"amount": req.amount, "reason": req.reason})
+    return {"status": "ok", "wallet": wallet.get_wallet(uid)}
+
+
+@router.get("/usage")
+def usage(days: int = Query(default=30, ge=1, le=90),
+          user: AuthUser = Depends(require_admin)):
+    try:
+        return {"status": "ok", **admin_service.usage_summary(days)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/notify-runs")
+def notify_runs(days: int = Query(default=7, ge=1, le=30),
+                user: AuthUser = Depends(require_admin)):
+    try:
+        return {"status": "ok", "runs": admin_service.notify_runs(days)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/audit")
+def audit(limit: int = Query(default=50, ge=1, le=200),
+          user: AuthUser = Depends(require_admin)):
+    try:
+        return {"status": "ok", "entries": admin_service.audit_list(limit)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
 # Ortaklar (W7) — panel CRUD'u; hepsi require_admin
 # ---------------------------------------------------------------------------
 
@@ -213,6 +321,7 @@ def create_partner(req: PartnerCreate,
             req.name, req.contact, req.sharePercent, req.notes)
     except partner_service.RedeemError as e:
         raise _servis_hatasi(e)
+    _audit(user, "partner.create", params={"name": req.name})
     return {"status": "ok", "partner": ortak}
 
 
@@ -224,6 +333,9 @@ def patch_partner(partner_id: str, req: PartnerPatch,
             partner_id, req.model_dump(exclude_none=True))
     except partner_service.RedeemError as e:
         raise _servis_hatasi(e)
+    _audit(user, "partner.update",
+           params={"partnerId": partner_id,
+                   **req.model_dump(exclude_none=True)})
     return {"status": "ok"}
 
 
@@ -248,6 +360,9 @@ def create_code(partner_id: str, req: CodeCreate,
             partner_id, req.code, req.bonusTokens, req.maxRedemptions, son)
     except partner_service.RedeemError as e:
         raise _servis_hatasi(e)
+    _audit(user, "partner.code",
+           params={"partnerId": partner_id, "code": kod.get("code"),
+                   "bonusTokens": req.bonusTokens})
     return {"status": "ok", "code": kod}
 
 
@@ -259,4 +374,7 @@ def add_payout(partner_id: str, req: PayoutCreate,
             partner_id, req.amount, req.currency, req.note)
     except partner_service.RedeemError as e:
         raise _servis_hatasi(e)
+    _audit(user, "partner.payout",
+           params={"partnerId": partner_id, "amount": req.amount,
+                   "currency": req.currency})
     return {"status": "ok", "payout": odeme}

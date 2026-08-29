@@ -122,6 +122,18 @@ def _claim(uid: str, device_id: str, platform: str | None = None) -> None:
         "lastSeenAt": dt.datetime.now(dt.timezone.utc),
     })
     _remember(uid, device_id)
+    # Platform aynası (AP-turu): private/** istemciye ve toplu istatistik
+    # taramasına kapalı/pahalı; adminStats'ın platform kırılımı profildeki
+    # bu tek alandan beslenir. Best-effort — cihaz devri bunun yüzünden
+    # düşmez. Alanı olmayan eski kullanıcılar "bilinmiyor" sayılır.
+    if platform:
+        try:
+            client = firestore_client.get_client()
+            if client is not None:
+                client.collection("users").document(uid).set(
+                    {"platform": str(platform)}, merge=True)
+        except Exception as exc:
+            logger.warning("Platform aynası yazılamadı (%s): %s", uid, exc)
 
 
 def enforce_single_device(uid: str, device_id: str | None,

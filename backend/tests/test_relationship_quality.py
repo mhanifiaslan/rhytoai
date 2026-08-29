@@ -172,7 +172,7 @@ class TestIliskiOkumasiPromptu:
 
         yakalanan = {}
 
-        def sahte_generate(prompt, lang=None):
+        def sahte_generate(prompt, lang=None, **_):
             yakalanan["prompt"] = prompt
             return "okuma"
 
@@ -209,7 +209,7 @@ class TestIliskiOkumasiPromptu:
                             lambda k, v, **kw: None)
         monkeypatch.setattr(
             report_service.gemini_service, "generate",
-            lambda prompt, lang=None: (
+            lambda prompt, lang=None, **_: (
                 "communication: Merkur gerilimi konusmayi keskinlestiriyor.\n"
                 "emotional: Ay-Jupiter temasi duyguyu comert kiliyor.\n"
                 "attraction: Mars-Uranus kivilcimi ani ve dalgali.\n"
@@ -237,7 +237,7 @@ class TestIliskiOkumasiPromptu:
         monkeypatch.setattr(report_service.cache, "set",
                             lambda k, v, **kw: None)
         monkeypatch.setattr(report_service.gemini_service, "generate",
-                            lambda prompt, lang=None: "Serbest bir paragraf.")
+                            lambda prompt, lang=None, **_: "Serbest bir paragraf.")
 
         sonuc = report_service.relationship_reading(
             "a", "b", "Ben", "Erkan", {"calc_version": "2", "axes": []},
@@ -327,7 +327,7 @@ class TestOnbellekYolu:
             rs.cache, "set",
             lambda k, v, **kw: kutu.__setitem__(k, v))
         monkeypatch.setattr(rs.gemini_service, "generate",
-                            lambda p, lang=None: uretim)
+                            lambda p, lang=None, **_: uretim)
         return rs, kutu
 
     def test_ikinci_acilis_da_eksen_cumlesi_tasir(self, monkeypatch):
