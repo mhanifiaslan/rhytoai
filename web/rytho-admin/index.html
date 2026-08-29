@@ -27,9 +27,23 @@
   <!-- Giriş: tek buton. Sayfa hiçbir yerden linklenmez. -->
   <div id="giris" class="orta" style="display:none">
     <img src="/assets/rytho_logo.svg" alt="">
-    <button id="google-gir" class="buton">Google ile devam et</button>
+    <div class="giris-kart">
+      <form id="eposta-form" class="giris-form">
+        <input class="girdi" name="email" type="email" placeholder="E-posta"
+               autocomplete="username" aria-label="E-posta">
+        <input class="girdi" name="password" type="password" placeholder="Şifre"
+               autocomplete="current-password" aria-label="Şifre">
+        <button class="buton" type="submit">Giriş yap</button>
+      </form>
+      <div class="giris-ayrac"><span>ya da</span></div>
+      <button id="google-gir" class="buton ikincil">Google ile devam et</button>
+      <button id="sifre-unut" class="giris-unut" type="button">
+        Şifreni mi unuttun?</button>
+    </div>
     <p id="giris-hata" role="alert"
        style="display:none;color:var(--madder);font-size:13px;max-width:340px"></p>
+    <p id="giris-bilgi" role="status"
+       style="display:none;color:var(--celadon);font-size:13px;max-width:340px"></p>
   </div>
 
   <!-- Panel kabuğu: yan menü (geniş) / üst pill (dar) -->

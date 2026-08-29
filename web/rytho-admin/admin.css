@@ -402,6 +402,46 @@ a:focus-visible, button:focus-visible, .girdi:focus-visible,
 }
 .orta img { width: 64px; height: 64px; }
 
+/* ---- Giriş kartı ---- */
+
+.giris-kart {
+  width: min(320px, 86vw);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-card);
+  padding: 22px;
+}
+.giris-form { display: flex; flex-direction: column; gap: 10px; }
+.giris-form .girdi { width: 100%; }
+.giris-ayrac {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--parchment-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+.giris-ayrac::before, .giris-ayrac::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.giris-unut {
+  background: none;
+  border: 0;
+  color: var(--parchment-dim);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px;
+}
+.giris-unut:hover { color: var(--lilac); }
+
 /* ---- Kırılımlar ---- */
 
 @media (max-width: 1079px) {

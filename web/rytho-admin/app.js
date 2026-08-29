@@ -56,7 +56,57 @@
     var kutu = document.getElementById('giris-hata');
     kutu.textContent = metin || '';
     kutu.style.display = metin ? 'block' : 'none';
+    if (metin) girisBilgi('');
   }
+
+  function girisBilgi(metin) {
+    var kutu = document.getElementById('giris-bilgi');
+    kutu.textContent = metin || '';
+    kutu.style.display = metin ? 'block' : 'none';
+  }
+
+  /* ---- E-posta + şifre girişi ----
+     Yetki YÖNTEMDEN değil admin claim'inden gelir: şifreyle giren
+     claim'siz hesap da sahte-404 görür. Hata metinleri hesap varlığını
+     ele vermez (mobil anti-enumeration duruşuyla aynı). */
+  document.getElementById('eposta-form').onsubmit = function (ev) {
+    ev.preventDefault();
+    girisHatasi('');
+    var f = ev.target;
+    var dugme = f.querySelector('button');
+    dugme.disabled = true;
+    auth.signInWithEmailAndPassword(f.email.value.trim(), f.password.value)
+      .catch(function (hata) {
+        var kod = (hata && hata.code) || '';
+        if (kod === 'auth/wrong-password' || kod === 'auth/user-not-found' ||
+            kod === 'auth/invalid-credential' ||
+            kod === 'auth/invalid-login-credentials') {
+          girisHatasi('E-posta ya da şifre hatalı.');
+        } else if (kod === 'auth/too-many-requests') {
+          girisHatasi('Çok fazla deneme — biraz bekleyip tekrar dene.');
+        } else if (kod === 'auth/invalid-email') {
+          girisHatasi('Geçerli bir e-posta gir.');
+        } else {
+          girisHatasi('Giriş başarısız: ' + (kod || hata));
+        }
+      })
+      .finally(function () { dugme.disabled = false; });
+  };
+
+  /* Şifre sıfırlama: sonuç her durumda AYNI metin (hesap varlığı
+     sızdırılmaz). Google-bağlı hesaba şifre eklemenin yolu da budur —
+     bağlantıyı tamamlamak hesaba şifre yöntemini ekler. */
+  document.getElementById('sifre-unut').onclick = function () {
+    girisHatasi('');
+    var eposta = document.querySelector('#eposta-form [name=email]')
+      .value.trim();
+    if (!eposta) { girisHatasi('Önce e-posta alanını doldur.'); return; }
+    auth.sendPasswordResetEmail(eposta).catch(function () {})
+      .then(function () {
+        girisBilgi('E-posta kayıtlıysa sıfırlama bağlantısı gönderildi — ' +
+          'spam kutusunu da kontrol et.');
+      });
+  };
 
   document.getElementById('google-gir').onclick = function () {
     girisHatasi('');
