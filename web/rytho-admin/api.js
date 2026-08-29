@@ -7,7 +7,9 @@
   var BACKEND = 'https://rytho-backend-770582338651.us-central1.run.app';
 
   async function apiIste(yol, secenekler) {
-    var kullanici = firebase.auth().currentUser;
+    // Oturum app.js'in kurduğu SAME-ORIGIN auth örneğinde yaşar
+    // (RY.auth); varsayılan uygulamaya düşüş yalnız emniyet.
+    var kullanici = (window.RY.auth || firebase.auth()).currentUser;
     if (!kullanici) throw new Error('oturum-yok');
     var token = await kullanici.getIdToken();
     secenekler = secenekler || {};

@@ -6,7 +6,28 @@
   'use strict';
 
   var RY = window.RY;
-  var auth = firebase.auth();
+
+  /* Kimlik işleyicisi AYNI ORIGIN'den (AP onarımı).
+
+     Varsayılan authDomain (rhytoai.firebaseapp.com) panel web.app'ten
+     açılınca popup el sıkışmasını ÇAPRAZ origin yapıyordu; Chrome'un
+     COOP'u window.closed izlemesini kesince SDK "pencere kapandı" sanıp
+     düşüyor, redirect yedeği de üçüncü-taraf depolama bölümlemesine
+     takılıyordu — net etki: giriş sessizce başarısız. Hosting /__/auth/*
+     işleyicisini HER alanında sunar; authDomain'i bulunduğumuz alana
+     çevirince akış tamamen same-origin olur (Firebase'in belgelediği
+     1 numaralı çözüm). Yalnız varsayılan Hosting alanlarında yapılır —
+     özel alan adı gelirse OAuth istemcisine handler URI'si eklenmeden
+     açılmamalı. */
+  var auth = (function () {
+    var ana = location.hostname;
+    var uygun = /\.web\.app$|\.firebaseapp\.com$/.test(ana);
+    if (!uygun) return firebase.auth();
+    var cfg = Object.assign({}, firebase.app().options,
+                            { authDomain: ana });
+    return firebase.initializeApp(cfg, 'yonetim').auth();
+  })();
+  RY.auth = auth;
 
   var BASLIKLAR = {
     genel: 'Genel Bakış',
@@ -31,13 +52,38 @@
     goster('bulunamadi');
   };
 
+  function girisHatasi(metin) {
+    var kutu = document.getElementById('giris-hata');
+    kutu.textContent = metin || '';
+    kutu.style.display = metin ? 'block' : 'none';
+  }
+
   document.getElementById('google-gir').onclick = function () {
+    girisHatasi('');
     var saglayici = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(saglayici).catch(function () {
-      // Popup engellendiyse yönlendirmeye düş.
-      auth.signInWithRedirect(saglayici);
+    auth.signInWithPopup(saglayici).catch(function (hata) {
+      var kod = (hata && hata.code) || '';
+      if (kod === 'auth/popup-blocked') {
+        // Tarayıcı popup'ı hiç açmadı: yönlendirme akışı tek seçenek.
+        auth.signInWithRedirect(saglayici);
+        return;
+      }
+      if (kod === 'auth/popup-closed-by-user' ||
+          kod === 'auth/cancelled-popup-request') {
+        girisHatasi('Pencere kapandı — tekrar dene.');
+        return;
+      }
+      // Eskiden her hata SESSİZCE redirect'e düşüyordu ve redirect de
+      // sessizce sonuçsuz kalınca "hiçbir şey olmuyor" görünüyordu.
+      // Hata artık görünür; teşhis buradan başlar.
+      girisHatasi('Giriş başarısız: ' + (kod || hata));
     });
   };
+
+  // Redirect yedeğinden dönüşte hata varsa o da görünür olsun.
+  auth.getRedirectResult().catch(function (hata) {
+    girisHatasi('Giriş başarısız: ' + ((hata && hata.code) || hata));
+  });
 
   document.getElementById('cikis').onclick = function () {
     auth.signOut().then(function () { goster('giris'); });
