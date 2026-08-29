@@ -364,13 +364,13 @@ def usage_summary(days: int = 30) -> dict[str, Any]:
 
 
 def notify_runs(days: int = 7) -> list[dict[str, Any]]:
-    """notifyRuns dokümanları — kimlik `{gün}-{tür}` olduğu için ada göre
-    tersten sıralama gün sırasıdır; indeks gerekmez (adminStats emsali)."""
+    """notifyRuns dokümanları — `date` ALANINA göre tersten (adminStats
+    dersi: `__name__` DESC otomatik indekslenmiyor)."""
     client = _client()
     kayitlar: list[dict[str, Any]] = []
     try:
         sorgu = (client.collection("notifyRuns")
-                 .order_by("__name__", direction="DESCENDING")
+                 .order_by("date", direction="DESCENDING")
                  .limit(days * 4 + 8))
         for anlik in sorgu.stream():
             veri = anlik.to_dict() or {}

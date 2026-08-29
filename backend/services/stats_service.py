@@ -331,11 +331,17 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
 
 
 def read_days(days: int) -> list[dict[str, Any]]:
-    """Son N günün hazır istatistik dokümanları (yeniden eskiye)."""
+    """Son N günün hazır istatistik dokümanları (yeniden eskiye).
+
+    Sıralama `date` ALANINA göre — doküman kimliğiyle aynı değer ama
+    `__name__` üzerinden azalan sıralama otomatik indekslenmiyor
+    (üretimde 400 FailedPrecondition olarak ölçüldü, AP2); tek-alan
+    otomatik indeks ise her iki yönü de kapsar.
+    """
     client = firestore_client.get_client()
     if client is None:
         return []
     sorgu = (client.collection("adminStats")
-             .order_by("__name__", direction="DESCENDING")
+             .order_by("date", direction="DESCENDING")
              .limit(max(1, min(days, 365))))
     return [anlik.to_dict() or {} for anlik in sorgu.stream()]
