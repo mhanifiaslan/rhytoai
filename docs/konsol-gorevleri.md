@@ -168,6 +168,10 @@ deploy-backend.ps1'e kalıcı yazılacak.
   claim'inden gelir (aslan.mh@gmail.com'a basıldı). Yeni admin eklemek:
   `backend/.venv/Scripts/python tools/set_admin.py --email <eposta>`
   (claim ≤1 saat / çıkış-giriş sonrası yansır).
+  **TUZAK (2026-08-29'da yaşandı):** claim Firebase Auth KULLANICI
+  kaydında yaşar — mobilde "Hesabı sil" testi yapıp hesabı yeniden
+  kurarsan claim SİLİNİR ve panel seni sahte-404'e atar ("giriş
+  yapamıyorum" gibi görünür). Çözüm: set_admin.py ile yeniden bas.
 - **Panel girişi OAuth adımı (AP onarımı, 2026-08-29):** Chrome COOP'u
   çapraz-origin popup'ı kırdığı için panel `authDomain` artık
   `rhytoai.web.app` (same-origin işleyici). Bunun çalışması için OAuth
