@@ -6,6 +6,14 @@
       {
         "source": "/i/**",
         "destination": "/i/index.html"
+      },
+      {
+        "source": "/api/**",
+        "run": { "serviceId": "rytho-backend", "region": "us-central1" }
+      },
+      {
+        "source": "/health**",
+        "run": { "serviceId": "rytho-backend", "region": "us-central1" }
       }
     ],
     "headers": [

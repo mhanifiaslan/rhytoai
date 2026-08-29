@@ -4,7 +4,12 @@
 (function () {
   'use strict';
 
-  var BACKEND = 'https://rytho-backend-770582338651.us-central1.run.app';
+  /* AYNI ORIGIN (AP2 onarımı): istekler Hosting'in Cloud Run
+     yönlendirmesinden geçer (firebase.json /api/** ve /health**).
+     Çapraz-site istek kalmadı — CORS, reklam engelleyiciler ve run.app
+     DNS sorunları sınıf olarak devre dışı. Mobil uygulama doğrudan
+     Cloud Run URL'ini kullanmaya devam eder; bu yalnız panelin yolu. */
+  var BACKEND = '';
 
   async function apiIste(yol, secenekler) {
     // Oturum app.js'in kurduğu SAME-ORIGIN auth örneğinde yaşar
