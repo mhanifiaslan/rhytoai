@@ -96,6 +96,13 @@ def user_360(uid: str) -> dict[str, Any] | None:
     profil["uid"] = uid
     profil["hasPush"] = bool(profil.pop("fcmToken", None))
 
+    # Kimlik tarafı bayrağı (AP2): devre dışı hesap panelde görünür olmalı.
+    try:
+        from firebase_admin import auth as fb_auth
+        profil["authDisabled"] = bool(fb_auth.get_user(uid).disabled)
+    except Exception:
+        profil["authDisabled"] = None  # okunamadı — panel "?" gösterir
+
     subscription = _private_doc(client, uid, "subscription")
     quota = _private_doc(client, uid, "quota")
     attribution = _private_doc(client, uid, "attribution")
@@ -171,6 +178,31 @@ def user_360(uid: str) -> dict[str, Any] | None:
     except Exception:
         pass
 
+    # Kullanıcı ekonomisi (AP2): son 50 kaydın DEĞİL tamamının toplamları.
+    toplam_maliyet = 0.0
+    toplam_cagri = 0
+    try:
+        from google.cloud.firestore_v1.base_query import FieldFilter
+        for kayit in (client.collection("usageEvents")
+                      .where(filter=FieldFilter("uid", "==", uid)).stream()):
+            veri = kayit.to_dict() or {}
+            toplam_maliyet += float(veri.get("estCostUsd") or 0)
+            toplam_cagri += 1
+    except Exception as exc:
+        logger.warning("Kullanım toplamı okunamadı (%s): %s", uid, exc)
+    toplam_gelir = sum(
+        (-abs(float(o.get("price") or 0))
+         if o.get("eventType") == "REFUND"
+         else float(o.get("price") or 0)) for o in gelir)
+    ekonomi = {
+        "revenueUsd": round(toplam_gelir, 2),
+        "aiCostUsd": round(toplam_maliyet, 4),
+        "calls": toplam_cagri,
+        "marginUsd": round(toplam_gelir * (1 - STORE_CUT)
+                           - toplam_maliyet, 4),
+        "storeCutRate": STORE_CUT,
+    }
+
     return {
         "profile": profil,
         "subscription": subscription,
@@ -182,7 +214,103 @@ def user_360(uid: str) -> dict[str, Any] | None:
         "notifications": notifications,
         "revenueEvents": gelir,
         "usage": {"recent": kullanim, **kullanim_toplam},
+        "economics": ekonomi,
         "counts": sayilar,
+    }
+
+
+#: Mağaza kesintisi tahmini (Play/App Store standart %15 küçük işletme
+#: oranı). Panelde her yerde "tahmini" etiketiyle sunulur — gerçek
+#: hakediş mağaza raporundan gelir.
+STORE_CUT = 0.15
+
+
+def economics(days: int = 90) -> dict[str, Any]:
+    """Kullanıcı bazlı gelir/maliyet/marj tablosu + toplamlar (AP2).
+
+    Kâr formülü TAHMİNİDİR ve dürüstçe etiketlenir:
+    marj = gelir × (1 − mağaza kesintisi) − tahmini AI maliyeti.
+    Sabit giderler (Cloud Run vb.) kullanıcıya bölünmez — toplam satırında
+    ayrıca gösterilir diye maliyet-calismasi.md §4'e işaret edilir.
+
+    Ölçek: tam koleksiyon taramaları — bugünkü boyutta (onlarca kullanıcı,
+    yüzlerce olay) doğru araç; binlere çıkınca gün-özetli rollup gerekir.
+    """
+    client = _client()
+    from google.cloud.firestore_v1.base_query import FieldFilter
+
+    baslangic = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=days)
+
+    gelir: dict[str, float] = {}
+    for kayit in (client.collection("revenueEvents")
+                  .where(filter=FieldFilter("at", ">=", baslangic)).stream()):
+        veri = kayit.to_dict() or {}
+        uid = str(veri.get("uid") or "")
+        if not uid:
+            continue
+        fiyat = float(veri.get("price") or 0)
+        if veri.get("eventType") == "REFUND":
+            fiyat = -abs(fiyat)
+        gelir[uid] = round(gelir.get(uid, 0.0) + fiyat, 4)
+
+    maliyet: dict[str, float] = {}
+    cagri: dict[str, int] = {}
+    for kayit in (client.collection("usageEvents")
+                  .where(filter=FieldFilter("at", ">=", baslangic)).stream()):
+        veri = kayit.to_dict() or {}
+        uid = str(veri.get("uid") or "") or "(paylaşımlı)"
+        maliyet[uid] = round(maliyet.get(uid, 0.0)
+                             + float(veri.get("estCostUsd") or 0), 6)
+        cagri[uid] = cagri.get(uid, 0) + 1
+
+    jeton: dict[str, int] = {}
+    try:
+        for kayit in (client.collection_group("ledger")
+                      .where(filter=FieldFilter("at", ">=", baslangic))
+                      .stream()):
+            veri = kayit.to_dict() or {}
+            if veri.get("type") != "debit":
+                continue
+            parcalar = kayit.reference.path.split("/")
+            uid = parcalar[1] if len(parcalar) > 1 else ""
+            if uid:
+                jeton[uid] = jeton.get(uid, 0) + int(veri.get("amount") or 0)
+    except Exception as exc:
+        logger.warning("Ledger taraması düştü (indeks?): %s", exc)
+
+    satirlar: list[dict[str, Any]] = []
+    for veri in _iter_users(client):
+        uid = veri["uid"]
+        g = gelir.get(uid, 0.0)
+        m = maliyet.get(uid, 0.0)
+        satirlar.append({
+            "uid": uid,
+            "displayName": veri.get("displayName"),
+            "email": veri.get("email"),
+            "revenueUsd": round(g, 2),
+            "storeCutUsd": round(g * STORE_CUT, 2) if g > 0 else 0.0,
+            "aiCostUsd": round(m, 4),
+            "calls": cagri.get(uid, 0),
+            "tokensSpent": jeton.get(uid, 0),
+            "marginUsd": round(g * (1 - STORE_CUT) - m, 4),
+        })
+    satirlar.sort(key=lambda s: s["marginUsd"], reverse=True)
+
+    toplam_gelir = round(sum(gelir.values()), 2)
+    toplam_maliyet = round(sum(maliyet.values()), 4)
+    paylasimli = round(maliyet.get("(paylaşımlı)", 0.0), 4)
+    return {
+        "days": days,
+        "users": satirlar,
+        "totals": {
+            "revenueUsd": toplam_gelir,
+            "storeCutUsd": round(max(toplam_gelir, 0) * STORE_CUT, 2),
+            "aiCostUsd": toplam_maliyet,
+            "sharedAiCostUsd": paylasimli,
+            "marginUsd": round(toplam_gelir * (1 - STORE_CUT)
+                               - toplam_maliyet, 4),
+            "storeCutRate": STORE_CUT,
+        },
     }
 
 

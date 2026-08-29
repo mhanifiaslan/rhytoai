@@ -234,11 +234,17 @@ def test_ucler_claim_ister(monkeypatch):
     with TestClient(app) as client:
         for yol in ("/api/v1/admin/users", "/api/v1/admin/users/u1",
                     "/api/v1/admin/usage", "/api/v1/admin/notify-runs",
-                    "/api/v1/admin/audit"):
+                    "/api/v1/admin/audit", "/api/v1/admin/economics"):
             assert client.get(yol).status_code == 403, yol
         assert client.post("/api/v1/admin/users/u1/credit",
                            json={"amount": 5, "reason": "test"}
                            ).status_code == 403
+        assert client.post("/api/v1/admin/users/u1/disable",
+                           json={"disabled": True, "reason": "test"}
+                           ).status_code == 403
+        assert client.request("DELETE", "/api/v1/admin/users/u1",
+                              json={"confirm": "SIL", "reason": "test"}
+                              ).status_code == 403
 
 
 @uygulama_gerekir
@@ -281,3 +287,107 @@ def test_kredi_basarili_defter_ve_audit(monkeypatch, depo):
     assert izler[0]["action"] == "user.credit"
     assert izler[0]["targetUid"] == "u1"
     assert izler[0]["params"]["reason"] == "paket gelmedi, telafi"
+
+
+# ---------------------------------------------------------------------------
+# Yönetim eylemleri (AP2): devre dışı bırak + sil emniyetleri
+# ---------------------------------------------------------------------------
+
+class _SahteFbAuth:
+    def __init__(self):
+        self.guncellenen = []
+        self.revoke_edilen = []
+
+    def update_user(self, uid, disabled=None):
+        self.guncellenen.append((uid, disabled))
+
+    def revoke_refresh_tokens(self, uid):
+        self.revoke_edilen.append(uid)
+
+    class _K:
+        disabled = False
+
+    def get_user(self, uid):
+        return self._K()
+
+
+@uygulama_gerekir
+def test_disable_akisi_ve_kendini_koruma(monkeypatch, depo):
+    monkeypatch.setattr(config, "DEV_MODE", True)
+    monkeypatch.setattr(config, "DEV_ADMIN", True)
+    sahte_auth = _SahteFbAuth()
+    import firebase_admin
+    monkeypatch.setattr(firebase_admin, "auth", sahte_auth, raising=False)
+    import sys
+    monkeypatch.setitem(sys.modules, "firebase_admin.auth", sahte_auth)
+    monkeypatch.setattr("api.admin.firestore_client.get_client",
+                        lambda: depo)
+
+    with TestClient(app) as client:
+        tamam = client.post("/api/v1/admin/users/u1/disable",
+                            json={"disabled": True, "reason": "kotu kullanim"})
+        kendisi = client.post("/api/v1/admin/users/dev-user/disable",
+                              json={"disabled": True, "reason": "x-y-z"})
+        gerekcesiz = client.post("/api/v1/admin/users/u1/disable",
+                                 json={"disabled": True})
+
+    assert tamam.status_code == 200
+    assert sahte_auth.guncellenen == [("u1", True)]
+    assert sahte_auth.revoke_edilen == ["u1"]
+    assert kendisi.status_code == 400
+    assert gerekcesiz.status_code == 422
+    izler = [v for k, v in depo.docs.items() if k.startswith("adminAudit/")]
+    assert [i["action"] for i in izler] == ["user.disable"]
+
+
+@uygulama_gerekir
+def test_silme_emniyetleri_ve_akisi(monkeypatch, depo):
+    monkeypatch.setattr(config, "DEV_MODE", True)
+    monkeypatch.setattr(config, "DEV_ADMIN", True)
+    monkeypatch.setattr("api.admin.firestore_client.get_client",
+                        lambda: depo)
+
+    silinen = []
+    from services import account_service
+    monkeypatch.setattr(account_service, "delete_account",
+                        lambda uid: silinen.append(uid) or
+                        type("R", (), {"__dict__": {"ok": True}})())
+
+    with TestClient(app) as client:
+        onaysiz = client.request("DELETE", "/api/v1/admin/users/u1",
+                                 json={"confirm": "sil", "reason": "test-sil"})
+        kendisi = client.request("DELETE", "/api/v1/admin/users/dev-user",
+                                 json={"confirm": "SIL", "reason": "test-sil"})
+        tamam = client.request("DELETE", "/api/v1/admin/users/u1",
+                               json={"confirm": "SIL", "reason": "test-sil"})
+
+    assert onaysiz.status_code == 400
+    assert kendisi.status_code == 400
+    assert tamam.status_code == 200
+    assert silinen == ["u1"]
+    izler = [v for k, v in depo.docs.items() if k.startswith("adminAudit/")]
+    assert [i["action"] for i in izler] == ["user.delete"]
+    assert izler[0]["params"]["email"] == "ayse@ornek.com"
+
+
+def test_economics_marj_matematigi(depo):
+    """Kâr = gelir × 0,85 − AI maliyeti; iade negatif; paylaşımlı üretim
+    kullanıcıya yazılmaz ama toplamda görünür."""
+    depo.docs["usageEvents/x1"] = {"uid": "u1", "estCostUsd": 0.05,
+                                   "at": _SIMDI}
+    depo.docs["usageEvents/x2"] = {"uid": None, "estCostUsd": 0.01,
+                                   "at": _SIMDI}
+    depo.docs["revenueEvents/e2"] = {"uid": "u1", "eventType": "REFUND",
+                                     "price": 1.0, "at": _SIMDI}
+
+    sonuc = admin_service.economics(days=30)
+
+    u1 = next(s for s in sonuc["users"] if s["uid"] == "u1")
+    assert u1["revenueUsd"] == pytest.approx(3.99)   # 4.99 − 1.00 iade
+    assert u1["aiCostUsd"] == pytest.approx(0.05)
+    assert u1["marginUsd"] == pytest.approx(3.99 * 0.85 - 0.05)
+    assert sonuc["totals"]["sharedAiCostUsd"] == pytest.approx(0.01)
+    assert sonuc["totals"]["aiCostUsd"] == pytest.approx(0.06)
+    # Hareketsiz kullanıcı da satır alır (tam liste).
+    assert any(s["uid"] == "u2" and s["revenueUsd"] == 0
+               for s in sonuc["users"])

@@ -197,6 +197,16 @@ deploy-backend.ps1'e kalıcı yazılacak.
   composite + ledger.at collection-group override (deploy edildi).
   Mahremiyet çizgisi: panel sohbet/hafıza İÇERİĞİNİ ve fcmToken
   değerini ASLA görmez — yalnız sayılar.
+- **Panel v2.1 (AP2, aynı gün):** işletme K/Z katmanı + kullanıcı
+  yönetimi. `/admin/economics` kullanıcı bazlı gelir/AI-maliyet/marj
+  (marj = gelir × 0,85 − AI, "tahmini" etiketli); Genel Bakış'ta marj
+  panosu + bugün şeridi + sayaç/çizim animasyonları; Ekonomi'de
+  sıralanabilir K/Z tablosu. Yönetim eylemleri (hepsi gerekçeli +
+  denetim izli): hesap devre dışı bırak/aç (`/admin/users/{uid}/disable`
+  — token'lar revoke edilir), hesabı sil (`DELETE /admin/users/{uid}`,
+  yazılı "SIL" onayı, mobil silme borusunun aynısı), şifre sıfırlama
+  e-postası (istemci SDK). Kendi hesabında devre dışı/sil YASAK.
+  Girişte e-posta+şifre formu da var (yetki yine claim'den).
 - **İstatistikler:** her gece 02:40 UTC `rytho-stats` işi `adminStats/`
   dokümanını üretir; panel Genel Bakış'tan "Topla" ile elle de tetiklenir.
 - **Ortak kodları:** panel > Ortaklar: ortak ekle → kod üret (bonus jeton +

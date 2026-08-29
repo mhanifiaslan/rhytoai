@@ -71,8 +71,16 @@
 
     var SOL = 40, ALT = 16, UST = 6;
 
-    function ciz() {
+    function ciz(oran) {
+      // oran < 1: giriş animasyonu — seri soldan sağa "çizilir".
+      oran = oran == null ? 1 : oran;
       var k = hazirla(canvas), ctx = k.ctx;
+      if (oran < 1) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(0, 0, SOL + (k.g - SOL - 6) * oran + 6, k.y);
+        ctx.clip();
+      }
       // Tavan gerçek maksimumdur; 1'e kelepçelemek küçük dolar serilerini
       // düz çizgiye eziyordu. Sıfır seri için 1 yalnız bölme koruması.
       var maks = Math.max.apply(null, degerler);
@@ -139,10 +147,22 @@
 
       canvas.__ryX = x;
       canvas.__ryY = y;
+      if (oran < 1) ctx.restore();
     }
 
-    ciz();
-    izle(canvas, ciz);
+    // Giriş: 450ms çizim süpürmesi; reduced-motion'da doğrudan tam kare.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      ciz();
+    } else {
+      var basla = null;
+      (function adim(t) {
+        if (basla === null) { basla = t || performance.now(); }
+        var f = Math.min(((t || performance.now()) - basla) / 450, 1);
+        ciz(1 - Math.pow(1 - f, 3));
+        if (f < 1) requestAnimationFrame(adim);
+      })(performance.now());
+    }
+    izle(canvas, function () { ciz(); });
 
     // İmleç ipucu: en yakın nokta
     var ip = ipucuAl(canvas);

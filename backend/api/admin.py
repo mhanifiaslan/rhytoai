@@ -242,6 +242,76 @@ def user_credit(uid: str, req: CreditCreate,
     return {"status": "ok", "wallet": wallet.get_wallet(uid)}
 
 
+class DisableRequest(BaseModel):
+    disabled: bool
+    reason: str = Field(min_length=3, max_length=300)
+
+
+class DeleteRequest(BaseModel):
+    #: Yazılı onay: panel formu "SIL" yazdırır — kaza tek tıkla olamaz.
+    confirm: str
+    reason: str = Field(min_length=3, max_length=300)
+
+
+@router.post("/users/{uid}/disable")
+def user_disable(uid: str, req: DisableRequest,
+                 user: AuthUser = Depends(require_admin)):
+    """Hesabı devre dışı bırakır/açar (Firebase Auth `disabled`).
+
+    Devre dışı hesap oturum AÇAMAZ; mevcut token'lar da revoke edilir
+    (yenileme anında düşer). Verisi durur — silme ayrı ve daha ağır iş.
+    """
+    if uid == user.uid:
+        raise HTTPException(status_code=400,
+                            detail="Kendi hesabını devre dışı bırakamazsın.")
+    try:
+        from firebase_admin import auth as fb_auth
+        fb_auth.update_user(uid, disabled=req.disabled)
+        if req.disabled:
+            fb_auth.revoke_refresh_tokens(uid)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Kimlik güncellenemedi: {exc}")
+    _audit(user, "user.disable" if req.disabled else "user.enable",
+           target_uid=uid, params={"reason": req.reason})
+    return {"status": "ok", "disabled": req.disabled}
+
+
+@router.delete("/users/{uid}")
+def user_delete(uid: str, req: DeleteRequest,
+                user: AuthUser = Depends(require_admin)):
+    """Hesabı TAMAMEN siler — mobil 'Hesabı sil' ile aynı boru
+    (account_service.delete_account: veri önce, kimlik en son).
+
+    İki emniyet: yazılı onay ("SIL") + kendini silme yasağı. Denetim izi
+    silinen hesabın e-postasını da saklar — iz kalmalı.
+    """
+    if req.confirm != "SIL":
+        raise HTTPException(status_code=400,
+                            detail='Onay metni "SIL" olmalı.')
+    if uid == user.uid:
+        raise HTTPException(status_code=400,
+                            detail="Kendi hesabını buradan silemezsin.")
+    from services import account_service
+    try:
+        detay = admin_service.user_360(uid) or {}
+        eposta = (detay.get("profile") or {}).get("email")
+        rapor = account_service.delete_account(uid)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    _audit(user, "user.delete", target_uid=uid,
+           params={"reason": req.reason, "email": eposta})
+    return {"status": "ok", "report": getattr(rapor, "__dict__", str(rapor))}
+
+
+@router.get("/economics")
+def economics(days: int = Query(default=90, ge=1, le=365),
+              user: AuthUser = Depends(require_admin)):
+    try:
+        return {"status": "ok", **admin_service.economics(days)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
 @router.get("/usage")
 def usage(days: int = Query(default=30, ge=1, le=90),
           user: AuthUser = Depends(require_admin)):

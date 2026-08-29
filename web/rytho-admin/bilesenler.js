@@ -45,11 +45,57 @@
 
   function kpi(deger, ad, sec) {
     sec = sec || {};
+    // sec.sayac: ham sayı verilirse değer 0'dan hedefe sayarak belirir
+    // (canlandir ile; reduced-motion'da animasyonsuz son değer).
+    var sayacAttr = (typeof sec.sayac === 'number' && isFinite(sec.sayac))
+      ? ' data-hedef="' + sec.sayac + '"' : '';
     return '<div class="kpi-kart"><div class="kpi-deger' +
-      (sec.altin ? ' altin' : '') + '">' + e(deger) + '</div>' +
+      (sec.altin ? ' altin' : '') + '"' + sayacAttr + '>' + e(deger) +
+      '</div>' +
       '<div class="kpi-ad">' + e(ad) + '</div>' +
       (sec.alt ? '<div class="kpi-alt">' + e(sec.alt) + '</div>' : '') +
       '</div>';
+  }
+
+  /* Tam sayı KPI'ları 0'dan hedefe sayar (~600ms, easeOut). */
+  function canlandir(kok) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    kok.querySelectorAll('[data-hedef]').forEach(function (el) {
+      var hedef = Number(el.getAttribute('data-hedef'));
+      if (!isFinite(hedef) || hedef <= 0) return;
+      var basla = null;
+      function adim(t) {
+        if (basla === null) basla = t;
+        var f = Math.min((t - basla) / 600, 1);
+        f = 1 - Math.pow(1 - f, 3);
+        el.textContent = Math.round(hedef * f).toLocaleString('tr-TR');
+        if (f < 1) requestAnimationFrame(adim);
+      }
+      requestAnimationFrame(adim);
+    });
+  }
+
+  /* İşletme marjı panosu (AP2): gelir − mağaza − AI = tahmini katkı marjı.
+     Her kalem "tahmini" dilinde — gerçek hakediş mağaza raporunda. */
+  function marjPanosu(t, donemEtiketi) {
+    var marj = t.marginUsd || 0;
+    return '<div class="marj-panosu">' +
+      '<div class="marj-etiket">' + e(donemEtiketi) +
+      ' — tahmini katkı marjı</div>' +
+      '<div class="marj-deger' + (marj < 0 ? ' eksi' : '') + '">' +
+      para(marj) + '</div>' +
+      '<div class="marj-formul">' +
+      '<div class="kalem"><b>' + para(t.revenueUsd) +
+      '</b><span>Brüt gelir</span></div>' +
+      '<div class="kalem"><b>−' + para(t.storeCutUsd) +
+      '</b><span>Mağaza kesintisi (~%' +
+      Math.round((t.storeCutRate || 0.15) * 100) + ')</span></div>' +
+      '<div class="kalem"><b>−' + para(t.aiCostUsd) +
+      '</b><span>Tahmini AI maliyeti</span></div>' +
+      '</div>' +
+      '<div class="marj-not">Sabit giderler (Cloud Run + Firestore, ' +
+      '~$32-35/ay — maliyet-calismasi §4) hariçtir; AI maliyeti ölçülen ' +
+      'token × birim fiyattır.</div></div>';
   }
 
   function rozet(metin, tur) {
@@ -111,6 +157,7 @@
     e: e, sayi: sayi, para: para, tarih: tarih,
     kpi: kpi, rozet: rozet, abonelikRozeti: abonelikRozeti,
     tablo: tablo, iskelet: iskelet, bosDurum: bosDurum,
-    hataDurum: hataDurum, girdi: girdi, grafikPanel: grafikPanel
+    hataDurum: hataDurum, girdi: girdi, grafikPanel: grafikPanel,
+    canlandir: canlandir, marjPanosu: marjPanosu
   };
 })();

@@ -79,6 +79,10 @@
     return apiIste(yol, { method: 'PATCH',
                           body: JSON.stringify(govde || {}) });
   };
+  window.RY.del = function (yol, govde) {
+    return apiIste(yol, { method: 'DELETE',
+                          body: JSON.stringify(govde || {}) });
+  };
   // Sağlık uçları herkese açık — token gerekmez.
   window.RY.saglik = function (yol) {
     return fetch(BACKEND + yol).then(function (y) { return y.json(); });

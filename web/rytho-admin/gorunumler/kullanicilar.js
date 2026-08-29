@@ -200,6 +200,7 @@
       '<div class="mono">' + b.e(p.email || '') + ' · ' + b.e(uid) +
       '</div></div>' +
       '<div class="rozetler">' +
+      (p.authDisabled === true ? b.rozet('DEVRE DIŞI', 'hata') : '') +
       b.abonelikRozeti(sub, p) +
       (p.platform ? b.rozet(p.platform, 'notr') : '') +
       (p.hasPush ? b.rozet('push açık', 'aktif') : b.rozet('push yok', 'notr')) +
@@ -249,6 +250,36 @@
       '</div>' +
 
       '<div class="izgara-2">' +
+      '<div class="panel"><h2>Bu kullanıcının ekonomisi</h2>' +
+      (function () {
+        var ek = d.economics || {};
+        return '<div class="marj-formul" style="margin-top:4px">' +
+          '<div class="kalem"><b>' + b.para(ek.revenueUsd) +
+          '</b><span>Toplam gelir</span></div>' +
+          '<div class="kalem"><b>−' + b.para(ek.aiCostUsd) +
+          '</b><span>AI maliyeti (' + b.sayi(ek.calls) +
+          ' çağrı)</span></div>' +
+          '<div class="kalem"><b class="' +
+          ((ek.marginUsd || 0) < 0 ? 'eksi' : 'arti') + '">' +
+          b.para(ek.marginUsd) + '</b><span>Tahmini marj</span></div>' +
+          '</div>' +
+          '<p class="dipnot">Marj = gelir × (1 − mağaza ~%' +
+          Math.round((ek.storeCutRate || 0.15) * 100) +
+          ') − AI maliyeti; tüm zamanlar.</p>';
+      })() + '</div>' +
+      '<div class="panel"><h2>Yönetim</h2>' +
+      '<p class="dipnot" style="margin-top:0">Her eylem gerekçe ister ve ' +
+      'denetim izine yazılır.</p>' +
+      '<div class="eylem-satir">' +
+      '<button id="y-sifre" class="buton ikincil kucuk">Şifre sıfırlama ' +
+      'e-postası gönder</button>' +
+      '<button id="y-durum" class="buton ikincil kucuk">' +
+      (p.authDisabled === true ? 'Hesabı aktifleştir'
+                               : 'Hesabı devre dışı bırak') + '</button>' +
+      '<button id="y-sil" class="buton tehlike kucuk">Hesabı sil</button>' +
+      '</div><p id="y-mesaj" class="dipnot"></p></div>' +
+      '</div>' +
+      '<div class="izgara-2">' +
       '<div class="panel"><h2>Bildirimler</h2>' +
       (bild.dailyTheme
         ? '<p class="dipnot" style="margin-top:0">Bugünkü tema: <b>' +
@@ -268,6 +299,62 @@
 
     RY.grafik.cubuk(document.getElementById('g-360-ozellik'),
       (kul.byFeature || {}));
+    b.canlandir(icerik);
+
+    /* ---- Yönetim eylemleri (AP2) ---- */
+    function yMesaj(metin) {
+      document.getElementById('y-mesaj').textContent = metin || '';
+    }
+
+    document.getElementById('y-sifre').onclick = function () {
+      if (!p.email) { yMesaj('Hesabın e-postası yok.'); return; }
+      if (!confirm(p.email + ' adresine şifre sıfırlama e-postası ' +
+                   'gönderilsin mi?')) return;
+      // İstemci SDK'sı yeter: sıfırlama isteği herkese açık bir akıştır,
+      // sunucuya uç eklemek gerekmez.
+      RY.auth.sendPasswordResetEmail(p.email)
+        .then(function () { yMesaj('Sıfırlama e-postası gönderildi.'); })
+        .catch(function () { yMesaj('Gönderilemedi — sonra tekrar dene.'); });
+    };
+
+    document.getElementById('y-durum').onclick = async function () {
+      var kapat = p.authDisabled !== true;
+      var gerekce = prompt(kapat
+        ? 'Hesap DEVRE DIŞI kalacak, oturumları düşecek. Gerekçe (zorunlu):'
+        : 'Hesap yeniden AKTİF olacak. Gerekçe (zorunlu):');
+      if (gerekce == null) return;
+      if (gerekce.trim().length < 3) { yMesaj('Gerekçe en az 3 karakter.'); return; }
+      this.disabled = true;
+      try {
+        await RY.post('/api/v1/admin/users/' + encodeURIComponent(uid) +
+          '/disable', { disabled: kapat, reason: gerekce.trim() });
+        detay(icerik, uid);
+      } catch (h) {
+        this.disabled = false;
+        yMesaj(RY.hataMetni(h));
+      }
+    };
+
+    document.getElementById('y-sil').onclick = async function () {
+      var onay = prompt('Bu hesap ve TÜM verisi kalıcı olarak silinecek ' +
+        '(mobildeki "Hesabı sil" ile aynı boru). Onaylamak için SIL yaz:');
+      if (onay == null) return;
+      if (onay.trim() !== 'SIL') { yMesaj('Silme onaylanmadı.'); return; }
+      var gerekce = prompt('Silme gerekçesi (zorunlu, denetim izine yazılır):');
+      if (gerekce == null || gerekce.trim().length < 3) {
+        yMesaj('Gerekçe en az 3 karakter.');
+        return;
+      }
+      this.disabled = true;
+      try {
+        await RY.del('/api/v1/admin/users/' + encodeURIComponent(uid),
+          { confirm: 'SIL', reason: gerekce.trim() });
+        location.hash = '#/kullanicilar';
+      } catch (h) {
+        this.disabled = false;
+        yMesaj(RY.hataMetni(h));
+      }
+    };
 
     document.getElementById('kredi-form').onsubmit = async function (ev) {
       ev.preventDefault();

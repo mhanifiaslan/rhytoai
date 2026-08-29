@@ -156,7 +156,9 @@ nav.sekme-ust a.aktif {
   border: 1px solid var(--glass-stroke);
   border-radius: var(--r-card);
   padding: 16px 18px;
+  transition: transform var(--fast), border-color var(--fast);
 }
+.kpi-kart:hover { transform: translateY(-2px); border-color: var(--glass-edge); }
 .kpi-deger {
   font-family: 'Sora', sans-serif;
   font-size: 27px;
@@ -401,6 +403,124 @@ a:focus-visible, button:focus-visible, .girdi:focus-visible,
   gap: 18px;
 }
 .orta img { width: 64px; height: 64px; }
+
+/* ---- Giriş canlılığı (AP2): kademeli belirme + marj panosu ---- */
+
+.icerik-alan > * {
+  animation: belir var(--base) var(--enter) backwards;
+}
+.icerik-alan > *:nth-child(2) { animation-delay: 60ms; }
+.icerik-alan > *:nth-child(3) { animation-delay: 120ms; }
+.icerik-alan > *:nth-child(4) { animation-delay: 180ms; }
+.icerik-alan > *:nth-child(5) { animation-delay: 240ms; }
+.icerik-alan > *:nth-child(n+6) { animation-delay: 300ms; }
+@keyframes belir {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .icerik-alan > * { animation: none; }
+  .kpi-kart:hover { transform: none; }
+}
+
+.marj-panosu {
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-fill);
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--r-card);
+  padding: 24px 26px;
+  margin-bottom: 18px;
+}
+.marj-panosu::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--primary-gradient);
+  opacity: 0.08;
+  pointer-events: none;
+}
+.marj-etiket {
+  color: var(--lilac);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+  margin-bottom: 6px;
+}
+.marj-deger {
+  font-family: 'Sora', sans-serif;
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  color: var(--gold-bright);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+.marj-deger.eksi { color: var(--madder); }
+.marj-formul {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+.marj-formul .kalem { min-width: 110px; }
+.marj-formul .kalem b {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  color: var(--parchment);
+  font-variant-numeric: tabular-nums;
+}
+.marj-formul .kalem span { color: var(--parchment-dim); font-size: 11px; }
+.marj-not { color: var(--parchment-dim); font-size: 11px; margin-top: 12px; }
+
+/* Bugün şeridi: gün içi nabız */
+.bugun-serit {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.bugun-cip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  background: var(--ink-lighter);
+  border: 1px solid var(--glass-stroke);
+  border-radius: var(--r-pill);
+  padding: 8px 16px;
+  font-size: 12px;
+  color: var(--parchment-dim);
+}
+.bugun-cip b {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+  color: var(--parchment);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Sıralanabilir tablo başlıkları */
+.tablo th.siralanir { cursor: pointer; user-select: none; }
+.tablo th.siralanir:hover { color: var(--parchment); }
+.tablo th.siralanir[data-yon="1"]::after { content: ' ↑'; }
+.tablo th.siralanir[data-yon="-1"]::after { content: ' ↓'; }
+.tablo tr.toplam td {
+  border-top: 1px solid var(--glass-edge);
+  color: var(--parchment);
+  font-weight: 600;
+}
+.tablo td .arti { color: var(--celadon); }
+.tablo td .eksi { color: var(--madder); }
+
+/* Yönetim / tehlike bölgesi */
+.eylem-satir { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.buton.tehlike {
+  background: none;
+  border: 1px solid var(--madder);
+  color: var(--madder);
+  box-shadow: none;
+}
+.buton.tehlike:hover { background: rgba(255, 107, 129, 0.1); }
 
 /* ---- Giriş kartı ---- */
 
