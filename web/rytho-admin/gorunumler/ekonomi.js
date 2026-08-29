@@ -9,10 +9,16 @@
 
   RY.gorunumler.ekonomi = async function (icerik) {
     var b = RY.b;
-    var veri = await RY.get('/api/v1/admin/revenue?days=90');
-    var stats = await RY.get('/api/v1/admin/stats?days=30');
-    var kullanim = await RY.get('/api/v1/admin/usage?days=30')
-      .catch(function () { return { costs: {} }; });
+    // Üçü paralel; gelir ana veridir, stats/usage yardımcı — düşerlerse
+    // ilgili paneller boş kalır, ekran ayakta durur.
+    var ucu = await Promise.all([
+      RY.get('/api/v1/admin/revenue?days=90'),
+      RY.get('/api/v1/admin/stats?days=30')
+        .catch(function () { return { days: [] }; }),
+      RY.get('/api/v1/admin/usage?days=30')
+        .catch(function () { return { costs: {} }; })
+    ]);
+    var veri = ucu[0], stats = ucu[1], kullanim = ucu[2];
 
     var gunSirali = Object.keys(veri.byDay || {}).sort();
     var olaylar = veri.events || {};

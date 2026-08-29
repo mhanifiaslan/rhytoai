@@ -10,13 +10,20 @@
 
   RY.gorunumler.sistem = async function (icerik) {
     var b = RY.b;
-    var saglik = await RY.saglik('/health').catch(function () { return null; });
-    var rag = await RY.saglik('/health/rag').catch(function () { return null; });
-    var veri = await RY.get('/api/v1/admin/stats?days=1');
-    var kosular = await RY.get('/api/v1/admin/notify-runs?days=7')
-      .catch(function () { return { runs: [] }; });
-    var iz = await RY.get('/api/v1/admin/audit?limit=50')
-      .catch(function () { return { entries: [] }; });
+    // Hepsi paralel ve hepsi yardımcı: sağlık ekranı tek uç düştü diye
+    // düşmemeli — düşen bölüm boş durumuyla görünür.
+    var hepsi = await Promise.all([
+      RY.saglik('/health').catch(function () { return null; }),
+      RY.saglik('/health/rag').catch(function () { return null; }),
+      RY.get('/api/v1/admin/stats?days=1')
+        .catch(function () { return { days: [] }; }),
+      RY.get('/api/v1/admin/notify-runs?days=7')
+        .catch(function () { return { runs: [] }; }),
+      RY.get('/api/v1/admin/audit?limit=50')
+        .catch(function () { return { entries: [] }; })
+    ]);
+    var saglik = hepsi[0], rag = hepsi[1], veri = hepsi[2];
+    var kosular = hepsi[3], iz = hepsi[4];
 
     var son = (veri.days || [])[0] || {};
     var sys = son.system || {}, sosyal = son.social || {};

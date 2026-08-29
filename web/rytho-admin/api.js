@@ -24,7 +24,17 @@
       yanit = await fetch(BACKEND + yol,
         Object.assign({}, secenekler, { headers: basliklar }));
     } catch (aghata) {
-      throw new Error('ag-hatasi');
+      // Anlık ağ kesintisi/uyku dönüşü için TEK otomatik tekrar —
+      // yalnız güvenli metotlarda (POST/PATCH çift işlem yapmasın).
+      var metot = (secenekler.method || 'GET').toUpperCase();
+      if (metot !== 'GET') throw new Error('ag-hatasi');
+      await new Promise(function (t) { setTimeout(t, 700); });
+      try {
+        yanit = await fetch(BACKEND + yol,
+          Object.assign({}, secenekler, { headers: basliklar }));
+      } catch (yine) {
+        throw new Error('ag-hatasi');
+      }
     }
     if (yanit.status === 401 || yanit.status === 403) {
       // Yetki düştü: oturumu kapat, jenerik görünüme dön.

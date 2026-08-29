@@ -8,8 +8,13 @@
 
   RY.gorunumler.genel = async function (icerik) {
     var b = RY.b;
-    var veri = await RY.get('/api/v1/admin/stats?days=30');
-    var canli = await RY.get('/api/v1/admin/live');
+    // İkisi paralel; canlı satır YARDIMCIDIR — düşerse ekran düşmez,
+    // yalnız "bugün yeni" değeri — olur. stats düşerse gerçek hata.
+    var ikisi = await Promise.all([
+      RY.get('/api/v1/admin/stats?days=30'),
+      RY.get('/api/v1/admin/live').catch(function () { return {}; })
+    ]);
+    var veri = ikisi[0], canli = ikisi[1];
     var gunler = veri.days || [];
     var son = gunler[0] || {};
     var u = son.users || {}, s = son.subs || {}, r = son.revenue || {};
