@@ -147,10 +147,68 @@
   }
 
   function grafikPanel(kimlik, baslik, kisa) {
-    return '<div class="panel"><h2>' + e(baslik) + '</h2>' +
+    return '<div class="modul"><div class="modul-baslik"><h2>' +
+      e(baslik) + '</h2></div>' +
       '<div class="grafik-kap"><canvas id="' + e(kimlik) +
       '" class="grafik' + (kisa ? ' grafik-kisa' : '') +
       '" role="img" aria-label="' + e(baslik) + '"></canvas></div></div>';
+  }
+
+  /* ---- Modül dili (AP3) ---- */
+
+  function modul(baslik, icHtml, kontrolHtml) {
+    return '<div class="modul"><div class="modul-baslik"><h2>' +
+      e(baslik) + '</h2>' +
+      (kontrolHtml ? '<div class="modul-kontrol">' + kontrolHtml + '</div>'
+                   : '') +
+      '</div>' + icHtml + '</div>';
+  }
+
+  function etiket(metin) {
+    return '<span class="modul-etiket">' + e(metin) + '</span>';
+  }
+
+  /* İkonlu liste satırı. sec: {ikon, ikonSinif, avatar, baslik, alt,
+     sagUst, sagUstSinif ('arti'|'eksi'), sagAlt, veri: {ad:deger}} */
+  function satir(sec) {
+    var ikonHucre;
+    if (sec.avatar) {
+      ikonHucre = '<div class="satir-ikon avatar-hucre">' +
+        e(String(sec.avatar).trim().charAt(0).toUpperCase() || '?') +
+        '</div>';
+    } else {
+      ikonHucre = '<div class="satir-ikon' +
+        (sec.ikonSinif ? ' ' + sec.ikonSinif : '') + '">' +
+        (RY.ikon ? RY.ikon(sec.ikon || 'kivilcim') : '') + '</div>';
+    }
+    var veriAttr = '';
+    Object.keys(sec.veri || {}).forEach(function (ad) {
+      veriAttr += ' data-' + ad + '="' + e(sec.veri[ad]) + '"';
+    });
+    return '<div class="satir' + (sec.veri ? ' tikla' : '') + '"' +
+      veriAttr + '>' + ikonHucre +
+      '<div class="satir-govde"><b>' + e(sec.baslik) + '</b>' +
+      (sec.alt ? '<span>' + e(sec.alt) + '</span>' : '') + '</div>' +
+      ((sec.sagUst != null || sec.sagAlt != null)
+        ? '<div class="satir-sag">' +
+          (sec.sagUst != null
+            ? '<b class="' + (sec.sagUstSinif || '') + '">' + e(sec.sagUst) +
+              '</b>' : '') +
+          (sec.sagAlt != null ? '<span>' + e(sec.sagAlt) + '</span>' : '') +
+          '</div>'
+        : '') +
+      '</div>';
+  }
+
+  function delta(fark, birim) {
+    if (fark == null || !isFinite(fark)) return '';
+    var yon = fark > 0 ? 'yukari' : (fark < 0 ? 'asagi' : 'duz');
+    var ok = fark > 0 ? '▲' : (fark < 0 ? '▼' : '◆');
+    var deger = Math.abs(fark);
+    var metin = birim === '$'
+      ? para(deger)
+      : deger.toLocaleString('tr-TR');
+    return '<span class="delta ' + yon + '">' + ok + ' ' + metin + '</span>';
   }
 
   RY.b = {
@@ -158,6 +216,7 @@
     kpi: kpi, rozet: rozet, abonelikRozeti: abonelikRozeti,
     tablo: tablo, iskelet: iskelet, bosDurum: bosDurum,
     hataDurum: hataDurum, girdi: girdi, grafikPanel: grafikPanel,
-    canlandir: canlandir, marjPanosu: marjPanosu
+    canlandir: canlandir, marjPanosu: marjPanosu,
+    modul: modul, etiket: etiket, satir: satir, delta: delta
   };
 })();

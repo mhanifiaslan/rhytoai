@@ -64,14 +64,16 @@
       b.kpi(son.durationMs != null ? b.sayi(son.durationMs) + ' ms' : '—',
         'Son toplama süresi') +
       '</div>' +
-      '<div class="panel"><h2>Bildirim sağlığı (7 gün)</h2>' +
+      '<div class="modul"><div class="modul-baslik">' +
+      '<h2>Bildirim sağlığı</h2>' + b.etiket('7 gün') + '</div>' +
       (kosuSatir
         ? b.tablo(['Gün', 'Tür', 'Koşu', 'Taranan', 'Gönderilen',
                    'Başarısız', 'Atlanan'], kosuSatir)
         : b.bosDurum('Henüz koşu kaydı yok — bir sonraki zamanlayıcı ' +
             'koşusuyla dolar (AP-turu öncesi koşular kayıtsızdı).')) +
       '</div>' +
-      '<div class="panel"><h2>Denetim izi</h2>' +
+      '<div class="modul"><div class="modul-baslik">' +
+      '<h2>Denetim izi</h2>' + b.etiket('son 50') + '</div>' +
       (izSatir
         ? b.tablo(['Zaman', 'Yönetici', 'Eylem', 'Hedef', 'Ayrıntı'],
                   izSatir)

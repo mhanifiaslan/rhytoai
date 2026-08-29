@@ -173,6 +173,36 @@
   window.addEventListener('hashchange', rota);
   RY.rotaYenile = rota;
 
+  /* ---- Kabuk süslemeleri (AP3): nav ikonları + arama + durum ---- */
+  document.querySelectorAll('#yan-nav a').forEach(function (a) {
+    a.insertAdjacentHTML('afterbegin', RY.ikon(a.getAttribute('data-ikon')));
+  });
+  document.getElementById('ara-ikon').innerHTML = RY.ikon('arama', 15);
+
+  document.getElementById('genel-ara').addEventListener('keydown',
+    function (ev) {
+      if (ev.key !== 'Enter') return;
+      var q = this.value.trim();
+      location.hash = q
+        ? '#/kullanicilar/ara/' + encodeURIComponent(q)
+        : '#/kullanicilar';
+      this.blur();
+    });
+
+  function backendDurumu() {
+    RY.saglik('/health').then(function () {
+      document.getElementById('backend-nokta').className =
+        'durum-nokta iyi';
+      document.getElementById('backend-durum').textContent =
+        'Backend çalışıyor';
+    }).catch(function () {
+      document.getElementById('backend-nokta').className =
+        'durum-nokta kotu';
+      document.getElementById('backend-durum').textContent =
+        'Backend erişilemiyor';
+    });
+  }
+
   /* ---- Oturum akışı ---- */
   auth.onAuthStateChanged(function (kullanici) {
     if (!kullanici) { goster('giris'); return; }
@@ -181,9 +211,12 @@
         goster('uygulama');
         document.getElementById('admin-eposta').textContent =
           kullanici.email || '';
+        document.getElementById('admin-avatar').textContent =
+          (kullanici.email || '?').charAt(0).toUpperCase();
         var saat = document.getElementById('sunucu-saat');
         saat.textContent = new Date().toLocaleString('tr-TR',
           { dateStyle: 'medium', timeStyle: 'short' });
+        backendDurumu();
         rota();
       } else {
         // Claim yok: panelin varlığı ele verilmez — jenerik görünüm.

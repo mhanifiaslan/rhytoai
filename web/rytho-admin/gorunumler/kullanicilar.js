@@ -33,10 +33,13 @@
       .catch(function () { return { days: [] }; });
     var u = ((stats.days || [])[0] || {}).users || {};
     var satirlar = (veri.users || []).map(function (k) {
+      var basHarf = String(k.displayName || k.email || '?')
+        .trim().charAt(0).toUpperCase();
       return '<tr class="tikla" data-uid="' + b.e(k.uid) + '">' +
-        '<td><b>' + b.e(k.displayName || '—') + '</b> ' +
-        burc(k.sunSign) + '</td>' +
-        '<td>' + b.e(k.email || '—') + '</td>' +
+        '<td><div class="hucre-kisi">' +
+        '<div class="avatar-hucre">' + b.e(basHarf) + '</div>' +
+        '<div><b>' + b.e(k.displayName || '—') + ' ' + burc(k.sunSign) +
+        '</b><span>' + b.e(k.email || '') + '</span></div></div></td>' +
         '<td>' + (k.username ? '@' + b.e(k.username) : '—') + '</td>' +
         '<td class="sayi">' + b.tarih(k.createdAt) + '</td>' +
         '<td class="sayi">' + b.e(k.lastSeenDaily || '—') + '</td>' +
@@ -60,7 +63,7 @@
       '<option value="streakCount">Seri</option>' +
       '</select></div>' +
       (satirlar
-        ? b.tablo(['Ad', 'E-posta', 'Kullanıcı adı', 'Kayıt',
+        ? b.tablo(['Kullanıcı', 'Kullanıcı adı', 'Kayıt',
                    'Son görülme', 'Seri', 'Dil', 'Platform', 'Push'],
                   satirlar)
         : b.bosDurum(sorgu
@@ -382,6 +385,11 @@
   }
 
   RY.gorunumler.kullanicilar = async function (icerik, args) {
+    // Rota sözleşmesi: /kullanicilar → liste; /kullanicilar/ara/<q> →
+    // sorgulu liste (üst çubuktaki global arama); /kullanicilar/<uid> → 360.
+    if (args && args[0] === 'ara') {
+      return liste(icerik, args[1] || '', 'createdAt');
+    }
     if (args && args[0]) return detay(icerik, args[0]);
     return liste(icerik, '', 'createdAt');
   };

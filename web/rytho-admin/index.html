@@ -53,16 +53,26 @@
         <img src="/assets/rytho_logo.svg" alt="">
         <div><b>Rytho</b><span>Yönetim</span></div>
       </div>
-      <nav aria-label="Bölümler">
-        <a href="#/genel">Genel Bakış</a>
-        <a href="#/kullanicilar">Kullanıcılar</a>
-        <a href="#/ekonomi">Ekonomi</a>
-        <a href="#/ai">AI Kullanımı</a>
-        <a href="#/ortaklar">Ortaklar</a>
-        <a href="#/sistem">Sistem</a>
+      <div class="profil-blok">
+        <div class="avatar" id="admin-avatar">?</div>
+        <div class="kim">
+          <span class="rol">Yönetici</span>
+          <span id="admin-eposta" class="mono"></span>
+        </div>
+      </div>
+      <nav aria-label="Bölümler" id="yan-nav">
+        <a href="#/genel" data-ikon="panel">Genel Bakış</a>
+        <a href="#/kullanicilar" data-ikon="kullanicilar">Kullanıcılar</a>
+        <a href="#/ekonomi" data-ikon="ekonomi">Ekonomi</a>
+        <a href="#/ai" data-ikon="ai">AI Kullanımı</a>
+        <a href="#/ortaklar" data-ikon="ortaklar">Ortaklar</a>
+        <a href="#/sistem" data-ikon="sistem">Sistem</a>
       </nav>
       <div class="alt">
-        <span id="admin-eposta" class="mono"></span>
+        <div class="durum-satir">
+          <span class="durum-nokta" id="backend-nokta"></span>
+          <span id="backend-durum">Backend</span>
+        </div>
         <button id="cikis" class="cikis-dugme">Çıkış</button>
       </div>
     </aside>
@@ -70,6 +80,11 @@
     <div class="ana">
       <header class="ust-cubuk">
         <h1 id="sayfa-baslik">Rytho Yönetim</h1>
+        <label class="genel-ara" id="genel-ara-kutu">
+          <span id="ara-ikon" aria-hidden="true"></span>
+          <input id="genel-ara" placeholder="Kullanıcı ara…"
+                 aria-label="Kullanıcı ara">
+        </label>
         <span id="sunucu-saat" class="mono"></span>
       </header>
       <nav class="sekme-ust" aria-label="Bölümler">
@@ -91,6 +106,7 @@
 
   <script src="/assets/starfield.js"></script>
   <script src="/rytho-admin/api.js"></script>
+  <script src="/rytho-admin/ikonlar.js"></script>
   <script src="/rytho-admin/bilesenler.js"></script>
   <script src="/rytho-admin/charts.js"></script>
   <script src="/rytho-admin/gorunumler/genel.js"></script>

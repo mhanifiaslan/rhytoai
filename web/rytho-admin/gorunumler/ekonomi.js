@@ -111,7 +111,9 @@
         olaylar.REFUND ? { alt: 'dikkat' } : {}) +
       '</div>' +
       (eko
-        ? '<div class="panel"><h2>Kullanıcı bazlı kâr/zarar (90 gün)</h2>' +
+        ? '<div class="modul"><div class="modul-baslik">' +
+          '<h2>Kullanıcı bazlı kâr/zarar</h2>' +
+          b.etiket('90 gün') + '</div>' +
           '<div id="kz-kap"></div>' +
           '<p class="dipnot">Marj = gelir × (1 − mağaza ~%' +
           Math.round((eko.totals.storeCutRate || 0.15) * 100) +

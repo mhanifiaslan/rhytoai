@@ -141,7 +141,7 @@
         i ? ctx.lineTo(x(i), y(v)) : ctx.moveTo(x(i), y(v));
       });
       ctx.strokeStyle = renk('magenta');
-      ctx.lineWidth = 2;
+      ctx.lineWidth = (sec && sec.kalin) ? 3 : 2;
       ctx.lineJoin = 'round';
       ctx.stroke();
 
