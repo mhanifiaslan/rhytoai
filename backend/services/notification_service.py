@@ -539,21 +539,25 @@ def midday_push(profile: dict[str, Any], lang: str,
                     veri["sign"] = sign
                 return (baslik, govde, veri), "gonderilecek"
         # --- b) çift ânı, yalnız önbellekten ---
+        # Aday = (karşı taraf, hedef kimliği). Kimlik yükte taşınır (BY):
+        # dokununca O ilişkinin ekranı açılır — kimliksiz yük istemciyi
+        # yalnız Çevrem sekmesine bırakıyordu ("sadece uygulama açılıyor").
         uid = profile.get("uid") or ""
-        adaylar: list = []
+        adaylar: list[tuple[Any, dict[str, str]]] = []
         for friend_uid in circle_context.list_accepted_friend_uids(uid):
             cp = synastry_service.friend_counterpart(uid, friend_uid)
             if cp is not None:
-                adaylar.append(cp)
+                adaylar.append((cp, {"fromUid": friend_uid}))
         for kayit in people_service.list_people(uid):
             cp = synastry_service.person_counterpart(
                 uid, kayit["id"], lang=lang)
             if cp is not None:
-                adaylar.append(cp)
+                adaylar.append((cp, {"pid": kayit["id"]}))
 
         from services import chart_context
-        en_iyi: tuple[tuple[int, float], Any, dict[str, Any]] | None = None
-        for cp in adaylar:
+        en_iyi: tuple[tuple[int, float], Any, dict[str, str],
+                      dict[str, Any]] | None = None
+        for cp, kimlik in adaylar:
             veri_cp = synastry_service.pair_transits_cached(uid, cp,
                                                             today=today)
             vuruslar = (veri_cp or {}).get("hits") or []
@@ -563,17 +567,18 @@ def midday_push(profile: dict[str, Any], lang: str,
             sira = (0 if chart_context.is_slow_mover(v.get("transit")) else 1,
                     float(v.get("orb") or 99.0))
             if en_iyi is None or sira < en_iyi[0]:
-                en_iyi = (sira, cp, v)
+                en_iyi = (sira, cp, kimlik, v)
 
         if en_iyi is not None:
-            _, cp, v = en_iyi
+            _, cp, kimlik, v = en_iyi
             satirlar = synastry_service.pair_transit_lines([v], cp.label,
                                                            lang)
             if satirlar and 0 < len(satirlar[0]) <= MAX_PUSH_BODY:
                 p = prompts.get(lang)
                 baslik = p.PUSH_MIDDAY_PAIR_TITLE.format(name=cp.label)
                 return ((baslik, satirlar[0],
-                         {"type": "friend", "src": "midday", "d": gun}),
+                         {"type": "friend", "src": "midday", "d": gun,
+                          **kimlik}),
                         "gonderilecek")
 
         return None, ("sabahla-ayni" if sabahla_ayni else "olay-yok")

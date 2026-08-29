@@ -17,7 +17,7 @@ import 'package:rytho/widgets/chart/chart_wheel.dart';
 import 'package:rytho/widgets/chart/wheel_layout.dart';
 import 'package:rytho/widgets/chart/wheel_painter.dart';
 
-ChartPoint _p(String name, double lon, {int ring = 0}) => ChartPoint(
+ChartPoint _p(String name, double lon) => ChartPoint(
       name: name,
       localName: name,
       absPosition: lon,

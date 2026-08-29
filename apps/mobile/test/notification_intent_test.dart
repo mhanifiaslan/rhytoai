@@ -43,6 +43,71 @@ void main() {
     });
   });
 
+  group('resolveNotificationRoute (BY-turu)', () {
+    // Cihaz bulgusu: "öğle bildirimine tıkladım, sadece uygulama açıldı."
+    // Bu matris HER türün anlamlı bir hedefe düştüğünü sabitler — hiçbir
+    // yük "yalnız uygulamayı aç"ta kalamaz.
+    NotificationRoute r(Map<String, String> data) =>
+        resolveNotificationRoute(data);
+
+    test('daily route=signal → sinyal dayanak sayfası (SkyScreen işi)', () {
+      expect(r({'type': 'daily', 'route': 'signal', 'fp': 'x'}).kind,
+          NotificationRouteKind.signalSheet);
+    });
+
+    test('daily route=story ve ROUTE\'SUZ ESKİ yük → günlük okuma', () {
+      expect(r({'type': 'daily', 'route': 'story', 'sign': 'leo'}).kind,
+          NotificationRouteKind.dailyStory);
+      final eski = r({'type': 'daily', 'sign': 'leo'});
+      expect(eski.kind, NotificationRouteKind.dailyStory);
+      expect(eski.sign, 'leo');
+    });
+
+    test('streak → günlük okuma (istenen eylemi yapar)', () {
+      expect(r({'type': 'streak'}).kind, NotificationRouteKind.dailyStory);
+      expect(r({'type': 'streak', 'route': 'story'}).kind,
+          NotificationRouteKind.dailyStory);
+    });
+
+    test('checkin → soru yazılı sohbet', () {
+      final rota = r({'type': 'checkin', 'q': 'Nasıl geçti?',
+          'q_date': '2026-08-29'});
+      expect(rota.kind, NotificationRouteKind.checkinChat);
+      expect(rota.question, 'Nasıl geçti?');
+      expect(rota.questionDate, '2026-08-29');
+    });
+
+    test('öğle çift ânı ve kabul → o İLİŞKİNİN ekranı', () {
+      final ogle = r({'type': 'friend', 'src': 'midday', 'fromUid': 'f1'});
+      expect(ogle.kind, NotificationRouteKind.friendRelation);
+      expect(ogle.friendUid, 'f1');
+      expect(
+          r({'type': 'friend', 'src': 'invite_accepted',
+              'fromUid': 'f2'}).kind,
+          NotificationRouteKind.friendRelation);
+      // Çevrem kişisiyle öğle ânı → kişi ilişki ekranı.
+      final kisi = r({'type': 'friend', 'src': 'midday', 'pid': 'p9'});
+      expect(kisi.kind, NotificationRouteKind.personRelation);
+      expect(kisi.personId, 'p9');
+    });
+
+    test('davet ve tepki → Çevrem sekmesi (istek/kutu en üstte)', () {
+      expect(r({'type': 'friend', 'src': 'invite', 'fromUid': 'f1'}).kind,
+          NotificationRouteKind.circleTab);
+      expect(
+          r({'type': 'friend', 'src': 'reaction', 'fromUid': 'f1'}).kind,
+          NotificationRouteKind.circleTab);
+      // ESKİ src'siz yük de çıkmaz sokakta kalmaz.
+      expect(r({'type': 'friend', 'fromUid': 'f1'}).kind,
+          NotificationRouteKind.circleTab);
+    });
+
+    test('bilinmeyen tür ana sekmede güvenle kalır', () {
+      expect(r({'type': 'yeni-tur'}).kind, NotificationRouteKind.homeTab);
+      expect(r({}).kind, NotificationRouteKind.homeTab);
+    });
+  });
+
   group('bekleyen niyet', () {
     test('kur / oku / temizle', () {
       final container = ProviderContainer();

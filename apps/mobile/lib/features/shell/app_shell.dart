@@ -3,8 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../core/device_claim.dart';
+import '../../core/friends.dart' show FriendStatus, friendsProvider;
 import '../../core/notifications.dart'
-    show PendingNotification, pendingNotificationProvider;
+    show
+        NotificationRoute,
+        NotificationRouteKind,
+        PendingNotification,
+        pendingNotificationProvider,
+        resolveNotificationRoute;
+import '../../core/people.dart' show peopleProvider;
+import '../../widgets/nebula_widgets.dart' show signIndexOf;
+import '../friends/relationship_screen.dart' show RelationshipScreen;
+import '../sky/sign_story_screen.dart' show SignStoryScreen;
 import '../../core/providers.dart'
     show OnboardOutcome, justOnboardedProvider, profileProvider;
 import '../../widgets/big_three_reveal.dart';
@@ -47,11 +57,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       if (!mounted) return;
       maybeConfirmDeviceTakeover(context, ref);
       _buyukUcluPerdesi();
-      // Soğuk açılış: check-in niyeti dinleyiciden ÖNCE yazılmış olabilir.
+      // Soğuk açılış: niyet dinleyiciden ÖNCE yazılmış olabilir.
       final bekleyen = ref.read(pendingNotificationProvider);
-      if (bekleyen != null && bekleyen.type == 'checkin') {
-        _checkinNiyeti(bekleyen);
-      }
+      if (bekleyen != null) _niyetIsle(bekleyen);
     });
   }
 
@@ -81,13 +89,70 @@ class _AppShellState extends ConsumerState<AppShell> {
     showBigThreeReveal(context, sun: gunes, moon: ay, ascendant: yukselen);
   }
 
+  /// Bildirim niyetinin MERKEZİ tüketicisi (BY-turu).
+  ///
+  /// Cihaz bulgusu: "öğle bildirimine tıkladım, sadece uygulama açıldı."
+  /// Karar saf `resolveNotificationRoute`ta; burada yalnız uygulanır.
+  /// Tek istisna `signalSheet`: sinyaller yüklü olmalı, onu SkyScreen
+  /// tüketir — burada NİYETE DOKUNULMAZ.
+  void _niyetIsle(PendingNotification niyet) {
+    final rota = resolveNotificationRoute(niyet.data);
+    if (rota.kind == NotificationRouteKind.signalSheet) return;
+    ref.read(pendingNotificationProvider.notifier).clear();
+    if (!mounted) return;
+
+    switch (rota.kind) {
+      case NotificationRouteKind.checkinChat:
+        _checkinNiyeti(rota);
+      case NotificationRouteKind.dailyStory:
+        // "Okuman hazır / okumanı açmadın" → okumanın KENDİSİ açılır.
+        // Yükte burç varsa o, yoksa kullanıcının burcu öne alınır.
+        final profil = ref.read(profileProvider).value ?? const {};
+        var burc = signIndexOf(rota.sign);
+        if (burc < 0) burc = signIndexOf(profil['sunSign'] as String?);
+        if (burc < 0) burc = 0;
+        final sira = [burc, for (var i = 0; i < 12; i++) if (i != burc) i];
+        Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => SignStoryScreen(order: sira, initialIndex: 0),
+          fullscreenDialog: true,
+        ));
+      case NotificationRouteKind.friendRelation:
+        // Öğle çift ânı / kabul: o ilişkinin ekranı ("Bugün aranıza
+        // dokunan gökyüzü" tam bildirimin içeriği). Arkadaş listesi henüz
+        // yüklenmediyse Çevrem sekmesi zaten seçili — sessizce orada kal.
+        final arkadaslar = ref.read(friendsProvider).value ?? const [];
+        for (final f in arkadaslar) {
+          if (f.uid == rota.friendUid && f.status == FriendStatus.accepted) {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => RelationshipScreen(friend: f)));
+            break;
+          }
+        }
+      case NotificationRouteKind.personRelation:
+        final kisiler = ref.read(peopleProvider).value ?? const [];
+        for (final k in kisiler) {
+          if (k.id == rota.personId) {
+            Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => RelationshipScreen.forPerson(person: k)));
+            break;
+          }
+        }
+      case NotificationRouteKind.circleTab:
+      case NotificationRouteKind.homeTab:
+        // Sekme dokunuş anında zaten atandı (tabForNotification); davet
+        // isteği / tepki kutusu o sekmenin en üstünde.
+        break;
+      case NotificationRouteKind.signalSheet:
+        break; // yukarıda elendi
+    }
+  }
+
   /// Akşam check-in bildirimi (KA5): dokunma sohbeti SORUYLA açar.
   /// Soru bayatsa (dünün bildirimi bugün açıldı) yalnız konu listesi
   /// açılır — dünkü soruyu bugün sormak yanıltıcı olur.
-  void _checkinNiyeti(PendingNotification niyet) {
-    ref.read(pendingNotificationProvider.notifier).clear();
-    final soru = niyet.data['q'] ?? '';
-    final gun = niyet.data['q_date'] ?? '';
+  void _checkinNiyeti(NotificationRoute rota) {
+    final soru = rota.question ?? '';
+    final gun = rota.questionDate ?? '';
     final bugun = DateTime.now().toIso8601String().substring(0, 10);
     if (soru.isNotEmpty && gun == bugun) {
       Navigator.of(context).push(MaterialPageRoute(
@@ -100,14 +165,12 @@ class _AppShellState extends ConsumerState<AppShell> {
 
   @override
   Widget build(BuildContext context) {
-    // Bekleyen check-in niyeti: bildirime dokunulduğunda uygulama hangi
-    // hâlde olursa olsun (soğuk/sıcak) buradan işlenir. Daily niyetini
-    // SkyScreen tüketir (ilgili sinyal kartının dayanak sayfası).
+    // Bekleyen bildirim niyeti: uygulama hangi hâlde olursa olsun
+    // (soğuk/sıcak) buradan işlenir. Tek istisna route=signal daily'si —
+    // onu SkyScreen tüketir (sinyaller yüklü olmalı).
     ref.listen<PendingNotification?>(pendingNotificationProvider,
         (previous, next) {
-      if (next != null && next.type == 'checkin' && mounted) {
-        _checkinNiyeti(next);
-      }
+      if (next != null && mounted) _niyetIsle(next);
     });
     final index = ref.watch(shellTabProvider);
     final l10n = AppLocalizations.of(context);

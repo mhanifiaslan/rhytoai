@@ -335,6 +335,100 @@ int tabForNotification(Map<String, dynamic> data) {
 }
 
 // ---------------------------------------------------------------------------
+// Dokunuş yönlendirme çözücüsü (BY-turu)
+//
+// Cihaz bulgusu: "öğle bildirimine tıkladım, sadece uygulama açıldı."
+// Sekme atamak yetmiyor — HER bildirim türünün anlamlı bir hedefi olmalı:
+// günlük okuma → okumanın kendisi, check-in → soru yazılı sohbet,
+// arkadaş/çift ânı → o ilişkinin ekranı. Karar SAF bir fonksiyonda yaşar
+// (testli); AppShell ve SkyScreen yalnız uygular.
+// ---------------------------------------------------------------------------
+
+enum NotificationRouteKind {
+  /// daily + route=signal: ilgili sinyal kartının dayanak sayfası —
+  /// sinyaller yüklü olmalı, bu yüzden SkyScreen tüketir.
+  signalSheet,
+
+  /// Günlük okumanın kendisi (hikâye): route=story, yedek-daily, streak.
+  dailyStory,
+
+  /// Soru yazılı sohbet.
+  checkinChat,
+
+  /// Arkadaşla ilişki ekranı (bugün aranıza dokunan gökyüzü).
+  friendRelation,
+
+  /// Çevrem kişisiyle ilişki ekranı.
+  personRelation,
+
+  /// Yalnız Çevrem sekmesi (davet en üstte / tepki kutusu orada).
+  circleTab,
+
+  /// Yalnız ana sekme.
+  homeTab,
+}
+
+class NotificationRoute {
+  const NotificationRoute(this.kind,
+      {this.sign, this.friendUid, this.personId, this.question,
+      this.questionDate});
+
+  final NotificationRouteKind kind;
+  final String? sign;
+  final String? friendUid;
+  final String? personId;
+  final String? question;
+  final String? questionDate;
+}
+
+/// Yükten hedef kararı. Eski sunucu yükleri (route'suz daily, src'siz
+/// friend) en yakın anlamlı hedefe düşer — hiçbir tür "yalnız uygulamayı
+/// aç"ta bırakılmaz.
+NotificationRoute resolveNotificationRoute(Map<String, String> data) {
+  switch (data['type']) {
+    case 'checkin':
+      return NotificationRoute(NotificationRouteKind.checkinChat,
+          question: data['q'], questionDate: data['q_date']);
+    case 'daily':
+      if (data['route'] == 'signal') {
+        return const NotificationRoute(NotificationRouteKind.signalSheet);
+      }
+      // route=story (yeni yedek yol) ya da route'suz eski yük: bildirim
+      // "okuman hazır" diyor — okumanın kendisi açılır.
+      return NotificationRoute(NotificationRouteKind.dailyStory,
+          sign: data['sign']);
+    case 'streak':
+      // "Bugün okumanı açmadın" — dokunuş istenen eylemi YAPAR.
+      return const NotificationRoute(NotificationRouteKind.dailyStory);
+    case 'friend':
+      final pid = data['pid'];
+      if (pid != null && pid.isNotEmpty) {
+        return NotificationRoute(NotificationRouteKind.personRelation,
+            personId: pid);
+      }
+      final uid = data['fromUid'];
+      switch (data['src']) {
+        case 'midday':
+        case 'invite_accepted':
+          // Öğle çift ânı / kabul: o ilişkinin ekranı (ölçüm ücretsiz).
+          if (uid != null && uid.isNotEmpty) {
+            return NotificationRoute(NotificationRouteKind.friendRelation,
+                friendUid: uid);
+          }
+          return const NotificationRoute(NotificationRouteKind.circleTab);
+        case 'invite':
+        case 'reaction':
+        default:
+          // Davet isteği ve tepki kutusu Çevrem'de en üstte; eski
+          // src'siz yükler de buraya düşer.
+          return const NotificationRoute(NotificationRouteKind.circleTab);
+      }
+    default:
+      return const NotificationRoute(NotificationRouteKind.homeTab);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Bekleyen bildirim niyeti (KA5)
 //
 // `deep_links.dart`'taki PendingInvite deseninin ikizi: dokunma anında
@@ -380,6 +474,27 @@ Future<void> handleNotificationTaps(ValueChanged<int> onSelectTab,
 
   // Ön planda gelen bildirim: göstermezsek kullanıcı hiçbir şey görmez.
   FirebaseMessaging.onMessage.listen(_showForeground);
+
+  // BY-turu onarımı — DÖRDÜNCÜ yol eksikti: ön plandayken gösterdiğimiz
+  // YEREL bildirim tepside dururken süreç ölür, kullanıcı sonra dokunursa
+  // uygulama SOĞUK açılır ve dokunuş `onDidReceiveNotificationResponse`a
+  // DEĞİL buraya düşer. Bağlanmadığı için yük kayboluyordu — "öğle
+  // bildirimine tıkladım, sadece uygulama açıldı" cihaz bulgusunun kökü.
+  try {
+    final acilis =
+        await _localNotifications.getNotificationAppLaunchDetails();
+    final ham = acilis?.didNotificationLaunchApp == true
+        ? acilis!.notificationResponse?.payload
+        : null;
+    if (ham != null && ham.isNotEmpty) {
+      final veri = decodeNotificationPayload(ham);
+      Analytics.notificationOpened('${veri['type'] ?? 'unknown'}');
+      onIntent(veri);
+      onSelectTab(tabForNotification(veri));
+    }
+  } catch (e) {
+    debugPrint('Yerel açılış bildirimi okunamadı: $e');
+  }
 
   try {
     final ilk = await FirebaseMessaging.instance.getInitialMessage();

@@ -241,7 +241,10 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
                 baslik = prompts.get(lang).PUSH_DAILY_TITLE
                 govde = notification_service.daily_push_body(
                     sign, sky_by_lang[lang], lang, gun)
-                veri = {"type": "daily", "sign": sign}
+                # BY-turu: yedek yol da hedefli — dokununca günlük okuma
+                # (hikâye) açılır; eskiden yalnız sekme atanıyordu.
+                veri = {"type": "daily", "sign": sign,
+                        "route": "story", "d": gun}
         elif type == "midday":
             # OB3 → OT1.2: öğle ölçülü slotu — yalnız BUGÜN gerçekten
             # olay varsa gider ve SABAH GÖVDESİNİN KOPYASI ASLA gitmez
@@ -267,7 +270,9 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
                     "q": govde, "q_date": gun}
         else:
             baslik, govde = notification_service.streak_push(profil, lang)
-            veri = {"type": "streak"}
+            # BY-turu: "okumanı açmadın" dokununca okumayı AÇAR (hikâye) —
+            # yalnız {type} taşıyan eski yükün hedefi yoktu.
+            veri = {"type": "streak", "route": "story", "d": gun}
 
         mesajlar.append(push_service.Message(
             uid=profil["uid"], token=profil["fcmToken"],
@@ -359,7 +364,9 @@ def reaction(req: ReactionPush,
     sonuc = push_service.send([push_service.Message(
         uid=req.friend_uid, token=alici["fcmToken"],
         title=baslik, body=govde,
-        data={"type": "friend", "fromUid": user.uid},
+        # `src` (BY-turu): istemci tepkiyi davetten/kabulden ayırt edip
+        # doğru hedefe yönlendirir (src: midday konvansiyonu).
+        data={"type": "friend", "fromUid": user.uid, "src": "reaction"},
     )])
     return {"status": "ok", "sent": sonuc.sent}
 
@@ -369,7 +376,8 @@ class InvitePush(BaseModel):
 
 
 def _event_push(alici_uid: str, gonderen_uid: str, tur: str,
-                baslik_sablonu: str, govde_sablonu: str) -> dict[str, Any]:
+                baslik_sablonu: str, govde_sablonu: str,
+                src: str) -> dict[str, Any]:
     """Davet/kabul push'unun ortak kuyruğu (OB2).
 
     Doğrulama ÇAĞIRANDA biter; buradan sonrası asla raise etmez — davet
@@ -403,9 +411,10 @@ def _event_push(alici_uid: str, gonderen_uid: str, tur: str,
         uid=alici_uid, token=alici["fcmToken"],
         title=getattr(p, baslik_sablonu).format(name=ad),
         body=getattr(p, govde_sablonu),
-        # `type=friend`: dokununca Çevrem sekmesi açılır — gelen davet /
-        # yeni arkadaş orada en üstte, mobilde yeni tüketici gerekmez.
-        data={"type": "friend", "fromUid": gonderen_uid},
+        # `type=friend` + `src` (BY-turu): davet Çevrem sekmesine (istek
+        # en üstte), kabul ise doğrudan o arkadaşın ilişki ekranına
+        # yönlenir — istemci kararı `src` ile verir.
+        data={"type": "friend", "fromUid": gonderen_uid, "src": src},
     )])
     if sonuc.sent:
         notification_service.mark_sent(alici_uid, tur, gun)
@@ -432,7 +441,8 @@ def invite(req: InvitePush,
         raise HTTPException(status_code=403, detail=text("invite.none", lang))
 
     return _event_push(req.friend_uid, user.uid, f"invite-{user.uid}",
-                       "PUSH_INVITE_TITLE", "PUSH_INVITE_BODY")
+                       "PUSH_INVITE_TITLE", "PUSH_INVITE_BODY",
+                       src="invite")
 
 
 @router.post("/invite-accepted")
@@ -454,4 +464,5 @@ def invite_accepted(req: InvitePush,
 
     return _event_push(req.friend_uid, user.uid, f"accept-{user.uid}",
                        "PUSH_INVITE_ACCEPTED_TITLE",
-                       "PUSH_INVITE_ACCEPTED_BODY")
+                       "PUSH_INVITE_ACCEPTED_BODY",
+                       src="invite_accepted")

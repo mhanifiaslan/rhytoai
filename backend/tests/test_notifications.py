@@ -403,6 +403,9 @@ def test_midday_cift_ani_yalniz_onbellekten(monkeypatch):
     assert "Erkan" in baslik
     assert govde
     assert veri["type"] == "friend" and veri["src"] == "midday"
+    # BY-turu: hedef kimliği taşınır — dokununca O ilişkinin ekranı
+    # açılır; kimliksiz yük istemciyi yalnız sekmeye bırakıyordu.
+    assert veri["fromUid"] == "f1"
     assert all(isinstance(v, str) for v in veri.values())
 
 
@@ -888,7 +891,9 @@ def test_davet_bildirimi_gider_ve_ayni_gun_tekrarlamaz(monkeypatch):
     assert iki.json()["reason"] == "zaten-gonderildi"
     assert len(yakalanan) == 1
     mesaj = yakalanan[0]
-    assert mesaj.data == {"type": "friend", "fromUid": "dev-user"}
+    # BY-turu: `src` istemciye daveti tepkiden/kabulden ayırt ettirir.
+    assert mesaj.data == {"type": "friend", "fromUid": "dev-user",
+                          "src": "invite"}
     assert "🤝" in mesaj.title and "Gonderen" in mesaj.title
     assert notify is not None  # import dumani
 
@@ -957,7 +962,8 @@ def test_kabul_bildirimi_daveti_gonderene_gider(monkeypatch):
     assert len(yakalanan) == 1
     assert "🎉" in yakalanan[0].title
     assert "Kabul-Eden" in yakalanan[0].title
-    assert yakalanan[0].data == {"type": "friend", "fromUid": "dev-user"}
+    assert yakalanan[0].data == {"type": "friend", "fromUid": "dev-user",
+                                 "src": "invite_accepted"}
 
 
 # --------------------------------------------------------------------------

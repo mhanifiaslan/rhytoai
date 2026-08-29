@@ -627,11 +627,11 @@ class _SignalsSectionState extends ConsumerState<_SignalsSection> {
   void _dailyNiyetiIsle(List<Map<String, dynamic>> sinyaller) {
     final niyet = ref.read(pendingNotificationProvider);
     if (niyet == null || niyet.type != 'daily') return;
-    if (niyet.data['route'] != 'signal' || sinyaller.isEmpty) {
-      // Eski sunucudan gelen yüklerde route yok — yalnız sekme açılır.
-      ref.read(pendingNotificationProvider.notifier).clear();
-      return;
-    }
+    // BY-turu: bu ekran YALNIZ route=signal tüketir; route'suz/story
+    // daily'yi merkezî tüketici (AppShell._niyetIsle) günlük okumaya
+    // yönlendirir — burada dokunulmaz ki yarış çıkmasın.
+    if (niyet.data['route'] != 'signal') return;
+    if (sinyaller.isEmpty) return;
     ref.read(pendingNotificationProvider.notifier).clear();
 
     final bugun = DateTime.now().toIso8601String().substring(0, 10);
