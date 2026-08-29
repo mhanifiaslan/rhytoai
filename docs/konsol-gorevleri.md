@@ -168,6 +168,17 @@ deploy-backend.ps1'e kalıcı yazılacak.
   claim'inden gelir (aslan.mh@gmail.com'a basıldı). Yeni admin eklemek:
   `backend/.venv/Scripts/python tools/set_admin.py --email <eposta>`
   (claim ≤1 saat / çıkış-giriş sonrası yansır).
+- **Panel girişi OAuth adımı (AP onarımı, 2026-08-29):** Chrome COOP'u
+  çapraz-origin popup'ı kırdığı için panel `authDomain` artık
+  `rhytoai.web.app` (same-origin işleyici). Bunun çalışması için OAuth
+  web istemcisine web.app işleyicisi eklendi (Console'dan elle —
+  API'si yok): Cloud Console → APIs & Services → Credentials →
+  "Web client (auto created by Google Service)" → Authorized redirect
+  URIs'e `https://rhytoai.web.app/__/auth/handler`, Authorized
+  JavaScript origins'e `https://rhytoai.web.app`. Yapılmazsa Google
+  "Hata 400: redirect_uri_mismatch" verir. İleride ÖZEL alan adı
+  bağlanırsa aynı adım o alan için tekrarlanır (app.js'te uygunluk
+  bekçisi var — yalnız varsayılan Hosting alanlarında devrede).
 - **Panel v2 (AP-turu, 2026-08-29):** baştan tasarlandı — yan menü + 6
   bölüm: Genel Bakış (KPI + eğriler), Kullanıcılar (aramalı liste +
   Kullanıcı 360: abonelik/cüzdan/kullanım/bildirim + zaman çizelgesi +
