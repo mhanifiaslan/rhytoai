@@ -191,6 +191,41 @@ Ses seviyesi 0.3–0.5; Profil > Ayarlar > "Sesler" anahtarıyla kapatılır
 - **Premium upsell**: satış mesajı `PlusLockedCard`'da, yani kullanıcının
   kilitli içeriğe baktığı yerde yaşar (banner yok).
 
+## 8b. Harita çarkı doktrini (HI-turu)
+
+Tek çark sistemi (`lib/widgets/chart/`): natal, gökyüzü, bi-wheel ve
+Çevrem sinastrisi AYNI `ChartData → WheelLayout → RythoWheelPainter`
+zincirinden geçer; `ChartInspectorScreen` tam ekran inceleme yüzeyidir.
+
+- **Geometri tek kaynak:** çizim ve dokunma isabeti AYNI `WheelLayout`
+  nesnesini tüketir — iki ayrı hesap yasak (eski çarkın "Venüs'e dokun,
+  Merkür açılsın" kusuru bu ayrışmadan doğdu).
+- **Yön sözleşmesi:** Yükselen saat 9'da, boylam saat yönünün tersine;
+  evsiz düzende 0° Koç solda. SERBEST DÖNDÜRME YOK.
+- **Derece cetveli** 1°/5°/10° kendi bandında — profesyonel çarkın bir
+  numaralı işareti. AC/MC eksenleri kalın + AS/DS/MC/IC etiketli.
+- **Açı paleti** (chart_palette.dart): karşıt #FF5C7A · kare #FF8A5C ·
+  üçgen #5AC8FA · altmışlık #7FD8A4 · kavuşum altın · minör gri. Renk
+  TEK anlam taşır; sert/yumuşak/minör ayrımı AYRICA çizgi stiliyle
+  (düz/ince/kesik) verilir — renk körlüğünde de okunur. Orb daraldıkça
+  çizgi kalınlaşır (0.6+1.6·sıkılık).
+- **Kavuşum kiriş DEĞİLDİR:** jant braketi + nokta olarak çizilir.
+- **Yelpaze dürüstlüğü:** stellium'da glifler açısal yayılır ama her
+  glif gerçek derecesine İŞARETÇİ çizgisiyle bağlı kalır.
+- **Bi-wheel/sinastri:** iç halka HER ZAMAN natal/kullanıcı; evler iç
+  haritanındır; dış halka kendi ince cetvelini taşır; yalnız ÇAPRAZ
+  açılar çizilir; LEJANT halkaları adlandırır ("İç: sen — Dış: X").
+- **Glif stratejisi:** ♈-♓ + ⚹⚷⚸ VEKTÖR path (wheel_glyphs.dart) —
+  U+2648-2653 Android'de renkli emojiye dönüyor; gezegenler güvenli
+  metin kümesi (☉☽☿…), retro "R" harfi (℞ fontu güvenilmez).
+- **Ölçülmeyen söylenmez:** saatsizde ev/eksen çizilmez + beyan; transit
+  gezegene ev iddia edilmez (Greenwich artefaktı istemcide atılır);
+  arkadaş sinastri çarkı yok (Çevrem v1 — kullanıcı kararı).
+- **Etkileşim:** dokun→izole modu (diğerleri %30'a söner), tekrar
+  dokun→ortak alt-sayfa ailesi; pinch-zoom 1-4x KENDİ durumuyla
+  (InteractiveViewer yasak: raster bulanıklığı); zoom ≥2'de
+  derece-dakika açılır; reduceMotion süpürmeyi keser.
+
 ## 9. Yapılmayacaklar
 
 - Parşömen/altın gravür estetiğine dönüş yok; Cormorant/Spectral kullanılmaz.

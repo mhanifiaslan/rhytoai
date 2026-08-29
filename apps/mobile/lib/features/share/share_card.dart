@@ -404,7 +404,7 @@ Future<bool> shareReadingCard(
   String? moonEmoji,
   String? moonName,
 }) =>
-    _paylas(
+    shareRenderedCard(
       context,
       ShareCard(
         signName: signName,
@@ -427,7 +427,7 @@ Future<bool> shareReportCard(
   List<(String, String)> badges = const [],
   String? glyph,
 }) =>
-    _paylas(
+    shareRenderedCard(
       context,
       ReportShareCard(
         title: title,
@@ -439,7 +439,12 @@ Future<bool> shareReportCard(
       const Size(ReportShareCard.width, ReportShareCard.height),
     );
 
-Future<bool> _paylas(BuildContext context, Widget kart, Size boyut) async {
+/// Herhangi bir widget'ı PNG'ye çevirip paylaşım sayfasını açar.
+///
+/// HI-turu'nda dışa açıldı (eski `_paylas`): Harita İnceleme çark
+/// görüntüsünü de bu boru hattıyla paylaşıyor.
+Future<bool> shareRenderedCard(
+    BuildContext context, Widget kart, Size boyut) async {
   final l10n = AppLocalizations.of(context);
   final mediaQuery = MediaQuery.of(context);
   final locale = Localizations.localeOf(context);

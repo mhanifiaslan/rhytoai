@@ -246,6 +246,26 @@ final peopleProvider = StreamProvider<List<Person>>((ref) {
   });
 });
 
+/// Kullanıcı ↔ Çevrem kişisi sinastrisi (HI-turu HA9) — sinastri
+/// ÇARKININ veri kaynağı.
+///
+/// İki taraf da KULLANICININ KENDİ girdiği veridir (profil + kişi
+/// kaydı); gizlilik sözleşmesi değişmez. Arkadaş sinastri çarkı BİLEREK
+/// yok: arkadaşın konumları istemciye inmez (karşılıklı onay
+/// mekanizmasıyla ileri tur). Yanıt points1/points2/houses1/houses2 +
+/// sıralı ilk 60 çapraz açı taşır (rev 00076).
+final synastryChartProvider = FutureProvider.family<Map<String, dynamic>?,
+    Person>((ref, kisi) async {
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) return null;
+  final dio = ref.watch(apiProvider);
+  final response = await dio.post('/api/v1/astrology/synastry', data: {
+    'person1': birthPayload(profile),
+    'person2': kisi.toBirthPayload(),
+  });
+  return Map<String, dynamic>.from(response.data['data']);
+});
+
 /// Kontenjan durumu: kaç kişi eklenmiş, kaç kişiye izin var.
 ///
 /// Sunucudan gelir çünkü sınır abonelik durumuna bağlı ve "kaç kişi

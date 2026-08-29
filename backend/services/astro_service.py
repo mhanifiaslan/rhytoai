@@ -269,6 +269,28 @@ def _subject_points(subject) -> list[dict[str, Any]]:
     return points
 
 
+#: Ev öznitelik adları — sıra 1. evden 12. eve.
+_HOUSE_ATTRS = [
+    "first_house", "second_house", "third_house", "fourth_house",
+    "fifth_house", "sixth_house", "seventh_house", "eighth_house",
+    "ninth_house", "tenth_house", "eleventh_house", "twelfth_house",
+]
+
+
+def _subject_houses(subject) -> list[dict[str, Any]]:
+    """12 ev girişi — natal ve sinastri (HA9) aynı biçimi paylaşır."""
+    houses = []
+    for i, attr in enumerate(_HOUSE_ATTRS, start=1):
+        h = getattr(subject, attr)
+        houses.append({
+            "house": i, "sign": h.sign,
+            "sign_tr": SIGN_TR.get(h.sign, h.sign),
+            "position": round(h.position, 2),
+            "abs_position": round(h.abs_pos, 2),
+        })
+    return houses
+
+
 #: Açı türünün taşıdığı ağırlık. `synastry_service._ACI_AGIRLIK` ile aynı
 #: doktrin; buraya kopyalanmasının sebebi bağımlılık yönü (synastry_service
 #: astro_service'i içe aktarıyor, tersi döngü olurdu).
@@ -391,19 +413,7 @@ def get_natal_chart(
         # üretilmez; gezegen burçları (Ay hariç saate duyarsız) kalır.
         disclosures.append("natal_hour_unknown")
 
-    houses = []
-    if hour_known:
-        for i, house_attr in enumerate([
-            "first_house", "second_house", "third_house", "fourth_house",
-            "fifth_house", "sixth_house", "seventh_house", "eighth_house",
-            "ninth_house", "tenth_house", "eleventh_house", "twelfth_house",
-        ], start=1):
-            h = getattr(subject, house_attr)
-            houses.append({
-                "house": i, "sign": h.sign, "sign_tr": SIGN_TR.get(h.sign, h.sign),
-                "position": round(h.position, 2),
-                "abs_position": round(h.abs_pos, 2),
-            })
+    houses = _subject_houses(subject) if hour_known else []
 
     asc = subject.first_house
 
@@ -567,9 +577,26 @@ def get_synastry(person1: dict[str, Any], person2: dict[str, Any]) -> dict[str, 
     except Exception:
         score_data = {"score": None, "description": None}
 
+    # HA9 (Harita İnceleme): sinastri ÇARKI iki tarafın tam nokta listesini
+    # ister — ek alanlar EKLENİR, mevcut tüketici (report_service yalnız
+    # person1/person2/aspects/relationship_score okur) etkilenmez. Saatsiz
+    # taraf natal doktrinini aynen taşır: ev listesi BOŞ, noktaların
+    # house/house_no'su null — öğle dolgusu Yükselen'i çarka çizilmez.
+    def _taraf_noktalari(subject, saat: bool) -> list[dict[str, Any]]:
+        noktalar = _subject_points(subject)
+        if not saat:
+            for p in noktalar:
+                p["house"] = None
+                p["house_no"] = None
+        return noktalar
+
     return {
         "person1": {"name": s1.name, "sun": _point_dict(s1.sun), "moon": _point_dict(s1.moon)},
         "person2": {"name": s2.name, "sun": _point_dict(s2.sun), "moon": _point_dict(s2.moon)},
+        "points1": _taraf_noktalari(s1, saat1),
+        "points2": _taraf_noktalari(s2, saat2),
+        "houses1": _subject_houses(s1) if saat1 else [],
+        "houses2": _subject_houses(s2) if saat2 else [],
         "relationship_score": score_data,
         # Sıralama artık öneme göre (bkz. rank_aspects), bu yüzden sınır
         # "en önemli 60 açı" demek. 30'du: kerykeion 87-122 açı buluyor ve

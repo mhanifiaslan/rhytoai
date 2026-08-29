@@ -106,6 +106,22 @@ final natalChartProvider =
   return Map<String, dynamic>.from(response.data['data']);
 });
 
+/// Bugünün transitleri (HI-turu HA8): gökyüzünün BU haritaya değdiği
+/// noktalar + natal↔transit çapraz açılar.
+///
+/// `/astrology/transits` sunucuda BAŞTAN BERİ vardı ve mobil hiç
+/// çağırmıyordu — bi-wheel bu yüzden çapraz açısız çiziliyordu. Hesap
+/// LLM'siz; Harita İnceleme'nin bi-wheel görünümü buradan beslenir.
+final transitsProvider =
+    FutureProvider<Map<String, dynamic>?>((ref) async {
+  final profile = ref.watch(profileProvider).value;
+  if (profile == null || profile['onboardingCompleted'] != true) return null;
+  final dio = ref.watch(apiProvider);
+  final response = await dio.post('/api/v1/astrology/transits',
+      data: birthPayload(profile));
+  return Map<String, dynamic>.from(response.data['data']);
+});
+
 /// Günlük girişleri (R2-G1/R4-3): yeniden eskiye.
 ///
 /// Ana ekrandaki hızlı giriş kartı son girişin tarihini göstermek için

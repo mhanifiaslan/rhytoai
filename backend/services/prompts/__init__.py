@@ -782,10 +782,19 @@ def localize_synastry(lang: str | None, synastry: dict | None) -> dict:
                                    "sign_local": sign_from_point(lang, nokta)}
         return çevrilmiş
 
+    # HA9: sinastri çarkı için tam nokta/ev listeleri de çevrilir (ek
+    # anahtarlar; yoksa boş liste — eski yükler etkilenmez).
+    def nokta(pt: dict) -> dict:
+        return {**pt,
+                "name_local": planet_name(lang, pt.get("name")),
+                "sign_local": sign_name_from_code(lang, pt.get("sign"))}
+
     return {
         **synastry,
         "person1": kişi(synastry.get("person1")),
         "person2": kişi(synastry.get("person2")),
+        "points1": [nokta(p) for p in (synastry.get("points1") or [])],
+        "points2": [nokta(p) for p in (synastry.get("points2") or [])],
         "aspects": [
             {**a,
              "p1_local": planet_name(lang, a.get("p1")),
@@ -796,6 +805,41 @@ def localize_synastry(lang: str | None, synastry: dict | None) -> dict:
     }
 
 
+def localize_transits(lang: str | None, data: dict | None) -> dict:
+    """Transit yükünü çevirir (HA8) — HA1 sözleşmesi: kararlı anahtarlar
+    korunur, çeviri ``*_local`` alanlarına EKLENİR.
+
+    `/astrology/transits` bugüne dek yerelleştirmesizdi çünkü mobil
+    tüketicisi yoktu; bi-wheel'in natal↔transit çapraz açıları bu uca
+    bağlanınca (Harita İnceleme) çeviri sözleşmesi de gerekti.
+    """
+    if not data:
+        return {}
+    p = get(lang)
+
+    def nokta(pt: dict) -> dict:
+        return {**pt,
+                "name_local": planet_name(lang, pt.get("name")),
+                "sign_local": sign_name_from_code(lang, pt.get("sign"))}
+
+    def açı(a: dict) -> dict:
+        hareket = a.get("movement")
+        return {**a,
+                "p1_local": planet_name(lang, a.get("p1")),
+                "p2_local": planet_name(lang, a.get("p2")),
+                "aspect_local": aspect_name(lang, a.get("aspect")),
+                "movement_local": (p.MOVEMENT_NAMES.get(hareket)
+                                   if hareket else None)}
+
+    return {
+        **data,
+        "transiting_points": [nokta(pt)
+                              for pt in (data.get("transiting_points") or [])],
+        "aspects_to_natal": [açı(a)
+                             for a in (data.get("aspects_to_natal") or [])],
+    }
+
+
 def localize_sky(lang: str | None, sky: dict | None) -> dict:
     """Gökyüzü yükünü isteğin diline çevirir.
 
@@ -803,6 +847,14 @@ def localize_sky(lang: str | None, sky: dict | None) -> dict:
     yüzden retro listesi, açılar ve ay evresi anahtar taşır. Çeviri **yanıt
     üretilirken** yapılır — aksi halde önbelleği ilk dolduran dil herkese
     servis edilirdi (İngilizce kullanıcı "Satürn retro" görüyordu).
+
+    HA1 (canlı hata onarımı): açıların ``p1/p2/aspect`` anahtarları artık
+    ÜZERİNE YAZILMAZ — kararlı (İngilizce/küçük-harf) kalır ve
+    ``p1_local/p2_local/aspect_local`` EKLENİR (localize_chart deseni).
+    Eski davranış gökyüzü çarkının açı ağını öldürüyordu: mobil,
+    ``planets[].name`` (İngilizce) ile açı uçlarını eşleyemiyor ve TR'de
+    SIFIR açı çizgisi çiziyordu; EN'de "Conjunction" küçük-harf renk
+    tablosunu ıskalayıp görünmez renge düşüyordu.
     """
     if not sky:
         return {}
@@ -819,9 +871,9 @@ def localize_sky(lang: str | None, sky: dict | None) -> dict:
                         for p in (sky.get("retrogrades") or [])],
         "aspects": [
             {**a,
-             "p1": planet_name(lang, a.get("p1")),
-             "p2": planet_name(lang, a.get("p2")),
-             "aspect": aspect_name(lang, a.get("aspect"))}
+             "p1_local": planet_name(lang, a.get("p1")),
+             "p2_local": planet_name(lang, a.get("p2")),
+             "aspect_local": aspect_name(lang, a.get("aspect"))}
             for a in (sky.get("aspects") or [])
         ],
     }

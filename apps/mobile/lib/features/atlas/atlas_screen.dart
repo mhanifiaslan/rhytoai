@@ -8,8 +8,11 @@ import '../../widgets/atlas_widgets.dart' show AstrolabeSpinner;
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/common.dart';
 import '../../widgets/glass.dart';
-import '../../widgets/natal_wheel.dart';
+import '../../widgets/chart/chart_data.dart';
+import '../../widgets/chart/chart_wheel.dart';
+import '../../widgets/chart/wheel_painter.dart' show WheelAspectFilter;
 import '../../widgets/nebula_widgets.dart';
+import 'chart_inspector_screen.dart';
 import '../../widgets/markdown_text.dart' show markdownToPlain;
 import '../../widgets/reading_card.dart';
 import '../share/share_card.dart' show shareReportCard;
@@ -50,20 +53,8 @@ class AtlasScreen extends ConsumerStatefulWidget {
 }
 
 class _AtlasScreenState extends ConsumerState<AtlasScreen> {
-  Map<String, dynamic>? _selectedPlanet;
-
   /// Çark görünümü (R3-3): 0 = Haritam, 1 = Şu an gökyüzü, 2 = İkili çark.
   int _gorunum = 0;
-
-  /// Anlık gökyüzü gezegenlerini çarkın nokta şemasına çevirir.
-  List<Map<String, dynamic>> _gokyuzuNoktalari(Map<String, dynamic> sky) => [
-        for (final p in (sky['planets'] as List? ?? const []))
-          {
-            'name': (p as Map)['name'],
-            'abs_position': p['longitude'],
-            'retrograde': p['retrograde'] == true,
-          },
-      ];
 
   @override
   Widget build(BuildContext context) {
@@ -153,51 +144,59 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                       l10n.atlasWheelSky,
                       l10n.atlasWheelBiwheel,
                     ],
-                    onChanged: (i) => setState(() {
-                      _gorunum = i;
-                      _selectedPlanet = null;
-                    }),
+                    onChanged: (i) => setState(() => _gorunum = i),
                   ),
                   const SizedBox(height: 4),
+                  // HI-turu: üç görünüm de ORTAK ChartWheel'e geçti. Eski
+                  // satır-içi gezegen kartı kalktı — dokunma her yerde
+                  // aynı alt-sayfa ailesini açar (showPointSheet), gökyüzü
+                  // ve bi-wheel görünümleri de artık dokunulabilir.
                   Builder(builder: (context) {
                     final boyut = MediaQuery.of(context).size.width - 72;
-                    final sky = ref.watch(skyNowProvider).value;
-                    final gokyuzu =
-                        sky == null ? null : _gokyuzuNoktalari(sky);
-                    final cark = switch (_gorunum) {
-                      1 => gokyuzu == null
-                          ? const Padding(
-                              padding: EdgeInsets.all(RythoSpace.xl),
-                              child: AstrolabeSpinner(),
-                            )
-                          : NatalWheel(
-                              key: const ValueKey('sky'),
-                              points: gokyuzu,
-                              houses: const [],
-                              aspects: List<Map<String, dynamic>>.from(
-                                  sky!['aspects'] ?? const []),
-                              size: boyut,
-                            ),
-                      2 => NatalWheel(
-                          key: const ValueKey('biwheel'),
-                          points: points,
-                          houses: houses,
-                          aspects: aspects,
-                          outerPoints: gokyuzu,
-                          size: boyut,
-                        ),
-                      _ => NatalWheel(
-                          key: const ValueKey('natal'),
-                          points: points,
-                          houses: houses,
-                          aspects: aspects,
-                          size: boyut,
-                          onPlanetTap: (p) =>
-                              setState(() => _selectedPlanet = p),
-                        ),
+                    final skyAsync = ref.watch(skyNowProvider);
+                    final sky = skyAsync.value;
+                    final transits = _gorunum == 2
+                        ? ref.watch(transitsProvider).value
+                        : null;
+                    final yukleniyor = switch (_gorunum) {
+                      1 => sky == null,
+                      // Bi-wheel dış halkasızken SESSİZCE tek halkaya
+                      // düşmez (eski kusur) — bekleme gösterilir.
+                      2 => sky == null || transits == null,
+                      _ => false,
+                    };
+                    if (yukleniyor) {
+                      return const Padding(
+                        padding: EdgeInsets.all(RythoSpace.xl),
+                        child: AstrolabeSpinner(),
+                      );
+                    }
+                    final veri = switch (_gorunum) {
+                      1 => ChartData.fromSky(sky!,
+                          label: l10n.chartLegendSkyNow),
+                      2 => ChartData.fromTransits(chart, transits!,
+                          innerLabel: l10n.chartLegendYou,
+                          outerLabel: l10n.chartLegendSkyNow),
+                      _ => ChartData.fromNatal(chart,
+                          label: l10n.chartLegendYou),
                     };
                     return Column(children: [
-                      Center(child: cark),
+                      Center(
+                        child: ChartWheel(
+                          key: ValueKey('cark-$_gorunum'),
+                          data: veri,
+                          size: boyut,
+                          interactive: false,
+                          filter: _gorunum == 0
+                              ? WheelAspectFilter.all
+                              : WheelAspectFilter.major,
+                          maxOrb: _gorunum == 2 ? 3.0 : 8.0,
+                          onPlanetTap: (g) => showPointSheet(
+                              context, pointSheetMap(g.point)),
+                          onAspectTap: (a) =>
+                              showAspectSheet(context, aspectSheetMap(a)),
+                        ),
+                      ),
                       if (_gorunum != 0 || houses.isEmpty)
                         Padding(
                           padding: const EdgeInsets.fromLTRB(10, 2, 10, 6),
@@ -211,54 +210,28 @@ class _AtlasScreenState extends ConsumerState<AtlasScreen> {
                                   color: RythoColors.parchmentDim,
                                   height: 1.4)),
                         ),
+                      // Harita İnceleme girişi (HI-turu): astrolog gözü
+                      // için tam ekran — zoom, filtreler, açı tablosu.
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                  builder: (_) => ChartInspectorScreen(
+                                      mode: switch (_gorunum) {
+                                        1 => ChartInspectorMode.sky,
+                                        2 => ChartInspectorMode.biwheel,
+                                        _ => ChartInspectorMode.natal,
+                                      }))),
+                          icon: const Icon(Icons.open_in_full_rounded,
+                              size: 15),
+                          label: Text(l10n.chartExpandTooltip,
+                              style: RythoText.label(11,
+                                  color: RythoColors.goldBright)),
+                        ),
+                      ),
                     ]);
                   }),
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 260),
-                    curve: Curves.easeOutCubic,
-                    child: _selectedPlanet == null
-                        ? const SizedBox(width: double.infinity)
-                        : Container(
-                            width: double.infinity,
-                            margin: const EdgeInsets.fromLTRB(8, 4, 8, 8),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: RythoColors.inkLighter,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                  color: RythoColors.lilac
-                                      .withValues(alpha: 0.3)),
-                            ),
-                            child: Row(children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      planetSignLabel(
-                                          context, _selectedPlanet!),
-                                      style: RythoText.body(15,
-                                          w: FontWeight.w700),
-                                    ),
-                                    Text(
-                                      '${(_selectedPlanet!['position'] as num).toStringAsFixed(1)}°'
-                                      '${_selectedPlanet!['house'] != null ? ' · ${_selectedPlanet!['house']}' : ''}'
-                                      '${_selectedPlanet!['retrograde'] == true ? ' · retro' : ''}',
-                                      style: RythoText.mono(12,
-                                          color: RythoColors.parchmentDim),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.close,
-                                    size: 16, color: RythoColors.parchmentDim),
-                                onPressed: () =>
-                                    setState(() => _selectedPlanet = null),
-                              ),
-                            ]),
-                          ),
-                  ),
                 ]),
               ).animate(delay: next()).fadeIn(duration: 380.ms).slideY(
                   begin: 0.06, curve: Curves.easeOutCubic),

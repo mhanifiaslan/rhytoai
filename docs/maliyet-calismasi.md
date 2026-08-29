@@ -279,6 +279,14 @@ nedeni kapatıldı; LLM deltası ihmal edilebilir.
 | 3 günlük deneme (OT6, kullanıcı kararı: kartsız) | yeni kullanıcı başına TEK SEFER: 30 deneme jetonu (≈$0.06 tavan) + 3 gün jetonsuz Plus yüzeyleri (ilişki yorumu ~$0.002, takvim ~$0.003, sinyal zaten herkese) | en kötü ~**$0.10/yeni kullanıcı**, tek seferlik edinim maliyeti; dönüşüm kaldıracı olarak bilinçli |
 | Şifre panosu / izin akışı / telefon adımı / sohbet ikonu | **$0** | istemci + Firebase Auth |
 
+## 6j. HI-turu: Harita İnceleme — ortak profesyonel çark — 2026-08-29
+
+Tur TAMAMEN LLM'siz: çark çizimi istemci CPU'su; `/astrology/transits`
+ve `/astrology/synastry` mevcut efemeris uçları (istek başına yerel
+hesap, LLM yok). Sinastri yanıtına eklenen points/houses alanları aynı
+hesabın zaten ürettiği veridir — ek maliyet sıfır. Canlı onarım (gökyüzü
+açı ağı) da maliyetsiz: yalnız yerelleştirme sözleşmesi düzeldi.
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

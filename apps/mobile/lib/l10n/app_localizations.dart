@@ -4717,6 +4717,174 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Tüm Rytho+ özellikleri açık — bugün son gün.'**
   String get trialBannerLastDay;
+
+  /// No description provided for @chartInspectorTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Harita İnceleme'**
+  String get chartInspectorTitle;
+
+  /// No description provided for @chartWheelSemantics.
+  ///
+  /// In tr, this message translates to:
+  /// **'Astroloji çarkı: {rings} halka, {aspects} açı. Ayrıntılar aşağıdaki konum tablosunda.'**
+  String chartWheelSemantics(int rings, int aspects);
+
+  /// No description provided for @chartLegendInner.
+  ///
+  /// In tr, this message translates to:
+  /// **'İç: {label}'**
+  String chartLegendInner(String label);
+
+  /// No description provided for @chartLegendOuter.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dış: {label}'**
+  String chartLegendOuter(String label);
+
+  /// No description provided for @chartLegendYou.
+  ///
+  /// In tr, this message translates to:
+  /// **'sen'**
+  String get chartLegendYou;
+
+  /// No description provided for @chartLegendSkyNow.
+  ///
+  /// In tr, this message translates to:
+  /// **'şu anki gökyüzü'**
+  String get chartLegendSkyNow;
+
+  /// No description provided for @chartFilterAll.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tümü'**
+  String get chartFilterAll;
+
+  /// No description provided for @chartFilterMajor.
+  ///
+  /// In tr, this message translates to:
+  /// **'Majör'**
+  String get chartFilterMajor;
+
+  /// No description provided for @chartFilterApplying.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yaklaşan'**
+  String get chartFilterApplying;
+
+  /// No description provided for @chartFilterHard.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sert'**
+  String get chartFilterHard;
+
+  /// No description provided for @chartFilterSoft.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yumuşak'**
+  String get chartFilterSoft;
+
+  /// No description provided for @chartFilterMinors.
+  ///
+  /// In tr, this message translates to:
+  /// **'Minörler'**
+  String get chartFilterMinors;
+
+  /// No description provided for @chartOrbLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Orb ≤ {orb}°'**
+  String chartOrbLabel(int orb);
+
+  /// No description provided for @chartHouseSystem.
+  ///
+  /// In tr, this message translates to:
+  /// **'Placidus evleri · Tropikal zodyak'**
+  String get chartHouseSystem;
+
+  /// No description provided for @chartHourUnknownNote.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğum saati bilinmediği için evler, Yükselen ve eksenler çizilmedi — ölçülmeyen söylenmez.'**
+  String get chartHourUnknownNote;
+
+  /// No description provided for @chartAspectarianTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'AÇI TABLOSU'**
+  String get chartAspectarianTitle;
+
+  /// No description provided for @chartPositionsTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'KONUMLAR'**
+  String get chartPositionsTitle;
+
+  /// No description provided for @chartApplyingLetter.
+  ///
+  /// In tr, this message translates to:
+  /// **'Y'**
+  String get chartApplyingLetter;
+
+  /// No description provided for @chartSeparatingLetter.
+  ///
+  /// In tr, this message translates to:
+  /// **'A'**
+  String get chartSeparatingLetter;
+
+  /// No description provided for @chartHousesYou.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evler: sen'**
+  String get chartHousesYou;
+
+  /// No description provided for @chartHousesOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Evler: {name}'**
+  String chartHousesOther(String name);
+
+  /// No description provided for @chartModeSynastry.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sen & {name}'**
+  String chartModeSynastry(String name);
+
+  /// No description provided for @chartAsOf.
+  ///
+  /// In tr, this message translates to:
+  /// **'{time} itibarıyla'**
+  String chartAsOf(String time);
+
+  /// No description provided for @chartAskPrefill.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an {title} çarkını inceliyorum. Bu haritada öne çıkan neler?'**
+  String chartAskPrefill(String title);
+
+  /// No description provided for @chartShareTooltip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çarkı paylaş'**
+  String get chartShareTooltip;
+
+  /// No description provided for @chartExpandTooltip.
+  ///
+  /// In tr, this message translates to:
+  /// **'Harita İnceleme\'de aç'**
+  String get chartExpandTooltip;
+
+  /// No description provided for @chartSelectedDetail.
+  ///
+  /// In tr, this message translates to:
+  /// **'Detay →'**
+  String get chartSelectedDetail;
+
+  /// No description provided for @chartOuterLoading.
+  ///
+  /// In tr, this message translates to:
+  /// **'Dış halka yükleniyor…'**
+  String get chartOuterLoading;
 }
 
 class _AppLocalizationsDelegate

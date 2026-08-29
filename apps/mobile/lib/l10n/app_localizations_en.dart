@@ -2648,4 +2648,105 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get trialBannerLastDay =>
       'All Rytho+ features unlocked — today is the last day.';
+
+  @override
+  String get chartInspectorTitle => 'Chart Inspector';
+
+  @override
+  String chartWheelSemantics(int rings, int aspects) {
+    return 'Astrology wheel: $rings rings, $aspects aspects. Details in the position table below.';
+  }
+
+  @override
+  String chartLegendInner(String label) {
+    return 'Inner: $label';
+  }
+
+  @override
+  String chartLegendOuter(String label) {
+    return 'Outer: $label';
+  }
+
+  @override
+  String get chartLegendYou => 'you';
+
+  @override
+  String get chartLegendSkyNow => 'the sky right now';
+
+  @override
+  String get chartFilterAll => 'All';
+
+  @override
+  String get chartFilterMajor => 'Major';
+
+  @override
+  String get chartFilterApplying => 'Applying';
+
+  @override
+  String get chartFilterHard => 'Hard';
+
+  @override
+  String get chartFilterSoft => 'Soft';
+
+  @override
+  String get chartFilterMinors => 'Minors';
+
+  @override
+  String chartOrbLabel(int orb) {
+    return 'Orb ≤ $orb°';
+  }
+
+  @override
+  String get chartHouseSystem => 'Placidus houses · Tropical zodiac';
+
+  @override
+  String get chartHourUnknownNote =>
+      'Birth time unknown, so houses, Ascendant and axes are not drawn — nothing unmeasured is shown.';
+
+  @override
+  String get chartAspectarianTitle => 'ASPECT GRID';
+
+  @override
+  String get chartPositionsTitle => 'POSITIONS';
+
+  @override
+  String get chartApplyingLetter => 'A';
+
+  @override
+  String get chartSeparatingLetter => 'S';
+
+  @override
+  String get chartHousesYou => 'Houses: you';
+
+  @override
+  String chartHousesOther(String name) {
+    return 'Houses: $name';
+  }
+
+  @override
+  String chartModeSynastry(String name) {
+    return 'You & $name';
+  }
+
+  @override
+  String chartAsOf(String time) {
+    return 'as of $time';
+  }
+
+  @override
+  String chartAskPrefill(String title) {
+    return 'I\'m inspecting the $title wheel right now. What stands out in this chart?';
+  }
+
+  @override
+  String get chartShareTooltip => 'Share the wheel';
+
+  @override
+  String get chartExpandTooltip => 'Open in Chart Inspector';
+
+  @override
+  String get chartSelectedDetail => 'Details →';
+
+  @override
+  String get chartOuterLoading => 'Loading the outer ring…';
 }

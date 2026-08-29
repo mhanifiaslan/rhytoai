@@ -25,8 +25,12 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/common.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
+import '../../widgets/chart/chart_data.dart';
+import '../../widgets/chart/chart_wheel.dart';
 import '../../widgets/nebula_widgets.dart' show Pressable;
-import '../../widgets/natal_wheel.dart';
+import '../atlas/atlas_detail_screens.dart'
+    show showAspectSheet, showPointSheet;
+import '../atlas/chart_inspector_screen.dart';
 import '../chat/chat_screen.dart';
 import '../friends/relationship_screen.dart' show RelationshipScreen;
 import 'person_form_screen.dart' show PersonFormScreen, relationLabel;
@@ -174,18 +178,8 @@ class _HaritaBolumu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final points = [
-      for (final p in (chart['points'] as List? ?? const []))
-        Map<String, dynamic>.from(p as Map),
-    ];
-    final houses = [
-      for (final h in (chart['houses'] as List? ?? const []))
-        Map<String, dynamic>.from(h as Map),
-    ];
-    final aspects = [
-      for (final a in (chart['aspects'] as List? ?? const []))
-        Map<String, dynamic>.from(a as Map),
-    ];
+    final ad = person.label ?? relationLabel(l10n, person.relation);
+    final veri = ChartData.fromNatal(chart, label: ad);
 
     return Column(children: [
       // Büyük Üçlü: Yükselen saatsizken sunucu ZATEN üretmiyor, bu yüzden
@@ -216,11 +210,50 @@ class _HaritaBolumu extends StatelessWidget {
         ),
       ],
       const SizedBox(height: RythoSpace.lg),
-      if (points.isNotEmpty)
+      if (veri.rings.first.points.isNotEmpty) ...[
         Center(
-          child: NatalWheel(
-              points: points, houses: houses, aspects: aspects, size: 320),
+          child: ChartWheel(
+            data: veri,
+            size: 320,
+            interactive: false,
+            onPlanetTap: (g) =>
+                showPointSheet(context, pointSheetMap(g.point)),
+            onAspectTap: (a) =>
+                showAspectSheet(context, aspectSheetMap(a)),
+          ),
         ),
+        // Harita İnceleme girişleri (HI-turu): kişinin kendi çarkı tam
+        // ekran + kullanıcıyla İKİLİ (sinastri) çark — her ikisi de
+        // kullanıcının kendi girdiği veriyle (gizlilik sözleşmesi aynı).
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
+          child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => ChartInspectorScreen(
+                          mode: ChartInspectorMode.synastry,
+                          person: person))),
+              icon: const Icon(Icons.join_left_rounded, size: 15),
+              label: Text(l10n.chartModeSynastry(ad),
+                  style: RythoText.label(11, color: RythoColors.lilac)),
+            ),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                      builder: (_) => ChartInspectorScreen(
+                          mode: ChartInspectorMode.natal,
+                          person: person,
+                          natalOverride: chart,
+                          titleOverride: ad))),
+              icon: const Icon(Icons.open_in_full_rounded, size: 15),
+              label: Text(l10n.chartExpandTooltip,
+                  style:
+                      RythoText.label(11, color: RythoColors.goldBright)),
+            ),
+          ]),
+        ),
+      ],
     ]);
   }
 }

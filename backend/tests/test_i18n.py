@@ -454,8 +454,16 @@ def test_gokyuzu_yerellestirme():
 
     assert tr["retrogrades"] == ["Satürn", "Neptün", "Plüton"]
     assert en["retrogrades"] == ["Saturn", "Neptune", "Pluto"]
-    assert tr["aspects"][0]["aspect"] == "Altmışlık"
-    assert en["aspects"][0]["aspect"] == "Sextile"
+    # HA1 (canlı hata onarımı): açı anahtarları KARARLI kalır, çeviri
+    # *_local alanlarına EKLENİR. Eski davranış p1/p2/aspect'in üzerine
+    # yazıyordu ve mobil çark açı uçlarını planets[].name (İngilizce) ile
+    # eşleyemediği için TR'de SIFIR açı çizgisi çiziyordu.
+    assert tr["aspects"][0]["aspect"] == "sextile"
+    assert tr["aspects"][0]["aspect_local"] == "Altmışlık"
+    assert tr["aspects"][0]["p1"] == "Neptune"
+    assert tr["aspects"][0]["p1_local"] == "Neptün"
+    assert en["aspects"][0]["aspect"] == "sextile"
+    assert en["aspects"][0]["aspect_local"] == "Sextile"
     assert tr["moon_phase"]["name"] == "Dolunay"
     assert en["moon_phase"]["name"] == "Full Moon"
     # Gezegenlere yerelleştirilmiş adlar EKLENİR, mevcut alanlar korunur.
@@ -465,6 +473,26 @@ def test_gokyuzu_yerellestirme():
     assert en["aspects"][0]["orb"] == 1.2
     # Ham veri degismemeli
     assert ham["retrogrades"] == ["Saturn", "Neptune", "Pluto"]
+
+
+def test_gokyuzu_carki_sozlesmesi():
+    """ÇARK SÖZLEŞMESİ (HA1 bekçisi): yerelleştirilmiş gökyüzünde her açı
+    ucu planets[].name içinde bulunmalı ve açı türü küçük-harf anahtar
+    kalmalı — mobil çark uçları adla, rengi anahtarla çözer. Bu tutmazsa
+    açı ağı SESSİZCE boş çizilir (canlıda aylarca fark edilmedi)."""
+    from services import sky_service
+
+    ham = sky_service.get_sky_now(include_nasa=False)
+    for kod in i18n.SUPPORTED:
+        yerel = prompts.localize_sky(kod, ham)
+        adlar = {p["name"] for p in yerel["planets"]}
+        anahtarlar = {a for _, a, _ in sky_service._MAJOR_ASPECTS}
+        for a in yerel["aspects"]:
+            assert a["p1"] in adlar, f"{kod}: {a['p1']} planets'te yok"
+            assert a["p2"] in adlar, f"{kod}: {a['p2']} planets'te yok"
+            assert a["aspect"] in anahtarlar
+            assert a.get("p1_local") and a.get("p2_local")
+            assert a.get("aspect_local")
 
 
 def test_gokyuzu_yerellestirme_bos_veri():
@@ -494,5 +522,8 @@ def test_gokyuzu_ucu_retro_ve_acilari_yerellestirir(monkeypatch):
 
     veri = en.json()["data"]
     assert veri["retrogrades"] == ["Saturn"]
-    assert veri["aspects"][0]["aspect"] == "Square"
+    # HA1: kararlı anahtar korunur, çeviri *_local'de.
+    assert veri["aspects"][0]["aspect"] == "square"
+    assert veri["aspects"][0]["aspect_local"] == "Square"
+    assert veri["aspects"][0]["p1"] == "Venus"
     assert veri["moon_phase"]["name"] == "Full Moon"

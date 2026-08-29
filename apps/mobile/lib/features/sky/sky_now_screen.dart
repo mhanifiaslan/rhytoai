@@ -25,6 +25,8 @@ import '../../widgets/common.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/nebula_widgets.dart';
+import '../atlas/chart_inspector_screen.dart'
+    show ChartInspectorMode, ChartInspectorScreen;
 
 class SkyNowScreen extends ConsumerWidget {
   const SkyNowScreen({super.key});
@@ -56,7 +58,26 @@ class SkyNowScreen extends ConsumerWidget {
                   size: 280,
                 ),
               ),
-              const SizedBox(height: RythoSpace.lg),
+              // Harita İnceleme girişi (HI-turu): gökyüzü çarkının
+              // profesyonel görünümü — derece cetveli, açı ağı, tablo.
+              Align(
+                alignment: Alignment.centerRight,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                            builder: (_) => const ChartInspectorScreen(
+                                mode: ChartInspectorMode.sky))),
+                    icon: const Icon(Icons.open_in_full_rounded, size: 15),
+                    label: Text(l10n.chartExpandTooltip,
+                        style: RythoText.label(11,
+                            color: RythoColors.goldBright)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: RythoSpace.sm),
               GlassPanel(child: SkyDetails(sky: data)),
             ],
           ),
@@ -119,8 +140,13 @@ class SkyDetails extends StatelessWidget {
           runSpacing: 6,
           alignment: WrapAlignment.center,
           children: [
+            // HA1: sunucu artık kararlı anahtarların üzerine yazmıyor;
+            // görünen ad *_local'den gelir (eski sunucuya karşı yedekli).
             for (final a in aspects.take(8))
-              InfoChip(text: '${a['p1']} ${a['aspect']} ${a['p2']}'),
+              InfoChip(
+                  text: '${a['p1_local'] ?? a['p1']} '
+                      '${a['aspect_local'] ?? a['aspect']} '
+                      '${a['p2_local'] ?? a['p2']}'),
           ],
         ),
       ],
@@ -156,8 +182,9 @@ class SkyNowSummary extends StatelessWidget {
     // biri okunuyor.
     final oneCikan = aspects.isEmpty
         ? null
-        : '${aspects.first['p1']} ${aspects.first['aspect']} '
-            '${aspects.first['p2']}';
+        : '${aspects.first['p1_local'] ?? aspects.first['p1']} '
+            '${aspects.first['aspect_local'] ?? aspects.first['aspect']} '
+            '${aspects.first['p2_local'] ?? aspects.first['p2']}';
 
     return GlassPanel(
       onTap: () => Navigator.of(context)

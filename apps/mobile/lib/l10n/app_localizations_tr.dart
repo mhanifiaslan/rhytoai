@@ -2635,4 +2635,105 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get trialBannerLastDay =>
       'Tüm Rytho+ özellikleri açık — bugün son gün.';
+
+  @override
+  String get chartInspectorTitle => 'Harita İnceleme';
+
+  @override
+  String chartWheelSemantics(int rings, int aspects) {
+    return 'Astroloji çarkı: $rings halka, $aspects açı. Ayrıntılar aşağıdaki konum tablosunda.';
+  }
+
+  @override
+  String chartLegendInner(String label) {
+    return 'İç: $label';
+  }
+
+  @override
+  String chartLegendOuter(String label) {
+    return 'Dış: $label';
+  }
+
+  @override
+  String get chartLegendYou => 'sen';
+
+  @override
+  String get chartLegendSkyNow => 'şu anki gökyüzü';
+
+  @override
+  String get chartFilterAll => 'Tümü';
+
+  @override
+  String get chartFilterMajor => 'Majör';
+
+  @override
+  String get chartFilterApplying => 'Yaklaşan';
+
+  @override
+  String get chartFilterHard => 'Sert';
+
+  @override
+  String get chartFilterSoft => 'Yumuşak';
+
+  @override
+  String get chartFilterMinors => 'Minörler';
+
+  @override
+  String chartOrbLabel(int orb) {
+    return 'Orb ≤ $orb°';
+  }
+
+  @override
+  String get chartHouseSystem => 'Placidus evleri · Tropikal zodyak';
+
+  @override
+  String get chartHourUnknownNote =>
+      'Doğum saati bilinmediği için evler, Yükselen ve eksenler çizilmedi — ölçülmeyen söylenmez.';
+
+  @override
+  String get chartAspectarianTitle => 'AÇI TABLOSU';
+
+  @override
+  String get chartPositionsTitle => 'KONUMLAR';
+
+  @override
+  String get chartApplyingLetter => 'Y';
+
+  @override
+  String get chartSeparatingLetter => 'A';
+
+  @override
+  String get chartHousesYou => 'Evler: sen';
+
+  @override
+  String chartHousesOther(String name) {
+    return 'Evler: $name';
+  }
+
+  @override
+  String chartModeSynastry(String name) {
+    return 'Sen & $name';
+  }
+
+  @override
+  String chartAsOf(String time) {
+    return '$time itibarıyla';
+  }
+
+  @override
+  String chartAskPrefill(String title) {
+    return 'Şu an $title çarkını inceliyorum. Bu haritada öne çıkan neler?';
+  }
+
+  @override
+  String get chartShareTooltip => 'Çarkı paylaş';
+
+  @override
+  String get chartExpandTooltip => 'Harita İnceleme\'de aç';
+
+  @override
+  String get chartSelectedDetail => 'Detay →';
+
+  @override
+  String get chartOuterLoading => 'Dış halka yükleniyor…';
 }

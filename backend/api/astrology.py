@@ -88,12 +88,21 @@ def natal_chart_svg(
 
 @router.post("/transits")
 def transits(data: BirthData, lang: str = Depends(get_language)):
+    """Bugünün gökyüzünün BU haritaya değdiği noktalar + çapraz açılar.
+
+    HA8: Harita İnceleme'nin bi-wheel görünümü buradan beslenir; yanıt
+    artık HA1 sözleşmesiyle yerelleştirilir (kararlı anahtar + *_local).
+    Not: `transiting_points[].house_no` Greenwich öznesinin artefaktıdır
+    ve İSTEMCİDE atılır (ChartData.fromTransits) — transit gezegene ev
+    iddia etmek "ölçülmeyen söylenmez" ihlali olurdu.
+    """
     try:
         result = astro_service.get_transits(
             **astro_service.subject_kwargs(_birth_kwargs(data)),
             hour_known=data.hour_known,
         )
-        return {"status": "success", "data": result}
+        return {"status": "success",
+                "data": prompts.localize_transits(lang, result)}
     except Exception as e:
         raise _internal(e, "transits", lang)
 
@@ -241,11 +250,19 @@ def _takvimi_kilitle(yerel: dict) -> dict:
 
 @router.post("/synastry")
 def synastry(req: SynastryRequest, lang: str = Depends(get_language)):
+    """İki doğum verisinden sinastri (HA9: sinastri ÇARKININ veri kaynağı).
+
+    Gövde iki tarafın doğum verisini İSTEMCİDEN alır — bu uç yalnız
+    kullanıcının KENDİ girdiği verilerle (kendi profili + Çevrem kişisi)
+    çağrılır; arkadaş verisi istemcide olmadığı için buradan geçemez
+    (reports.py dyad kuralı bozulmaz).
+    """
     try:
         result = astro_service.get_synastry(
             _birth_kwargs(req.person1), _birth_kwargs(req.person2)
         )
-        return {"status": "success", "data": result}
+        return {"status": "success",
+                "data": prompts.localize_synastry(lang, result)}
     except Exception as e:
         raise _internal(e, "synastry", lang)
 

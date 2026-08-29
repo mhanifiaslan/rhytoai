@@ -181,8 +181,13 @@ def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],
     memory = memory_service.memory_context(user_id, max_chars=400)
 
     retros = ", ".join(sky.get("retrogrades", [])) or "-"
+    # HA1: yerelleştirme kararlı anahtarların üzerine yazmıyor; prompt
+    # metni *_local alanlarından kurulur (alan yoksa kararlı anahtara
+    # düşülür — elle kurulmuş test fikstürleri ve eski şekiller).
     aspects = "; ".join(
-        f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
+        f"{a.get('p1_local') or a['p1']}-{a.get('p2_local') or a['p2']} "
+        f"{a.get('aspect_local') or a['aspect']}"
+        for a in sky.get("aspects", [])[:5]
     )
     moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
 
@@ -265,8 +270,11 @@ def horoscope_reading(sign: str, period: str, sky: dict[str, Any],
     length = p.PERIOD_LENGTHS.get(period, p.PERIOD_LENGTHS["daily"])
 
     retros = ", ".join(sky.get("retrogrades", [])) or "-"
+    # HA1: *_local alanları (bkz. daily_reading'deki not).
     aspects = "; ".join(
-        f"{a['p1']}-{a['p2']} {a['aspect']}" for a in sky.get("aspects", [])[:5]
+        f"{a.get('p1_local') or a['p1']}-{a.get('p2_local') or a['p2']} "
+        f"{a.get('aspect_local') or a['aspect']}"
+        for a in sky.get("aspects", [])[:5]
     ) or "-"
     moon = prompts.localize_moon_phase(lang, sky.get("moon_phase"))
     # Gökyüzü/arketip tohumu + yerel burç adı (H1): eskiden 'temperament'

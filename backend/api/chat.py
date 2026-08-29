@@ -79,8 +79,12 @@ def _sky_summary(lang: str, profile: dict | None = None) -> str:
         p = prompts.get(lang)
         moon = sky.get("moon_phase") or {}
         retros = ", ".join(sky.get("retrogrades", [])) or p.NONE_LABEL
+        # HA1: yerelleştirme artık kararlı anahtarların ÜZERİNE yazmıyor;
+        # LLM'e giden metin *_local alanlarından kurulur (dil izolasyonu;
+        # alan yoksa kararlı anahtara düşülür).
         aspects = "; ".join(
-            f"{a['p1']}-{a['p2']} {a['aspect']}"
+            f"{a.get('p1_local') or a['p1']}-{a.get('p2_local') or a['p2']} "
+            f"{a.get('aspect_local') or a['aspect']}"
             for a in (sky.get("aspects") or [])[:3]
         )
 
