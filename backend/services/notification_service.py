@@ -140,15 +140,68 @@ def already_sent(uid: str, tur: str, gun: str) -> bool:
     return (anlik.to_dict() or {}).get(f"{tur}LastSent") == gun
 
 
-def mark_sent(uid: str, tur: str, gun: str) -> None:
+def mark_sent(uid: str, tur: str, gun: str,
+              extra: dict[str, Any] | None = None) -> None:
+    """Gönderim kaydı. ``extra`` (OT1): daily dalı gönderilen GÖVDEYİ ve
+    odak sinyalini de yazar — ertesi günün rotasyonu ve öğle kopya
+    koruması bu hafızaya bakar. Tek merge yazımı; ek tur maliyeti yok.
+    """
     doc = _notification_doc(uid)
     if doc is None:
         return
     try:
-        doc.set({f"{tur}LastSent": gun,
+        doc.set({f"{tur}LastSent": gun, **(extra or {}),
                  "updatedAt": dt.datetime.now(dt.timezone.utc)}, merge=True)
     except Exception as exc:
         logger.warning("Gonderim kaydi yazilamadi (%s): %s", uid, exc)
+
+
+def _body_hash(metin: str) -> str:
+    import hashlib
+    return hashlib.sha256(metin.encode("utf-8")).hexdigest()[:16]
+
+
+def daily_sent_fields(gun: str, govde: str, idx: int,
+                      sinyal: dict[str, Any]) -> dict[str, Any]:
+    """Sabah gönderiminin `mark_sent(extra=...)` alanları (OT1.1)."""
+    return {
+        "dailyBody": govde[:200],
+        "dailyBodyHash": _body_hash(govde),
+        "dailyFocusFp": (f"{sinyal.get('transit')}-{sinyal.get('aspect')}"
+                         f"-{sinyal.get('natal')}"),
+        "dailyFocusIdx": idx,
+        "dailyTheme": sinyal.get("theme") or "",
+        "dailyBodyDay": gun,
+    }
+
+
+def last_daily_sent(uid: str) -> dict[str, Any] | None:
+    """Son gönderilen sabah bildiriminin hafızası; yoksa None (OT1.1).
+
+    Sunucuya kapalı `private/notifications` dokümanından okur — istemci
+    bu alanları ne görür ne yazabilir (firestore.rules private/**).
+    """
+    doc = _notification_doc(uid)
+    if doc is None:
+        return None
+    try:
+        anlik = doc.get()
+    except Exception as exc:
+        logger.warning("Gonderim hafizasi okunamadi (%s): %s", uid, exc)
+        return None
+    if not anlik.exists:
+        return None
+    veri = anlik.to_dict() or {}
+    if not veri.get("dailyBodyHash"):
+        return None
+    return {
+        "body": veri.get("dailyBody") or "",
+        "bodyHash": veri["dailyBodyHash"],
+        "focusFp": veri.get("dailyFocusFp") or "",
+        "focusIdx": veri.get("dailyFocusIdx"),
+        "theme": veri.get("dailyTheme") or "",
+        "day": veri.get("dailyBodyDay") or veri.get("dailyLastSent") or "",
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -286,7 +339,8 @@ def daily_push_body(sign: str, sky: dict[str, Any], lang: str,
         if metin:
             logger.info("Push satiri cok uzun (%s kar.), yedege dusuldu",
                         len(metin))
-        metin = p.PUSH_DAILY_FALLBACK.format(sign=sign_adi)
+        metin = p.PUSH_DAILY_FALLBACK.format(
+            sign=sign_adi, date=prompts.signal_date(lang, gun))
 
     # Yedek metin de önbelleklenir: aksi halde Gemini'nin sorunlu olduğu bir
     # saatte her burç için tekrar tekrar denenirdi.
@@ -294,49 +348,100 @@ def daily_push_body(sign: str, sky: dict[str, Any], lang: str,
     return metin
 
 
+def _bundle_body(paket: dict[str, Any] | None, idx: int,
+                 yerel: list[dict[str, Any]], lang: str) -> str:
+    """idx'inci sinyalin gövdesi: paket cümlesi, yoksa/taşarsa teknik satır.
+
+    Boş dize dönerse o sinyalden gövde çıkmadı demektir (teknik satır da
+    taşmış) — çağıran başka sinyale bakar ya da None döner.
+    """
+    govde = ""
+    if paket and len(paket.get("insights") or []) > idx:
+        govde = paket["insights"][idx]
+        if not 0 < len(govde) <= prompts.get(lang).SIGNAL_INSIGHT_MAX:
+            govde = ""
+    if not govde:
+        govde = yerel[idx]["technical"]
+        if not 0 < len(govde) <= MAX_PUSH_BODY:
+            return ""
+    return govde
+
+
 def signal_push(profile: dict[str, Any], lang: str,
-                today: dt.date | None = None
-                ) -> tuple[str, str, str] | None:
-    """Sabah bildirimi kullanıcının 1 numaralı sinyalinden (R2-S4 → KA-turu).
+                today: dt.date | None = None,
+                onceki: dict[str, Any] | None = None
+                ) -> tuple[str, str, str, int, dict[str, Any]] | None:
+    """Sabah bildirimi — TEMA ÇARKLI odak sinyalinden (R2-S4 → OT-turu).
 
-    ``(başlık, gövde, parmak_izi)`` döner: başlık temanın adı ("Bugün:
-    İlişkiler"), gövde o güne/o kişiye ÖZGÜ AI cümlesi — uç ile AYNI
-    paylaşılan paketten (`cached_insight_bundle`), yani kullanıcı
-    bildirimde okuduğu cümleyi uygulamayı açınca kartta bulur ve günde
-    toplam bir LLM çağrısı yapılır (kim önce çalışırsa). Parmak izi
-    derin bağlantı eşleşmesi içindir (KA5).
+    ``(başlık, gövde, parmak_izi, idx, hafıza_alanları)`` döner. Gövde uç
+    ile AYNI paylaşılan paketten; günde toplam bir LLM çağrısı korunur.
 
-    Eski davranış (`headline` = 12 cümlelik sabit tablo) cihazda ölçülen
-    kusurdu: tema+ton haftalarca sabit kaldığı için HERKESE her sabah
-    birebir aynı metin gidiyordu. Paket üretilemezse gövde DÜRÜST teknik
-    satıra düşer — o da ölçülmüş veridir ve tarih içerdiği için günden
-    güne değişir.
+    OT-turu (cihaz bulgusu "dünkü bildirimle aynıydı"): odak artık hep
+    0 değil — bugün kesinleşen varsa o, yoksa dünkü temadan SONRAKİ tema
+    (`daily_focus_index`, kullanıcı kararı: "bir gün ilişki, bir gün
+    mali, bir gün iç dünya"). Gövde dünkü gövdeyle AYNI çıkarsa: önce
+    farklı sinyal denenir (bedava), sonra TEK yeniden üretim (dünkü
+    cümle negatif örnek), o da tutmazsa geri sayımlı teknik satır —
+    hiçbir yolda dünkü metnin kopyası gönderilmez.
 
-    Üretilemezse (doğum verisi yok / hesap düştü / satır uzun) None döner
-    ve çağıran paylaşımlı burç satırına düşer; bildirim ASLA atlanmaz.
+    Üretilemezse None döner ve çağıran paylaşımlı burç satırına düşer;
+    bildirim ASLA atlanmaz.
     """
     try:
         from services import signal_service
         ham = signal_service.cached_signals(profile, today=today)
         if not ham or not ham.get("signals"):
             return None
+        gun = (today or dt.date.today()).isoformat()
+
+        dun = onceki if (onceki and onceki.get("day") != gun) else None
+        idx = signal_service.daily_focus_index(
+            ham,
+            prev_theme=(dun or {}).get("theme") or None,
+            prev_fp=(dun or {}).get("focusFp") or None)
+
         paket = signal_service.cached_insight_bundle(ham, lang)
-        sinyal = prompts.localize_signals(lang, ham)["signals"][0]
-        govde = ""
-        if paket and paket.get("insights"):
-            govde = paket["insights"][0]
-            if not 0 < len(govde) <= prompts.get(lang).SIGNAL_INSIGHT_MAX:
-                govde = ""  # taşan yorum: dürüst teknik satıra düş
+        yerel = prompts.localize_signals(lang, ham)["signals"]
+        govde = _bundle_body(paket, idx, yerel, lang)
+
+        # Dünle aynılık koruması (OT1.3) — sınırlı: 1 ek LLM çağrısı.
+        if govde and dun and _body_hash(govde) == dun.get("bodyHash"):
+            for aday in range(len(yerel)):
+                if aday == idx:
+                    continue
+                aday_govde = _bundle_body(paket, aday, yerel, lang)
+                if aday_govde and _body_hash(aday_govde) != dun["bodyHash"]:
+                    idx, govde = aday, aday_govde
+                    break
+            else:
+                yeni = signal_service.insight_bundle(
+                    ham, lang, avoid=dun.get("body") or "")
+                if yeni:
+                    from core import cache
+                    cache.set(
+                        f"signals-bundle-"
+                        f"{signal_service.signals_fingerprint(ham)}-{lang}",
+                        yeni, ttl_seconds=signal_service.BUNDLE_TTL_OK)
+                    aday_govde = _bundle_body(yeni, idx, yerel, lang)
+                    if aday_govde and _body_hash(aday_govde) != dun["bodyHash"]:
+                        govde = aday_govde
+                if _body_hash(govde) == dun["bodyHash"]:
+                    govde = yerel[idx]["technical"]
+                    if (not 0 < len(govde) <= MAX_PUSH_BODY
+                            or _body_hash(govde) == dun["bodyHash"]):
+                        return None
         if not govde:
-            govde = sinyal["technical"]
-            if not 0 < len(govde) <= MAX_PUSH_BODY:
-                return None
+            return None
+
+        sinyal = yerel[idx]
         p = prompts.get(lang)
         iz = signal_service.signals_fingerprint(ham)
+        extra = daily_sent_fields(gun, govde, idx,
+                                  (ham.get("signals") or [])[idx])
         return (p.PUSH_SIGNAL_TITLE.format(
                     emoji=prompts.theme_emoji(sinyal.get("theme")),
                     theme=sinyal["theme_local"]),
-                govde, iz)
+                govde, iz, idx, extra)
     except Exception as exc:
         logger.warning("Sinyal bildirimi uretilemedi (%s): %s",
                        profile.get("uid"), exc)
@@ -371,23 +476,23 @@ def checkin_push(profile: dict[str, Any], lang: str,
 
 def midday_push(profile: dict[str, Any], lang: str,
                 today: dt.date | None = None
-                ) -> tuple[str, str, dict[str, str]] | None:
-    """Öğle ölçülü slotu (OB3) — yalnız gerçekten olay varsa, LLM'siz.
+                ) -> tuple[tuple[str, str, dict[str, str]] | None, str]:
+    """Öğle ölçülü slotu (OB3 → OT1.2) — yalnız gerçekten olay varsa, LLM'siz.
 
-    ``(başlık, gövde, fcm_verisi)`` döner; olay yoksa None ve çağıran o
-    kullanıcıyı "olay-yok" ile atlar — öğle bildirimi bir HAK değil,
-    ölçülmüş bir olayın haberi. Çözüm sırası:
+    ``(yük, gerekçe)`` döner; yük None ise gerekçe "olay-yok" ya da
+    "sabahla-ayni" — öğle bildirimi bir HAK değil, ölçülmüş bir olayın
+    haberi ve SABAH GÖNDERİLENİN KOPYASI ASLA DEĞİL (canlıda yakalanan
+    açık: bugün kesinleşen sinyal çoğunlukla sabahın odağıydı ve 13:00
+    gövdesi 09:00'unkiyle bayt-aynı çıkıyordu). Çözüm sırası:
 
     a) **Kendi haritasında BUGÜN kesinleşen açı** (``days_to_exact == 0``,
        sabahki paylaşımlı sinyal önbelleği): gövde sabah paketindeki
        indeks-hizalı AI cümlesi (yalnız okunur — öğle LLM yakmaz), yoksa
-       dürüst teknik satır. Yük birebir sabahki `daily` deseni: dokununca
-       ilgili kartın dayanak sayfası açılır, mobilde SIFIR yeni tüketici.
+       dürüst teknik satır. SABAH GÖVDESİYLE AYNI ÇIKARSA aynı paketten
+       farklı bir sinyal denenir; o da yoksa (b)'ye düşülür.
     b) **Çift ânı, YALNIZ ÖNBELLEK** (`pair_transits_cached` — asla
-       hesaplamaz): kabul edilmiş arkadaşlar + Çevrem kişileri taranır,
-       bugün önbelleği olan çiftlerden en dar yavaş-gezen vuruş seçilir.
-       Yük `type=friend` → Çevrem sekmesi.
-    c) Hiçbiri → None.
+       hesaplamaz). Yük `type=friend` → Çevrem sekmesi.
+    c) Hiçbiri → (None, gerekçe).
     """
     try:
         from services import (circle_context, people_service, profile_service,
@@ -396,25 +501,33 @@ def midday_push(profile: dict[str, Any], lang: str,
         today = today or dt.date.today()
         gun = today.isoformat()
 
+        # Sabah hafızası (OT1.1): bugün gönderilen gövdenin kopyası yasak.
+        dun = last_daily_sent(profile.get("uid") or "")
+        sabah_hash = (dun or {}).get("bodyHash") \
+            if (dun or {}).get("day") == gun else None
+        sabahla_ayni = False
+
         # --- a) kendi haritasında bugün kesinleşen ---
         ham = signal_service.cached_signals(profile, today=today)
         sinyaller = (ham or {}).get("signals") or []
-        idx = next((i for i, s in enumerate(sinyaller)
-                    if s.get("exact_on") and s.get("days_to_exact") == 0),
-                   None)
-        if ham and idx is not None:
+        bugunku = [i for i, s in enumerate(sinyaller)
+                   if s.get("exact_on") and s.get("days_to_exact") == 0]
+        if ham and bugunku:
             p = prompts.get(lang)
-            yerel = prompts.localize_signals(lang, ham)["signals"][idx]
+            yereller = prompts.localize_signals(lang, ham)["signals"]
             paket = signal_service.cached_insight_bundle(
                 ham, lang, generate_if_missing=False)
-            govde = ""
-            if paket and len(paket.get("insights") or []) > idx:
-                govde = paket["insights"][idx]
-                if not 0 < len(govde) <= p.SIGNAL_INSIGHT_MAX:
-                    govde = ""
-            if not govde:
-                govde = yerel["technical"]
-            if 0 < len(govde) <= max(MAX_PUSH_BODY, p.SIGNAL_INSIGHT_MAX):
+            # Bugün kesinleşenler önce; hepsi sabahın kopyasıysa diğer
+            # sinyaller de denenir (paket zaten elimizde, sıfır maliyet).
+            for idx in bugunku + [i for i in range(len(sinyaller))
+                                  if i not in bugunku]:
+                govde = _bundle_body(paket, idx, yereller, lang)
+                if not govde:
+                    continue
+                if sabah_hash and _body_hash(govde) == sabah_hash:
+                    sabahla_ayni = True
+                    continue
+                yerel = yereller[idx]
                 baslik = p.PUSH_MIDDAY_TITLE.format(
                     emoji=prompts.theme_emoji(yerel.get("theme")),
                     theme=yerel["theme_local"])
@@ -424,8 +537,7 @@ def midday_push(profile: dict[str, Any], lang: str,
                 sign = profile_service.sun_sign_key(profile)
                 if sign:
                     veri["sign"] = sign
-                return baslik, govde, veri
-
+                return (baslik, govde, veri), "gonderilecek"
         # --- b) çift ânı, yalnız önbellekten ---
         uid = profile.get("uid") or ""
         adaylar: list = []
@@ -460,14 +572,15 @@ def midday_push(profile: dict[str, Any], lang: str,
             if satirlar and 0 < len(satirlar[0]) <= MAX_PUSH_BODY:
                 p = prompts.get(lang)
                 baslik = p.PUSH_MIDDAY_PAIR_TITLE.format(name=cp.label)
-                return (baslik, satirlar[0],
-                        {"type": "friend", "src": "midday", "d": gun})
+                return ((baslik, satirlar[0],
+                         {"type": "friend", "src": "midday", "d": gun}),
+                        "gonderilecek")
 
-        return None
+        return None, ("sabahla-ayni" if sabahla_ayni else "olay-yok")
     except Exception as exc:
         logger.warning("Ogle bildirimi uretilemedi (%s): %s",
                        profile.get("uid"), exc)
-        return None
+        return None, "olay-yok"
 
 
 def streak_push(profile: dict[str, Any], lang: str) -> tuple[str, str]:

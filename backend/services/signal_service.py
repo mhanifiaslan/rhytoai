@@ -36,7 +36,10 @@ logger = logging.getLogger(__name__)
 #: v3 (KA-turu): tema KESİN tekil oldu — sürüm artmasaydı bugünün
 #: önbelleğindeki çift-temalı kayıtlar 24 saat daha servis edilirdi
 #: (kullanıcı kusuru ekranda gördü; aynı gün düzelmeli).
-SIGNAL_CALC_VERSION = "3"
+#: v4 (OT-turu): SIGNALS_PROMPT v3 (tarih + "dünkünün yeniden ifadesi
+#: yasak" + SORU tekrarlamaz) — parmak izi sürümü taşıdığı için eski
+#: paketler yeni kuralları taşımadan servis edilmesin.
+SIGNAL_CALC_VERSION = "4"
 
 #: Pencere: bugün + 7 gün. Daha uzunu "bugün senin için" iddiasını sulandırır.
 WINDOW_DAYS = 8
@@ -420,6 +423,54 @@ BUNDLE_TTL_OK = 24 * 3600
 BUNDLE_TTL_FAIL = 3600
 
 
+#: Sabah bildiriminin tema çarkı (OT1.3, kullanıcı kararı): "bir gün
+#: ilişki, bir gün mali, bir gün iç dünya..." — rotasyon YALNIZ ölçülmüş
+#: sinyaller üzerinde döner; o temada sinyal yoksa sıradakine geçilir.
+THEME_ROTATION = ("relationships", "finance", "inner", "career")
+
+
+def daily_focus_index(ham: dict[str, Any],
+                      prev_theme: str | None = None,
+                      prev_fp: str | None = None) -> int:
+    """Sabah bildiriminin odak sinyali — determinist, günden güne döner.
+
+    Kural sırası:
+    1. BUGÜN kesinleşen sinyal varsa O — gerçek olay rotasyonu döver
+       (öğle slotu ve dayanak sayfasıyla tutarlı).
+    2. Tema çarkı: dünkü temadan SONRAKİ temaya sahip ilk sinyal;
+       o temada yoksa çarkta sıradaki. Dünkü sinyalin TA KENDİSİ
+       (fp eşleşmesi) ancak başka aday hiç yoksa seçilir.
+    3. Hiçbiri tutmazsa 0 (tek sinyallı harita — tazeliği prompt taşır).
+    """
+    sinyaller = ham.get("signals") or []
+    if not sinyaller:
+        return 0
+    for i, s in enumerate(sinyaller):
+        if s.get("exact_on") and s.get("days_to_exact") == 0:
+            return i
+
+    if prev_theme in THEME_ROTATION:
+        basla = (THEME_ROTATION.index(prev_theme) + 1) % len(THEME_ROTATION)
+    else:
+        basla = 0
+    sira = [THEME_ROTATION[(basla + k) % len(THEME_ROTATION)]
+            for k in range(len(THEME_ROTATION))]
+
+    def fp(s: dict) -> str:
+        return f"{s.get('transit')}-{s.get('aspect')}-{s.get('natal')}"
+
+    yedek: int | None = None
+    for tema in sira:
+        for i, s in enumerate(sinyaller):
+            if s.get("theme") != tema:
+                continue
+            if prev_fp and fp(s) == prev_fp:
+                yedek = yedek if yedek is not None else i
+                continue
+            return i
+    return yedek if yedek is not None else 0
+
+
 def significant_signal(ham: dict[str, Any]) -> int | None:
     """Günün "önemli" sinyalinin indeksi — akşam check-in sorusu buna bağlanır.
 
@@ -440,7 +491,8 @@ def significant_signal(ham: dict[str, Any]) -> int | None:
     return None
 
 
-def insight_bundle(ham: dict[str, Any], lang: str) -> dict[str, Any] | None:
+def insight_bundle(ham: dict[str, Any], lang: str,
+                   avoid: str | None = None) -> dict[str, Any] | None:
     """Sinyal yorumları + akşam check-in sorusu — hepsi TEK çağrıda (KA1).
 
     Dönen: ``{"insights": [str, ...], "checkin_question": str | None}``.
@@ -476,7 +528,13 @@ def insight_bundle(ham: dict[str, Any], lang: str) -> dict[str, Any] | None:
         satirlar.append(parca)
 
     prompt = p.SIGNALS_PROMPT.format(count=len(sinyaller),
-                                     lines="\n".join(satirlar))
+                                     lines="\n".join(satirlar),
+                                     today=prompts.signal_date(
+                                         lang, ham.get("generated_for")))
+    # OT1.3: dünkü cümleyle bayt/öz aynılık yakalanırsa TEK yeniden
+    # denemede dünkü metin negatif örnek olarak verilir.
+    if avoid:
+        prompt += "\n" + p.SIGNALS_AVOID_BLOCK.format(prev=avoid)
     try:
         metin = (gemini_service.generate(prompt, lang=lang) or "").strip()
     except Exception as exc:

@@ -149,6 +149,23 @@ Future<void> markNotificationPromptShown() async {
   } catch (_) {}
 }
 
+/// İzni GEREKİYORSA ister — sıra hatasının tek yerde onarımı (OT3).
+///
+/// Eski çağıranlar bayrağı istekten ÖNCE yazıyordu: kullanıcı OS
+/// diyaloğunu kapatırsa (istek yarıda düşerse bile) bayrak yazılmış
+/// oluyor ve uygulama BİR DAHA HİÇ sormuyordu — "bildirim gelmiyor"
+/// şikâyetlerinin sessiz köklerinden biri. Artık: önce istenir, bayrak
+/// ANCAK istek tamamlanınca yazılır; istek fırlatırsa bayrak yazılmaz
+/// ve bir sonraki fırsatta yeniden denenir.
+///
+/// [requester] test dikişidir; üretimde [requestNotificationPermission].
+Future<void> ensureNotificationPermissionAsked(
+    {Future<bool> Function()? requester}) async {
+  if (await notificationPromptShown()) return;
+  await (requester ?? requestNotificationPermission)();
+  await markNotificationPromptShown();
+}
+
 /// Bildirim iznini ister ve sonucu döndürür.
 ///
 /// Ayrı bir fonksiyon: izin isteme ANI ürün kararıdır (bkz. sınıf açıklaması)

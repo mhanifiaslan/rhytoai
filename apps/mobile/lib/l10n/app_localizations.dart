@@ -1832,18 +1832,6 @@ abstract class AppLocalizations {
   /// **'Şifreler eşleşmiyor.'**
   String get passwordsDoNotMatch;
 
-  /// No description provided for @enterEmailFirst.
-  ///
-  /// In tr, this message translates to:
-  /// **'Önce e-posta adresini yaz.'**
-  String get enterEmailFirst;
-
-  /// No description provided for @resetLinkSent.
-  ///
-  /// In tr, this message translates to:
-  /// **'Şifre sıfırlama bağlantısı gönderildi.'**
-  String get resetLinkSent;
-
   /// No description provided for @nameLabel.
   ///
   /// In tr, this message translates to:
@@ -2605,12 +2593,6 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Doğrulama bağlantısı {email} adresine gönderildi. Gelen kutunu kontrol et.'**
   String verificationSent(Object email);
-
-  /// No description provided for @resetLinkSentNeutral.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi.'**
-  String get resetLinkSentNeutral;
 
   /// No description provided for @useGoogleInstead.
   ///
@@ -4651,6 +4633,90 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Günün keşif halkası: gökyüzünü aç · Rytho ile konuş · çevrenden birine bak'**
   String get discoveryRingTooltip;
+
+  /// No description provided for @forgotPasswordTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şifreni sıfırla'**
+  String get forgotPasswordTitle;
+
+  /// No description provided for @forgotPasswordBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hesabının e-posta adresini yaz; sana bir sıfırlama bağlantısı gönderelim.'**
+  String get forgotPasswordBody;
+
+  /// No description provided for @forgotPasswordSend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantıyı gönder'**
+  String get forgotPasswordSend;
+
+  /// No description provided for @forgotPasswordSentTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bağlantı yolda'**
+  String get forgotPasswordSentTitle;
+
+  /// No description provided for @forgotPasswordSentBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu adres kayıtlıysa {email} adresine bir sıfırlama bağlantısı gönderdik. Bağlantı kısa süreliğine geçerli.'**
+  String forgotPasswordSentBody(String email);
+
+  /// No description provided for @forgotPasswordSpamHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta birkaç dakika içinde gelmezse spam/gereksiz klasörüne bak.'**
+  String get forgotPasswordSpamHint;
+
+  /// No description provided for @forgotPasswordResend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar gönder'**
+  String get forgotPasswordResend;
+
+  /// No description provided for @forgotPasswordResendWait.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar gönder ({seconds} sn)'**
+  String forgotPasswordResendWait(int seconds);
+
+  /// No description provided for @notifPermissionOffTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bildirimler sistemde kapalı'**
+  String get notifPermissionOffTitle;
+
+  /// No description provided for @notifPermissionOffBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Telefonun ayarlarında Rytho bildirimlerine izin vermeden buradaki tercihler etkisiz kalır: Ayarlar → Uygulamalar → Rytho → Bildirimler.'**
+  String get notifPermissionOffBody;
+
+  /// No description provided for @chatOpenLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Rytho ile sohbet et'**
+  String get chatOpenLabel;
+
+  /// No description provided for @trialBannerTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Deneme süren aktif ✨'**
+  String get trialBannerTitle;
+
+  /// No description provided for @trialBannerDays.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm Rytho+ özellikleri açık — {days} gün kaldı.'**
+  String trialBannerDays(int days);
+
+  /// No description provided for @trialBannerLastDay.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tüm Rytho+ özellikleri açık — bugün son gün.'**
+  String get trialBannerLastDay;
 }
 
 class _AppLocalizationsDelegate

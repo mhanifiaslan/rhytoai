@@ -238,6 +238,11 @@ Sonunda "Büyük Üçlü" perdesi (Güneş/Ay/Yükselen açılışı).
 | Profil, doğum kaydı, avatar, bildirimler, dil, sohbet (jeton) | Arkadaşla günlük ikili okuma |
 | **1 kişi ekleme** — harita, Büyük Üçlü ve ilişki ÖLÇÜMÜ açık, yorum kilitli | **10 kişi kontenjanı** + ilişki AI yorumu (jetonsuz) |
 
+**3 günlük deneme (OT6):** yeni hesap ilk 3 gün TÜM Rytho+ yüzeylerini
+kartsız kullanır ve tek seferlik **30 karşılama jetonu** alır (kalan
+bakiye deneme bitince yanmaz). Kural sunucuda (`entitlements.in_trial`,
+profil `createdAt`); paywall geri sayımı gösterir.
+
 **Jeton ekonomisi:** Rytho+ ayda **300 jeton** verir (devretmez); satın
 alınan paketler (100/300/1000) **hiç yanmaz**. Bedeller: sohbet 1 · İ Ching
 2 · ikili okuma 3 · derin raporlar 5. Kilitli ekranda ücretli uca **istek

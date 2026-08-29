@@ -32,11 +32,7 @@ import '../chat/chat_screen.dart';
 import '../../core/api.dart' show friendlyError;
 import '../profile/diary_screen.dart' show DiaryScreen;
 import '../../core/notifications.dart'
-    show
-        markNotificationPromptShown,
-        notificationPromptShown,
-        pendingNotificationProvider,
-        requestNotificationPermission;
+    show ensureNotificationPermissionAsked, pendingNotificationProvider;
 import '../../l10n/app_localizations.dart';
 
 /// GÖKYÜZÜ — **bugün** ekranı.
@@ -142,11 +138,10 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
       }
 
       // Bildirim izni: kullanıcı ilk değeri gördü, artık neyin bildirimini
-      // alacağını biliyor. Değer görmeden sorulan izin reddediliyor ve
-      // sistem bir daha sormaya izin vermiyor.
-      if (await notificationPromptShown()) return;
-      await markNotificationPromptShown();
-      await requestNotificationPermission();
+      // alacağını biliyor. OT3: bayrak istekten SONRA yazılır (ortak
+      // yardımcı) — eski sıra, diyaloğu kapatan kullanıcıya bir daha hiç
+      // sorulmaması demekti.
+      await ensureNotificationPermissionAsked();
     });
   }
 

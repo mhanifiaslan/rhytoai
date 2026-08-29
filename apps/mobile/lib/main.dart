@@ -1,3 +1,6 @@
+import 'dart:async' show unawaited;
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -70,6 +73,14 @@ class RythoApp extends ConsumerWidget {
     // Dil hem arayüzü hem backend'in ürettiği yorumları belirler; ikincisini
     // apiProvider aynı sağlayıcıyı izleyerek yapar (bkz. core/api.dart).
     final locale = ref.watch(localeProvider);
+
+    // OT2: Firebase'in e-postaları (şifre sıfırlama, adres doğrulama)
+    // şablon dilini BURADAN alır — hiç çağrılmadığı için Türk kullanıcıya
+    // İngilizce "Reset your password" gidiyor ve spam sanılıyordu.
+    // Çağrı ucuz ve idempotent; dil değişince kendiliğinden güncellenir.
+    unawaited(FirebaseAuth.instance.setLanguageCode(
+        (locale ?? WidgetsBinding.instance.platformDispatcher.locale)
+            .languageCode));
 
     return SystemLocaleObserver(
       child: MaterialApp(

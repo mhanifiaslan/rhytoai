@@ -105,10 +105,70 @@ def get_subscription(uid: str) -> dict[str, Any]:
     }
 
 
+#: Yeni hesabın tüm Plus yüzeylerini kullandığı süre (OT6, kullanıcı
+#: kararı: "ilk 3 günlük ücretsiz dönemdekiler tüm Plus özelliklerini
+#: kullanabilsin" — kartsız, sunucu taraflı).
+TRIAL_DAYS = 3
+
+#: Deneme kararı sıcak yolda; profil okumasını kısa süre önbellekle
+#: (`_user_tz` deseni). Yanlış negatif en fazla bu kadar gecikir.
+_TRIAL_CACHE_TTL = 15 * 60
+
+
+def in_trial(uid: str) -> bool:
+    """Hesap ilk ``TRIAL_DAYS`` günü içinde mi? (OT6)
+
+    Kaynak profildeki ``createdAt`` (onboarding yazar). Alan yoksa deneme
+    YOK — eski hesaplar ve alan yazılmadan kalmış kayıtlar sessizce
+    ücretsiz katmanda kalır ("okunamazsa ücretsiz" doktrini).
+    """
+    from core import cache  # tembel: core.cache -> core.* yonu karisik olmasin
+    anahtar = f"user-trial-{uid}"
+    karar = cache.get(anahtar)
+    if karar is None:
+        karar = False
+        try:
+            from services import profile_service
+            olusturma = (profile_service.get_profile(uid) or {}).get(
+                "createdAt")
+            if olusturma is not None and hasattr(olusturma, "timestamp"):
+                yas = (dt.datetime.now(dt.timezone.utc).timestamp()
+                       - olusturma.timestamp())
+                karar = 0 <= yas < TRIAL_DAYS * 24 * 3600
+        except Exception as exc:
+            logger.warning("Deneme durumu okunamadi (%s): %s", uid, exc)
+        cache.set(anahtar, karar, ttl_seconds=_TRIAL_CACHE_TTL,
+                  owner_uid=uid)
+    return bool(karar)
+
+
+def trial_days_left(uid: str) -> int | None:
+    """Denemede kalan TAM gün (yukarı yuvarlanır, en az 1); denemede
+    değilse None. Paywall'daki geri sayım buradan beslenir."""
+    if not in_trial(uid):
+        return None
+    try:
+        from services import profile_service
+        olusturma = (profile_service.get_profile(uid) or {}).get("createdAt")
+        if olusturma is None or not hasattr(olusturma, "timestamp"):
+            return None
+        kalan = (TRIAL_DAYS * 24 * 3600
+                 - (dt.datetime.now(dt.timezone.utc).timestamp()
+                    - olusturma.timestamp()))
+        return max(1, -(-int(kalan) // (24 * 3600)))
+    except Exception as exc:
+        logger.warning("Deneme suresi okunamadi (%s): %s", uid, exc)
+        return None
+
+
 def is_subscriber(uid: str) -> bool:
     if FORCE_PLUS:
         return True
-    return bool(get_subscription(uid).get("active"))
+    # OT6: deneme dönemi TÜM Plus kapılarını açar — require_plus dahil her
+    # yol buradan geçtiği için tek noktadan uygulanır. Gerçek abonelik
+    # önce denenir (daha ucuz: tek private doküman okuması, deneme kararı
+    # ayrıca önbellekli).
+    return bool(get_subscription(uid).get("active")) or in_trial(uid)
 
 
 # ---------------------------------------------------------------------------

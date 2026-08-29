@@ -37,7 +37,11 @@ logger = logging.getLogger(__name__)
 #: "3" (1.7.0): saatsiz tarafın Yükselen/MC açıları artık sinastriden
 #: de düşüyor (natal ile aynı disiplin). Ölçüldü: uydurma Yükselen
 #: "ortak zemin" eksenini bir seviye şişiriyordu.
-SYNASTRY_CALC_VERSION = "3"
+#:
+#: "4" (OT-turu): çift-transit birleşimi hızlı gezene yer ayırıyor
+#: (`_mix_hits`) — eskiden yavaş-önce sıralama + tavan 4, aynı 4 vuruşu
+#: haftalarca gösteriyordu ("yorumlar değişmiyor" cihaz bulgusu).
+SYNASTRY_CALC_VERSION = "4"
 
 #: Eksen anahtarları — l10n adları prompts katmanında (SYNASTRY_AXIS_NAMES).
 AXES = ("communication", "emotional", "attraction", "bond")
@@ -399,13 +403,43 @@ def pair_transits(uid: str, other: Counterpart,
                 cap=PAIR_TRANSIT_PER_SIDE):
             vuruslar.append({**v, "side": taraf})
 
-    # Birleşimde de yavaş-önce: dönemi işaretleyen Satürn/Plüton vuruşu,
-    # hangi tarafta olursa olsun Merkür'ün önüne geçer.
-    vuruslar.sort(key=lambda v: (
-        0 if chart_context.is_slow_mover(v["transit"]) else 1, v["orb"]))
-    sonuc = {"date": gun, "hits": vuruslar[:PAIR_TRANSIT_CAP]}
+    sonuc = {"date": gun, "hits": _mix_hits(vuruslar)}
     cache.set(anahtar, sonuc, ttl_seconds=PAIR_TTL_SECONDS, owner_uid=uid)
     return sonuc
+
+
+def _mix_hits(vuruslar: list[dict[str, Any]],
+              cap: int = PAIR_TRANSIT_CAP) -> list[dict[str, Any]]:
+    """Birleşim: yavaş-önce AMA hızlı gezene garantili yer (OT1.6).
+
+    Eski davranış saf yavaş-önce sıralamaydı; ≥4 yavaş vuruşu olan çiftte
+    (çok yaygın) Güneş/Merkür/Venüs/Mars süzgeci geçtiği hâlde ASLA
+    yüzeye çıkamıyor ve şerit haftalarca aynı 4 satırı gösteriyordu
+    ("yorumlar değişmiyor" cihaz bulgusu). Artık: en fazla ``cap - 1``
+    yavaş vuruş (dar orb önce) + varsa EN DAR hızlı vuruş garanti; kalan
+    yer hıza bakılmaksızın en dar orb ile dolar. Hızlı gezenler günde
+    ~1° yol aldığı için şerit her gün görünür biçimde değişir.
+    """
+    from services import chart_context
+
+    vuruslar = sorted(vuruslar, key=lambda v: (
+        0 if chart_context.is_slow_mover(v["transit"]) else 1, v["orb"]))
+    yavas = [v for v in vuruslar if chart_context.is_slow_mover(v["transit"])]
+    hizli = [v for v in vuruslar
+             if not chart_context.is_slow_mover(v["transit"])]
+    if not hizli or len(vuruslar) <= cap:
+        return vuruslar[:cap]
+
+    secilen = yavas[:cap - 1] + [hizli[0]]
+    for v in vuruslar:
+        if len(secilen) >= cap:
+            break
+        if v not in secilen:
+            secilen.append(v)
+    # Sunum sırası korunur: yavaş-önce, sonra orb.
+    secilen.sort(key=lambda v: (
+        0 if chart_context.is_slow_mover(v["transit"]) else 1, v["orb"]))
+    return secilen[:cap]
 
 
 def pair_transits_cached(uid: str, other: Counterpart,

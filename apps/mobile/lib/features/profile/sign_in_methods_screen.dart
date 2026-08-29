@@ -22,6 +22,7 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/common.dart';
 import '../../widgets/glass.dart';
 import '../../l10n/app_localizations.dart';
+import 'phone_verify_screen.dart' show PhoneVerifyScreen;
 import 'profile_sections.dart' show SettingsPage;
 
 /// Profil satırındaki özet: "Google · Şifre" gibi.
@@ -187,7 +188,23 @@ class _SignInMethodsScreenState extends State<SignInMethodsScreen> {
           SettingsRow(
             icon: Icons.sms_outlined,
             title: l10n.providerPhone,
-            trailing: rozet(telefonBagli),
+            // OT4: bağsız satır eskiden salt rozetti — telefonunu burada
+            // arayan kullanıcı çıkmaz sokağa giriyordu. Google satırı
+            // deseniyle eylem kazandı.
+            trailing: telefonBagli
+                ? rozet(true)
+                : TextButton(
+                    onPressed: _busy
+                        ? null
+                        : () async {
+                            await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                    builder: (_) =>
+                                        const PhoneVerifyScreen()));
+                            if (mounted) setState(() {});
+                          },
+                    child: Text(l10n.linkAction),
+                  ),
           ),
           const Divider(height: 1, indent: RythoSpace.lg),
           SettingsRow(

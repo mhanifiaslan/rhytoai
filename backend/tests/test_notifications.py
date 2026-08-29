@@ -317,8 +317,9 @@ def test_midday_bugun_kesinlesen_kendi_haritasindan(monkeypatch):
             "checkin_question": None,
         })
 
-    sonuc = ns.midday_push(profil(), "tr", today=dt.date(2026, 6, 15))
-    assert sonuc is not None
+    sonuc, gerekce = ns.midday_push(profil(), "tr",
+                                    today=dt.date(2026, 6, 15))
+    assert sonuc is not None and gerekce == "gonderilecek"
     baslik, govde, veri = sonuc
     assert govde == "Bugün iç dünyanda kapanış var."      # idx 1, hizali
     assert "🌙" in baslik                                  # inner temasi
@@ -343,7 +344,8 @@ def test_midday_paketi_yalniz_okur(monkeypatch):
     monkeypatch.setattr(signal_service, "insight_bundle", uretim_yasak)
     monkeypatch.setattr(ns.gemini_service, "generate", uretim_yasak)
 
-    sonuc = ns.midday_push(profil(), "tr", today=dt.date(2026, 6, 15))
+    sonuc, _gerekce = ns.midday_push(profil(), "tr",
+                                     today=dt.date(2026, 6, 15))
     assert sonuc is not None
     _, govde, veri = sonuc
     assert govde and veri["src"] == "midday"   # teknik satir dolu
@@ -361,7 +363,7 @@ def test_midday_olay_yoksa_none(monkeypatch):
     monkeypatch.setattr(people_service, "list_people", lambda uid: [])
 
     assert ns.midday_push(profil(), "tr",
-                          today=dt.date(2026, 6, 15)) is None
+                          today=dt.date(2026, 6, 15)) == (None, "olay-yok")
 
 
 def test_midday_cift_ani_yalniz_onbellekten(monkeypatch):
@@ -394,13 +396,222 @@ def test_midday_cift_ani_yalniz_onbellekten(monkeypatch):
 
     monkeypatch.setattr(astro_service, "get_transits", hesap_yasak)
 
-    sonuc = ns.midday_push(profil(), "tr", today=dt.date(2026, 6, 15))
-    assert sonuc is not None
+    sonuc, gerekce = ns.midday_push(profil(), "tr",
+                                    today=dt.date(2026, 6, 15))
+    assert sonuc is not None and gerekce == "gonderilecek"
     baslik, govde, veri = sonuc
     assert "Erkan" in baslik
     assert govde
     assert veri["type"] == "friend" and veri["src"] == "midday"
     assert all(isinstance(v, str) for v in veri.values())
+
+
+# --- OT-turu: tekrar korumasi + tema rotasyonu ---
+
+def test_midday_sabahin_kopyasini_gondermez(monkeypatch):
+    """CANLI ACIK (OT1.2): bugun kesinlesen sinyal cogunlukla sabahin
+    odagiydi ve 13:00 govdesi 09:00'unkiyle BAYT-AYNI cikiyordu. Artik:
+    ayni paketten FARKLI sinyal denenir; hepsi kopyaysa 'sabahla-ayni'
+    ile atlanir. Degismez: sabah govdesi == ogle govdesi ASLA."""
+    from services import signal_service
+
+    ham = _midday_ham(gunler=0)
+    sabah_govde = "Bugün iç dünyanda kapanış var."
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    monkeypatch.setattr(
+        signal_service, "cached_insight_bundle",
+        lambda h, lang, generate_if_missing=True: {
+            "insights": ["Kariyer cümlesi.", sabah_govde],
+            "checkin_question": None,
+        })
+    monkeypatch.setattr(
+        ns, "last_daily_sent",
+        lambda uid: {"day": "2026-06-15", "body": sabah_govde,
+                     "bodyHash": ns._body_hash(sabah_govde),
+                     "focusFp": "Saturn-Square-Moon", "focusIdx": 1,
+                     "theme": "inner"})
+
+    sonuc, gerekce = ns.midday_push(profil(), "tr",
+                                    today=dt.date(2026, 6, 15))
+    assert sonuc is not None and gerekce == "gonderilecek"
+    _, govde, veri = sonuc
+    assert govde != sabah_govde            # degismez: kopya yasak
+    assert govde == "Kariyer cümlesi."     # ayni paketten farkli sinyal
+    assert veri["idx"] == "0"
+
+
+def test_midday_tum_adaylar_kopyaysa_atlanir(monkeypatch):
+    """Tek sinyalli haritada gövde sabahınkiyse öğle 'sabahla-ayni' ile
+    susar (çift önbelleği de boşsa) — kopya hiçbir koşulda gitmez."""
+    from services import circle_context, people_service, signal_service
+
+    ham = {"generated_for": "2026-06-15", "signals": [
+        {"transit": "Saturn", "natal": "Moon", "aspect": "Square",
+         "orb": 0.3, "theme": "inner", "active": True,
+         "exact_on": "2026-06-15", "days_to_exact": 0}]}
+    sabah_govde = "Bugün iç dünyanda kapanış var."
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    monkeypatch.setattr(
+        signal_service, "cached_insight_bundle",
+        lambda h, lang, generate_if_missing=True: {
+            "insights": [sabah_govde], "checkin_question": None})
+    monkeypatch.setattr(
+        ns, "last_daily_sent",
+        lambda uid: {"day": "2026-06-15", "body": sabah_govde,
+                     "bodyHash": ns._body_hash(sabah_govde),
+                     "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
+                     "theme": "inner"})
+    monkeypatch.setattr(circle_context, "list_accepted_friend_uids",
+                        lambda uid, limit=5: [])
+    monkeypatch.setattr(people_service, "list_people", lambda uid: [])
+
+    assert ns.midday_push(profil(), "tr", today=dt.date(2026, 6, 15)) == \
+        (None, "sabahla-ayni")
+
+
+def test_daily_focus_index_rotasyon():
+    """OT1.3 tema çarkı (kullanıcı kararı: 'bir gün ilişki, bir gün mali,
+    bir gün iç dünya'): dünkü temadan SONRAKİ temaya geçilir; bugün
+    kesinleşen olay rotasyonu döver; dünkü sinyalin kendisi ancak başka
+    aday yoksa seçilir."""
+    from services import signal_service as ss
+
+    ham = {"signals": [
+        {"transit": "Jupiter", "natal": "Sun", "aspect": "Trine",
+         "theme": "career"},
+        {"transit": "Saturn", "natal": "Venus", "aspect": "Square",
+         "theme": "relationships"},
+        {"transit": "Pluto", "natal": "Moon", "aspect": "Sextile",
+         "theme": "inner"},
+    ]}
+    # Dün ilişkiler gittiyse çark finance arar, yoksa inner'a düşer.
+    assert ss.daily_focus_index(ham, prev_theme="relationships") == 2
+    # Dün inner gittiyse sıradaki career.
+    assert ss.daily_focus_index(ham, prev_theme="inner") == 0
+    # Hafıza yoksa çark başından (relationships mevcut → idx 1).
+    assert ss.daily_focus_index(ham) == 1
+    # Bugün kesinleşen olay her şeyi döver.
+    olayli = {"signals": [
+        {"transit": "Jupiter", "natal": "Sun", "aspect": "Trine",
+         "theme": "career"},
+        {"transit": "Saturn", "natal": "Moon", "aspect": "Square",
+         "theme": "inner", "exact_on": "2026-06-15", "days_to_exact": 0},
+    ]}
+    assert ss.daily_focus_index(olayli, prev_theme="inner") == 1
+    # Dünkü sinyalin TA KENDİSİ ancak tek adaysa seçilir.
+    tek = {"signals": [{"transit": "Pluto", "natal": "Moon",
+                        "aspect": "Sextile", "theme": "inner"}]}
+    assert ss.daily_focus_index(tek, prev_theme="career",
+                                prev_fp="Pluto-Sextile-Moon") == 0
+
+
+def test_signal_push_dunla_ayni_govdeyi_yeniden_uretir(monkeypatch):
+    """OT1.3 sınırlı tekrar koruması: gövde dünkü gövdeyle aynıysa TEK
+    yeniden üretim (dünkü cümle negatif örnek) yapılır; o da tutmazsa
+    gün-farkındalıklı teknik satıra düşülür. Asla dünkü metnin kopyası
+    dönmez ve en fazla 1 ek LLM çağrısı yapılır."""
+    from services import signal_service
+
+    ham = {"generated_for": "2026-06-15", "signals": [
+        {"transit": "Saturn", "natal": "Moon", "aspect": "Square",
+         "orb": 0.3, "theme": "inner", "active": True,
+         "exact_on": "2026-06-18", "days_to_exact": 3,
+         "movement": "applying"}]}
+    dunku = "Aynı cümle."
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    monkeypatch.setattr(
+        signal_service, "cached_insight_bundle",
+        lambda h, lang, generate_if_missing=True: {
+            "insights": [dunku], "checkin_question": None})
+
+    cagrilar: list = []
+
+    def sahte_uretim(h, lang, avoid=None):
+        cagrilar.append(avoid)
+        return {"insights": ["Yepyeni bir açı."], "checkin_question": None}
+
+    monkeypatch.setattr(signal_service, "insight_bundle", sahte_uretim)
+
+    onceki = {"day": "2026-06-14", "body": dunku,
+              "bodyHash": ns._body_hash(dunku),
+              "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
+              "theme": "inner"}
+    sonuc = ns.signal_push(profil(), "tr", today=dt.date(2026, 6, 15),
+                           onceki=onceki)
+    assert sonuc is not None
+    _, govde, _iz, _idx, _extra = sonuc
+    assert govde == "Yepyeni bir açı."
+    assert cagrilar == [dunku]  # tam 1 yeniden üretim, negatif örnekle
+
+    # Yeniden üretim de aynı çıkarsa: teknik satıra düşülür (o satır
+    # geri sayımlı olduğu için dünle aynı olamaz).
+    cagrilar.clear()
+    monkeypatch.setattr(
+        signal_service, "insight_bundle",
+        lambda h, lang, avoid=None: {"insights": [dunku],
+                                     "checkin_question": None})
+    sonuc = ns.signal_push(profil(), "tr", today=dt.date(2026, 6, 15),
+                           onceki=onceki)
+    assert sonuc is not None
+    _, govde, _iz, _idx, _extra = sonuc
+    assert "3 gün sonra" in govde  # gün-farkındalıklı teknik satır
+
+
+def test_teknik_satir_geri_sayimli():
+    """OT1.4: sabit tarihli satır iki kötü sabahda bayt-aynı bildirim
+    üretiyordu; geri sayım ({days}) her gün azalır."""
+    from services import prompts as p
+
+    veri = {"signals": [
+        {"transit": "Saturn", "natal": "Moon", "aspect": "square",
+         "orb": 0.3, "theme": "inner", "exact_on": "2026-06-18",
+         "days_to_exact": 3}]}
+    uc_gun = p.localize_signals("tr", veri)["signals"][0]["technical"]
+    veri["signals"][0]["days_to_exact"] = 2
+    iki_gun = p.localize_signals("tr", veri)["signals"][0]["technical"]
+    assert "3 gün sonra" in uc_gun and "2 gün sonra" in iki_gun
+    assert uc_gun != iki_gun
+
+
+@uygulama_gerekir
+def test_gecici_fcm_hatasi_gunu_yakmaz(monkeypatch):
+    """OT1.5: eskiden yalnız ölü token'lar işaretlenmiyordu — geçici FCM
+    hatası alan kullanıcı 'gönderildi' sayılıp o günü kaybediyordu.
+    Artık failed_uids'teki hiçbir kullanıcı işaretlenmez."""
+    from api import notify
+    from services import push_service
+
+    monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
+    monkeypatch.setattr(notify, "_iter_profiles", lambda: iter([
+        profil(uid="tamam", quietFrom=0, quietTo=0),
+        profil(uid="gecici-hata", fcmToken="token-2",
+               quietFrom=0, quietTo=0),
+    ]))
+    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
+    monkeypatch.setattr(ns, "last_daily_sent", lambda uid: None)
+    monkeypatch.setattr(
+        ns, "signal_push",
+        lambda p, lang, today=None, onceki=None: (
+            "Başlık", "Gövde.", "iz", 0, {}))
+
+    isaretlenen: list = []
+    monkeypatch.setattr(
+        ns, "mark_sent",
+        lambda uid, tur, gun, extra=None: isaretlenen.append(uid))
+
+    def sahte_gonder(mesajlar):
+        return push_service.SendResult(
+            sent=1, failed=1, pruned=[], failed_uids=["gecici-hata"])
+
+    monkeypatch.setattr(push_service, "send", sahte_gonder)
+    with TestClient(app) as client:
+        client.post("/api/v1/notify/run?type=daily&force=true",
+                    headers={"Authorization": "dogru"})
+    assert isaretlenen == ["tamam"]
 
 
 # --- Olay tabanli (arkadas tepkisi) ---
@@ -902,18 +1113,25 @@ def test_daily_fcm_yuku_derin_baglanti_alanlari_tasir(monkeypatch):
                         lambda: iter([profil(quietFrom=0, quietTo=0)]))
     monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
     monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
-    monkeypatch.setattr(ns, "mark_sent", lambda uid, tur, gun: None)
+    isaretler: list = []
+    monkeypatch.setattr(
+        ns, "mark_sent",
+        lambda uid, tur, gun, extra=None: isaretler.append((uid, extra)))
+    monkeypatch.setattr(ns, "last_daily_sent", lambda uid: None)
+    # OT1.3: signal_push artık odak idx'i ve hafıza alanlarını da döner;
+    # yük hep "0" değil GERÇEK idx'i taşır (tema çarkı 1'i seçebilir).
     monkeypatch.setattr(
         ns, "signal_push",
-        lambda p, lang, today=None: ("Bugün: İç dünya",
-                                     "Güne özgü cümle.", "iz123"))
+        lambda p, lang, today=None, onceki=None: (
+            "🌙 Bugün: İç dünya", "Güne özgü cümle.", "iz123", 1,
+            {"dailyBodyHash": "h1", "dailyTheme": "inner"}))
 
     yakalanan = []
 
     def sahte_gonder(mesajlar):
         yakalanan.extend(mesajlar)
         return push_service.SendResult(sent=len(mesajlar), failed=0,
-                                       pruned=[])
+                                       pruned=[], failed_uids=[])
 
     monkeypatch.setattr(push_service, "send", sahte_gonder)
     with TestClient(app) as client:
@@ -924,8 +1142,10 @@ def test_daily_fcm_yuku_derin_baglanti_alanlari_tasir(monkeypatch):
     assert veri["type"] == "daily"
     assert veri["route"] == "signal"
     assert veri["fp"] == "iz123"
-    assert veri["idx"] == "0"
+    assert veri["idx"] == "1"
     assert veri["d"]  # yerel gün — bayat dokunma koruması
+    # OT1.1: gönderim hafızası (gövde/odak) mark_sent'e ulaştı.
+    assert isaretler and isaretler[0][1]["dailyBodyHash"] == "h1"
 
 
 @uygulama_gerekir
@@ -940,7 +1160,8 @@ def test_checkin_fcm_yuku_soruyu_tasir(monkeypatch):
                         lambda: iter([profil(quietFrom=0, quietTo=0)]))
     monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
     monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
-    monkeypatch.setattr(ns, "mark_sent", lambda uid, tur, gun: None)
+    monkeypatch.setattr(ns, "mark_sent",
+                        lambda uid, tur, gun, extra=None: None)
     monkeypatch.setattr(
         ns, "checkin_push",
         lambda p, lang, today=None: ("Rytho merak ediyor",
@@ -951,7 +1172,7 @@ def test_checkin_fcm_yuku_soruyu_tasir(monkeypatch):
     def sahte_gonder(mesajlar):
         yakalanan.extend(mesajlar)
         return push_service.SendResult(sent=len(mesajlar), failed=0,
-                                       pruned=[])
+                                       pruned=[], failed_uids=[])
 
     monkeypatch.setattr(push_service, "send", sahte_gonder)
     with TestClient(app) as client:

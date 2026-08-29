@@ -56,6 +56,7 @@ class SubscriptionStatus {
     this.expiresAt,
     this.willRenew,
     this.isTrial,
+    this.trialDaysLeft,
   });
 
   final bool active;
@@ -63,6 +64,11 @@ class SubscriptionStatus {
   final DateTime? expiresAt;
   final bool? willRenew;
   final bool? isTrial;
+
+  /// OT6: sunucu taraflı 3 günlük denemede kalan gün — paywall geri
+  /// sayımı. Deneme aktif değilse null. Kural SUNUCUDA yaşar; istemci
+  /// tarih hesabı yapmaz (iki kopya kaçınılmaz olarak ayrışırdı).
+  final int? trialDaysLeft;
 
   static const none = SubscriptionStatus(active: false);
 
@@ -74,6 +80,7 @@ class SubscriptionStatus {
       expiresAt: raw == null ? null : DateTime.tryParse(raw),
       willRenew: json['will_renew'] as bool?,
       isTrial: json['is_trial'] as bool?,
+      trialDaysLeft: (json['trial_days_left'] as num?)?.toInt(),
     );
   }
 }

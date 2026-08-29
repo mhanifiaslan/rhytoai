@@ -15,6 +15,11 @@ doktrini: **bildirim başlıkları** tema emojisi taşır (💼❤️🌙🪙 �
 emoji kullanabilir (ağır duygu anlarında hiç), **kart/rapor gövdeleri**
 sade kalır.
 
+İşaret doktrini (OT5): **merkez sohbet düğmesi** = balon biçimli kap +
+sırayla parlayan "yazıyor" noktaları (`widgets/chat_bubble_icon.dart`);
+**✦** satır içi "Rytho'ya sor" işaretidir (7+ CTA) ve merkeze geri
+dönmez — iki işaretin işi ayrıldı, ikisi de tekil kaldı.
+
 ## 2. Renk paleti (`lib/theme/rytho_theme.dart` → `RythoColors`)
 
 Token adları v1/v2'den korunur (ekran dosyaları kırılmasın diye); değerler v3'tür.

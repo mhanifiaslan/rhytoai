@@ -190,6 +190,9 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
 
     mesajlar: list[push_service.Message] = []
     isaretlenecek: list[tuple[str, str]] = []  # (uid, yerel gün)
+    # OT1.1: daily gönderiminin hafıza alanları (gövde + odak sinyal) —
+    # başarılı gönderimden sonra mark_sent'e `extra` olarak geçer.
+    ekstralar: dict[str, dict[str, Any]] = {}
     taranan = 0
     atlanan: dict[str, int] = {}
     # Dil başına yerelleştirilmiş gökyüzü; her kullanıcı için yeniden
@@ -223,25 +226,30 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
             # `route`/`fp`/`idx`/`d`: dokununca ilgili sinyal kartının
             # dayanak sayfası açılsın diye (KA5) — eski istemci bu
             # alanları yok sayar, davranışı değişmez.
+            # OT1.3: dünkü gönderimin hafızası tema çarkını döndürür ve
+            # "dünle aynı metin" korumasını besler; gönderilen gövde
+            # `ekstra` ile geri yazılır (öğle kopya koruması ona bakar).
+            onceki = notification_service.last_daily_sent(profil["uid"])
             sinyal_push = notification_service.signal_push(
-                profil, lang, today=yerel.date())
+                profil, lang, today=yerel.date(), onceki=onceki)
             if sinyal_push is not None:
-                baslik, govde, iz = sinyal_push
+                baslik, govde, iz, idx, ekstra = sinyal_push
                 veri = {"type": "daily", "sign": sign, "route": "signal",
-                        "fp": iz, "idx": "0", "d": gun}
+                        "fp": iz, "idx": str(idx), "d": gun}
+                ekstralar[profil["uid"]] = ekstra
             else:
                 baslik = prompts.get(lang).PUSH_DAILY_TITLE
                 govde = notification_service.daily_push_body(
                     sign, sky_by_lang[lang], lang, gun)
                 veri = {"type": "daily", "sign": sign}
         elif type == "midday":
-            # OB3: öğle ölçülü slotu — yalnız BUGÜN gerçekten bir olay
-            # varsa gider (kendi haritasında kesinleşme ya da önbellekli
-            # çift ânı); yoksa kullanıcı sessizce atlanır. LLM yakmaz.
-            ogle = notification_service.midday_push(
+            # OB3 → OT1.2: öğle ölçülü slotu — yalnız BUGÜN gerçekten
+            # olay varsa gider ve SABAH GÖVDESİNİN KOPYASI ASLA gitmez
+            # ("sabahla-ayni" gerekçesiyle görünür atlanır). LLM yakmaz.
+            ogle, gerekce = notification_service.midday_push(
                 profil, lang, today=yerel.date())
             if ogle is None:
-                atlanan["olay-yok"] = atlanan.get("olay-yok", 0) + 1
+                atlanan[gerekce] = atlanan.get(gerekce, 0) + 1
                 continue
             baslik, govde, veri = ogle
         elif type == "checkin":
@@ -278,11 +286,17 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
     sonuc = push_service.send(mesajlar)
 
     # Gönderim kaydı SONRA yazılır: önce yazsaydık ve gönderim düşseydi,
-    # kullanıcı o gün bildirimi hiç almazdı.
-    basarisiz_uidler = set(sonuc.pruned)
+    # kullanıcı o gün bildirimi hiç almazdı. OT1.5: GEÇİCİ hatalar da
+    # işaretlenmez (eskiden yalnız ölü token'lar atlanıyordu ve FCM'in
+    # anlık hatası kullanıcının o gününü sessizce yakıyordu) — zamanlayıcı
+    # aynı hedef saat penceresi içinde yeniden dener. Süreç gönderim ile
+    # işaretleme arasında ölürse dar bir çift-gönderim penceresi kalır;
+    # kabul edilmiş sınır (işlemsel FCM+Firestore yok).
+    basarisiz_uidler = set(sonuc.failed_uids)
     for uid, gun in isaretlenecek:
         if uid not in basarisiz_uidler:
-            notification_service.mark_sent(uid, type, gun)
+            notification_service.mark_sent(uid, type, gun,
+                                           extra=ekstralar.get(uid))
 
     logger.info("Bildirim turu=%s taranan=%d kuyruk=%d gonderilen=%d "
                 "basarisiz=%d temizlenen=%d atlanan=%s",

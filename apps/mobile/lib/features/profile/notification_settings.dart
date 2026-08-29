@@ -1,3 +1,6 @@
+// Önekli: firebase_messaging'in `NotificationSettings` tipi bu ekranın
+// kendi sınıf adıyla çakışıyor.
+import 'package:firebase_messaging/firebase_messaging.dart' as fm;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -27,6 +30,7 @@ class NotificationSettings extends ConsumerWidget {
       label: l10n.notifications,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       child: Column(children: [
+        const _PermissionBanner(),
         _Toggle(
           icon: Icons.wb_twilight_rounded,
           title: l10n.notifyDaily,
@@ -51,6 +55,58 @@ class NotificationSettings extends ConsumerWidget {
         const Divider(height: 20),
         _QuietHours(prefs: prefs),
       ]),
+    );
+  }
+}
+
+/// OS izni kapalıysa dürüst uyarı (OT3).
+///
+/// Android'de izin yokken bile `getToken()` başarılı olduğu için sunucu
+/// gönderiyor, sistem sessizce düşürüyor — kullanıcı buradaki anahtarları
+/// açık görüp "bildirim gelmiyor" diyordu. Ayar ekranındaki bant, sorunun
+/// UYGULAMADA değil sistem ayarında olduğunu söyler (yeni bağımlılık yok;
+/// derin bağlantı yerine yol tarifi).
+class _PermissionBanner extends StatelessWidget {
+  const _PermissionBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return FutureBuilder<fm.NotificationSettings>(
+      future: fm.FirebaseMessaging.instance.getNotificationSettings(),
+      builder: (context, snap) {
+        if (snap.data?.authorizationStatus !=
+            fm.AuthorizationStatus.denied) {
+          return const SizedBox.shrink();
+        }
+        return Container(
+          margin: const EdgeInsets.only(top: 6, bottom: 8),
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: RythoColors.madder.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: RythoColors.madder.withValues(alpha: 0.35)),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            const Icon(Icons.notifications_off_outlined,
+                size: 18, color: RythoColors.madder),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(l10n.notifPermissionOffTitle,
+                        style: RythoText.body(13.5)),
+                    const SizedBox(height: 2),
+                    Text(l10n.notifPermissionOffBody,
+                        style: RythoText.body(11.5,
+                            color: RythoColors.parchmentDim)),
+                  ]),
+            ),
+          ]),
+        );
+      },
     );
   }
 }

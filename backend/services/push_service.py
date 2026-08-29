@@ -75,6 +75,11 @@ class SendResult(NamedTuple):
     failed: int
     #: Token'ı ölmüş kullanıcılar — kayıtları temizlendi.
     pruned: list[str]
+    #: Gönderimi BAŞARISIZ olan tüm kullanıcılar (ölü token + geçici hata
+    #: + parti hatası). OT1.5: çağıran bunları "gönderildi" saymamalı —
+    #: eskiden yalnız `pruned` atlanıyordu ve geçici bir FCM hatası
+    #: kullanıcının o gününü sessizce yakıyordu.
+    failed_uids: list[str]
 
 
 def _prune_token(uid: str) -> None:
@@ -96,16 +101,17 @@ def send(messages: list[Message]) -> SendResult:
     girdi sırasıyla aynıdır, hataları bu sayede doğru kullanıcıya bağlarız.
     """
     if not messages:
-        return SendResult(0, 0, [])
+        return SendResult(0, 0, [], [])
 
     messaging = _get_messaging()
     if messaging is None:
         logger.error("FCM kullanilamiyor; %d bildirim gonderilemedi",
                      len(messages))
-        return SendResult(0, len(messages), [])
+        return SendResult(0, len(messages), [], [m.uid for m in messages])
 
     gonderilen = basarisiz = 0
     temizlenen: list[str] = []
+    basarisiz_uidler: list[str] = []
 
     for i in range(0, len(messages), FCM_BATCH_SIZE):
         parti = messages[i:i + FCM_BATCH_SIZE]
@@ -139,6 +145,7 @@ def send(messages: list[Message]) -> SendResult:
         except Exception as exc:
             logger.exception("FCM parti gonderimi basarisiz", exc_info=exc)
             basarisiz += len(parti)
+            basarisiz_uidler.extend(m.uid for m in parti)
             continue
 
         for mesaj, sonuc in zip(parti, yanit.responses):
@@ -146,6 +153,7 @@ def send(messages: list[Message]) -> SendResult:
                 gonderilen += 1
                 continue
             basarisiz += 1
+            basarisiz_uidler.append(mesaj.uid)
             kod = getattr(getattr(sonuc.exception, "cause", None), "code", None)
             kod = kod or type(sonuc.exception).__name__
             if str(kod).upper() in _DEAD_TOKEN_ERRORS or _olu_token(sonuc):
@@ -155,7 +163,7 @@ def send(messages: list[Message]) -> SendResult:
                 logger.info("Bildirim gonderilemedi (%s): %s",
                             mesaj.uid, sonuc.exception)
 
-    return SendResult(gonderilen, basarisiz, temizlenen)
+    return SendResult(gonderilen, basarisiz, temizlenen, basarisiz_uidler)
 
 
 def _olu_token(sonuc: Any) -> bool:

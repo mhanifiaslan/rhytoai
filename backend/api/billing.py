@@ -66,6 +66,9 @@ class SubscriptionStatus(BaseModel):
     expires_at: str | None = None
     will_renew: bool | None = None
     is_trial: bool | None = None
+    #: OT6: sunucu taraflı 3 günlük deneme — paywall'daki geri sayım.
+    #: Yalnız deneme aktifken dolu; mağaza aboneliğinde None.
+    trial_days_left: int | None = None
 
 
 @router.get("/status", response_model=SubscriptionStatus)
@@ -77,6 +80,10 @@ def status(user: AuthUser = Depends(get_current_user)):
     """
     subscription = entitlements.get_subscription(user.uid)
     expires_at = subscription.get("expiresAt")
+    # OT6: mağaza aboneliği yokken deneme dönemi de "açık" sayılır
+    # (is_subscriber zaten öyle diyor); istemci geri sayımı buradan okur.
+    deneme_kalan = (None if subscription.get("active")
+                    else entitlements.trial_days_left(user.uid))
     return SubscriptionStatus(
         # `is_subscriber` ile aynı kaynağa bakar — ham `active` alanına DEĞİL.
         #
@@ -89,7 +96,8 @@ def status(user: AuthUser = Depends(get_current_user)):
         product_id=subscription.get("productId"),
         expires_at=expires_at.isoformat() if hasattr(expires_at, "isoformat") else None,
         will_renew=subscription.get("willRenew"),
-        is_trial=subscription.get("isTrial"),
+        is_trial=subscription.get("isTrial") or (deneme_kalan is not None),
+        trial_days_left=deneme_kalan,
     )
 
 

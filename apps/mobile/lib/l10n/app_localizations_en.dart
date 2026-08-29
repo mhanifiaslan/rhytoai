@@ -960,12 +960,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordsDoNotMatch => 'Passwords don\'t match.';
 
   @override
-  String get enterEmailFirst => 'Enter your email address first.';
-
-  @override
-  String get resetLinkSent => 'Password reset link sent.';
-
-  @override
   String get nameLabel => 'Name';
 
   @override
@@ -1407,10 +1401,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String verificationSent(Object email) {
     return 'A verification link was sent to $email. Please check your inbox.';
   }
-
-  @override
-  String get resetLinkSentNeutral =>
-      'If this address is registered, a reset link has been sent.';
 
   @override
   String get useGoogleInstead =>
@@ -2605,4 +2595,57 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get discoveryRingTooltip =>
       'Daily discovery ring: open the sky · talk to Rytho · look at someone in your circle';
+
+  @override
+  String get forgotPasswordTitle => 'Reset your password';
+
+  @override
+  String get forgotPasswordBody =>
+      'Enter your account\'s email address and we\'ll send you a reset link.';
+
+  @override
+  String get forgotPasswordSend => 'Send the link';
+
+  @override
+  String get forgotPasswordSentTitle => 'Link on its way';
+
+  @override
+  String forgotPasswordSentBody(String email) {
+    return 'If this address is registered, we sent a reset link to $email. The link is valid for a short while.';
+  }
+
+  @override
+  String get forgotPasswordSpamHint =>
+      'If it doesn\'t arrive within a few minutes, check your spam folder.';
+
+  @override
+  String get forgotPasswordResend => 'Send again';
+
+  @override
+  String forgotPasswordResendWait(int seconds) {
+    return 'Send again (${seconds}s)';
+  }
+
+  @override
+  String get notifPermissionOffTitle =>
+      'Notifications are off in system settings';
+
+  @override
+  String get notifPermissionOffBody =>
+      'Until you allow Rytho notifications in your phone\'s settings, the preferences here have no effect: Settings → Apps → Rytho → Notifications.';
+
+  @override
+  String get chatOpenLabel => 'Chat with Rytho';
+
+  @override
+  String get trialBannerTitle => 'Your trial is active ✨';
+
+  @override
+  String trialBannerDays(int days) {
+    return 'All Rytho+ features unlocked — $days days left.';
+  }
+
+  @override
+  String get trialBannerLastDay =>
+      'All Rytho+ features unlocked — today is the last day.';
 }

@@ -20,9 +20,9 @@ açık, SMS region policy'de Türkiye, Blaze aktif, **SHA-256 eklendi**
 Integrity doğrulaması için SHA-256 ister — yalnız SHA-1 yetmez).
 
 Kalan işler:
-- Cihazda SMS uçtan uca doğrulanınca sihirbazın telefon adımı açılır:
-  derlemede `RYTHO_PHONE_STEP=true` (dart_defines) — doğrulama sonrası
-  `onboarding_wizard.dart` içindeki varsayılan da true yapılabilir.
+- ~~Sihirbazın telefon adımını açmak~~ **YAPILDI (OT4, 1.12.0+28):**
+  `RYTHO_PHONE_STEP` bayrağı silindi; adım herkese görünür ve "Sonra"
+  ile atlanabilir.
 - **Play'e yüklerken**: Play App Signing'in mağaza imza anahtarının
   SHA-256'sı da Firebase'e eklenmeli (Play Console → Setup → App
   integrity → App signing key certificate) — yoksa mağazadan inen
@@ -31,6 +31,18 @@ Kalan işler:
   bir kodla ekle — mağaza incelemesi için de işe yarar.
 
 Not: SMS gönderimi Blaze planında ücretlidir (Türkiye ~0,01-0,05 USD/SMS).
+
+## 1b. Firebase: e-posta şablon dili (OT2 — şifre sıfırlama)
+
+Kod tarafı hazır (1.12.0+28): uygulama `setLanguageCode` ile Firebase'e
+kullanıcının dilini bildiriyor ve şifre panosu gerçek hataları
+gösteriyor. Konsolda ELLE doğrulanacak tek şey:
+
+- Firebase Console → Authentication → Templates → **Password reset**
+  (ve **Email address verification**): şablonların Türkçe sürümü var mı,
+  gönderen adı "Rytho" mu bak; gerekirse şablon metnini Türkçeleştir.
+  `setLanguageCode` yalnız Firebase'in HAZIR dil şablonları arasından
+  seçim yapar — özel metin yazdıysan dil başına ayrı düzenlenir.
 
 ## 2. RevenueCat: 3 token paketi + entitlement adı (R1 — token ekonomisi)
 

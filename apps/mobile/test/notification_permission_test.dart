@@ -1,0 +1,59 @@
+// Bildirim izni akışı bekçileri (OT3).
+//
+// Kusurun kökü SIRAydı: bayrak istekten ÖNCE yazılıyordu — kullanıcı OS
+// diyaloğunu kapatınca (ya da istek düşünce) uygulama BİR DAHA HİÇ
+// sormuyordu. `ensureNotificationPermissionAsked` sırayı tek yerde
+// sabitler: önce iste, bayrağı ancak istek TAMAMLANINCA yaz.
+import 'package:flutter_test/flutter_test.dart';
+import 'package:rytho/core/notifications.dart';
+import 'package:rytho/features/onboarding/onboarding_wizard.dart'
+    show kOnboardingSteps;
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  test('istek bayraktan ÖNCE koşar; bayrak sonra yazılır', () async {
+    SharedPreferences.setMockInitialValues({});
+    final sira = <String>[];
+    await ensureNotificationPermissionAsked(requester: () async {
+      // İstek anında bayrak HENÜZ yazılmamış olmalı.
+      sira.add('istek');
+      expect(await notificationPromptShown(), isFalse);
+      return true;
+    });
+    sira.add('bitti');
+    expect(sira, ['istek', 'bitti']);
+    expect(await notificationPromptShown(), isTrue);
+  });
+
+  test('istek düşerse bayrak YAZILMAZ — sonraki fırsatta yeniden sorulur',
+      () async {
+    SharedPreferences.setMockInitialValues({});
+    await expectLater(
+        ensureNotificationPermissionAsked(
+            requester: () async => throw StateError('os hatası')),
+        throwsStateError);
+    // Eski davranış burada bayrağı yazmıştı: kullanıcı sonsuza dek
+    // bildirimsiz kalıyordu.
+    expect(await notificationPromptShown(), isFalse);
+  });
+
+  test('ikinci çağrı no-op: istek bir daha koşmaz', () async {
+    SharedPreferences.setMockInitialValues(
+        {'notificationPermissionAsked': true});
+    var cagri = 0;
+    await ensureNotificationPermissionAsked(requester: () async {
+      cagri++;
+      return true;
+    });
+    expect(cagri, 0);
+  });
+
+  test('sihirbaz adım sözleşmesi (OT4): telefon herkese, gender sonrası',
+      () {
+    expect(kOnboardingSteps, [
+      'welcome', 'date', 'time', 'place', 'gender', 'phone', 'notify',
+    ]);
+  });
+}

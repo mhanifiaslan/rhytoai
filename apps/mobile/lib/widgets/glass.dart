@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../l10n/app_localizations.dart';
 import '../theme/rytho_theme.dart';
 import '../theme/rytho_tokens.dart';
+import 'chat_bubble_icon.dart';
 import 'motion.dart';
 
 /// Yükleme iskeleti (R12-B3): [GlassPanel] boyutlarında boş blok + yumuşak
@@ -202,7 +204,8 @@ class CosmicDock extends StatelessWidget {
   }
 }
 
-/// Degrade dolgulu, glow'lu, nefes alan merkez AI butonu (✦).
+/// Degrade dolgulu, glow'lu, nefes alan merkez sohbet butonu — balon
+/// biçimli kap + "yazıyor" noktaları (OT5).
 class _CenterAiButton extends StatefulWidget {
   const _CenterAiButton({required this.onTap});
   final VoidCallback onTap;
@@ -233,15 +236,19 @@ class _CenterAiButtonState extends State<_CenterAiButton>
     } else if (!_pulse.isAnimating) {
       _pulse.repeat(reverse: true);
     }
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        HapticFeedback.mediumImpact();
-        widget.onTap();
-      },
-      child: AnimatedBuilder(
+    final hareketsiz = reduceMotion(context);
+    return Semantics(
+      button: true,
+      label: AppLocalizations.of(context).chatOpenLabel,
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapCancel: () => setState(() => _pressed = false),
+        onTapUp: (_) {
+          setState(() => _pressed = false);
+          HapticFeedback.mediumImpact();
+          widget.onTap();
+        },
+        child: AnimatedBuilder(
         animation: _pulse,
         builder: (_, _) {
           final t = Curves.easeInOut.transform(_pulse.value);
@@ -282,11 +289,14 @@ class _CenterAiButtonState extends State<_CenterAiButton>
                   ),
                 ],
               ),
-              child: const Text('✦',
-                  style: TextStyle(fontSize: 26, color: Colors.white)),
+              // OT5 (kullanıcı seçimi): glif artık ✦ değil "yazıyor"
+              // noktaları — balon formu + daktilo ritmi birlikte "sohbet"
+              // diyor. reduceMotion'da noktalar durağan (t sabit).
+              child: TypingDotsGlyph(t: hareketsiz ? 0.0 : t),
             ),
           );
         },
+        ),
       ),
     );
   }

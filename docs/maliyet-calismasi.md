@@ -264,6 +264,21 @@ Gün içi bildirim bütçesi (kullanıcı kararı): sabah 09 + öğle 13 (yalnı
 olay günleri) + akşam 20; davet/kabul olay tetikli ve bütçeye sayılmaz.
 Marj matematiği değişmedi.
 
+## 6i. OT-turu: tekrarsız bildirim + tema rotasyonu + 3 günlük deneme — 2026-08-29
+
+Güven-kritik tur: "dünkü bildirimle aynıydı" cihaz bulgusunun beş kök
+nedeni kapatıldı; LLM deltası ihmal edilebilir.
+
+| Kalem | Değişim | Not |
+|---|---|---|
+| Tema rotasyonu + öğle kopya koruması + gün-farkındalıklı yedekler | **$0** | seçim/karşılaştırma mantığı; paket üretimi günde 1 çağrı olarak KALDI |
+| SIGNALS_PROMPT v3 ({today} + tekrar yasağı) | ~+40 girdi token/paket | aynı tek günlük çağrının içinde |
+| Dünle-aynılık yeniden üretimi | ≤1 ek flash çağrısı/harita/gün, YALNIZ bayt-aynı tekrar gününde | temp 0.9'da nadir; filo genelinde <$0.001/gün tahmini |
+| SIGNAL_CALC_VERSION 3→4 | tek seferlik | deploy günü paketler bir kez tazelenir (~$0.0004/aktif harita) |
+| SYNASTRY_CALC_VERSION 3→4 (_mix_hits) | tek seferlik | rel-reading çift başına bir kez yeniden üretilir (~$0.0004/çift, jetonsuz Plus yüzeyi) |
+| 3 günlük deneme (OT6, kullanıcı kararı: kartsız) | yeni kullanıcı başına TEK SEFER: 30 deneme jetonu (≈$0.06 tavan) + 3 gün jetonsuz Plus yüzeyleri (ilişki yorumu ~$0.002, takvim ~$0.003, sinyal zaten herkese) | en kötü ~**$0.10/yeni kullanıcı**, tek seferlik edinim maliyeti; dönüşüm kaldıracı olarak bilinçli |
+| Şifre panosu / izin akışı / telefon adımı / sohbet ikonu | **$0** | istemci + Firebase Auth |
+
 ## 7. İzlenecek metrikler (canlıda)
 
 - aiCache isabet oranı (maliyet öngörüsünün temeli — production-checklist

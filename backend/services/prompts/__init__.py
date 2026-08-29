@@ -578,8 +578,13 @@ def localize_signals(lang: str | None, data: dict | None) -> dict:
             "date": signal_date(lang, s.get("exact_on")),
         }
         # TEKNİK satır: dayanak sayfasının ilk cümlesi (kart yüzeyinde DEĞİL).
-        if s.get("exact_on") and s.get("days_to_exact") == 0:
+        gunler = s.get("days_to_exact")
+        if s.get("exact_on") and gunler == 0:
             teknik = p.SIGNAL_LINE_EXACT_TODAY.format(**alanlar)
+        elif s.get("exact_on") and isinstance(gunler, int) and gunler >= 1:
+            # OT1.4: geri sayımlı biçim — {days} her gün azaldığı için bu
+            # satır yedek olarak bildirime düştüğünde bile günlük değişir.
+            teknik = p.SIGNAL_LINE_EXACT_SOON.format(**alanlar, days=gunler)
         elif s.get("exact_on"):
             teknik = p.SIGNAL_LINE_EXACT.format(**alanlar)
         elif s.get("movement") == "applying":

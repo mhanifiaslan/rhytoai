@@ -367,8 +367,10 @@ PUSH_DAILY_TITLE = "✨ Bugünün gökyüzü hazır"
 #: bugünün hangi alanı olduğunu söyler. {emoji} tema emojisi (OB5,
 #: prompts.THEME_EMOJIS — mobil kThemeIcons ile eş).
 PUSH_SIGNAL_TITLE = "{emoji} Bugün: {theme}"
-#: Günlük bildirimin gövdesi üretilemezse kullanılacak metin.
-PUSH_DAILY_FALLBACK = "{sign} için bugünün okuması seni bekliyor."
+#: Günlük bildirimin gövdesi üretilemezse kullanılacak metin. {date} (OT1.4):
+#: son çare bile günden güne değişsin — statik metin iki kötü sabahda
+#: bayt-aynı bildirim üretiyordu (kullanıcı bulgusu).
+PUSH_DAILY_FALLBACK = "{sign} için {date} okuması seni bekliyor."
 
 PUSH_STREAK_TITLE = "🔥 {days} günlük serin"
 PUSH_STREAK_BODY = (
@@ -955,6 +957,11 @@ SIGNAL_LINE_EXACT_TODAY = (
 SIGNAL_LINE_EXACT = (
     "{transit}, natal {natal} ile {aspect} açısını {date} günü "
     "kesinleştiriyor.")
+#: OT1.4: {days} her gün azalır — sabit tarihli satır iki kötü sabahda
+#: bayt-aynı bildirim üretiyordu; geri sayım son çareyi bile günlük yapar.
+SIGNAL_LINE_EXACT_SOON = (
+    "{transit}, natal {natal} ile {aspect} açısını {days} gün sonra "
+    "({date}) kesinleştiriyor.")
 SIGNAL_LINE_APPLYING = (
     "{transit}, natal {natal} ile {aspect} açısına yaklaşıyor (orb {orb}°).")
 SIGNAL_LINE_SEPARATING = (
@@ -977,11 +984,24 @@ SIGNAL_PROMPT_FOCUS_MARK = "(bugünün odağı)"
 #: Modelin soru satırı öneki. Ayrıştırıcı bunu BÜYÜK harfle arar.
 CHECKIN_PREFIX = "SORU:"
 
+#: OT1.3: dünle bayt/öz aynılık yakalanınca TEK yeniden denemede prompta
+#: eklenen negatif örnek bloğu.
+SIGNALS_AVOID_BLOCK = """
+DÜN GÖNDERİLEN CÜMLE (yeniden ifadesi YASAK — farklı bir açıdan,
+farklı sözcüklerle yaz):
+"{prev}"
+"""
+
 #: Sinyal yorumları + akşam check-in sorusu — hepsi TEK çağrıda
 #: (birim ekonomi kuralı; KA-turu'nda soru satırı eklendi).
 SIGNALS_PROMPT = """
 GÖREV: Aşağıdaki {count} kişisel transit sinyalinin HER BİRİ için tek
 cümlelik bir yorum yaz; en sonda BİR check-in sorusu ekle.
+
+BUGÜN: {today}. Aynı gökyüzü olayı günlerce sürebilir; senin işin HER
+GÜN yeni bir nüans yakalamak — dünkü cümlenin yeniden ifadesi YASAK,
+bugünün açısını anlat (sürecin neresinde, bugün ne değişti, hangi küçük
+adım bugüne ait).
 
 SİNYALLER (ölçülmüş gökyüzü verisi):
 {lines}
@@ -1009,7 +1029,9 @@ KURALLAR (kesin):
   GEÇTİĞİNİ soran, arkadaşça tek bir soru ("Bugün iş tarafında bir
   hareket görünüyordu — nasıl geçti?" tarzında). En fazla 120 karakter.
   SORU satırında istersen EN FAZLA BİR emoji kullanabilirsin (120
-  sınırına dahildir). İşaretli sinyal yoksa "SORU: -" yaz.
+  sınırına dahildir). SORU, numaralı cümlelerin HİÇBİRİNİN yeniden
+  ifadesi OLMASIN — olayı anlatma, günün NASIL GEÇTİĞİNİ sor.
+  İşaretli sinyal yoksa "SORU: -" yaz.
 
 Yalnızca numaralı satırları ve SORU satırını yaz, başka hiçbir şey yazma.
 """

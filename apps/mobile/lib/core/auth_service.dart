@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import 'device_claim.dart' show resetDeviceTakeoverPrompt;
+import '../l10n/app_localizations.dart';
 
 /// Kimlik doğrulama işlemleri.
 ///
@@ -129,16 +130,41 @@ Future<void> registerWithEmail({
   }
 }
 
-/// Şifre sıfırlama.
+/// Şifre sıfırlama — hatayı YENİDEN FIRLATIR (OT2).
 ///
-/// **Sonuç ne olursa olsun sessizce döner.** Hatayı kullanıcıya göstermek
-/// "bu e-posta kayıtlı mı" bilgisini sızdırırdı (kullanıcı sayımı); arayüz
-/// her durumda aynı nötr mesajı gösterir.
-Future<void> sendPasswordReset(String email) async {
-  try {
-    await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-  } catch (e) {
-    debugPrint('Şifre sıfırlama gönderilemedi: $e');
+/// Eski davranış TÜM istisnaları yutup çağırana "başarılı" gibi
+/// dönüyordu; offline/kota/yapılandırma hatalarında bile kullanıcı
+/// "gönderildi" görüyor ve e-posta asla gelmiyordu — "şifremi unuttum
+/// çalışmıyor" cihaz bulgusunun bir numaralı nedeni. Kullanıcı sayımı
+/// koruması EKRANIN işidir: yalnız `user-not-found` başarı gibi
+/// gösterilir (bkz. ForgotPasswordScreen), gerçek hatalar anlatılır.
+Future<void> sendPasswordReset(String email) =>
+    FirebaseAuth.instance.sendPasswordResetEmail(email: email.trim());
+
+/// FirebaseAuth hata kodunu kullanıcı diline çevirir.
+///
+/// LoginScreen'in özel kopyasıydı (OT2'de buraya çıkarıldı): şifre panosu
+/// da aynı haritayı kullanır; iki kopya kaçınılmaz olarak ayrışırdı.
+String authErrorText(AppLocalizations l10n, FirebaseAuthException e) {
+  switch (e.code) {
+    case 'user-not-found':
+    case 'wrong-password':
+    case 'invalid-credential':
+      return l10n.authWrongCredentials;
+    case 'email-already-in-use':
+      return l10n.authEmailInUse;
+    case 'weak-password':
+      return l10n.passwordTooShort;
+    case 'invalid-email':
+      return l10n.authInvalidEmail;
+    case 'too-many-requests':
+      return l10n.authTooManyRequests;
+    case 'operation-not-allowed':
+      return l10n.authDisabled;
+    case 'network-request-failed':
+      return l10n.authNetwork;
+    default:
+      return l10n.authFailed;
   }
 }
 

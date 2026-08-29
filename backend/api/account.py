@@ -75,6 +75,21 @@ def record_consent(req: ConsentRequest,
     """
     if not consent_service.grant_terms_consent(user.uid, req.version, lang):
         raise HTTPException(status_code=500, detail=text("internal", lang))
+
+    # OT6: deneme hoş geldin jetonu — onboarding bitişinde bir kez.
+    # Defter kimliği hesap başına sabit (idempotent): yasal metin sürümü
+    # yükselince yeniden onay veren ESKİ kullanıcı ikinci kez alamaz;
+    # `in_trial` kapısı da yalnız yeni hesaplara açar. Jeton yazılamazsa
+    # onay kaydı yine başarılıdır — deneme jetonu bir ek, onayın kendisi
+    # değil.
+    from core import entitlements, wallet
+    try:
+        if entitlements.in_trial(user.uid):
+            wallet.credit_promo(user.uid, wallet.TRIAL_PROMO_CODE,
+                                wallet.TRIAL_TOKENS)
+    except Exception as exc:
+        logger.warning("Deneme jetonu yazilamadi (%s): %s", user.uid, exc)
+
     return {"status": "success",
             "version": consent_service.TERMS_CONSENT_VERSION}
 

@@ -163,16 +163,20 @@ class TestYerellestirme:
         assert ing["timing_local"] == "Peaks on August 18"
 
     def test_teknik_satir_dayanakta_durur(self, monkeypatch):
-        """Teknik bilgi KAYBOLMAZ — 'Neye dayanıyor?' sayfasının ilk satırı."""
+        """Teknik bilgi KAYBOLMAZ — 'Neye dayanıyor?' sayfasının ilk satırı.
+
+        OT1.4: yaklaşan kesinleşme GERİ SAYIMLI ("{days} gün sonra") —
+        satır yedek olarak bildirime düştüğünde bile günlük değişir."""
         ham = _hesapla(monkeypatch)
         birinci = prompts.localize_signals("tr", ham)["signals"][0]
         assert birinci["technical"] == (
-            "Satürn, natal Ay ile Kare açısını 18 Ağustos günü "
+            "Satürn, natal Ay ile Kare açısını 2 gün sonra (18 Ağustos) "
             "kesinleştiriyor.")
         assert birinci["natal_sign_local"] == "Yengeç"
         ing = prompts.localize_signals("en", ham)["signals"][0]
         assert ing["technical"] == (
-            "Saturn perfects its Square to your natal Moon on August 18.")
+            "Saturn perfects its Square to your natal Moon in 2 days "
+            "(August 18).")
 
     def test_zamanlama_satirlari(self):
         bugun = {"generated_for": "2026-08-16", "signals": [
@@ -766,12 +770,17 @@ class TestOnbellekVeBildirim:
             lambda ham, lang, generate_if_missing=True: {
                 "insights": ["Bugüne özgü tek cümle."],
                 "checkin_question": None})
-        baslik, govde, iz = notification_service.signal_push(PROFIL, "tr")
+        baslik, govde, iz, idx, extra = notification_service.signal_push(
+            PROFIL, "tr")
         # OB5: başlık tema emojisi taşır (THEME_EMOJIS — mobil kThemeIcons
         # ile aynı dörtlü).
         assert baslik == "🌙 Bugün: İç dünya"
         assert govde == "Bugüne özgü tek cümle."
         assert iz  # derin bağlantı eşleşmesi için parmak izi taşır
+        # OT1.1: hafıza alanları gönderilen gövdeyi ve odağı taşır.
+        assert idx == 0
+        assert extra["dailyBody"] == govde
+        assert extra["dailyTheme"] == "inner"
 
     def test_bildirim_paket_yoksa_teknik_satira_duser(self, monkeypatch):
         """AI üretilemezse gövde SABİT CÜMLE DEĞİL dürüst teknik satır —
@@ -782,9 +791,12 @@ class TestOnbellekVeBildirim:
         monkeypatch.setattr(
             signal_service, "cached_insight_bundle",
             lambda ham, lang, generate_if_missing=True: None)
-        baslik, govde, iz = notification_service.signal_push(PROFIL, "tr")
-        assert govde == ("Satürn, natal Ay ile Kare açısını 18 Ağustos "
-                         "günü kesinleştiriyor.")
+        baslik, govde, iz, _idx, _extra = notification_service.signal_push(
+            PROFIL, "tr")
+        # OT1.4: yaklaşan kesinleşme GERİ SAYIMLI yazılır ({days} her gün
+        # azalır) — sabit tarihli satır iki kötü sabahda bayt-aynıydı.
+        assert govde == ("Satürn, natal Ay ile Kare açısını 2 gün sonra "
+                         "(18 Ağustos) kesinleştiriyor.")
 
     def test_bildirim_sinyal_yoksa_none(self, monkeypatch):
         """None dönüşü çağıranı paylaşımlı burç satırına düşürür."""
@@ -803,7 +815,8 @@ class TestOnbellekVeBildirim:
             signal_service, "cached_insight_bundle",
             lambda ham, lang, generate_if_missing=True: {
                 "insights": ["u" * 200], "checkin_question": None})
-        baslik, govde, iz = notification_service.signal_push(PROFIL, "tr")
+        baslik, govde, iz, _idx, _extra = notification_service.signal_push(
+            PROFIL, "tr")
         assert govde.startswith("Satürn, natal Ay ile")
 
     def test_checkin_push_yalniz_onbellekten(self, monkeypatch):

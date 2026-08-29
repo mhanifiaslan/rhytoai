@@ -406,8 +406,6 @@
   "displayName": "Your name",
   "passwordRepeat": "Password (repeat)",
   "passwordsDoNotMatch": "Passwords don't match.",
-  "enterEmailFirst": "Enter your email address first.",
-  "resetLinkSent": "Password reset link sent.",
   "nameLabel": "Name",
   "signAries": "Aries",
   "signTaurus": "Taurus",
@@ -731,7 +729,6 @@
       }
     }
   },
-  "resetLinkSentNeutral": "If this address is registered, a reset link has been sent.",
   "useGoogleInstead": "Sign-in failed. Your password may be wrong, or this account may have been created with Google/Apple — try the buttons below.",
   "faceReadingTitle": "Face Reading",
   "faceGuideNoFace": "Bring your face into the frame",
@@ -1145,5 +1142,23 @@
   "chatMentionEmpty": "No match — add people from My Circle",
 
   "discoveryComplete": "Today's three discoveries done ✨ The sky resets tomorrow.",
-  "discoveryRingTooltip": "Daily discovery ring: open the sky · talk to Rytho · look at someone in your circle"
+  "discoveryRingTooltip": "Daily discovery ring: open the sky · talk to Rytho · look at someone in your circle",
+
+  "forgotPasswordTitle": "Reset your password",
+  "forgotPasswordBody": "Enter your account's email address and we'll send you a reset link.",
+  "forgotPasswordSend": "Send the link",
+  "forgotPasswordSentTitle": "Link on its way",
+  "forgotPasswordSentBody": "If this address is registered, we sent a reset link to {email}. The link is valid for a short while.",
+  "@forgotPasswordSentBody": { "placeholders": { "email": { "type": "String" } } },
+  "forgotPasswordSpamHint": "If it doesn't arrive within a few minutes, check your spam folder.",
+  "forgotPasswordResend": "Send again",
+  "forgotPasswordResendWait": "Send again ({seconds}s)",
+  "@forgotPasswordResendWait": { "placeholders": { "seconds": { "type": "int" } } },
+  "notifPermissionOffTitle": "Notifications are off in system settings",
+  "notifPermissionOffBody": "Until you allow Rytho notifications in your phone's settings, the preferences here have no effect: Settings → Apps → Rytho → Notifications.",
+  "chatOpenLabel": "Chat with Rytho",
+  "trialBannerTitle": "Your trial is active ✨",
+  "trialBannerDays": "All Rytho+ features unlocked — {days} days left.",
+  "@trialBannerDays": { "placeholders": { "days": { "type": "int" } } },
+  "trialBannerLastDay": "All Rytho+ features unlocked — today is the last day."
 }

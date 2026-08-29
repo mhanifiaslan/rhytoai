@@ -12,6 +12,7 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../profile/legal_page.dart';
+import 'forgot_password_screen.dart';
 
 /// Giriş ve kayıt.
 ///
@@ -93,29 +94,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  String _authErrorMessage(FirebaseAuthException e) {
-    final l10n = AppLocalizations.of(context);
-    switch (e.code) {
-      case 'user-not-found':
-      case 'wrong-password':
-      case 'invalid-credential':
-        return l10n.authWrongCredentials;
-      case 'email-already-in-use':
-        return l10n.authEmailInUse;
-      case 'weak-password':
-        return l10n.passwordTooShort;
-      case 'invalid-email':
-        return l10n.authInvalidEmail;
-      case 'too-many-requests':
-        return l10n.authTooManyRequests;
-      case 'operation-not-allowed':
-        return l10n.authDisabled;
-      case 'network-request-failed':
-        return l10n.authNetwork;
-      default:
-        return l10n.authFailed;
-    }
-  }
+  // Hata haritası core/auth_service.authErrorText'e taşındı (OT2):
+  // şifre panosu da aynı haritayı kullanıyor; iki kopya ayrışırdı.
+  String _authErrorMessage(FirebaseAuthException e) =>
+      authErrorText(AppLocalizations.of(context), e);
 
   Future<void> _runSocial(
       Future<void> Function() action, void Function(bool) setBusy) async {
@@ -192,19 +174,15 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// Şifre sıfırlama.
+  /// Şifre sıfırlama — ayrı panoya gider (OT2, kullanıcı isteği).
   ///
-  /// **Sonuç ne olursa olsun aynı mesaj.** Hatayı göstermek "bu e-posta
-  /// kayıtlı mı" bilgisini sızdırırdı.
-  Future<void> _resetPassword() async {
-    final l10n = AppLocalizations.of(context);
-    final email = _emailCtrl.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
-      _showSnack(l10n.enterEmailFirst);
-      return;
-    }
-    await sendPasswordReset(email);
-    _showSnack(l10n.resetLinkSentNeutral);
+  /// Eski akış e-postanın burada yazılı olmasını şart koşuyor ve her
+  /// sonucu "gönderildi" snackbar'ıyla kapatıyordu; pano gerçek hataları
+  /// anlatır, başarıyı tekrar-gönder seçeneğiyle gösterir.
+  void _resetPassword() {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ForgotPasswordScreen(
+            initialEmail: _emailCtrl.text.trim())));
   }
 
   void _openLegal(String title, LegalSections Function(String) sections) {

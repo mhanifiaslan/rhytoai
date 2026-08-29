@@ -959,12 +959,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String get passwordsDoNotMatch => 'Şifreler eşleşmiyor.';
 
   @override
-  String get enterEmailFirst => 'Önce e-posta adresini yaz.';
-
-  @override
-  String get resetLinkSent => 'Şifre sıfırlama bağlantısı gönderildi.';
-
-  @override
   String get nameLabel => 'Ad';
 
   @override
@@ -1404,10 +1398,6 @@ class AppLocalizationsTr extends AppLocalizations {
   String verificationSent(Object email) {
     return 'Doğrulama bağlantısı $email adresine gönderildi. Gelen kutunu kontrol et.';
   }
-
-  @override
-  String get resetLinkSentNeutral =>
-      'Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi.';
 
   @override
   String get useGoogleInstead =>
@@ -2593,4 +2583,56 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get discoveryRingTooltip =>
       'Günün keşif halkası: gökyüzünü aç · Rytho ile konuş · çevrenden birine bak';
+
+  @override
+  String get forgotPasswordTitle => 'Şifreni sıfırla';
+
+  @override
+  String get forgotPasswordBody =>
+      'Hesabının e-posta adresini yaz; sana bir sıfırlama bağlantısı gönderelim.';
+
+  @override
+  String get forgotPasswordSend => 'Bağlantıyı gönder';
+
+  @override
+  String get forgotPasswordSentTitle => 'Bağlantı yolda';
+
+  @override
+  String forgotPasswordSentBody(String email) {
+    return 'Bu adres kayıtlıysa $email adresine bir sıfırlama bağlantısı gönderdik. Bağlantı kısa süreliğine geçerli.';
+  }
+
+  @override
+  String get forgotPasswordSpamHint =>
+      'E-posta birkaç dakika içinde gelmezse spam/gereksiz klasörüne bak.';
+
+  @override
+  String get forgotPasswordResend => 'Tekrar gönder';
+
+  @override
+  String forgotPasswordResendWait(int seconds) {
+    return 'Tekrar gönder ($seconds sn)';
+  }
+
+  @override
+  String get notifPermissionOffTitle => 'Bildirimler sistemde kapalı';
+
+  @override
+  String get notifPermissionOffBody =>
+      'Telefonun ayarlarında Rytho bildirimlerine izin vermeden buradaki tercihler etkisiz kalır: Ayarlar → Uygulamalar → Rytho → Bildirimler.';
+
+  @override
+  String get chatOpenLabel => 'Rytho ile sohbet et';
+
+  @override
+  String get trialBannerTitle => 'Deneme süren aktif ✨';
+
+  @override
+  String trialBannerDays(int days) {
+    return 'Tüm Rytho+ özellikleri açık — $days gün kaldı.';
+  }
+
+  @override
+  String get trialBannerLastDay =>
+      'Tüm Rytho+ özellikleri açık — bugün son gün.';
 }

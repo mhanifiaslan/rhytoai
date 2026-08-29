@@ -332,6 +332,13 @@ class _ZodiacRingState extends State<ZodiacRing>
 
   @override
   Widget build(BuildContext context) {
+    // OT5 sürüklenme onarımı: denetleyici reduceMotion kapısı olmadan
+    // sonsuza dek dönüyordu (_CenterAiButton deseninin eksik kopyası).
+    if (reduceMotion(context)) {
+      _breath.stop();
+    } else if (!_breath.isAnimating) {
+      _breath.repeat(reverse: true);
+    }
     return AnimatedBuilder(
       animation: _breath,
       builder: (_, _) => CustomPaint(

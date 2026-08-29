@@ -96,6 +96,15 @@ TOKEN_PACKS: dict[str, int] = {
 #: Kuru çalışma bayrağı. 0 iken harcama loglanır ama reddedilmez.
 TOKENS_ENFORCE: bool = os.getenv("RYTHO_TOKENS_ENFORCE", "0") == "1"
 
+#: Deneme dönemi hoş geldin jetonu (OT6): yeni hesap ilk 3 gün Plus
+#: kapılarını kullanır (core.entitlements.in_trial) ama jetonlu yüzeyler
+#: (rapor 5, dyad 3, sohbet 1) bakiye ister — deneme "tüm özellikler"
+#: vaadini ancak küçük bir başlangıç bakiyesiyle tutar. `credit_promo`
+#: defteriyle hesap başına TEK SEFER yüklenir; deneme bitince kalan
+#: bakiye kullanıcıda kalır (30 jeton ≈ $0,06 tavan maliyet).
+TRIAL_PROMO_CODE = "TRIAL-WELCOME"
+TRIAL_TOKENS = 30
+
 
 def _wallet_ref(uid: str):
     client = firestore_client.get_client()

@@ -37,7 +37,7 @@ import '../../widgets/city_search_field.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/motion.dart';
 import '../../core/notifications.dart'
-    show markNotificationPromptShown, requestNotificationPermission;
+    show ensureNotificationPermissionAsked;
 import '../profile/legal_page.dart';
 import '../profile/legal_texts.dart';
 import '../profile/phone_verify_screen.dart';
@@ -48,13 +48,18 @@ import 'constellation_progress.dart';
 /// ikisi birlikte artar).
 const int kTermsConsentVersion = 1;
 
-/// Telefon adımı bayrağı (O4). Konsol tarafı hazır (Phone sağlayıcısı,
-/// SHA-256, region policy, Blaze — 2026-08-07) ama SMS cihazda uçtan uca
-/// doğrulanana kadar varsayılan KAPALI: kod göndermeyen bir adımı
-/// göstermek güven kırar. Açmak: --dart-define=RYTHO_PHONE_STEP=true
-/// (dart_defines.example.json'da hazır).
-const bool kPhoneStepEnabled =
-    bool.fromEnvironment('RYTHO_PHONE_STEP', defaultValue: false);
+// `kPhoneStepEnabled` bayrağı SİLİNDİ (OT4, kullanıcı kararı): SMS ucu
+// 2026-08-07'den beri canlı ve bu makinede üretilen yayın AAB'leri adımı
+// zaten taşıyordu — bayrak yalnız test/temiz-checkout'u üretimden
+// ayrıştıran ölü ağırlıktı. Adım artık herkese görünür ve "Sonra" ile
+// atlanabilir; kullanıcı özellikleri aramak zorunda kalmadan kayıtta
+// numarasını doğrular.
+
+/// Sihirbaz adımları — sırası ürün sözleşmesidir ve testle sabitlidir
+/// (OT4: `phone` artık bayraksız, herkese; `gender` sonrası, atlanabilir).
+const List<String> kOnboardingSteps = [
+  'welcome', 'date', 'time', 'place', 'gender', 'phone', 'notify',
+];
 
 class OnboardingWizard extends ConsumerStatefulWidget {
   const OnboardingWizard({super.key});
@@ -79,11 +84,7 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   String _cinsiyet = 'female';
   bool _busy = false;
 
-  static const _adimAdlari = [
-    'welcome', 'date', 'time', 'place', 'gender',
-    if (kPhoneStepEnabled) 'phone',
-    'notify',
-  ];
+  static const _adimAdlari = kOnboardingSteps;
 
   int get _toplamAdim => _adimAdlari.length;
 
@@ -141,6 +142,16 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
   Future<void> _bitir() async {
     final user = FirebaseAuth.instance.currentUser!;
     setState(() => _busy = true);
+    // OT3: "Haritamı çiz ✨" yolculuğu bitirirken BİLDİRİM İZNİNİ DE
+    // İSTER. Eski akışta izin yalnız adım içindeki düğmeye bağlıydı;
+    // kullanıcı doğrudan bitir'e basınca hiç sorulmuyor, ikinci şans da
+    // tanıtım paywall'ına yeniliyordu — "yeni kullanıcıya bildirim
+    // gitmiyor"un kökü. Sonuç yolculuğu ASLA engellemez.
+    try {
+      await ensureNotificationPermissionAsked();
+    } catch (e) {
+      debugPrint('Onboarding bildirim izni istenemedi: $e');
+    }
     // Büyük Üçlü perdesinin bayrağı yazım ÖNCESİ konur (R12-B1):
     // onboardingCompleted iner inmez _Gate bu ekranı söküp AppShell'i
     // takıyor — sonuç o anda hazır olmalı. Hata olursa geri iner.
@@ -344,19 +355,18 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
                       onSec: (g) => setState(() => _cinsiyet = g),
                     ),
                   ),
-                  // Telefon (O4, bayrak açıksa): rehber eşleşmesinin
-                  // kapısı — atlanabilir, hiçbir çekirdek özellik buna
-                  // kilitlenmez (mağaza kuralı). Mevcut PhoneVerifyScreen
-                  // olduğu gibi yeniden kullanılır.
-                  if (kPhoneStepEnabled)
-                    _AdimSayfasi(
-                      emoji: '🤝',
-                      baslik: l10n.wizardPhoneTitle,
-                      govde: l10n.wizardPhoneBody,
-                      child: _TelefonAdimi(onVerified: () {
-                        if (mounted) setState(() {});
-                      }),
-                    ),
+                  // Telefon (O4 → OT4: artık herkese): rehber
+                  // eşleşmesinin kapısı — atlanabilir, hiçbir çekirdek
+                  // özellik buna kilitlenmez (mağaza kuralı). Mevcut
+                  // PhoneVerifyScreen olduğu gibi yeniden kullanılır.
+                  _AdimSayfasi(
+                    emoji: '🤝',
+                    baslik: l10n.wizardPhoneTitle,
+                    govde: l10n.wizardPhoneBody,
+                    child: _TelefonAdimi(onVerified: () {
+                      if (mounted) setState(() {});
+                    }),
+                  ),
                   // Bildirim izni: sürpriz sistem dialogu yerine önce
                   // değer önerisi (kabul oranını artıran sıra). İzin
                   // verilirse sky_screen'deki eski istem kendiliğinden
@@ -695,8 +705,10 @@ class _BildirimAdimiState extends State<_BildirimAdimi> {
   Future<void> _izinIste() async {
     setState(() => _busy = true);
     try {
-      await requestNotificationPermission();
-      await markNotificationPromptShown();
+      // OT3: ortak yardımcı — önce iste, bayrağı SONRA yaz (sıra tek
+      // yerde). Bitir düğmesi de aynı yardımcıyı çağırdığı için hangi
+      // yoldan çıkılırsa çıkılsın izin bir kez istenmiş olur.
+      await ensureNotificationPermissionAsked();
     } catch (_) {
       // İzin akışı düşerse yolculuk düşmez; sky_screen ikinci şansı verir.
     }

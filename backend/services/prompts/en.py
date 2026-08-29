@@ -386,8 +386,9 @@ PUSH_DAILY_TITLE = "✨ Today's sky is ready"
 #: about. {emoji} is the theme emoji (OB5, prompts.THEME_EMOJIS —
 #: mirrors mobile kThemeIcons).
 PUSH_SIGNAL_TITLE = "{emoji} Today: {theme}"
-#: Used when the generated line is unavailable.
-PUSH_DAILY_FALLBACK = "Your reading for {sign} is waiting."
+#: Used when the generated line is unavailable. {date} (OT1.4): even the
+#: last resort changes day over day.
+PUSH_DAILY_FALLBACK = "Your {date} reading for {sign} is waiting."
 
 PUSH_STREAK_TITLE = "🔥 {days}-day streak"
 PUSH_STREAK_BODY = (
@@ -992,6 +993,11 @@ SIGNAL_LINE_EXACT_TODAY = (
     "{transit} perfects its {aspect} to your natal {natal} today.")
 SIGNAL_LINE_EXACT = (
     "{transit} perfects its {aspect} to your natal {natal} on {date}.")
+#: OT1.4: {days} counts down daily — the fixed-date line produced
+#: byte-identical pushes on two bad mornings.
+SIGNAL_LINE_EXACT_SOON = (
+    "{transit} perfects its {aspect} to your natal {natal} in {days} "
+    "days ({date}).")
 SIGNAL_LINE_APPLYING = (
     "{transit} is applying to a {aspect} with your natal {natal} "
     "(orb {orb}°).")
@@ -1016,11 +1022,24 @@ SIGNAL_PROMPT_FOCUS_MARK = "(today's focus)"
 #: The model's question-line prefix. The parser matches it UPPERCASE.
 CHECKIN_PREFIX = "QUESTION:"
 
+#: OT1.3: negative-example block appended on the single retry when
+#: today's sentence matched yesterday's.
+SIGNALS_AVOID_BLOCK = """
+YESTERDAY'S SENT SENTENCE (do NOT restate it — take a different angle,
+different wording):
+"{prev}"
+"""
+
 #: Signal insights + the evening check-in question — all in ONE call
 #: (unit-economics rule; the question line was added in the KA round).
 SIGNALS_PROMPT = """
 TASK: Write a one-sentence reading for EACH of the {count} personal transit
 signals below; then add ONE check-in question at the end.
+
+TODAY: {today}. The same sky event can last for days; your job is to
+catch a NEW nuance EVERY day — restating yesterday's sentence is
+FORBIDDEN. Speak to today's angle: where in the process, what shifted
+today, which small step belongs to today.
 
 SIGNALS (measured sky data):
 {lines}
@@ -1048,8 +1067,9 @@ RULES (strict):
   to be asked in the evening. Not a prophecy; a friendly question about
   how the day WENT ("Something was moving on the work front today — how
   did it go?" style). At most 120 characters. The QUESTION line may carry
-  AT MOST ONE emoji (it counts toward the 120 limit). If no signal is
-  marked, write "QUESTION: -".
+  AT MOST ONE emoji (it counts toward the 120 limit). The QUESTION must
+  NOT restate any of the numbered sentences — do not describe the event,
+  ask how the day WENT. If no signal is marked, write "QUESTION: -".
 
 Write only the numbered lines and the QUESTION line, nothing else.
 """

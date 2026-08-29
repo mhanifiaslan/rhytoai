@@ -59,6 +59,88 @@ def test_force_plus_tum_kapilari_acar(monkeypatch):
 
 
 # --------------------------------------------------------------------------
+# 3 gunluk deneme (OT6, kullanici karari: kartsiz, sunucu tarafli)
+# --------------------------------------------------------------------------
+
+class _SahteZaman:
+    """createdAt gibi davranan minimal nesne (Firestore Timestamp arayuzu)."""
+
+    def __init__(self, ts: float):
+        self._ts = ts
+
+    def timestamp(self) -> float:
+        return self._ts
+
+
+def _in_trial_with_age(monkeypatch, saat_once: float | None):
+    from core import cache
+    from services import profile_service
+
+    monkeypatch.setattr(cache, "get", lambda k: None)
+    monkeypatch.setattr(cache, "set", lambda *a, **k: None)
+    if saat_once is None:
+        profil = {}
+    else:
+        simdi = dt.datetime.now(dt.timezone.utc).timestamp()
+        profil = {"createdAt": _SahteZaman(simdi - saat_once * 3600)}
+    monkeypatch.setattr(profile_service, "get_profile", lambda uid: profil)
+    return entitlements.in_trial("deneme-uid")
+
+
+def test_deneme_ilk_uc_gun_acik(monkeypatch):
+    assert _in_trial_with_age(monkeypatch, saat_once=2) is True
+    assert _in_trial_with_age(monkeypatch, saat_once=71) is True
+
+
+def test_deneme_uc_gun_sonra_ve_alan_yokken_kapali(monkeypatch):
+    """Suresi dolan hesap ucretsiz katmana doner; `createdAt` olmayan eski
+    hesaplar HIC denemeye girmez (okunamazsa ucretsiz doktrini)."""
+    assert _in_trial_with_age(monkeypatch, saat_once=73) is False
+    assert _in_trial_with_age(monkeypatch, saat_once=None) is False
+
+
+def test_deneme_kullanicisi_abone_sayilir(monkeypatch):
+    """OT6'nin ozu: is_subscriber TEK kapi — deneme donemi require_plus
+    dahil TUM Plus yollarini acar; abonelik pasifken bile."""
+    monkeypatch.setattr(entitlements, "get_subscription",
+                        lambda uid: {"active": False})
+    monkeypatch.setattr(entitlements, "in_trial", lambda uid: True)
+    assert entitlements.is_subscriber("yeni-hesap") is True
+    monkeypatch.setattr(entitlements, "in_trial", lambda uid: False)
+    assert entitlements.is_subscriber("yeni-hesap") is False
+
+
+@uygulama_gerekir
+def test_consent_deneme_jetonunu_bir_kez_yazar(monkeypatch):
+    """Onboarding bitisindeki /account/consent deneme kullanicisina TEK
+    SEFERLIK hos geldin jetonu yazar; ikinci cagri (yasal metin yeniden
+    onayi) tekrar yazmaz — defter kimligi sabit (idempotent)."""
+    from core import wallet
+    from services import consent_service
+
+    monkeypatch.setattr(consent_service, "grant_terms_consent",
+                        lambda uid, version, lang: True)
+    monkeypatch.setattr(entitlements, "in_trial", lambda uid: True)
+
+    yuklenen: list = []
+
+    def sahte_promo(uid, code, amount):
+        ilk = (uid, code) not in yuklenen
+        if ilk:
+            yuklenen.append((uid, code))
+        return ilk
+
+    monkeypatch.setattr(wallet, "credit_promo", sahte_promo)
+
+    with TestClient(app) as client:
+        for _ in range(2):
+            yanit = client.post("/api/v1/account/consent", json={},
+                                headers=_basliklar("deneme"))
+            assert yanit.status_code == 200
+    assert yuklenen == [("dev-user", wallet.TRIAL_PROMO_CODE)]
+
+
+# --------------------------------------------------------------------------
 # Ucretli uclar
 # --------------------------------------------------------------------------
 

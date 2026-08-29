@@ -406,8 +406,6 @@
   "displayName": "Adın",
   "passwordRepeat": "Şifre (tekrar)",
   "passwordsDoNotMatch": "Şifreler eşleşmiyor.",
-  "enterEmailFirst": "Önce e-posta adresini yaz.",
-  "resetLinkSent": "Şifre sıfırlama bağlantısı gönderildi.",
   "nameLabel": "Ad",
   "signAries": "Koç",
   "signTaurus": "Boğa",
@@ -731,7 +729,6 @@
       }
     }
   },
-  "resetLinkSentNeutral": "Bu adres kayıtlıysa şifre sıfırlama bağlantısı gönderildi.",
   "useGoogleInstead": "Giriş yapılamadı. Şifren hatalı olabilir ya da bu hesap Google/Apple ile açılmış olabilir — aşağıdaki düğmeleri dene.",
   "faceReadingTitle": "Yüz Okuma",
   "faceGuideNoFace": "Yüzünü çerçeveye al",
@@ -1228,5 +1225,23 @@
   "chatMentionEmpty": "Eşleşen kişi yok — Çevrem'den ekleyebilirsin",
 
   "discoveryComplete": "Günün üç keşfi tamam ✨ Yarın gökyüzü yeniden kurulur.",
-  "discoveryRingTooltip": "Günün keşif halkası: gökyüzünü aç · Rytho ile konuş · çevrenden birine bak"
+  "discoveryRingTooltip": "Günün keşif halkası: gökyüzünü aç · Rytho ile konuş · çevrenden birine bak",
+
+  "forgotPasswordTitle": "Şifreni sıfırla",
+  "forgotPasswordBody": "Hesabının e-posta adresini yaz; sana bir sıfırlama bağlantısı gönderelim.",
+  "forgotPasswordSend": "Bağlantıyı gönder",
+  "forgotPasswordSentTitle": "Bağlantı yolda",
+  "forgotPasswordSentBody": "Bu adres kayıtlıysa {email} adresine bir sıfırlama bağlantısı gönderdik. Bağlantı kısa süreliğine geçerli.",
+  "@forgotPasswordSentBody": { "placeholders": { "email": { "type": "String" } } },
+  "forgotPasswordSpamHint": "E-posta birkaç dakika içinde gelmezse spam/gereksiz klasörüne bak.",
+  "forgotPasswordResend": "Tekrar gönder",
+  "forgotPasswordResendWait": "Tekrar gönder ({seconds} sn)",
+  "@forgotPasswordResendWait": { "placeholders": { "seconds": { "type": "int" } } },
+  "notifPermissionOffTitle": "Bildirimler sistemde kapalı",
+  "notifPermissionOffBody": "Telefonun ayarlarında Rytho bildirimlerine izin vermeden buradaki tercihler etkisiz kalır: Ayarlar → Uygulamalar → Rytho → Bildirimler.",
+  "chatOpenLabel": "Rytho ile sohbet et",
+  "trialBannerTitle": "Deneme süren aktif ✨",
+  "trialBannerDays": "Tüm Rytho+ özellikleri açık — {days} gün kaldı.",
+  "@trialBannerDays": { "placeholders": { "days": { "type": "int" } } },
+  "trialBannerLastDay": "Tüm Rytho+ özellikleri açık — bugün son gün."
 }

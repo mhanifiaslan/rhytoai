@@ -204,6 +204,29 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             child: Text(widget.reason!,
                 style: RythoText.body(14, color: RythoColors.goldBright)),
           ),
+        // OT6: sunucu taraflı deneme aktifse dürüst geri sayım — kullanıcı
+        // "zaten her şey açıkken" neden paywall gördüğünü anlamalı (davet
+        // buraya jeton mağazasından ya da geri sayım merakından gelebilir).
+        Builder(builder: (context) {
+          final durum = ref.watch(subscriptionProvider).value;
+          final kalan = durum?.trialDaysLeft;
+          if (kalan == null) return const SizedBox.shrink();
+          return GlassPanel(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(l10n.trialBannerTitle,
+                      style: RythoText.body(14.5, w: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text(
+                      kalan <= 1
+                          ? l10n.trialBannerLastDay
+                          : l10n.trialBannerDays(kalan),
+                      style: RythoText.body(12.5,
+                          color: RythoColors.parchmentDim)),
+                ]),
+          );
+        }),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
           child: Text(l10n.paywallHeadline, style: RythoText.display(26)),

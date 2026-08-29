@@ -18,6 +18,7 @@ import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
+import '../../widgets/motion.dart' show reduceMotion;
 import '../../widgets/nebula_widgets.dart';
 import '../paywall/token_store_screen.dart';
 import '../../l10n/app_localizations.dart';
@@ -612,26 +613,32 @@ class _EmptyState extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 76,
-            height: 76,
-            alignment: Alignment.center,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RythoColors.primaryGradient,
-              boxShadow: [
-                BoxShadow(color: RythoColors.magentaGlow, blurRadius: 34),
-              ],
-            ),
-            child: const Text('✦',
-                style: TextStyle(fontSize: 32, color: Colors.white)),
-          )
-              .animate(onPlay: (c) => c.repeat(reverse: true))
-              .scale(
-                  begin: const Offset(1, 1),
-                  end: const Offset(1.06, 1.06),
-                  duration: 1400.ms,
-                  curve: Curves.easeInOut),
+          Builder(builder: (context) {
+            final hero = Container(
+              width: 76,
+              height: 76,
+              alignment: Alignment.center,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RythoColors.primaryGradient,
+                boxShadow: [
+                  BoxShadow(color: RythoColors.magentaGlow, blurRadius: 34),
+                ],
+              ),
+              child: const Text('✦',
+                  style: TextStyle(fontSize: 32, color: Colors.white)),
+            );
+            // OT5 sürüklenme onarımı: bu nabız reduceMotion kapısı OLMAYAN
+            // tek döngülü animasyondu (motion_test bekçisi artık tutuyor).
+            if (reduceMotion(context)) return hero;
+            return hero
+                .animate(onPlay: (c) => c.repeat(reverse: true))
+                .scale(
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.06, 1.06),
+                    duration: 1400.ms,
+                    curve: Curves.easeInOut);
+          }),
           const SizedBox(height: 18),
           Text('Rytho AI', style: RythoText.display(24)),
           const SizedBox(height: 8),

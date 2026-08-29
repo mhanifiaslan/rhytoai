@@ -120,7 +120,7 @@ sunucu tarafı yetkilendirme + token cüzdanı (`backend/core/wallet.py`).
 
 | Katman | İçerik |
 |---|---|
-| **Ücretsiz** | Burç yorumu (günlük/haftalık/aylık), gerçek gökyüzü, günde 5 sohbet mesajı, doğum haritası çarkı ve yerleşimleri, arkadaş listesi, seri ve hazır tepkiler, **1 kişi ekleme** (harita + ilişki ÖLÇÜMÜ; yorum kilitli) |
+| **Ücretsiz** | Burç yorumu (günlük/haftalık/aylık), gerçek gökyüzü, günde 5 sohbet mesajı, doğum haritası çarkı ve yerleşimleri, arkadaş listesi, seri ve hazır tepkiler, **1 kişi ekleme** (harita + ilişki ÖLÇÜMÜ; yorum kilitli). **Yeni hesap ilk 3 gün tüm Rytho+ özelliklerini kartsız dener** (+30 karşılama token'ı, tek sefer — OT6). |
 | **Rytho+** (yalnızca aylık) | Kişiye özel günlük okuma + **10 kişi kontenjanı** (eş, çocuk, yakın) + **aylık 300 token** hakkı. Token'la: sohbet (1), I Ching (2), ikili dinamik (3), natal/BaZi/sinastri/yüz okuma (5). Aylık hak dönem sonunda yenilenir, DEVRETMEZ. |
 > **Not (1.7.0):** ücretsiz katmandan "günde 1 I Ching çekimi" SİLİNDİ — kod `require_plus("iching")` diyor, yani İ Ching Rytho+ içinde. Mağaza metninin koda uymayan tek satırı buydu.
 

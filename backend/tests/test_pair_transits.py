@@ -108,6 +108,37 @@ class TestOlcum:
         # movement taşınır — "güçleniyor/sönüyor" dili buradan.
         assert vuruslar[0]["movement"] in ("applying", "separating")
 
+    def test_mix_hizli_gezene_yer_ayirir(self):
+        """OT1.6: saf yavaş-önce sıralama + tavan 4, aynı 4 vuruşu
+        haftalarca gösteriyordu ("yorumlar değişmiyor" cihaz bulgusu).
+        Artık ≥4 yavaş vuruş olsa bile EN DAR hızlı vuruş listeye girer —
+        hızlılar günde ~1° yol aldığı için şerit her gün değişir."""
+        yavaslar = [
+            {"transit": "Pluto", "natal": "Sun", "aspect": "trine",
+             "orb": 0.2},
+            {"transit": "Saturn", "natal": "Moon", "aspect": "square",
+             "orb": 0.5},
+            {"transit": "Neptune", "natal": "Venus", "aspect": "sextile",
+             "orb": 0.9},
+            {"transit": "Jupiter", "natal": "Mars", "aspect": "trine",
+             "orb": 1.1},
+        ]
+        hizlilar = [
+            {"transit": "Venus", "natal": "Sun", "aspect": "conjunction",
+             "orb": 0.4},
+            {"transit": "Mars", "natal": "Moon", "aspect": "square",
+             "orb": 1.8},
+        ]
+        secilen = synastry_service._mix_hits(yavaslar + hizlilar)
+        assert len(secilen) == synastry_service.PAIR_TRANSIT_CAP
+        assert any(v["transit"] == "Venus" for v in secilen)  # en dar hızlı
+        # En dar yavaşlar korunur; kurban en genis orb'lu yavaş olur.
+        assert any(v["transit"] == "Pluto" for v in secilen)
+        assert not any(v["transit"] == "Jupiter" for v in secilen)
+        # Az vuruşlu çiftte davranış değişmez.
+        assert synastry_service._mix_hits(yavaslar[:2]) == sorted(
+            yavaslar[:2], key=lambda v: v["orb"])
+
     def test_taraf_basina_ust_sinir(self, sahte_ortam):
         sonuc = synastry_service.pair_transits("u1", KARSI)
         from collections import Counter
