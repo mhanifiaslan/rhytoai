@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Rytho — Hesap işlemi</title>
+
+  <!-- Firebase Auth eylem sayfasi (mode=resetPassword | verifyEmail |
+       recoverEmail). Firebase Console > Authentication > Templates >
+       Action URL bu sayfaya cevrilidir; e-postadaki baglanti buraya
+       ?mode=...&oobCode=...&lang=... ile gelir.
+
+       Yapilandirma Hosting'in ayrilmis URL'lerinden gelir
+       (/__/firebase/init.js) - anahtar gomulmez; rytho-admin ile ayni
+       desen. Sifre kurali mobil auth_service.validatePassword ile
+       birebir aynidir: en az 8 karakter + {harf, rakam, sembol}
+       siniflarindan en az ikisi. -->
+
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: linear-gradient(180deg, #13091F 0%, #241038 55%, #0B0713 100%);
+      color: #EFE7DA;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   Helvetica, Arial, sans-serif;
+    }
+    main { max-width: 420px; width: 100%; }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 22px;
+      color: #F2C14E;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+    }
+    .brand .glyph { font-size: 22px; }
+    .card {
+      background: rgba(255, 255, 255, 0.045);
+      border: 1px solid rgba(239, 231, 218, 0.13);
+      border-radius: 18px;
+      padding: 26px 22px;
+      backdrop-filter: blur(6px);
+    }
+    h1 {
+      font-size: 22px;
+      margin: 0 0 8px;
+      letter-spacing: -0.2px;
+      text-align: center;
+    }
+    p.sub {
+      color: #B9AFC4;
+      line-height: 1.55;
+      margin: 0 0 22px;
+      font-size: 14px;
+      text-align: center;
+      overflow-wrap: anywhere;
+    }
+    p.sub .email { color: #F2C14E; font-weight: 600; }
+    label {
+      display: block;
+      font-size: 12.5px;
+      color: #B9AFC4;
+      margin: 0 0 6px 2px;
+    }
+    .field { position: relative; margin-bottom: 14px; }
+    input[type="password"], input[type="text"] {
+      width: 100%;
+      padding: 13px 74px 13px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(239, 231, 218, 0.2);
+      background: rgba(11, 7, 19, 0.55);
+      color: #EFE7DA;
+      font-size: 15px;
+      outline: none;
+    }
+    input:focus { border-color: #F2C14E; }
+    .toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: 0;
+      background: transparent;
+      color: #7E7490;
+      font-size: 12.5px;
+      cursor: pointer;
+      padding: 6px 8px;
+    }
+    .toggle:hover { color: #EFE7DA; }
+    ul.rules {
+      list-style: none;
+      margin: 2px 0 18px;
+      padding: 0;
+      font-size: 12.5px;
+      color: #7E7490;
+      line-height: 1.9;
+    }
+    ul.rules li::before { content: "○ "; }
+    ul.rules li.ok { color: #7FD8A4; }
+    ul.rules li.ok::before { content: "✓ "; }
+    ul.rules li.bad { color: #FF8A5C; }
+    ul.rules li.bad::before { content: "✕ "; }
+    button.primary {
+      display: block;
+      width: 100%;
+      padding: 15px 20px;
+      border: 0;
+      border-radius: 14px;
+      font-weight: 600;
+      font-size: 15px;
+      color: #fff;
+      background: linear-gradient(135deg, #7B4BC9, #C8479B);
+      cursor: pointer;
+    }
+    button.primary:disabled { opacity: 0.45; cursor: default; }
+    a.store {
+      display: block;
+      margin-top: 14px;
+      padding: 13px 20px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 14px;
+      text-align: center;
+      background: transparent;
+      border: 1px solid rgba(239, 231, 218, 0.22);
+      color: #EFE7DA;
+    }
+    .error {
+      display: none;
+      margin: 0 0 14px;
+      padding: 11px 13px;
+      border-radius: 12px;
+      background: rgba(255, 92, 122, 0.12);
+      border: 1px solid rgba(255, 92, 122, 0.35);
+      color: #FF9FB2;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .big-glyph { font-size: 52px; text-align: center; margin-bottom: 10px; }
+    .center { text-align: center; }
+    .note { font-size: 12px; color: #7E7490; margin-top: 20px; text-align: center; line-height: 1.6; }
+    .spinner {
+      width: 26px; height: 26px;
+      margin: 8px auto 16px;
+      border: 3px solid rgba(239, 231, 218, 0.15);
+      border-top-color: #F2C14E;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) {
+      .spinner { animation: none; }
+    }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand"><span class="glyph">✦</span><span>Rytho</span></div>
+
+    <!-- Durum: yukleniyor -->
+    <div class="card" id="state-loading">
+      <div class="spinner" aria-hidden="true"></div>
+      <p class="sub" id="loading-text" style="margin-bottom:4px"></p>
+    </div>
+
+    <!-- Durum: sifre formu -->
+    <div class="card hidden" id="state-form">
+      <h1 id="form-title"></h1>
+      <p class="sub" id="form-sub"></p>
+      <div class="error" id="form-error" role="alert"></div>
+      <form id="reset-form" novalidate>
+        <label for="pw1" id="label-pw1"></label>
+        <div class="field">
+          <input type="password" id="pw1" autocomplete="new-password" autofocus>
+          <button type="button" class="toggle" data-for="pw1"></button>
+        </div>
+        <label for="pw2" id="label-pw2"></label>
+        <div class="field">
+          <input type="password" id="pw2" autocomplete="new-password">
+          <button type="button" class="toggle" data-for="pw2"></button>
+        </div>
+        <ul class="rules">
+          <li id="rule-len"></li>
+          <li id="rule-mix"></li>
+          <li id="rule-match"></li>
+        </ul>
+        <button type="submit" class="primary" id="submit" disabled></button>
+      </form>
+    </div>
+
+    <!-- Durum: basari -->
+    <div class="card hidden" id="state-done">
+      <div class="big-glyph">🌙</div>
+      <h1 id="done-title"></h1>
+      <p class="sub" id="done-body" style="margin-bottom:8px"></p>
+      <a class="store hidden" id="store-link"
+         href="https://play.google.com/store/apps/details?id=ai.rytho"></a>
+    </div>
+
+    <!-- Durum: hata (gecersiz/suresi dolmus baglanti) -->
+    <div class="card hidden" id="state-invalid">
+      <div class="big-glyph">🔗</div>
+      <h1 id="invalid-title"></h1>
+      <p class="sub" id="invalid-body" style="margin-bottom:4px"></p>
+    </div>
+
+    <p class="note" id="footer-note"></p>
+  </main>
+
+  <script src="/__/firebase/10.12.2/firebase-app-compat.js"></script>
+  <script src="/__/firebase/10.12.2/firebase-auth-compat.js"></script>
+  <script src="/__/firebase/init.js"></script>
+  <script>
+    'use strict';
+
+    // ---- Dil: once ?lang= (Firebase setLanguageCode ile ekler), sonra tarayici.
+    var params = new URLSearchParams(window.location.search);
+    var lang = (params.get('lang') || navigator.language || 'tr')
+      .toLowerCase().slice(0, 2);
+    if (lang !== 'en') lang = 'tr';
+    document.documentElement.lang = lang;
+
+    var T = {
+      tr: {
+        pageTitle: 'Rytho — Şifre yenileme',
+        loading: 'Bağlantı doğrulanıyor…',
+        formTitle: 'Yeni şifreni belirle',
+        formSub: '{email} hesabı için yeni bir şifre oluştur.',
+        labelPw1: 'Yeni şifre',
+        labelPw2: 'Yeni şifre (tekrar)',
+        ruleLen: 'En az 8 karakter',
+        ruleMix: 'Harf, rakam ve sembolden en az ikisi',
+        ruleMatch: 'İki şifre birbiriyle aynı',
+        submit: 'Şifreyi güncelle',
+        submitBusy: 'Güncelleniyor…',
+        show: 'Göster',
+        hide: 'Gizle',
+        doneTitle: 'Şifren güncellendi',
+        doneBody: 'Artık Rytho uygulamasına yeni şifrenle giriş yapabilirsin. Bu sayfayı kapatabilirsin.',
+        verifiedTitle: 'E-posta adresin doğrulandı',
+        verifiedBody: 'Uygulamaya dönüp kaldığın yerden devam edebilirsin.',
+        recoveredTitle: 'E-posta değişikliği geri alındı',
+        recoveredBody: 'Hesabın eski e-posta adresine bağlandı. Şifreni de değiştirmeni öneririz.',
+        invalidTitle: 'Bağlantı geçersiz ya da süresi dolmuş',
+        invalidBody: 'Güvenlik için bu bağlantılar kısa süre geçerlidir ve tek kullanımlıktır. Uygulamadaki "Şifremi unuttum" adımından yeni bir bağlantı isteyebilirsin.',
+        errWeak: 'Bu şifre çok zayıf. Daha uzun ve karışık bir şifre dene.',
+        errNetwork: 'Ağ hatası — bağlantını kontrol edip tekrar dene.',
+        errGeneric: 'Bir şeyler ters gitti. Lütfen tekrar dene.',
+        store: "Google Play'den indir",
+        footer: 'Bu sayfa Rytho hesap işlemleri içindir. Şifren yalnızca Firebase kimlik servisine iletilir; Rytho sunucularında saklanmaz.'
+      },
+      en: {
+        pageTitle: 'Rytho — Reset password',
+        loading: 'Verifying the link…',
+        formTitle: 'Choose a new password',
+        formSub: 'Set a new password for {email}.',
+        labelPw1: 'New password',
+        labelPw2: 'Repeat new password',
+        ruleLen: 'At least 8 characters',
+        ruleMix: 'At least two of: letters, digits, symbols',
+        ruleMatch: 'Both passwords match',
+        submit: 'Update password',
+        submitBusy: 'Updating…',
+        show: 'Show',
+        hide: 'Hide',
+        doneTitle: 'Password updated',
+        doneBody: 'You can now sign in to the Rytho app with your new password. Feel free to close this page.',
+        verifiedTitle: 'Email address verified',
+        verifiedBody: 'You can return to the app and pick up where you left off.',
+        recoveredTitle: 'Email change reverted',
+        recoveredBody: 'Your account is linked to its previous email again. We also recommend changing your password.',
+        invalidTitle: 'This link is invalid or has expired',
+        invalidBody: 'For security these links are short-lived and single-use. Request a fresh one from "Forgot password" in the app.',
+        errWeak: 'That password is too weak. Try something longer and more varied.',
+        errNetwork: 'Network error — check your connection and try again.',
+        errGeneric: 'Something went wrong. Please try again.',
+        store: 'Get it on Google Play',
+        footer: 'This page handles Rytho account actions. Your password goes only to the Firebase identity service; Rytho servers never store it.'
+      }
+    }[lang];
+
+    document.title = T.pageTitle;
+    document.getElementById('loading-text').textContent = T.loading;
+    document.getElementById('footer-note').textContent = T.footer;
+
+    function show(id) {
+      ['state-loading', 'state-form', 'state-done', 'state-invalid']
+        .forEach(function (s) {
+          document.getElementById(s).classList.toggle('hidden', s !== id);
+        });
+    }
+
+    function done(title, body, withStore) {
+      document.getElementById('done-title').textContent = title;
+      document.getElementById('done-body').textContent = body;
+      var store = document.getElementById('store-link');
+      store.textContent = T.store;
+      store.classList.toggle('hidden', !withStore);
+      show('state-done');
+    }
+
+    function invalid() {
+      document.getElementById('invalid-title').textContent = T.invalidTitle;
+      document.getElementById('invalid-body').textContent = T.invalidBody;
+      show('state-invalid');
+    }
+
+    // ---- Sifre kurali: mobil validatePassword ile birebir ayni.
+    function passwordIssue(pw) {
+      if (pw.length < 8) return 'len';
+      var classes = 0;
+      if (/[a-zçğıöşü]/.test(pw.toLowerCase())) classes++;
+      if (/[0-9]/.test(pw)) classes++;
+      if (/[^A-Za-z0-9ÇĞİÖŞÜçğıöşü]/.test(pw)) classes++;
+      if (classes < 2) return 'mix';
+      return null;
+    }
+
+    var mode = params.get('mode');
+    var oobCode = params.get('oobCode');
+    var auth = firebase.auth();
+
+    if (!oobCode || !mode) {
+      invalid();
+    } else if (mode === 'resetPassword') {
+      auth.verifyPasswordResetCode(oobCode).then(function (email) {
+        setupForm(email);
+      }).catch(invalid);
+    } else if (mode === 'verifyEmail') {
+      auth.applyActionCode(oobCode).then(function () {
+        done(T.verifiedTitle, T.verifiedBody, false);
+      }).catch(invalid);
+    } else if (mode === 'recoverEmail') {
+      auth.applyActionCode(oobCode).then(function () {
+        done(T.recoveredTitle, T.recoveredBody, false);
+      }).catch(invalid);
+    } else {
+      invalid();
+    }
+
+    function setupForm(email) {
+      document.getElementById('form-title').textContent = T.formTitle;
+      var sub = document.getElementById('form-sub');
+      var parts = T.formSub.split('{email}');
+      sub.textContent = '';
+      sub.appendChild(document.createTextNode(parts[0]));
+      var em = document.createElement('span');
+      em.className = 'email';
+      em.textContent = email;
+      sub.appendChild(em);
+      sub.appendChild(document.createTextNode(parts[1]));
+
+      document.getElementById('label-pw1').textContent = T.labelPw1;
+      document.getElementById('label-pw2').textContent = T.labelPw2;
+      document.getElementById('rule-len').textContent = T.ruleLen;
+      document.getElementById('rule-mix').textContent = T.ruleMix;
+      document.getElementById('rule-match').textContent = T.ruleMatch;
+      var submit = document.getElementById('submit');
+      submit.textContent = T.submit;
+
+      var pw1 = document.getElementById('pw1');
+      var pw2 = document.getElementById('pw2');
+      var errBox = document.getElementById('form-error');
+
+      // Goster/gizle dugmeleri.
+      Array.prototype.forEach.call(
+        document.querySelectorAll('.toggle'),
+        function (btn) {
+          btn.textContent = T.show;
+          btn.addEventListener('click', function () {
+            var input = document.getElementById(btn.getAttribute('data-for'));
+            var visible = input.type === 'text';
+            input.type = visible ? 'password' : 'text';
+            btn.textContent = visible ? T.show : T.hide;
+            input.focus();
+          });
+        });
+
+      // Canli kural listesi: bos alan notr (○), dolu alan ✓/✕.
+      function mark(id, state) {
+        var li = document.getElementById(id);
+        li.classList.remove('ok', 'bad');
+        if (state === true) li.classList.add('ok');
+        if (state === false) li.classList.add('bad');
+      }
+      function refresh() {
+        var a = pw1.value, b = pw2.value;
+        var issue = passwordIssue(a);
+        mark('rule-len', a ? a.length >= 8 : null);
+        mark('rule-mix', a.length >= 8 ? issue !== 'mix' : (a ? false : null));
+        mark('rule-match', b ? (a === b && !!a) : null);
+        submit.disabled = !(a && !issue && a === b);
+      }
+      pw1.addEventListener('input', refresh);
+      pw2.addEventListener('input', refresh);
+      refresh();
+
+      document.getElementById('reset-form').addEventListener('submit',
+        function (ev) {
+          ev.preventDefault();
+          if (submit.disabled) return;
+          errBox.style.display = 'none';
+          submit.disabled = true;
+          submit.textContent = T.submitBusy;
+          auth.confirmPasswordReset(oobCode, pw1.value).then(function () {
+            done(T.doneTitle, T.doneBody, true);
+          }).catch(function (e) {
+            var code = (e && e.code) || '';
+            if (code === 'auth/expired-action-code' ||
+                code === 'auth/invalid-action-code' ||
+                code === 'auth/user-not-found' ||
+                code === 'auth/user-disabled') {
+              invalid();
+              return;
+            }
+            var msg = T.errGeneric;
+            if (code === 'auth/weak-password') msg = T.errWeak;
+            if (code === 'auth/network-request-failed') msg = T.errNetwork;
+            errBox.textContent = msg;
+            errBox.style.display = 'block';
+            submit.textContent = T.submit;
+            submit.disabled = false;
+          });
+        });
+
+      show('state-form');
+      pw1.focus();
+    }
+  </script>
+</body>
+</html>

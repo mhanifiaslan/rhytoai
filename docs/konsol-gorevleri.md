@@ -44,6 +44,28 @@ gösteriyor. Konsolda ELLE doğrulanacak tek şey:
   `setLanguageCode` yalnız Firebase'in HAZIR dil şablonları arasından
   seçim yapar — özel metin yazdıysan dil başına ayrı düzenlenir.
 
+## 1c. Firebase: e-posta eylem URL'i → markalı sayfa (ŞS — şifre sayfası)
+
+Kod tarafı hazır ve YAYINDA: `https://rhytoai.web.app/auth/action`
+markalı eylem sayfası deploy edildi (şifre + tekrar, canlı kural
+listesi, mobil `validatePassword` ile birebir aynı politika, TR/EN,
+`verifyEmail`/`recoverEmail` modları da karşılanıyor). Bağlantının
+Firebase'in varsayılan `rhytoai.firebaseapp.com` sayfası yerine BURAYA
+düşmesi için konsolda TEK elle adım gerekiyor (CLI/API'den yapılamıyor):
+
+1. Firebase Console → **Authentication → Templates → Password reset** →
+   kalem (düzenle) → alttaki **"Customize action URL"** bağlantısı.
+2. Alana şunu yaz: `https://rhytoai.web.app/auth/action`
+3. Kaydet. (Firebase bu URL'i TÜM e-posta şablonlarına birden uygular —
+   şablon başına tekrarlamak gerekmez. `mode`/`oobCode`/`lang`
+   parametrelerini bağlantıya Firebase kendisi ekler.)
+
+Doğrulama: uygulamada "Şifremi unuttum" → gelen e-postadaki bağlantı
+adres satırında `rhytoai.web.app/auth/action` göstermeli; sayfada İKİ
+şifre alanı ve Rytho tasarımı olmalı. Yapılmadığı sürece eski
+`firebaseapp.com` tek-input sayfası görünmeye devam eder (akış yine
+çalışır — bu adım görünüm/güven işi, işlevi kilitlemez).
+
 ## 2. RevenueCat: 3 token paketi + entitlement adı (R1 — token ekonomisi)
 
 Yapılmadan: Token mağazası ekranı paketleri listeleyemez ("ürün
