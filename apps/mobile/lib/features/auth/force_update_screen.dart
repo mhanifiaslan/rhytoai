@@ -22,12 +22,20 @@ class ForceUpdateScreen extends StatelessWidget {
 
   Future<void> _magazayaGit() async {
     // Önce Play uygulaması; kurulu değilse (ör. bazı tabletler) web sayfası.
+    // KT4: `market://` işleyen etkinlik YOKSA launchUrl false döndürmez,
+    // PlatformException FIRLATIR — eski kod web'e hiç düşemiyor ve bu
+    // ekranın başka çıkışı olmadığı için kullanıcı gerçekten kilitli
+    // kalıyordu. İki katman da try içinde: son çare sessiz kalmaktansa
+    // web denemesidir.
     final market = Uri.parse('market://details?id=ai.rytho');
     final web = Uri.parse(
         'https://play.google.com/store/apps/details?id=ai.rytho');
-    if (!await launchUrl(market)) {
+    try {
+      if (await launchUrl(market)) return;
+    } catch (_) {}
+    try {
       await launchUrl(web, mode: LaunchMode.externalApplication);
-    }
+    } catch (_) {}
   }
 
   @override

@@ -346,6 +346,75 @@ def test_ucretsiz_gunluk_hak_token_dusurmez(depo, monkeypatch):
     assert _cuzdan(depo) == {}
 
 
+def test_deneme_kullanicisi_gunluk_hakkini_KORUR(depo, monkeypatch):
+    """KT2: in_trial 'abone' sayılıyordu ve consume_quota hiç
+    çağrılmıyordu — deneme kullanıcısı günde 5 ücretsiz sohbetini
+    kaybedip 30 jetonu sohbete yakıyordu. Ayrım artık GERÇEK mağaza
+    aboneliği: denemede önce günlük hak, jeton rapor gibi işlere kalır."""
+    # in_trial=True senaryosu: is_subscriber True olurdu ama abonelik yok.
+    monkeypatch.setattr(wallet.entitlements, "is_subscriber",
+                        lambda uid: True)
+    kota = {"n": 0}
+    monkeypatch.setattr("core.entitlements.consume_quota",
+                        lambda uid, key, limit: kota.__setitem__(
+                            "n", kota["n"] + 1) or True)
+    _cuzdan_yaz(depo, allowance=0, allowanceExpiresAt=None, purchased=30)
+
+    harcandi = wallet.charge_metered(_Kullanici(), "chat", 5)
+
+    assert harcandi is False          # ücretsiz haktan geçti
+    assert kota["n"] == 1             # kota GERÇEKTEN soruldu
+    assert _cuzdan(depo)["purchased"] == 30  # jetona dokunulmadı
+
+
+def test_deneme_kota_bitince_jeton_devreye_girer(depo, monkeypatch):
+    monkeypatch.setattr(wallet.entitlements, "is_subscriber",
+                        lambda uid: True)
+    monkeypatch.setattr("core.entitlements.consume_quota",
+                        lambda uid, key, limit: False)
+    _cuzdan_yaz(depo, allowance=0, allowanceExpiresAt=None, purchased=30)
+
+    harcandi = wallet.charge_metered(_Kullanici(), "chat", 5)
+
+    assert harcandi is True
+    assert _cuzdan(depo)["purchased"] == 29
+
+
+def test_gercek_abone_kotaya_ugramaz(depo, monkeypatch):
+    """Mağaza abonesi eskisi gibi doğrudan cüzdandan harcar — aylık
+    300'lük hak bunun için var; günlük kota hiç sorgulanmaz."""
+    _abone_yap(monkeypatch, _DONEM)
+    monkeypatch.setattr(
+        "core.entitlements.consume_quota",
+        lambda uid, key, limit: (_ for _ in ()).throw(
+            AssertionError("abonede kota sorgulanmamalı")))
+    _cuzdan_yaz(depo, allowance=10, allowanceExpiresAt=_DONEM, purchased=0)
+
+    assert wallet.charge_metered(_Kullanici(), "chat", 5) is True
+    assert _cuzdan(depo)["allowance"] == 9
+
+
+# ---------------------------------------------------------------------------
+# Deneme jetonu tembel telafisi (KT2)
+# ---------------------------------------------------------------------------
+
+def test_tembel_telafi_eksik_jetonu_tamamlar(depo, monkeypatch):
+    monkeypatch.setattr(wallet.entitlements, "in_trial", lambda uid: True,
+                        raising=False)
+    wallet.ensure_trial_tokens("u1")
+    assert _cuzdan(depo)["purchased"] == wallet.TRIAL_TOKENS
+    # İkinci çağrı defter kaydını görür, İKİNCİ KEZ yüklemez.
+    wallet.ensure_trial_tokens("u1")
+    assert _cuzdan(depo)["purchased"] == wallet.TRIAL_TOKENS
+
+
+def test_tembel_telafi_deneme_disinda_calismaz(depo, monkeypatch):
+    monkeypatch.setattr(wallet.entitlements, "in_trial", lambda uid: False,
+                        raising=False)
+    wallet.ensure_trial_tokens("u1")
+    assert _cuzdan(depo) == {}
+
+
 def test_kota_bitince_paket_kurtarir(depo, monkeypatch):
     """Paket almak için abonelik ŞART DEĞİL — bilinçli ürün kararı."""
     monkeypatch.setattr("core.entitlements.consume_quota",

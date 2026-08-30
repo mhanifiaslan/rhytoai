@@ -41,6 +41,14 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
 | Yüz okuma rızası | `users/{uid}.faceConsent` — yalnızca sunucu yazar | İspat kaydı (GDPR Md.7/1) | Evet | Hayır |
 | Çökme kayıtları | Firebase Crashlytics | Kararlılık | Hayır (anonim) | Hayır |
 | Kullanım olayları | Firebase Analytics | Ürün ölçümü | Evet | Hayır |
+| **Günlük notları (serbest metin, isteğe bağlı)** | `users/{uid}/private/memory.diary` — kullanıcı "Günlüğüm"e yazar; yalnız kendi sohbet/okuma bağlamına girer, tek tek silinebilir | Yorumların yaşantıya bağlanması | Evet | Hayır |
+| **AI kullanım telemetrisi (KENDİ sunucumuz — Analytics DEĞİL)** | `usageEvents` — uid + özellik adı + token sayıları + tahmini maliyet + gecikme; her LLM çağrısında (AP-turu) | Maliyet/kalite gözlemi, işletme paneli | Evet | Hayır |
+| Jeton hareket defteri | `users/{uid}/private/wallet/ledger` — kredi/harcama/iade kayıtları (AP-turu debit dahil) | Bakiye izlenebilirliği, destek | Evet | Hayır |
+| Platform adı ("android"/"ios") | `users/{uid}.platform` — cihaz kaydında sunucu yazar (AP4) | İstatistik kırılımı | Evet | Hayır |
+
+> Sunucu-operasyon koleksiyonları `notifyRuns` (bildirim koşu sayıları)
+> ve `adminAudit` (yönetici eylem izi) kullanıcı İÇERİĞİ taşımaz; audit
+> kayıtları hedef uid + eylem parametresi tutar (destek/denetim amacı).
 
 ### Toplanmayanlar — açıkça
 
@@ -135,6 +143,9 @@ Her madde için "Bu veriyi topluyor musunuz?" → aşağıdaki gibi işaretleyin
 | App info & performance | Crash logs, Diagnostics | Evet | Hayır | Hayır | Analitik |
 | Financial info | Purchase history | Evet | Hayır | Hayır | Uygulama işlevi |
 | Personal info | Other info (yüz oranları — türetilmiş sayılar) | Evet | Hayır | Hayır | Uygulama işlevi |
+| Messages | Other in-app messages (günlük notları — kullanıcı yazar, yalnız kendi bağlamında) | Evet | **Evet** (Google — Gemini, sohbet bağlamı olarak) | Hayır | Uygulama işlevi |
+| App activity | Other user-generated content? HAYIR — kullanıcılar-arası içerik yok (tepkiler kapalı küme) | — | — | — | — |
+| Device or other IDs | Device or other IDs (rastgele cihaz kimliği + AD_ID izni: firebase_analytics bağımlılığından gelir) | Evet | Hayır | Hayır | Analitik, tek cihaz kilidi |
 
 > **Yüz okuma neden "Photos and videos" altında DEĞİL:** Play bu kategoriyi
 > uygulamanın fotoğraf/video *topladığı* durumlar için istiyor. Yüz okuma
@@ -185,8 +196,12 @@ Gizlilik politikasında yazılı.
 
 Her iki formda da:
 
-- Kullanıcı üretimi içerik paylaşımı: **hayır** (serbest metin yok)
-- Kullanıcılar arası etkileşim: **evet, sınırlı** — yalnızca sabit tepki kümesi
+- KULLANICILAR ARASI içerik paylaşımı: **hayır** — diğer kullanıcılara
+  serbest metin gösterilmez (tepkiler 12'lik kapalı küme —
+  `core/friends.dart kReactions`). Kullanıcının KENDİNE yazdığı serbest
+  metin VARDIR (sohbet + günlük) ve §1'de beyanlıdır; "hiç serbest metin
+  yok" cümlesi kurulMAZ.
+- Kullanıcılar arası etkileşim: **evet, sınırlı** — yalnızca sabit tepki kümesi (12)
 - Konum paylaşımı: **hayır**
 - Dijital satın alma: **evet** (abonelik)
 
@@ -211,9 +226,14 @@ Kullanıcı "çocuğum" türünde bir kişi ekleyebiliyor. Bu, uygulamayı
 Bu dosya kodun aynası. Aşağıdakilerden biri değişirse beyanı güncelleyin:
 
 - `infra/firestore.rules` — `users/{uid}` alan listesi
-- `backend/services/memory_service.py` — `CATEGORIES`
+- `backend/services/memory_service.py` — `CATEGORIES` + diary
 - `apps/mobile/lib/core/notifications.dart` — profile yazılan alanlar
 - `backend/main.py` — kayıtlı router listesi
+- `backend/services/usage_service.py` — AI telemetri alanları (uid'li!)
+- `backend/api/account.py` — diary uçları
+- `backend/api/admin.py` + `services/admin_service.py` — adminAudit ve
+  panelin gördüğü kullanıcı alanları
+- `backend/core/wallet.py` — ledger türleri
 - `apps/mobile/lib/features/face/` — yüz okuma; görüntünün cihazdan
   çıkmadığının kaynağı. `face_capture_screen.dart` fotoğraf ÇEKMİYOR;
   `face_segmentation.dart` modeli cihazda çalıştırıyor

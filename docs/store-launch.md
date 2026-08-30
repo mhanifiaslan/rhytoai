@@ -22,8 +22,9 @@ keyAlias=rytho-upload
 storeFile=c:/keys/rytho-upload.jks
 ```
 
-`app/build.gradle.kts` release bloğunu imzalama yapılandırmasına bağla
-(şu an debug anahtarıyla imzalanıyor — yayın öncesi değiştirilmeli):
+`app/build.gradle.kts` release bloğu imzalamaya BAĞLI (2026-08-07'den
+beri kurulu; `key.properties` yoksa build-aab.ps1 artık THROW eder —
+KT4 kapısı). Referans yapılandırma:
 
 ```kotlin
 signingConfigs {
@@ -55,13 +56,57 @@ App Bundle üretimi: `flutter build appbundle --release`
      (`apps/mobile/lib/features/profile/legal_texts.dart`) ama mağaza bir URL
      ister — bir web adresinde yayınlanmalı (Firebase Hosting yeterli).
    - **Veri güvenliği formu:** `docs/store-privacy-labels.md` §3'teki tabloyu
-     birebir gir. Konum yok, biyometrik veri yok, rehber erişimi yok.
+     birebir gir. Konum yok, biyometrik veri yok. DİKKAT: rehber erişimi
+     "yok" DEĞİL — isteğe bağlı rehber eşleşmesi VAR (yalnız numara
+     özetleri, saklanmaz; labels §1'e bak). Veri silme URL'si:
+     `https://rhytoai.web.app/legal/hesap-silme.html`.
    - İçerik derecelendirmesi anketi: Teen/13+ hedefleniyor
      (`docs/store-privacy-labels.md` §5).
 4. **Test → İç test** → yeni sürüm → `.aab` yükle → test kullanıcısı
    e-postalarını ekle → yayınla.
 5. Play App Signing'i kabul et (Google imzalama anahtarını yönetir; senin
    ürettiğin anahtar "upload key" olur).
+
+## 2b. Kapalı test (closed testing) — KT-turu kontrol listesi
+
+İç testten farkı: daha geniş testçi havuzu, "Uygulama içeriği" bölümünün
+TAMAMI zorunlu, ve üretim davranışının birebir provası. Sıra:
+
+1. **ÖNCE Firebase imzaları** (yapılmadan mağaza paketinde Google girişi
+   ve SMS ÖLÜR): Play Console → Setup → App integrity → **App signing key
+   certificate**'ın SHA-1 VE SHA-256'sını kopyala → Firebase Console →
+   Project settings → Android app → ikisini de ekle →
+   **google-services.json'u yeniden indir** ve
+   `apps/mobile/android/app/`'e koy → AAB'yi bundan SONRA üret.
+2. **Ürünler**: yukarıdaki "Kalan konsol işleri" 1-4 (abonelik
+   DENEMESİZ + 3 paket + RevenueCat bağlama + webhook).
+3. **License testing**: Play Console → Settings → License testing →
+   testçi e-postaları. Bu hesaplar test kartıyla öder (gerçek tahsilat
+   yok) ve abonelik yenilemesi dakikalara hızlanır (aylık ≈ 5 dk) —
+   yenileme/iade senaryoları böyle koşulur.
+4. **Uygulama içeriği** (hepsi zorunlu): Veri güvenliği formu
+   (labels §3 + veri silme URL'si `…/legal/hesap-silme.html` +
+   **AD_ID beyanı**: firebase_analytics AD_ID iznini birleştirir —
+   "reklam için DEĞİL, analitik için" işaretle), İçerik derecelendirme
+   anketi, Hedef kitle 13+, "Reklam içermiyor" beyanı, Gizlilik
+   politikası URL'si.
+5. **Mağaza kaydı varlıkları**: 512×512 ikon, 1024×500 feature graphic,
+   en az 2 telefon ekran görüntüsü, kısa/uzun açıklama.
+6. **Test → Kapalı test** → kanal oluştur → AAB yükle → testçi listesi
+   ya da Google Grubu ekle → sürüm notu (şablon aşağıda) → yayınla →
+   katılım bağlantısını testçilere gönder.
+7. Yayın sonrası ilk gün: Panel → Sistem'de webhook/bildirim sağlığı;
+   `revenueEvents`'e ilk gerçek kayıt düştüğünde test-raporu B2 kapanır.
+
+Sürüm notu şablonu (kanal başına kopyala/uyarla):
+
+```
+Rytho kapalı test {SÜRÜM}
+• Yeni: {1-3 madde, kullanıcı diliyle}
+• Düzeltme: {varsa}
+Bilinen sınırlar: deneme 3 gün, kart istemez; sorun görürsen
+uygulama içinden değil {iletişim kanalı} üzerinden yaz.
+```
 
 ## 3. Firebase App Check (Play Integrity)
 
@@ -93,7 +138,7 @@ Burada yalnızca konsol tarafını ilgilendiren özet var.
 |---|---|
 | **4.3 — Spam / duplicate** | En yüksek risk. Ayırt edici unsurlar ve kanıtları `store-review-notes.md` §2'de; inceleme notu §3'te kopyalanabilir hâlde. |
 | **5.1.1(v) — Hesap silme** | Karşılanıyor: Profil → Hesabı sil. |
-| **1.2 — UGC** | Uygulanmıyor: kullanıcılar arası **serbest metin yok**, yalnızca sekiz maddelik kapalı tepki kümesi. |
+| **1.2 — UGC** | Uygulanmıyor: kullanıcılar arası **serbest metin yok**, yalnızca 12 maddelik kapalı tepki kümesi (`core/friends.dart kReactions`). Kullanıcının KENDİNE yazdığı sohbet/günlük metni vardır ama başka kullanıcıya gösterilmez. |
 | **5.3.1 — Kumar/piyango** | Uygulanmıyor. I Ching para atma animasyonu bir kehanet ritüelidir; ödül, bahis veya şans oyunu mekaniği yok. Açıklamada netleştir. |
 | **3.1.1 — Uygulama içi satın alma** | Tek aylık abonelik, harici ödeme bağlantısı yok. |
 
@@ -131,13 +176,17 @@ Kurallar:
 - LLM yanıt üretemezse bedel iade edilir.
 - Kilit sunucuda: 402 + (token bitiminde) `X-Paywall-Reason: tokens` başlığı;
   istemci başlığa göre paywall ya da token mağazası açar.
-- `RYTHO_TOKENS_ENFORCE=0` (varsayılan): kuru çalışma — harcama loglanır ama
-  reddedilmez. Eski sürümler yayılınca `1` yapılır.
+- `RYTHO_TOKENS_ENFORCE=1` — CANLI (K5 kapanışı; kuru çalışma dönemi
+  bitti). Denemedeki kullanıcı günlük ücretsiz hakkını KORUR (KT2).
 
 ### Kalan konsol işleri — uygulama sahibinin
 
 1. **App Store Connect** ve **Play Console**'da abonelik ürününü oluştur:
-   önerilen kimlik `rytho_plus_monthly`, **3 gün ücretsiz deneme**.
+   kimlik `rytho_plus_monthly`. **MAĞAZA DENEMESİ EKLEME (KT kararı):**
+   3 günlük deneme SUNUCU tarafında zaten var (kartsız, hesap yaşına
+   bağlı — OT6); mağazaya da deneme koymak 3+3 gün çakışması, paywall
+   geri sayımıyla çelişki ve "otomatik ücretlendirme" beklentisi
+   yaratırdı. Hukuk metinleri sunucu-denemesi diline göre yazıldı.
 2. Aynı konsollarda ÜÇ **consumable** ürün oluştur — kimlikler birebir:
    `rytho_tokens_small`, `rytho_tokens_medium`, `rytho_tokens_large`
    (önerilen fiyatlar: $1,99 / $4,99 / $12,99). RevenueCat'te bu ürünleri

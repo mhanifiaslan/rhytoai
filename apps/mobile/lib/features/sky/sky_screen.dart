@@ -123,7 +123,17 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
 
-      final abone = ref.read(subscriptionProvider).value?.active ?? false;
+      // KT3: sağlayıcı HÂLÂ YÜKLENİYORKEN `.value` null döner ve eski
+      // `?? false` bunu "abone değil" sayıyordu — abonenin/denemedekinin
+      // yüzüne paywall açılıyor ve tek-atış bayrağı boşa yanıyordu.
+      // Yükleme bitmediyse bu açılışta hiç gösterme (bayrak YAKILMAZ);
+      // bir sonraki açılış gerçek cevapla karar verir.
+      final durum = ref.read(subscriptionProvider);
+      if (durum.isLoading) {
+        await ensureNotificationPermissionAsked();
+        return;
+      }
+      final abone = durum.value?.active ?? false;
       final paywallGosterilecek =
           !abone && !(await introPaywallShown());
 

@@ -3512,6 +3512,30 @@ abstract class AppLocalizations {
   /// **'E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç.'**
   String get emailChangeNote;
 
+  /// No description provided for @emailNotVerified.
+  ///
+  /// In tr, this message translates to:
+  /// **'E-posta adresin henüz doğrulanmadı.'**
+  String get emailNotVerified;
+
+  /// No description provided for @emailVerifyResend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrulama e-postasını gönder'**
+  String get emailVerifyResend;
+
+  /// No description provided for @emailVerifySent.
+  ///
+  /// In tr, this message translates to:
+  /// **'Doğrulama e-postası gönderildi — spam klasörünü de kontrol et.'**
+  String get emailVerifySent;
+
+  /// No description provided for @onboardingSwitchAccount.
+  ///
+  /// In tr, this message translates to:
+  /// **'Farklı hesapla gir'**
+  String get onboardingSwitchAccount;
+
   /// No description provided for @signalsSection.
   ///
   /// In tr, this message translates to:

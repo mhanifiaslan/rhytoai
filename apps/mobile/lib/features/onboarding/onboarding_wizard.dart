@@ -28,6 +28,10 @@ import 'package:intl/intl.dart';
 import '../../core/analytics.dart';
 import '../../core/api.dart';
 import '../../core/birth_record.dart';
+import '../../core/auth_service.dart' show signOutEverywhere;
+import '../../core/consent.dart' show ensureConsentRecorded;
+// kTermsConsentVersion artık core/consent.dart'ta yaşıyor (KT2) — sürüm
+// tek yerden yönetilir, AppShell'deki tekrar deneme de aynı sabiti görür.
 import '../../core/providers.dart'
     show OnboardOutcome, justOnboardedProvider;
 import '../../l10n/app_localizations.dart';
@@ -42,11 +46,6 @@ import '../profile/legal_page.dart';
 import '../profile/legal_texts.dart';
 import '../profile/phone_verify_screen.dart';
 import 'constellation_progress.dart';
-
-/// İstemcinin gösterdiği şartlar/gizlilik metin sürümü — backend
-/// `TERMS_CONSENT_VERSION` ile elle senkron (legal_texts güncellenince
-/// ikisi birlikte artar).
-const int kTermsConsentVersion = 1;
 
 // `kPhoneStepEnabled` bayrağı SİLİNDİ (OT4, kullanıcı kararı): SMS ucu
 // 2026-08-07'den beri canlı ve bu makinede üretilen yayın AAB'leri adımı
@@ -171,13 +170,10 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
         'createdAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      // Kabul kaydı — EN İYİ ÇABA: uç ispat tutar, kilit değildir; kaydın
-      // düşmesi kurulumun tamamını düşürmemeli (kutu işaretlenmeden bu
-      // noktaya gelinemiyor).
-      try {
-        await ref.read(apiProvider).post('/api/v1/account/consent',
-            data: {'version': kTermsConsentVersion});
-      } catch (_) {}
+      // Kabul kaydı — düşerse kurulum DÜŞMEZ ama kayıp da KALICI değil:
+      // başarı bayrakla işaretlenir, bayrak yoksa AppShell her açılışta
+      // yeniden dener (KT2 — jeton + KVKK ispatı tek çağrıya rehin olmaz).
+      await ensureConsentRecorded(ref.read(apiProvider));
 
       final sonuc = await saveBirthRecord(
         BirthRecord(
@@ -515,6 +511,22 @@ class _KarsilamaAdimi extends StatelessWidget {
           child: Text(l10n.insightDisclaimer,
               style:
                   RythoText.body(11, color: RythoColors.parchmentDim)),
+        ),
+        // KT4: sihirbaz PopScope ile kapalı ve 0. adımda geri de yok —
+        // yanlış hesapla giren kullanıcı (test cihazında sık) uygulamayı
+        // silmeden çıkamıyordu. Tek çıkış kapısı burada, küçük ve sakin.
+        const SizedBox(height: 16),
+        RythoReveal(
+          index: sira++,
+          slide: 0,
+          child: Center(
+            child: TextButton(
+              onPressed: signOutEverywhere,
+              child: Text(l10n.onboardingSwitchAccount,
+                  style: RythoText.body(12.5,
+                      color: RythoColors.parchmentDim)),
+            ),
+          ),
         ),
       ],
     );

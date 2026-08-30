@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import '../../core/auth_service.dart' show signOutEverywhere;
 
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/common.dart';
@@ -312,12 +312,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           padding: const EdgeInsets.all(16),
           child: GoldButton(
             text: l10n.signOut,
-            onPressed: () async {
-              try {
-                await GoogleSignIn.instance.signOut();
-              } catch (_) {}
-              await FirebaseAuth.instance.signOut();
-            },
+            // KT4: satır içi çıkış signOutEverywhere'i atlıyordu — cihaz
+            // devralma sorusu bayrağı sıfırlanmıyor, aynı süreçte yeniden
+            // giren kullanıcı soru yerine doğrudan 409 duvarı görüyordu.
+            onPressed: signOutEverywhere,
           ),
         ),
         // "Gönderilerin" bölümü kaldırıldı: kullanıcı üretimi serbest metin

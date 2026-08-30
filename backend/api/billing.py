@@ -117,6 +117,9 @@ def wallet_status(user: AuthUser = Depends(get_current_user)):
     İstemci paket adetlerini de buradan öğrenmez — yalnızca bedel tablosunu
     görür; paket içerikleri satın alma sonrası webhook'la sunucuda yüklenir.
     """
+    # KT2: consent çağrısı düşmüşse deneme jetonunu ilk cüzdan okuması
+    # tamamlar (defterle idempotent — çift yükleme imkânsız).
+    wallet.ensure_trial_tokens(user.uid)
     cuzdan = wallet.get_wallet(user.uid)
     resets_at = cuzdan.get("allowance_resets_at")
     return WalletStatus(
@@ -329,6 +332,28 @@ async def revenuecat_webhook(
         logger.info("Paket ürününde beklenmeyen olay: %s", event_type)
         return {"status": "ignored", "event": event_type}
 
+    # KT2/K-4: TOKEN_PACKS dışı kimlikle gelen NON_RENEWING_PURCHASE,
+    # "para alındı ama jeton yüklenmedi" demektir (Play Console'da ürün
+    # kimliği bir harf sapmış olabilir). Eskiden yalnız INFO loguna düşüp
+    # kayboluyordu; artık ERROR + kalıcı denetim izi — panelin Sistem
+    # sekmesinde görünür, kullanıcı şikâyet etmeden yakalanır.
+    if event_type == "NON_RENEWING_PURCHASE":
+        logger.error("BİLİNMEYEN paket kimliği: %r (uid=%s) — para alındı, "
+                     "jeton YÜKLENMEDİ. Play/RevenueCat ürün kimliğini "
+                     "wallet.TOKEN_PACKS ile karşılaştır.", product_id, uid)
+        try:
+            client = firestore_client.get_client()
+            if client is not None:
+                client.collection("adminAudit").document().set({
+                    "adminUid": "system", "adminEmail": "webhook",
+                    "action": "billing.unknown_pack", "targetUid": uid,
+                    "params": {"productId": product_id,
+                               "eventId": str(event.get("id") or "")},
+                    "at": dt.datetime.now(dt.timezone.utc)})
+        except Exception:
+            pass
+        return {"status": "ignored", "event": event_type}
+
     bilinen = (_ACTIVATING_EVENTS | _DEACTIVATING_EVENTS
                | _CANCELLATION_EVENTS | {_TRANSFER_EVENT})
     # Bilmedigimiz olay tiplerinde mevcut durumu bozmadan onaylayip geciyoruz;
@@ -351,6 +376,25 @@ async def revenuecat_webhook(
 
     if event_type == _TRANSFER_EVENT:
         return _handle_transfer(client, event)
+
+    # KT2/K-4 ikizi: REFUND yalnız KAYITLI abonelik ürünüyle eşleşiyorsa
+    # aboneliğe dokunabilir. Paket listesi dışında kalan yanlış bir ürün
+    # kimliğinin iadesi, kullanıcının AYRI ödediği aboneliğini
+    # söndürmemeli — gelir defterine negatif işlenir, abonelik durur.
+    if event_type == "REFUND" and product_id:
+        try:
+            mevcut = _subscription_ref(client, uid).get()
+            mevcut_urun = ((mevcut.to_dict() or {}).get("productId")
+                           if getattr(mevcut, "exists", False) else None)
+        except Exception:
+            mevcut_urun = None
+        if mevcut_urun and product_id != mevcut_urun:
+            logger.error("REFUND ürünü %r kayıtlı abonelikle %r eşleşmiyor; "
+                         "abonelik DOKUNULMADI (uid=%s).",
+                         product_id, mevcut_urun, uid)
+            _record_revenue_event(event, event_type, uid)
+            return {"status": "ignored", "event": event_type,
+                    "reason": "urun-eslesmiyor"}
 
     expires_at = _ms_to_datetime(event.get("expiration_at_ms"))
     active = event_type in (_ACTIVATING_EVENTS | _CANCELLATION_EVENTS)

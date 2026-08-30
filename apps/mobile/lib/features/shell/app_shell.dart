@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
+import '../../core/api.dart' show apiProvider;
+import '../../core/consent.dart' show ensureConsentRecorded;
 import '../../core/device_claim.dart';
 import '../../core/friends.dart' show FriendStatus, friendsProvider;
 import '../../core/notifications.dart'
@@ -57,6 +59,9 @@ class _AppShellState extends ConsumerState<AppShell> {
       if (!mounted) return;
       maybeConfirmDeviceTakeover(context, ref);
       _buyukUcluPerdesi();
+      // KT2: kabul kaydı onboarding'de düşmüşse burada telafi edilir
+      // (bayraklı — başarı sonrası bir daha ağa çıkmaz).
+      ensureConsentRecorded(ref.read(apiProvider));
       // Soğuk açılış: niyet dinleyiciden ÖNCE yazılmış olabilir.
       final bekleyen = ref.read(pendingNotificationProvider);
       if (bekleyen != null) _niyetIsle(bekleyen);

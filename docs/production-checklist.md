@@ -115,8 +115,10 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
       `user_followed`, `channel_subscribed`, `face_analyzed`). Temizlenmeli;
       yerine bildirim ve abonelik olayları eklenmeli
 - [ ] iOS derlemesi (macOS gerektirir) + TestFlight
-- [ ] Android imzalama anahtarı üret, Play Console iç test kanalı
-      (adımlar: `docs/store-launch.md` §1-2)
+- [x] Android imzalama anahtarı üretildi (`key.properties`, 2026-08-07;
+      build.gradle.kts release bloğu bağlı, build-aab.ps1 KT4'te imzayı
+      doğruluyor); Play Console iç test kanalı canlı — sıradaki adım
+      kapalı test (`docs/store-launch.md` §2b)
 - [ ] Yük testi: rapor uçları LLM'e bağlı
 
 ## 9. Monetizasyon
@@ -127,9 +129,11 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [x] Paywall ilk değerden sonra açılıyor; abone olmayan kullanıcı için
       kilitli uçlara istek atılmıyor
 - [x] RevenueCat kimliği Firebase oturumuna bağlı; TRANSFER olayı işleniyor
-- [ ] **Gerçek mağaza ürünleri ve 3 gün deneme** — App Store Connect / Play
-      Console tarafı, uygulama sahibinin işi
-- [ ] `test_` önekli RevenueCat anahtarları gerçek anahtarlarla değiştirildi
+- [ ] **Gerçek mağaza ürünleri** — Play Console tarafı, uygulama sahibinin
+      işi. Deneme MAĞAZAYA KONMAZ (KT kararı): 3 günlük deneme sunucu
+      tarafında (OT6) — mağaza denemesi eklemek 3+3 çakışması yaratır
+- [x] `REVENUECAT_ANDROID_KEY` gerçek (`goog_` önekli) anahtar; build-aab
+      `test_` görürse artık THROW eder (iOS anahtarı iOS turunda)
 
 ## 10. Mağaza inceleme
 
@@ -155,11 +159,12 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [x] Manifest intent-filter + `android:autoVerify="true"`
 - [x] Uygulama baglantiyi yakaliyor, kullanici adi arkadas ekleme kutusuna
       doluyor; gecersiz ad reddediliyor
-- [ ] **Release imza parmak izi eklenmeli.** `web/.well-known/assetlinks.json`
-      su an DEBUG anahtarinin SHA-256'sini tasiyor. Yayin anahtari
-      uretildikten sonra onun parmak izi eklenmeli (ikisi birden durabilir),
-      yoksa magazadan inen uygulamada baglanti dogrulanmaz.
-      `keytool -list -v -keystore <yol> -alias <alias>`
+- [x] **Release imza parmak izi eklendi** (680d0bb, 2026-08-12):
+      `assetlinks.json` 4 parmak izi taşıyor — debug + Play App Signing
+      GERÇEK imzası (cihazdaki APK'dan apksigner ile okundu) + Play
+      Console'dan kopyalanan ve EŞLEŞMEDİĞİ kanıtlanan iki eski kayıt
+      (CC:95…, AE:3F… — zararsız, temizlenebilir). Magazadan inen pakette
+      App Links doğrulanıyor.
 - [ ] **iOS Team ID eklenmeli.** `web/.well-known/apple-app-site-association`
       icindeki `TEAMID.ai.rytho` gercek Team ID ile degistirilmeli
       (Apple Developer hesabi gerekiyor).

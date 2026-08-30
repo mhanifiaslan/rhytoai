@@ -45,9 +45,20 @@ if (-not $androidKey) {
     throw "dart_defines.local.json icinde REVENUECAT_ANDROID_KEY yok."
 }
 if ($androidKey.StartsWith("test_")) {
-    Write-Warning ("REVENUECAT_ANDROID_KEY 'test_' onekli - RevenueCat Test " +
-                   "Store anahtari. Satin almalar SIMULE edilir, gercek " +
-                   "odeme alinmaz.")
+    # KT4: uyari yetmez - test anahtarli yayin AAB'si magazada satin
+    # almayi sessizce simulasyona cevirir. Yayin betigi bunu URETMEZ.
+    throw ("REVENUECAT_ANDROID_KEY 'test_' onekli (RevenueCat Test Store). " +
+           "Yayin AAB'si gercek 'goog_' anahtari ister; " +
+           "dart_defines.local.json'u duzelt.")
+}
+
+# KT4: release imzasi dogrulanir. build.gradle.kts key.properties yoksa
+# SESSIZCE debug anahtarina dusuyor - Play boyle bir AAB'yi ya reddeder
+# ya da App Signing'e yanlis anahtar gider. Kapi burada.
+$keyProps = Join-Path $mobil "android\key.properties"
+if (-not (Test-Path $keyProps)) {
+    throw ("android\key.properties yok - release imzasi kurulmamis. " +
+           "Bu haliyle AAB DEBUG anahtariyla imzalanirdi.")
 }
 
 Write-Host "1/3 Surum bilgisi..."
@@ -109,6 +120,19 @@ try {
     Write-Host "    OK: yetki kimligi pakette ('$entitlement')."
 } finally {
     Remove-Item -Recurse -Force $gecici -ErrorAction SilentlyContinue
+}
+
+# KT4: imza GERCEKTEN dogrulanir (elle keytool ipucu yerine). Debug
+# anahtarinin CN'i "Android Debug"tur; yayin paketinde gorunmemeli.
+$keytool = Get-Command keytool -ErrorAction SilentlyContinue
+if ($keytool) {
+    $imza = & $keytool.Source -printcert -jarfile $aab 2>$null | Out-String
+    if ($imza -match "Android Debug") {
+        throw "AAB DEBUG anahtariyla imzalanmis - key.properties okunamadi mi?"
+    }
+    Write-Host "    OK: imza debug degil (keytool dogrulandi)."
+} else {
+    Write-Warning "keytool bulunamadi; imza elle dogrulanmali."
 }
 
 $boyut = [math]::Round((Get-Item $aab).Length / 1MB, 1)

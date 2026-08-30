@@ -1934,6 +1934,19 @@ class AppLocalizationsTr extends AppLocalizations {
       'E-posta adresin oturumunun anahtarı; değiştirmek için destekle iletişime geç.';
 
   @override
+  String get emailNotVerified => 'E-posta adresin henüz doğrulanmadı.';
+
+  @override
+  String get emailVerifyResend => 'Doğrulama e-postasını gönder';
+
+  @override
+  String get emailVerifySent =>
+      'Doğrulama e-postası gönderildi — spam klasörünü de kontrol et.';
+
+  @override
+  String get onboardingSwitchAccount => 'Farklı hesapla gir';
+
+  @override
   String get signalsSection => 'Bugün gökyüzünde senin için';
 
   @override

@@ -206,7 +206,12 @@ def test_sohbet_kotasi_dolunca_paywall(monkeypatch):
 
 @uygulama_gerekir
 def test_abone_sohbette_kotaya_takilmaz(monkeypatch):
+    # KT2 sözleşmesi: kotayı atlayan şey GERÇEK mağaza aboneliğidir
+    # (get_subscription.active) — is_subscriber değil; in_trial kullanıcı
+    # is_subscriber=True olsa da günlük hakkını korur (test_wallet'ta).
     monkeypatch.setattr(entitlements, "is_subscriber", lambda uid: True)
+    monkeypatch.setattr(entitlements, "get_subscription",
+                        lambda uid: {"active": True})
     monkeypatch.setattr(entitlements, "consume_quota",
                         lambda *a: pytest.fail("Abonede kota dusulmemeli"))
     monkeypatch.setattr("services.gemini_service.chat", lambda h, m, **k: "merhaba")

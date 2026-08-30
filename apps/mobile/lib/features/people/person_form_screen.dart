@@ -15,6 +15,7 @@
 /// üretmez ve bunu beyan eder (bkz. core/birth_record.dart baş yorumu).
 library;
 
+import 'package:dio/dio.dart' show DioException;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -183,9 +184,13 @@ class _PersonFormScreenState extends ConsumerState<PersonFormScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _mesgul = false);
-      // Kontenjan doluysa sunucu 402 + anlaşılır metin döner; friendlyError
-      // onu olduğu gibi gösterir (mesaj sözleşmesi).
-      mesajci.showSnackBar(SnackBar(content: Text(friendlyError(e, l10n))));
+      // KT4: 402'de interceptor ZATEN paywall açıyor — üstüne snackbar
+      // basmak çift tepkiydi (iching_tab bu çakışmayı baştan engelliyordu,
+      // burası engellemiyordu). Diğer hatalar friendlyError ile görünür.
+      if (e is! DioException || e.response?.statusCode != 402) {
+        mesajci.showSnackBar(
+            SnackBar(content: Text(friendlyError(e, l10n))));
+      }
     }
   }
 

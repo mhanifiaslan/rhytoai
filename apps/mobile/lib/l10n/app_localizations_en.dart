@@ -1937,6 +1937,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your email is the key to your sign-in; contact support to change it.';
 
   @override
+  String get emailNotVerified => 'Your email isn\'t verified yet.';
+
+  @override
+  String get emailVerifyResend => 'Send verification email';
+
+  @override
+  String get emailVerifySent =>
+      'Verification email sent — check your spam folder too.';
+
+  @override
+  String get onboardingSwitchAccount => 'Sign in with a different account';
+
+  @override
   String get signalsSection => 'In your sky today';
 
   @override

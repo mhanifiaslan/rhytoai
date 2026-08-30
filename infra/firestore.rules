@@ -98,6 +98,12 @@ service cloud.firestore {
           // permission-denied ile düşüyordu (faceConsent olayının aynısı;
           // motor merge'de SONUÇ dokümana bakar). O2'de kapatıldı.
           'residenceCity', 'residenceNation',
+          // Platform aynası (AP4): SUNUCU yazar (device claim, Admin SDK)
+          // ama motor merge'de SONUÇ dokümana baktığı için alan listede
+          // olmazsa İSTEMCİNİN sonraki tüm profil yazımları düşer —
+          // faceConsent/residenceCity vakalarının ÜÇÜNCÜSÜ (KT1'de canlıda
+          // yaşandı ve kapatıldı). Ders: sunucu yazımlı alan da buraya girer.
+          'platform',
           // Biyometrik işleme rızası — LİSTEDE ama DEĞİŞMEZ (aşağıya bak).
           'faceConsent',
           // Şartlar/gizlilik kabulü (O3) — LİSTEDE ama DEĞİŞMEZ.

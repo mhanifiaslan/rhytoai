@@ -30,7 +30,8 @@ def sahte(monkeypatch):
     """Webhook sırrı + cüzdan çağrılarının kaydı + abonelik yazım kaydı."""
     monkeypatch.setattr(config, "REVENUECAT_WEBHOOK_SECRET", "anahtar")
 
-    kayit = {"credit": [], "refund": [], "subscription_set": []}
+    kayit = {"credit": [], "refund": [], "subscription_set": [],
+             "audit": [], "mevcut_urun": None}
 
     monkeypatch.setattr(
         "api.billing.wallet.credit_pack",
@@ -44,18 +45,40 @@ def sahte(monkeypatch):
         "api.billing.wallet.transfer_wallet", lambda c, s, t: None)
 
     class SahteKoleksiyon:
-        def document(self, _):
+        def __init__(self, ad):
+            self.ad = ad
+
+        def document(self, _=None):
             return self
 
         def collection(self, _):
             return self
+
+        def get(self):
+            urun = kayit.get("mevcut_urun")
+
+            class _Anlik:
+                exists = urun is not None
+
+                def to_dict(self):
+                    return {"productId": urun}
+            return _Anlik()
 
         def set(self, data, merge=False):
-            kayit["subscription_set"].append(data)
+            # Koleksiyona göre ayrık kayıt: gelir defteri yazımları
+            # abonelik yazımlarıyla karışmasın (fixture'a get() gelince
+            # attribution okuması artık düşmüyor ve revenue yazımı
+            # gerçekten buraya ulaşıyor).
+            if self.ad == "adminAudit":
+                kayit["audit"].append(data)
+            elif self.ad == "revenueEvents":
+                kayit.setdefault("revenue", []).append(data)
+            else:
+                kayit["subscription_set"].append(data)
 
     class SahteClient:
-        def collection(self, _):
-            return SahteKoleksiyon()
+        def collection(self, ad):
+            return SahteKoleksiyon(ad)
 
     monkeypatch.setattr("api.billing.firestore_client.get_client",
                         lambda: SahteClient())
@@ -132,6 +155,55 @@ def test_pakette_bilinmeyen_olay_yutulur(sahte):
     assert yanit.status_code == 200
     assert sahte["credit"] == []
     assert sahte["refund"] == []
+
+
+@uygulama_gerekir
+def test_bilinmeyen_paket_kimligi_iz_birakir(sahte):
+    """KT2/K-4: Play'de ürün kimliği bir harf sapsa "para alındı, jeton
+    yok" olur — eskiden yalnız INFO loguna düşüp kayboluyordu. Artık
+    adminAudit'e system kaydı düşer, kredi yazılmaz, abonelik dokunulmaz."""
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "NON_RENEWING_PURCHASE", "app_user_id": "u",
+            "product_id": "rytho_tokens_100", "id": "evt-yanlis"})
+
+    assert yanit.status_code == 200
+    assert yanit.json()["status"] == "ignored"
+    assert sahte["credit"] == []
+    assert sahte["subscription_set"] == []
+    assert len(sahte["audit"]) == 1
+    assert sahte["audit"][0]["action"] == "billing.unknown_pack"
+    assert sahte["audit"][0]["params"]["productId"] == "rytho_tokens_100"
+
+
+@uygulama_gerekir
+def test_yanlis_kimlikli_iade_abonelige_dokunmaz(sahte):
+    """KT2/K-4 ikizi: kayıtlı abonelik ürünüyle EŞLEŞMEYEN bir REFUND
+    aboneliği söndüremez (paket listesi dışı yanlış kimlik senaryosu)."""
+    sahte["mevcut_urun"] = "rytho_plus_monthly"
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "REFUND", "app_user_id": "u",
+            "product_id": "rytho_tokens_100", "id": "evt-yanlis-iade"})
+
+    assert yanit.status_code == 200
+    assert yanit.json()["status"] == "ignored"
+    assert sahte["subscription_set"] == []
+
+
+@uygulama_gerekir
+def test_eslesen_abonelik_iadesi_kapatir(sahte):
+    """Emniyet daraltması gerçek iadeyi engellemez: ürün kayıtla
+    eşleşiyorsa erişim eskisi gibi kesilir."""
+    sahte["mevcut_urun"] = "rytho_plus_monthly"
+    with TestClient(app) as client:
+        yanit = _gonder(client, {
+            "type": "REFUND", "app_user_id": "u",
+            "product_id": "rytho_plus_monthly", "id": "evt-gercek-iade"})
+
+    assert yanit.status_code == 200
+    assert len(sahte["subscription_set"]) == 1
+    assert sahte["subscription_set"][0]["active"] is False
 
 
 def test_paket_listesi_sunucu_gercegi():

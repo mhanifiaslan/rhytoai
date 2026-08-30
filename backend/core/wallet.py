@@ -326,14 +326,22 @@ def charge_metered(user, feature: str, free_limit: int,
     """
     from core.entitlements import consume_quota  # döngüsel import kırıcı
 
-    if entitlements.is_subscriber(user.uid):
+    # KT2: yalnız GERÇEK mağaza abonesi (ya da FORCE_PLUS test kipi)
+    # doğrudan cüzdandan harcar — aylık 300'lük hak bunun için var.
+    # Sunucu denemesindeki (in_trial) kullanıcı ESKİDEN buraya düşüyordu
+    # ve günlük ücretsiz hakkını KAYBEDİYORDU: 30 karşılama jetonu bir
+    # rapor turunda bitince, denemenin kalan günlerinde ücretsiz
+    # kullanıcıdan bile kısıtlı kalıyordu. Deneme artık ücretsiz hakkın
+    # ÜSTÜNE jeton verir, yerine değil.
+    if entitlements.FORCE_PLUS or entitlements.get_subscription(
+            user.uid).get("active"):
         spend(user.uid, feature, lang=lang)
         return True
 
     if consume_quota(user.uid, feature, free_limit):
         return False
 
-    # Günlük hak bitti; paket bakiyesi kurtarabilir.
+    # Günlük hak bitti; bakiye (deneme jetonu ya da paket) kurtarabilir.
     wallet_state = get_wallet(user.uid)
     if wallet_state.get("purchased", 0) >= TOKEN_COSTS.get(feature, 0):
         spend(user.uid, feature, lang=lang)
@@ -368,7 +376,10 @@ def metered_callbacks(user, feature: str, free_limit: int,
     def _refund() -> None:
         refund_spend(user.uid, feature)
 
-    if entitlements.is_subscriber(user.uid):
+    # KT2: charge_metered ile aynı ayrım — deneme kullanıcısı günlük
+    # ücretsiz hakkını korur (gerekçe yukarıda).
+    if entitlements.FORCE_PLUS or entitlements.get_subscription(
+            user.uid).get("active"):
         return _spend, _refund
 
     if consume_quota(user.uid, feature, free_limit):
@@ -468,6 +479,33 @@ def credit_promo(uid: str, code: str, amount: int) -> bool:
     logger.info("Promo %s: uid=%s kod=%s +%d",
                 "yüklendi" if islendi else "zaten işlenmiş", uid, code, amount)
     return islendi
+
+
+def ensure_trial_tokens(uid: str) -> None:
+    """Deneme jetonu TEMBEL TELAFİSİ (KT2).
+
+    30'luk karşılama jetonu normalde onboarding'in `/account/consent`
+    çağrısında yüklenir — ama o çağrı iki katmanda da sessizce
+    yutuluyordu ve tek ağ hıçkırığı denemeyi jetonsuz bırakıyordu.
+    Cüzdan her okunduğunda: kullanıcı denemede VE defterde karşılama
+    kaydı yoksa, kredi tamamlanır (credit_promo zaten defterle
+    idempotent — çift yükleme imkânsız). Varlık kontrolü ucuz bir
+    okuma; kayıt varsa transaction hiç kurulmaz.
+    """
+    try:
+        if not entitlements.in_trial(uid):
+            return
+        ref = _wallet_ref(uid)
+        if ref is None:
+            return
+        kayit = (ref.collection("ledger")
+                 .document(f"promo-{TRIAL_PROMO_CODE}").get())
+        if getattr(kayit, "exists", False):
+            return
+        if credit_promo(uid, TRIAL_PROMO_CODE, TRIAL_TOKENS):
+            logger.info("Deneme jetonu tembel telafiyle yüklendi: %s", uid)
+    except Exception as exc:
+        logger.warning("Deneme telafisi yapılamadı (%s): %s", uid, exc)
 
 
 def credit_admin(uid: str, amount: int, reason: str, admin_uid: str) -> bool:

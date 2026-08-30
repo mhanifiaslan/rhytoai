@@ -306,11 +306,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         actions: [
           // Bakiye çipi — "kalan hakkın" ilk kez bir yüzeye kavuşuyor.
           // Dokununca token mağazası: bakiyeyi GÖREN kullanıcı, bitmeden
-          // doldurabilmeli. Abone olmayan ve paketi olmayan kullanıcıda
-          // toplam 0 görünür; günlük ücretsiz hak zaten çipin konusu değil.
+          // doldurabilmeli. KT4: 0 bakiyede de GÖRÜNÜR (token_chip.dart
+          // kendi kuralı) — çipin en gerekli olduğu an tam da bakiyenin
+          // bittiği andır; kaybolması mağazaya giden yolu da kaybettiriyordu.
           Consumer(builder: (context, ref, _) {
             final cuzdan = ref.watch(walletProvider).value;
-            if (cuzdan == null || cuzdan.total <= 0) {
+            if (cuzdan == null) {
               return const SizedBox.shrink();
             }
             return Padding(

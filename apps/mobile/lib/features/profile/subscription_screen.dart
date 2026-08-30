@@ -103,6 +103,13 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
     final abonelik =
         ref.watch(subscriptionProvider).value ?? SubscriptionStatus.none;
     final cuzdan = ref.watch(walletProvider).value ?? WalletStatus.none;
+    // KT3: sunucu denemesi "aktif" döner ama mağaza ürünü YOKTUR.
+    // Denemedeki kullanıcı satın alma akışına ulaşabilmeli (aksi halde
+    // ilk 3 gün paywall hiçbir yerden açılamıyordu) ve "Aboneliği yönet"
+    // gibi Play'de karşılığı olmayan düğmeler görmemeli.
+    final magazaAbonesi = abonelik.active &&
+        (abonelik.productId != null && abonelik.productId!.isNotEmpty);
+    final denemede = abonelik.active && !magazaAbonesi;
     final dil = Localizations.localeOf(context).toLanguageTag();
     String tarih(DateTime t) => DateFormat('d MMMM yyyy', dil).format(t);
 
@@ -135,7 +142,28 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                     ),
                   ]),
                   const SizedBox(height: RythoSpace.sm),
-                  if (abonelik.active) ...[
+                  if (denemede) ...[
+                    // Sunucu denemesi: dürüst durum satırı + satın alma
+                    // yolu AÇIK (deneme, satışın önsözü — duvarı değil).
+                    LabelValueRow(
+                        label: l10n.subStatusLabel,
+                        value: l10n.subStatusTrial),
+                    const SizedBox(height: RythoSpace.xs),
+                    Text(
+                        (abonelik.trialDaysLeft ?? 0) <= 1
+                            ? l10n.trialBannerLastDay
+                            : l10n.trialBannerDays(
+                                abonelik.trialDaysLeft ?? 0),
+                        style: RythoType.bodyDim),
+                    const SizedBox(height: RythoSpace.md),
+                    GoldButton(
+                      text: l10n.subGoPlus,
+                      onPressed: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (_) => const PaywallScreen(),
+                              fullscreenDialog: true)),
+                    ),
+                  ] else if (abonelik.active) ...[
                     if (abonelik.isTrial == true)
                       LabelValueRow(
                           label: l10n.subStatusLabel,
@@ -207,14 +235,19 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                     ),
                   ]),
                   const SizedBox(height: RythoSpace.sm),
-                  LabelValueRow(
-                      label: l10n.subMonthlyAllowanceRow,
-                      value:
-                          '${cuzdan.allowance} / ${cuzdan.monthlyAllowance}'),
-                  if (cuzdan.allowanceResetsAt != null)
+                  // KT3: "0/300" yalnız GERÇEK mağaza abonesinde anlamlı;
+                  // denemede/ücretsizde yanıltıcı bir eksiklik gibi
+                  // görünüyordu (aylık hak abonelikle gelir).
+                  if (magazaAbonesi) ...[
                     LabelValueRow(
-                        label: l10n.subAllowanceResetsRow,
-                        value: tarih(cuzdan.allowanceResetsAt!)),
+                        label: l10n.subMonthlyAllowanceRow,
+                        value:
+                            '${cuzdan.allowance} / ${cuzdan.monthlyAllowance}'),
+                    if (cuzdan.allowanceResetsAt != null)
+                      LabelValueRow(
+                          label: l10n.subAllowanceResetsRow,
+                          value: tarih(cuzdan.allowanceResetsAt!)),
+                  ],
                   LabelValueRow(
                       label: l10n.tokenPurchasedRow,
                       value: '${cuzdan.purchased}'),

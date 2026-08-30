@@ -144,6 +144,13 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 110 | Admin panel v2 (AP): claim'siz Google hesabı → sahte-404; admin ile → yan menülü panel + akan starfield. Kullanıcılar'da arama önekle daralıyor; satır → 360 açılıyor, GERİ tuşu listeye dönüyor; 360'ta sohbet/hafıza İÇERİĞİ yok (yalnız sayılar). Gerekçesiz kredi reddediliyor; 50 jeton + gerekçe → cüzdan kartı tazeleniyor, MOBİLDE bakiye artıyor, zaman çizelgesinde "yönetici" kaydı, Sistem→Denetim izinde satır | ⬜ | panel + cihaz |
 | 111 | AI telemetri + jeton defteri (AP): mobilden 1 sohbet turu → panel AI sekmesinde çağrı +1 ve maliyet > 0; abone hesapla natal raporu → 360 çizelgesinde "−5 jeton · natal"; AYNI raporu tekrar aç → önbellek: yeni debit YOK, usageEvents'e yeni kayıt YOK. Sistem→Bildirim sağlığı gecelik koşudan sonra gerçek gönderim sayıları gösteriyor; "Topla" düğmesi denetim izine düşüyor. Dar ekranda (~390px) üst pill nav + 2'li KPI; grafikte imleç → değer ipucu | ⬜ | panel + cihaz + sunucu |
 | 112 | İşletme K/Z + kullanıcı yönetimi (AP2): Genel Bakış'ta marj panosu (gelir − mağaza ~%15 − AI = tahmini katkı marjı) ve bugün şeridi; Ekonomi'de KULLANICI BAZLI kâr tablosu — sütun başlığı sıralar, satır 360 açar, toplam satırında paylaşımlı üretim ayrı; 360'ta "Bu kullanıcının ekonomisi" + Yönetim: şifre sıfırlama e-postası gider, devre dışı bırakılan hesap MOBİLDE oturum açamıyor (gerekçe + denetim izi), "Hesabı sil" SIL yazmadan çalışmıyor, kendi hesabında devre dışı/sil reddediliyor | ⬜ | panel + cihaz |
+| 113 | Deneme ekonomisi (KT2): YENİ hesap denemedeyken günde 5 ücretsiz sohbet çalışıyor (jeton DÜŞMÜYOR — cüzdan aynı kalıyor); 6. sohbet jetondan; 30 karşılama jetonu raporlara yetiyor; consent çağrısı ilk açılışta düşse bile ikinci açılışta jeton kendiliğinden tamamlanıyor (uçak modu senaryosu); Abonelik ekranı denemede "Rytho+ ol" gösteriyor ve satın alma AKIŞI denemedeyken çalışıyor; cüzdan kartında "0/300" YOK | ⬜ | cihaz + sunucu |
+| 114 | Abonelik yaşam döngüsü (kapalı test, License testing hızlandırmasıyla): satın al → entitlement + 300 hak; ~5 dk'da RENEWAL → hak tazelenir; Play'den İPTAL → dönem sonuna dek erişim, paywall "yenilenir" DEMİYOR; İADE (refund) → webhook erişimi düşürüyor, panel Ekonomi'de negatif kayıt; yanlış ürün kimliği senaryosu panelde Sistem→Denetim izinde `billing.unknown_pack` olarak görünür (olmaması beklenir) | ⬜ | cihaz + sunucu + panel |
+| 115 | Kapalı test giriş/kimlik (KT4): MAĞAZADAN İNEN pakette Google girişi VE SMS doğrulaması çalışıyor (B1 imza adımının kanıtı); onboarding ilk adımında "Farklı hesapla gir" çıkışı; çıkış sonrası aynı oturumda yeniden girişte cihaz devralma sorusu SORULUYOR (409 duvarı değil); Hesap ekranında doğrulanmamış e-postada "doğrulama e-postasını gönder" satırı; zorunlu güncelleme ekranı Play'siz cihazda web mağazasına düşüyor | ⬜ | cihaz (mağaza paketi) |
+
+**Kapalı test ÖNCESİ zorunlu koşum listesi:** 1, 6, 17-24, 28, 33, 39,
+100, 101, 109, 110-112 (panel), 113-115. İade + yenileme yalnız
+License-testing hesabıyla ölçülebilir (114).
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
 Sunucu tarafı (Claude doğrular): webhook logları, revenueEvents,
@@ -218,9 +225,11 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
   RENEWAL'lar → CANCELLATION → EXPIRATION, hepsi DOĞRU uid ile
   (kimlik düzeltmesi sahada kanıtlandı). Üretimde döngü gerçek
   takvimle işler.
-- Sonuç: M4 ödeme doğrulaması TAMAMLANDI (senaryo 18-19-24 ✅).
-  Özellik testi için seçenek: süresi dolunca yeniden satın alma ya da
-  geçici RYTHO_FORCE_PLUS=1 (kapalı test öncesi kaldırılır).
+- Sonuç: M4 ödeme doğrulaması loglarla TAMAMLANDI — ama senaryo
+  tablosundaki 18-19-24 satırları o gün İŞARETLENMEDİ (KT denetimi
+  yakaladı: tabloda hâlâ ⬜). Kapalı test sürümünde (KT2 deneme
+  ekonomisi + jeton zorlaması artık CANLI) üçü de YENİDEN koşulup
+  tabloda işaretlenmeli; log kanıtı işaret yerine geçmez.
 
 ### K1 — Kapsam değişikliği: İching Rytho+ kapısında (2026-08-12)
 - Kullanıcı kararı: BaZi gibi İching de tam premium. Günde 1 ücretsiz

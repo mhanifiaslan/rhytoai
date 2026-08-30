@@ -12,9 +12,15 @@
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
+    <!-- allowBackup KAPALI (KT4): Android Auto Backup SharedPreferences'ı
+         cihazdan cihaza taşıyor — rythoDeviceId klonlanınca tek-cihaz
+         kilidi sessizce boşa düşüyordu; izin/paywall bayrakları da yeni
+         cihazda bayat geliyordu. Oturum Firebase'te, veri sunucuda —
+         yedeklenecek yerel kıymet yok. -->
     <application
         android:label="Rytho"
         android:name="${applicationName}"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"

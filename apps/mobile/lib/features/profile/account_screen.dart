@@ -42,6 +42,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   String _ilkKullaniciAdi = '';
   bool _dolduruldu = false;
   bool _mesgul = false;
+  bool _dogrulamaGonderildi = false;
   String? _hata;
 
   void _ilkDoldur(Map<String, dynamic>? profil) {
@@ -177,6 +178,38 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               // yeniden kimlik doğrulama gerekir. Kapsam dışı, ama neden
               // düzenlenemediği söylenmeli.
               Text(l10n.emailChangeNote, style: RythoType.caption),
+              // KT4: kayıtta doğrulama postası gidiyordu ama uygulamada ne
+              // durum görünüyordu ne yeniden gönderme yolu vardı — snackbar
+              // ekran geçişinde kayboluyordu. Kalıcı yüzeyi burası.
+              if (FirebaseAuth.instance.currentUser?.emailVerified ==
+                  false) ...[
+                const SizedBox(height: RythoSpace.sm),
+                Row(children: [
+                  Expanded(
+                    child: Text(l10n.emailNotVerified,
+                        style: RythoText.body(12.5,
+                            color: RythoColors.madder)),
+                  ),
+                  TextButton(
+                    onPressed: _dogrulamaGonderildi
+                        ? null
+                        : () async {
+                            final mesajci =
+                                ScaffoldMessenger.of(context);
+                            try {
+                              await FirebaseAuth.instance.currentUser
+                                  ?.sendEmailVerification();
+                            } catch (_) {}
+                            if (!mounted) return;
+                            setState(() => _dogrulamaGonderildi = true);
+                            mesajci.showSnackBar(SnackBar(
+                                content: Text(l10n.emailVerifySent)));
+                          },
+                    child: Text(l10n.emailVerifyResend,
+                        style: RythoType.button),
+                  ),
+                ]),
+              ],
             ],
             // Telefon (Revize R2): doğrulanmış numara rehber eşleşmesinin
             // anahtarı. Durum yerelden okunur (FirebaseAuth.phoneNumber) —

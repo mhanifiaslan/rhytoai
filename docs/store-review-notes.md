@@ -69,7 +69,7 @@ Sağlık, hamilelik, ölüm ve finans sorularında model **çağrılmıyor**; sa
 Kullanıcılar birbirine **yalnızca kapalı bir kümeden** tepki gönderebilir.
 Gönderi, yorum, DM, profil biyografisi yok.
 
-- `infra/firestore.rules` — `nudges` kuralı sekiz anahtarlı kümeyi zorunlu kılar
+- `infra/firestore.rules` — `nudges` kuralı 12 anahtarlı kapalı kümeyi zorunlu kılar (R3-4 genişlemesi)
 - `apps/mobile/lib/core/friends.dart` — `kReactions`
 
 Bu, App Store 1.2 (UGC) yükümlülüklerini ve DSA moderasyon operasyonunu
@@ -126,9 +126,11 @@ metnini taşıyor. Dil sızıntısına karşı ayrı bir muhafız test dosyası 
 > 3. **A hard safety gate.** Questions about health, pregnancy, death or
 >    finance never reach the model; a fixed, transparent response is returned
 >    instead. This is deterministic code, not a prompt instruction.
-> 4. **No user-generated free text anywhere.** Users can only send each other
->    reactions from a fixed set of eight. There are no posts, comments,
->    direct messages or bios, so there is no moderation surface.
+> 4. **No user-to-user free text.** Users can only send each other
+>    reactions from a fixed set of 12. There are no posts, comments,
+>    direct messages or bios, so there is no moderation surface between
+>    users. (Users do write free text privately — AI chat and a personal
+>    diary — but it is never shown to any other user.)
 > 5. **No flattery by design.** The persona is instructed to name a difficult
 >    period as difficult rather than reassure, and this is enforced by tests.
 >

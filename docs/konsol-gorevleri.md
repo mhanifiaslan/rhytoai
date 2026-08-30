@@ -10,6 +10,35 @@ işleme sırası, tek cihaz kilidi, telefon eşleme, rehber eşleşmesi, sohbet
 arşivi + gece 03:20 temizlik cron'u (`rytho-cleanup`) ve `aiCache` TTL
 politikası kuruldu. Aşağıdakiler sende.
 
+## 0. KAPALI TEST SIRASI (KT-turu, 2026-08-30) — buradan yürü
+
+Kod tarafı hazır (KT commit'i): jeton zorlaması canlı, deneme ekonomisi
+onarıldı, hukuk sayfaları + veri-silme sayfası yayında, AAB kapıları
+sertleşti. SENİN sıran (sıra ÖNEMLİ — 1 yapılmadan AAB üretme):
+
+1. **Firebase'e Play imzası** (yapılmadan mağaza paketinde Google girişi
+   + SMS ÖLÜR — google-services.json'da tek SHA kanıtlandı):
+   Play Console → Setup → App integrity → App signing key certificate →
+   SHA-1 VE SHA-256 kopyala → Firebase → Project settings → Android app →
+   ikisini ekle → **google-services.json'u indir** →
+   `apps/mobile/android/app/` içine koy → Claude'a "AAB üret" de.
+2. **Ürünler** (§2): Play'de 3 consumable + `rytho_plus_monthly`
+   abonelik — **mağaza denemesi EKLEME** (KT kararı: deneme sunucuda;
+   3+3 çakışması ve otomatik-ücretlendirme beklentisi yaratma).
+   RevenueCat'te ürünleri bağla (abonelik → `RhytoAI Pro`).
+3. **License testing**: Play Console → Settings → License testing →
+   testçi e-postaları (test kartı + hızlandırılmış yenileme).
+4. **Uygulama içeriği**: Veri güvenliği formu
+   (`docs/store-privacy-labels.md` §3 satır satır; veri silme URL'si
+   `https://rhytoai.web.app/legal/hesap-silme.html`; AD_ID beyanı:
+   analitik amaçlı), içerik derecelendirme, hedef kitle 13+, reklam yok.
+5. **Mağaza görselleri** + kapalı test kanalı + testçi listesi
+   (`docs/store-launch.md` §2b'de adım adım + sürüm notu şablonu).
+6. **Hukuk onayı** (bir hukukçuya metinler) + **Swiss Ephemeris lisans
+   kararı** — kapalı test de dağıtımdır (production-checklist şartı).
+7. İlk gerçek satın almada webhook'u panel Sistem sekmesinden doğrula
+   (test-raporu B2 kapanışı) ve senaryo 113-115'i koş.
+
 ---
 
 ## 1. Firebase: Telefon sağlayıcısını aç (R2 — SMS doğrulama)

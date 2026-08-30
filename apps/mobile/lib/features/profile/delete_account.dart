@@ -1,10 +1,9 @@
 import 'package:dio/dio.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../core/analytics.dart';
+import '../../core/auth_service.dart' show signOutEverywhere;
 import '../../core/api.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
@@ -56,11 +55,8 @@ class _DeleteAccountSheetState extends ConsumerState<DeleteAccountSheet> {
 
       // Sunucu kimliği de sildi; yerel oturumu temizle. Sıra önemli:
       // Firebase oturumu açık kalırsa uygulama silinmiş bir hesapla
-      // açılmaya çalışır.
-      try {
-        await GoogleSignIn.instance.signOut();
-      } catch (_) {}
-      await FirebaseAuth.instance.signOut();
+      // açılmaya çalışır. (KT4: ortak yol — devralma bayrağı da sıfırlanır.)
+      await signOutEverywhere();
 
       if (mounted) Navigator.of(context).pop();
     } on DioException catch (e) {
