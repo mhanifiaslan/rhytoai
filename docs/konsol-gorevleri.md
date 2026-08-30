@@ -16,12 +16,13 @@ Kod tarafı hazır (KT commit'i): jeton zorlaması canlı, deneme ekonomisi
 onarıldı, hukuk sayfaları + veri-silme sayfası yayında, AAB kapıları
 sertleşti. SENİN sıran (sıra ÖNEMLİ — 1 yapılmadan AAB üretme):
 
-1. **Firebase'e Play imzası** (yapılmadan mağaza paketinde Google girişi
-   + SMS ÖLÜR — google-services.json'da tek SHA kanıtlandı):
-   Play Console → Setup → App integrity → App signing key certificate →
-   SHA-1 VE SHA-256 kopyala → Firebase → Project settings → Android app →
-   ikisini ekle → **google-services.json'u indir** →
-   `apps/mobile/android/app/` içine koy → Claude'a "AAB üret" de.
+1. ~~Firebase'e Play imzası~~ **DOĞRULANDI — ZATEN TAM (2026-08-30):**
+   `firebase apps:android:sha:list` ile canlı liste okundu; Play App
+   Signing'in HEM SHA-1'i (9e12f5f1…) HEM SHA-256'sı (ffef27a1… —
+   assetlinks'tekiyle birebir) kayıtlı (B1 onarımında, 2026-08-12).
+   Denetimdeki "eksik" işareti yereldeki bayat google-services.json'dan
+   kaynaklanan yanlış alarmdı — dosyayı yenilemek isteğe bağlı hijyen,
+   işlev için gerekmez (mağaza paketinde Google girişi + SMS çalışıyor).
 2. **Ürünler** (§2): Play'de 3 consumable + `rytho_plus_monthly`
    abonelik — **mağaza denemesi EKLEME** (KT kararı: deneme sunucuda;
    3+3 çakışması ve otomatik-ücretlendirme beklentisi yaratma).
