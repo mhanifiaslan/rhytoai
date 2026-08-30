@@ -147,6 +147,52 @@ Burada yalnızca konsol tarafını ilgilendiren özet var.
 - Mağaza açıklamasında **sağlık iddiası ("iyileştirir", "şifa") ve kesin
   kehanet dili kullanılmamalı.**
 
+### Mağaza metinleri (KT-turu'nda yazıldı — hazır, kopyalanabilir)
+
+**Kısa açıklama** (Play sınırı 80 karakter; bu 60):
+
+```
+Gerçek gökyüzü hesabıyla çalışan kişisel astroloji rehberin.
+```
+
+**Uzun açıklama:**
+
+```
+Rytho, doğum haritanı gerçek astronomik verilerle hesaplayan ve gökyüzünü
+her gün senin için takip eden kişisel bir rehberdir.
+
+NELER VAR
+• Doğum haritan: çark, 14 nokta, evler ve açılar — Swiss Ephemeris
+  hesabıyla, hazır şablonla değil.
+• Şu an gökyüzünde: ay evresi, retrolar, günün açıları.
+• Günlük okuma: haritanı bugünün gökyüzüyle birleştiren kişisel yorum.
+• Sohbet: haritanı bilen ve konuştuklarınızı hatırlayan bir rehber.
+• Çevren: eşini, çocuğunu, yakınlarını ekle; aranızdaki ölçülebilir bağı gör.
+• Diğer gelenekler: BaZi (Çin dört sütun), I Ching ve firaset.
+
+ÜCRETSİZ KULLANIM
+Burç yorumları, canlı gökyüzü, doğum haritası çarkın ve yerleşimlerin,
+arkadaş katmanı, günde 5 sohbet mesajı ve bir kişi ekleme hakkı — hesap
+açman yeterli.
+
+RYTHO+ (aylık)
+Kişiye özel günlük okuma, tam natal rapor, yıl haritası, iç takvim, BaZi,
+I Ching, yüz okuma, 10 kişilik çevre kontenjanı ve ayda 300 AI kredisi.
+Yeni hesaplar ilk 3 gün tüm Rytho+ özelliklerini kart bilgisi vermeden
+dener; deneme bitince otomatik ücretlendirme olmaz.
+
+DÜRÜSTLÜK
+Ölçülmeyen söylenmez: doğum saatini bilmiyorsan yükselen burcun
+hesaplanmaz ve bu sana açıkça söylenir. Yorumlar eğlence ve kişisel
+içgörü amaçlıdır; tıbbi, hukuki, finansal veya psikolojik tavsiye
+niteliği taşımaz. Uygulamada reklam yoktur.
+```
+
+Bu metinler yasak kelime taramasından geçti: "iyileştirir/tedavi/şifa" ve
+kesin kehanet dili YOK; deneme cümlesi sunucu-denemesi gerçeğiyle uyumlu
+(otomatik ücretlendirme İMA EDİLMİYOR); ücretsiz katman listesi koddaki
+kapılarla birebir (İ Ching Plus'ta — "günde 1 çekim" YAZILMADI).
+
 ### Google Play
 
 - Kategori: **Yaşam Tarzı** veya **Eğlence**.
@@ -194,11 +240,23 @@ Kurallar:
 3. RevenueCat panelinde abonelik ürününü `RhytoAI Pro` yetkisine bağla.
    Yetki kimliği koddaki `RYTHO_PLUS_ENTITLEMENT` ile birebir aynı olmalı;
    farklıysa satın alma sonrası yetki açılmaz.
+3b. **OFFERING KUR — atlanırsa paywall BOŞ açılır.** `Product catalog →
+   Offerings` → `default` teklifi → `$rc_monthly` paketi → içine
+   `rytho_plus_monthly` → teklifi **Current** yap. Gerekçe kodda:
+   `apps/mobile/lib/core/subscription.dart:184` `Purchases.getOfferings()`
+   → `offerings.current?.availablePackages` okuyor; teklif yoksa liste
+   boş döner. **Jeton paketleri için Offering GEREKMEZ** — onlar
+   `wallet.dart:95-101`'de `Purchases.getProducts(kTokenPackIds,
+   productCategory: nonSubscription)` ile doğrudan kimlikle çekiliyor.
 4. RevenueCat webhook'unu şu adrese kur:
    `https://<cloud-run-url>/api/v1/billing/revenuecat`
    Authorization başlığına Secret Manager'daki `REVENUECAT_WEBHOOK_SECRET`
-   değerini yaz. Anahtar tanımsızken uç 503 döner ve **hiçbir kullanıcı abone
-   olarak işaretlenemez** — bu bilinçli.
+   değerini **ham hâliyle** yaz (Bearer öneki YOK — `billing.py:174`
+   `compare_digest` birebir eşitlik arıyor). Anahtar tanımsızken uç 503
+   döner ve **hiçbir kullanıcı abone olarak işaretlenemez** — bu bilinçli.
+   **Environment: production VE sandbox** seçili olmalı; kapalı testteki
+   lisanslı satın almalar sandbox sayılır ve yalnız-production ayarıyla
+   hiç düşmez.
 5. `test_` önekli RevenueCat anahtarlarını gerçek anahtarlarla değiştir
    (`apps/mobile/dart_defines.local.json`; dosya .gitignore'da).
 

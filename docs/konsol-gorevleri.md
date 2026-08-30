@@ -16,29 +16,70 @@ Kod tarafı hazır (KT commit'i): jeton zorlaması canlı, deneme ekonomisi
 onarıldı, hukuk sayfaları + veri-silme sayfası yayında, AAB kapıları
 sertleşti. SENİN sıran (sıra ÖNEMLİ — 1 yapılmadan AAB üretme):
 
-1. ~~Firebase'e Play imzası~~ **DOĞRULANDI — ZATEN TAM (2026-08-30):**
+> **Tıkla-tıkla sürüm (kullanıcı için):** aynı sıra, ekran adları ve
+> kopyalanabilir değerlerle birlikte artifact olarak yayınlandı
+> (2026-08-30). Bu bölüm mühendislik kaydıdır; oradaki metinler
+> (mağaza açıklamaları, sürüm notu) buradan türetildi.
+
+0. ~~Firebase'e Play imzası~~ **DOĞRULANDI — ZATEN TAM (2026-08-30):**
    `firebase apps:android:sha:list` ile canlı liste okundu; Play App
    Signing'in HEM SHA-1'i (9e12f5f1…) HEM SHA-256'sı (ffef27a1… —
    assetlinks'tekiyle birebir) kayıtlı (B1 onarımında, 2026-08-12).
    Denetimdeki "eksik" işareti yereldeki bayat google-services.json'dan
    kaynaklanan yanlış alarmdı — dosyayı yenilemek isteğe bağlı hijyen,
    işlev için gerekmez (mağaza paketinde Google girişi + SMS çalışıyor).
-2. **Ürünler** (§2): Play'de 3 consumable + `rytho_plus_monthly`
-   abonelik — **mağaza denemesi EKLEME** (KT kararı: deneme sunucuda;
-   3+3 çakışması ve otomatik-ücretlendirme beklentisi yaratma).
-   RevenueCat'te ürünleri bağla (abonelik → `RhytoAI Pro`).
-3. **License testing**: Play Console → Settings → License testing →
-   testçi e-postaları (test kartı + hızlandırılmış yenileme).
-4. **Uygulama içeriği**: Veri güvenliği formu
-   (`docs/store-privacy-labels.md` §3 satır satır; veri silme URL'si
-   `https://rhytoai.web.app/legal/hesap-silme.html`; AD_ID beyanı:
-   analitik amaçlı), içerik derecelendirme, hedef kitle 13+, reklam yok.
-5. **Mağaza görselleri** + kapalı test kanalı + testçi listesi
-   (`docs/store-launch.md` §2b'de adım adım + sürüm notu şablonu).
-6. **Hukuk onayı** (bir hukukçuya metinler) + **Swiss Ephemeris lisans
-   kararı** — kapalı test de dağıtımdır (production-checklist şartı).
-7. İlk gerçek satın almada webhook'u panel Sistem sekmesinden doğrula
-   (test-raporu B2 kapanışı) ve senaryo 113-115'i koş.
+1. **Play↔RevenueCat servis kimliği DOĞRULA** (RevenueCat → Project
+   settings → Apps → Service Credentials "valid" mi). B2'de kurulmuştu;
+   yeniden yüklenirse **36 saate kadar** yayılma penceresi var —
+   "Invalid credentials" o pencerede NORMALDİR, anahtar yenilenmez.
+   Bu yüzden sıranın başında: saat işlerken diğer adımlar sürebilir.
+2. **Ürünler** (§2): Play'de 3 tek-seferlik ürün + `rytho_plus_monthly`
+   abonelik (base plan `monthly`, **OFFER/DENEME EKLENMEZ** — KT kararı:
+   deneme sunucuda; 3+3 çakışması ve otomatik-ücretlendirme beklentisi
+   yaratma). Hepsi **Activate** edilmeli, yoksa RevenueCat import'u boş
+   döner. Not: Play'de "consumable" kutusu YOK — tüketilebilirlik
+   istemci tarafında (RevenueCat SDK) hallediliyor.
+   **KDV tuzağı:** Play girilen fiyata %20 ekler. Alıcının ₺59,99/
+   ₺155,99/₺419,99 görmesi için girilecek: ₺49,99 / ₺129,99 / ₺349,99.
+   Abonelikte ₺149,99 girilir → ₺179,99 görünür (B3 kararı).
+3. **RevenueCat**: ürünleri import et → `RhytoAI Pro` yetkisine
+   **yalnız** aboneliği bağla (jeton paketleri yetkisiz) → **OFFERING
+   KUR**: `default` teklifi + `$rc_monthly` paketi + Current işaretle.
+   **Offering olmadan paywall BOŞ açılır** — `subscription.dart:184`
+   `Purchases.getOfferings()` → `offerings.current` okuyor. Jeton
+   paketleri `getProducts(kTokenPackIds)` ile doğrudan çekiliyor,
+   onlar için Offering GEREKMEZ (`wallet.dart:95-101`).
+4. **Webhook** (§2c): kuruluysa yalnız **Environment** alanını kontrol
+   et — sandbox DA seçili olmalı, yoksa kapalı testteki satın almalar
+   hiç düşmez. Authorization = secret'ın HAM değeri (Bearer YOK;
+   `billing.py:174` `compare_digest` birebir eşitlik arıyor).
+5. **License testing**: Play Console **hesap seviyesi** → Settings →
+   License testing → testçi e-postaları. Üç şart birden: hesap bu
+   listede + kapalı test testçi listesinde + opt-in bağlantısını açmış.
+   Yenileme hızlanır (aylık ≈ 5 dk, en fazla 6 yenileme).
+6. **Uygulama içeriği** (Policy and programs → App content) — 10 form,
+   kapalı testte hepsi ZORUNLU. Veri güvenliği `store-privacy-labels.md`
+   §3'ten satır satır; **veri silme URL'si Data safety formunun İÇİNDE**
+   (`…/legal/hesap-silme.html`); **AD_ID AYRI bir bölüm** → "Evet,
+   yalnız Analytics" (firebase_analytics izni merge ediyor; "hayır"
+   dersen AAB yüklemesi hata verir); Health apps formu herkese zorunlu
+   (→ "sağlıkla ilgili değil"); hedef kitle 13+; reklam yok.
+7. **Mağaza kaydı**: görseller (512 ikon · 1024×500 · ≥2 ekran
+   görüntüsü, GERÇEK harita/gökyüzü verisiyle) + kısa/uzun açıklama
+   (artifact'te hazır metin; "iyileştirir/tedavi/şifa" ve kesin kehanet
+   dili YASAK).
+8. **Kapalı test kanalı**: Test and release → Testing → Closed testing →
+   Create track → AAB yükle → sürüm notu → Start rollout → testçi
+   listesi → **opt-in bağlantısı** (yalnız sürüm Published olunca çıkar).
+   **12 testçi / 14 gün kuralı:** 13 Kasım 2023 sonrası açılmış KİŞİSEL
+   hesaplar için ÜRETİME çıkış şartı (kapalı testi engellemez) — testçi
+   listesini 12+ kurmak baştan zaman kazandırır.
+9. **Doğrulama**: ilk gerçek satın almada webhook'u panel → Sistem
+   (Denetim izi) ve Ekonomi sekmesinden gör (test-raporu B2 kapanışı);
+   senaryo 113-115'i koş. Yanlış ürün kimliği `billing.unknown_pack`
+   olarak denetim izine düşer.
+10. **Hukuk onayı** (bir hukukçuya metinler) + **Swiss Ephemeris lisans
+    kararı** — kapalı test de dağıtımdır (production-checklist şartı).
 
 ---
 
