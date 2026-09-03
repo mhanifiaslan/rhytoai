@@ -86,7 +86,20 @@ Future<List<ArchivedMessage>> loadConversation(String uid, String id) async {
   ];
 }
 
+/// Silme istekleri SIRAYA girer — paralel değil.
+///
+/// Kullanıcı listede birkaç konuyu peş peşe kaydırınca istekler aynı anda
+/// çıkıyordu; sunucunun dakikalık penceresi bunu ani bir sel gibi görüp
+/// "yoğun talep" (429) döndürüyor ve konular silinmemiş kalıyordu. Sıra,
+/// aynı saniyeye yığılmayı tek satırda bitiriyor; kullanıcı açısından
+/// gecikme farkı yok (silme birkaç yüz milisaniye).
+Future<void> _silmeKuyrugu = Future<void>.value();
+
 /// Konuyu sunucu üzerinden siler (istemcinin yazma izni yok).
-Future<void> deleteConversation(Dio dio, String id) async {
-  await dio.delete('/api/v1/chat/conversations/$id');
+Future<void> deleteConversation(Dio dio, String id) {
+  final sonraki = _silmeKuyrugu.then(
+      (_) => dio.delete('/api/v1/chat/conversations/$id'));
+  // Kuyruk hatada KIRILMAMALI: bir silme düşse bile sıradaki denenmeli.
+  _silmeKuyrugu = sonraki.then((_) {}, onError: (_) {});
+  return sonraki;
 }

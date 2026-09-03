@@ -16,7 +16,27 @@ from starlette.responses import JSONResponse
 from core.i18n import resolve_language
 from core.messages import text
 
-# LLM'e giden pahalı uçlar: daha sıkı kota
+# LLM'e giden pahalı uçlar: daha sıkı kota.
+#
+# ## Neden yalnızca POST (KL-turu onarımı)
+#
+# Bu iki önek DAHA ÖNCE metot ayrımı yapmadan sıkı kotaya giriyordu ve
+# altlarındaki UCUZ uçlar da aynı kovayı yakıyordu:
+#   * `DELETE /api/v1/chat/conversations/{id}` — saf Firestore silme.
+#     Kullanıcı sohbet listesinde 10 konuyu arka arkaya silince 429
+#     görüyordu ("konuları silerken fazla istek" bulgusu, cihazdan).
+#   * `GET /api/v1/reports/iching/status` — yalnız kota sayacı okur.
+#   * `GET /api/v1/reports/signals` — günlük paylaşımlı önbellek; günde
+#     en fazla bir üretim, gerisi okuma.
+# Dahası: ÖNBELLEKTEN servis edilen rapor okumaları da (LLM hiç
+# çalışmadan, jeton hiç düşmeden) aynı kovayı yiyordu — Atlas'ta birkaç
+# detay ekranı gezen ABONE kullanıcı dakikada 10'u doldurup sohbete
+# sıra gelmeden "yoğun talep" duvarına çarpıyordu.
+#
+# Üretim yapabilen her uç POST'tur (tek istisna GET /signals ve
+# GET /horoscope — ikisi de gün/dönem başına tek üretimli paylaşımlı
+# önbellek). Bu yüzden kural metoda bağlandı: okuma ve silme genel
+# kotaya (dakikada 60) düşer, gerçek üretim sıkı kotada kalır.
 LLM_PREFIXES = ("/api/v1/reports", "/api/v1/chat")
 
 # LLM kotasından muaf tutulan uçlar.
@@ -26,7 +46,11 @@ LLM_PREFIXES = ("/api/v1/reports", "/api/v1/chat")
 # 10 isteği geçebiliyor; ücretsiz katmanın omurgasını buna kurban etmemek için
 # genel kotaya (dakikada 60) tabi tutulur.
 LLM_EXEMPT_PREFIXES = ("/api/v1/reports/horoscope",)
-LLM_LIMIT_PER_MINUTE = 10
+# 10 idi: sınıflandırma hatası yüzünden ucuz istekler de buradan yiyordu ve
+# meşru gezinme duvara çarpıyordu. Asıl MALİYET kapısı artık jeton cüzdanı
+# (RYTHO_TOKENS_ENFORCE=1 canlı); buradaki kota kaçak döngü ve kimliksiz
+# sel koruması. 20, tek kullanıcının makul en yoğun dakikasının üstünde.
+LLM_LIMIT_PER_MINUTE = 20
 DEFAULT_LIMIT_PER_MINUTE = 60
 WINDOW_SECONDS = 60.0
 
@@ -82,7 +106,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS" or path in EXEMPT_PATHS:
             return await call_next(request)
 
-        is_llm = (path.startswith(LLM_PREFIXES)
+        # Yalnızca ÜRETEBİLEN istekler sıkı kotada (yukarıdaki gerekçe):
+        # okuma/silme (GET, DELETE) genel kotaya düşer.
+        is_llm = (request.method == "POST"
+                  and path.startswith(LLM_PREFIXES)
                   and not path.startswith(LLM_EXEMPT_PREFIXES))
         limit = LLM_LIMIT_PER_MINUTE if is_llm else DEFAULT_LIMIT_PER_MINUTE
         # LLM ve genel kotalar ayrı sayaçlarda tutulur

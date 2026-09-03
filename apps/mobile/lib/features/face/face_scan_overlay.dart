@@ -62,50 +62,64 @@ class FaceGuidePainter extends CustomPainter {
   /// 0..1 arası sürekli nabız; "arıyor" hâlinde kılavuzu canlı tutar.
   final double pulse;
 
-  /// 0..1; yüz hazır konuma geldiğinde kilit halkasının dolma oranı.
+  /// 0..1; yüz hazır konuma geldiğinde çerçevenin dolma oranı.
   final double lockProgress;
+
+  /// Köşe yumuşatması — sabit piksel DEĞİL, orana bağlı: sabit değer küçük
+  /// ekranda "dörtgen", büyükte "kutu" gösterirdi.
+  static const double _kYaricapOrani = 0.11;
+
+  /// Köşe ayracının kenar boyunca uzunluğu (çerçeve genişliğinin oranı).
+  static const double _kAyracOrani = 0.17;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final oval = guideOval(size);
+    final kutu = guideFrame(size);
+    final yaricap = kutu.width * _kYaricapOrani;
+    final rrect = RRect.fromRectAndRadius(kutu, Radius.circular(yaricap));
     final renk = _renk(quality);
 
-    // Dışarısı karartılır: kullanıcının gözü otomatik olarak ovalin içine
-    // gider. Kılavuzu çizip ortamı aydınlık bırakmak, kadrajı hissettirmiyor.
+    // Dışarısı karartılır: kullanıcının gözü otomatik olarak çerçevenin
+    // içine gider. Kılavuzu çizip ortamı aydınlık bırakmak, kadrajı
+    // hissettirmiyor.
     final disari = Path()
       ..addRect(Offset.zero & size)
-      ..addOval(oval)
+      ..addRRect(rrect)
       ..fillType = PathFillType.evenOdd;
     canvas.drawPath(disari, Paint()..color = ScanPalette.vignette);
 
-    // Oval hattı — kesikli ve dönen. Sabit bir çizgi "donmuş" görünüyor.
-    _kesikliOval(canvas, oval, renk, pulse);
+    final yol = Path()..addRRect(rrect);
 
-    // Köşe pençeleri: kadrajın teknik/optik hissi buradan geliyor.
-    _pencesler(canvas, oval, renk);
+    // İnce sürekli hat: çerçevenin gövdesi. Sönük — asıl vurgu köşelerde.
+    canvas.drawPath(
+      yol,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.1
+        ..color = renk.withValues(alpha: 0.32),
+    );
 
-    // Kilit halkası: hazır olduğunda oval boyunca dolar.
-    if (lockProgress > 0) {
-      canvas.drawArc(
-        oval.deflate(6),
-        -math.pi / 2,
-        2 * math.pi * lockProgress.clamp(0.0, 1.0),
-        false,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3
-          ..strokeCap = StrokeCap.round
-          ..color = ScanPalette.locked,
-      );
-    }
+    // Köşe ayraçları: kadrajın teknik/optik hissi buradan geliyor. Eskiden
+    // çerçevenin DIŞINDA duran ayrı "pençeler"di; hatla hizasızdılar.
+    // Artık hattın kendisinden çıkıyor ve yuvarlatılmış köşeyi izliyorlar.
+    _koseAyraclari(canvas, kutu, yaricap, renk);
+
+    // Nabız: hat boyunca dolaşan kısa bir ışık. Eskisi 42 parçalı dönen
+    // kesikli ovaldi; dörtgende yay matematiği anlamsız ve kesikli hat
+    // sabit görünüyordu.
+    if (lockProgress <= 0) _tarayanIsik(canvas, yol, renk);
+
+    // Kilit: hazır olunca hat çerçeveyi baştan sona doldurur.
+    if (lockProgress > 0) _kilitHatti(canvas, yol);
   }
 
-  /// Kılavuz ovali — kadrajın ortasında, dikey olarak biraz yukarıda.
+  /// Kılavuz çerçevesi — kadrajın ortasında, dikey olarak biraz yukarıda.
   ///
-  /// Geometri `face_geometry.dart`'tan geliyor: çizilen oval ile kalite
+  /// Geometri `face_geometry.dart`'tan geliyor: çizilen çerçeve ile kalite
   /// kontrolünün beklediği hedef **aynı işlevden** çıkmalı. Ayrı hesaplar
   /// kullanınca kılavuz bir yeri gösterip kontrol başka yere bakmıştı.
-  static Rect guideOval(Size size) => guideOvalOnScreen(size);
+  /// (Kaynak işlevin adı tarihsel; döndürdüğü değer baştan beri bir `Rect`.)
+  static Rect guideFrame(Size size) => guideOvalOnScreen(size);
 
   static Color _renk(FrameQuality q) => switch (q) {
         FrameQuality.ready => ScanPalette.locked,
@@ -113,40 +127,74 @@ class FaceGuidePainter extends CustomPainter {
         _ => ScanPalette.warn,
       };
 
-  void _kesikliOval(Canvas canvas, Rect oval, Color renk, double faz) {
+  /// Dört köşede, yuvarlatılmış dönüşü izleyen L ayraçlar.
+  void _koseAyraclari(Canvas canvas, Rect kutu, double r, Color renk) {
+    final uzunluk = kutu.width * _kAyracOrani;
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6
+      ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round
-      ..color = renk.withValues(alpha: 0.85);
+      ..strokeJoin = StrokeJoin.round
+      ..color = renk;
 
-    const parca = 42;
-    const dolu = 0.55; // her parçanın çizilen kısmı
-    for (var i = 0; i < parca; i++) {
-      final bas = (i / parca + faz) * 2 * math.pi;
-      final son = bas + (dolu / parca) * 2 * math.pi;
-      canvas.drawArc(oval, bas, son - bas, false, paint);
+    // sx/sy: köşeden çerçevenin içine doğru yön (±1).
+    void ayrac(Offset kose, double sx, double sy) {
+      // Köşe yayının merkezi, köşeden içeri r kadar kaçık.
+      final merkez = kose.translate(r * sx, r * sy);
+      final yay = Rect.fromCircle(center: merkez, radius: r);
+      canvas.drawPath(
+        Path()
+          // Yatay kenar: yayın bittiği yerden dışarı doğru.
+          ..moveTo(merkez.dx + uzunluk * sx, kose.dy)
+          ..lineTo(merkez.dx, kose.dy)
+          // Yuvarlatılmış dönüş.
+          ..arcTo(yay, -math.pi / 2 * sy, -math.pi / 2 * sx * sy, false)
+          // Dikey kenar.
+          ..lineTo(kose.dx, merkez.dy + uzunluk * sy),
+        paint,
+      );
+    }
+
+    ayrac(kutu.topLeft, 1, 1);
+    ayrac(kutu.topRight, -1, 1);
+    ayrac(kutu.bottomLeft, 1, -1);
+    ayrac(kutu.bottomRight, -1, -1);
+  }
+
+  /// Hat boyunca dolaşan kısa parlak parça — "arıyor" hâlinin canlılığı.
+  void _tarayanIsik(Canvas canvas, Path yol, Color renk) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round
+      ..color = renk.withValues(alpha: 0.9);
+
+    for (final olcum in yol.computeMetrics()) {
+      final toplam = olcum.length;
+      final boy = toplam * 0.13;
+      final bas = (pulse % 1.0) * toplam;
+      if (bas + boy <= toplam) {
+        canvas.drawPath(olcum.extractPath(bas, bas + boy), paint);
+      } else {
+        // Başa sarma: iki parça hâlinde çizilir.
+        canvas.drawPath(olcum.extractPath(bas, toplam), paint);
+        canvas.drawPath(olcum.extractPath(0, bas + boy - toplam), paint);
+      }
     }
   }
 
-  void _pencesler(Canvas canvas, Rect oval, Color renk) {
-    final kutu = oval.inflate(14);
+  /// Kilit hattı: çerçeve tepeden başlayıp baştan sona dolar.
+  void _kilitHatti(Canvas canvas, Path yol) {
+    final oran = lockProgress.clamp(0.0, 1.0);
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.2
+      ..strokeWidth = 3
       ..strokeCap = StrokeCap.round
-      ..color = renk;
-    final uzunluk = kutu.width * 0.13;
+      ..color = ScanPalette.locked;
 
-    void pence(Offset kose, double dx, double dy) {
-      canvas.drawLine(kose, kose.translate(uzunluk * dx, 0), paint);
-      canvas.drawLine(kose, kose.translate(0, uzunluk * dy), paint);
+    for (final olcum in yol.computeMetrics()) {
+      canvas.drawPath(olcum.extractPath(0, olcum.length * oran), paint);
     }
-
-    pence(kutu.topLeft, 1, 1);
-    pence(kutu.topRight, -1, 1);
-    pence(kutu.bottomLeft, 1, -1);
-    pence(kutu.bottomRight, -1, -1);
   }
 
   @override

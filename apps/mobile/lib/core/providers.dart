@@ -80,8 +80,43 @@ final profileProvider = StreamProvider<Map<String, dynamic>?>((ref) {
             exists: s.exists,
             isFromCache: s.metadata.isFromCache,
           ))
-      .map((snapshot) => snapshot.data());
+      .map((snapshot) => snapshot.data())
+      // İÇERİK karşılaştırması: Firestore her yerel meta değişiminde
+      // (pending-write, cache→server) yeni bir anlık görüntü yayıyor ve
+      // her biri YENİ bir Map nesnesi. `AsyncData` eşitliği Map'in kimliğine
+      // düştüğü için profili izleyen 12 sağlayıcı — aralarında
+      // `POST /reports/daily` ve `/reports/natal` — içerik hiç
+      // değişmeden yeniden koşuyordu. Kotayı besleyen üçüncü döngü buydu.
+      .distinct(ayniProfil);
 });
+
+/// İki profil anlık görüntüsü içerikçe aynı mı?
+///
+/// `mapEquals` yeterli değil: profilde iç içe map/liste alanlar var
+/// (bildirim tercihleri, tepki sayaçları) ve onlar kimlikle karşılaştırılıp
+/// her seferinde "değişti" derdi.
+bool ayniProfil(Map<String, dynamic>? a, Map<String, dynamic>? b) =>
+    _ayniDeger(a, b);
+
+bool _ayniDeger(Object? a, Object? b) {
+  if (identical(a, b)) return true;
+  if (a is Map && b is Map) {
+    if (a.length != b.length) return false;
+    for (final anahtar in a.keys) {
+      if (!b.containsKey(anahtar)) return false;
+      if (!_ayniDeger(a[anahtar], b[anahtar])) return false;
+    }
+    return true;
+  }
+  if (a is List && b is List) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (!_ayniDeger(a[i], b[i])) return false;
+    }
+    return true;
+  }
+  return a == b;
+}
 
 /// Anlık gökyüzü durumu (retrolar, Ay evresi, açılar, NASA mesafeleri).
 final skyNowProvider = FutureProvider<Map<String, dynamic>>((ref) async {
@@ -300,7 +335,9 @@ final transitCalendarProvider =
     FutureProvider<Map<String, dynamic>?>((ref) async {
   final profile = ref.watch(profileProvider).value;
   if (profile == null || profile['onboardingCompleted'] != true) return null;
-  ref.watch(subscriptionProvider);
+  // Yalnız AKTİFLİK izlenir: çıplak `watch` yükleniyor→veri geçişinde de
+  // yeniden kuruyordu, yani takvim her açılışta iki kez çekiliyordu.
+  ref.watch(subscriptionProvider.select((s) => s.value?.active ?? false));
   final dio = ref.watch(apiProvider);
   final response = await dio.get('/api/v1/astrology/transit-calendar');
   return Map<String, dynamic>.from(response.data['data']);

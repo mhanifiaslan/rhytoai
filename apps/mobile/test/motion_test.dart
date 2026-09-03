@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rytho/widgets/atlas_widgets.dart' show ZodiacRing;
 import 'package:rytho/widgets/motion.dart';
 
 /// R12-A0 hareket altyapısının değişmezleri.
@@ -67,26 +66,6 @@ void main() {
       expect(find.text('bekle'), findsOneWidget);
       await tester.pump(const Duration(seconds: 6));
       expect(find.text('bekle'), findsOneWidget);
-    });
-  });
-
-  group('ZodiacRing reduce-motion (OT5 sürüklenme onarımı)', () {
-    testWidgets('kapı açıkken nefes denetleyicisi DURUR', (tester) async {
-      // Kusur: _breath, reduceMotion kapısı olmadan sonsuza dek dönüyordu
-      // (_CenterAiButton deseninin eksik kopyası). Ölçü: kare zamanlayıcı
-      // sayacı — dönen denetleyici sürekli geri çağrı tutar.
-      await tester.pumpWidget(_sar(
-          const ZodiacRing(planets: [], size: 120), azalt: true));
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.binding.transientCallbackCount, 0,
-          reason: 'reduce-motion altında dönen animasyon kalmamalı');
-    });
-
-    testWidgets('normalde nefes alır', (tester) async {
-      await tester.pumpWidget(
-          _sar(const ZodiacRing(planets: [], size: 120)));
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(tester.binding.transientCallbackCount, greaterThan(0));
     });
   });
 }

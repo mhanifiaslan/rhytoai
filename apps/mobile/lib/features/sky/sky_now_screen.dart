@@ -1,15 +1,21 @@
-/// "Şu an" — canlı gökyüzü çarkı ve ayrıntıları, kendi sayfasında.
+/// "Şu an gökyüzünde" — canlı gökyüzünün ANALİZ sayfası.
 ///
-/// ## Neden akıştan çıktı
+/// ## Neden yeniden kuruldu (KL-turu)
 ///
-/// 230 px'lik çark + ay evresi + retro çipleri + sekiz açı çipi, Gökyüzü
-/// akışının sonunda tek blok hâlinde duruyordu. "Bugün ne var" diye bakan
-/// kullanıcı her seferinde onun içinden geçmek zorundaydı; ölçülen ekran
-/// uzunluğunun (~1500 px) büyük bir dilimi buydu.
+/// Sayfa, uygulamadaki son ESKİ çark tüketicisiydi: dekoratif `ZodiacRing`
+/// (280 px, açı ağı yok, dokunulamaz) + altında sekiz düz açı çipi. HI-turu
+/// bütün haritaları ortak `ChartWheel`e taşımıştı ama bu sayfa dışarıda
+/// kalmış, yeni çark yalnız küçük bir "büyüt" bağlantısının arkasında
+/// duruyordu. Cihaz bulgusu birebir buydu: "Atlas'tan Şu an gökyüzünde'ye
+/// girince eski harita tasarımıyla karşılaşıyorum."
 ///
-/// Akışta artık tek satırlık bir özet var: ay evresi, retro sayısı, öne çıkan
-/// açı. Ayrıntı bir dokunuş uzakta — yani kaybolmadı, sadece kendi seviyesine
-/// indi.
+/// Artık sayfa doğum haritası analiziyle AYNI dili konuşuyor: ortak çark
+/// (derece cetveli, orb-ağırlıklı açı ağı, dokunulabilir), gruplanmış açı
+/// listesi ve konum tablosu. Dokunuş her yerde aynı alt-sayfa ailesini açar.
+///
+/// Değişmeyen doktrin: gökyüzü çarkı EVSİZDİR. Ev ve Yükselen konuma
+/// bağlıdır; konumsuz gökyüzüne ev çizmek ölçülmemiş şeyi göstermek olurdu.
+/// Çarkın altındaki not bunu söyler.
 library;
 
 import 'package:flutter/material.dart';
@@ -21,12 +27,32 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/chart/chart_data.dart';
+import '../../widgets/chart/chart_palette.dart' show aspectColor;
+import '../../widgets/chart/chart_positions.dart';
+import '../../widgets/chart/chart_wheel.dart';
 import '../../widgets/common.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
-import '../../widgets/nebula_widgets.dart';
+import '../../widgets/nebula_widgets.dart' show InfoChip, Pressable;
+import '../atlas/atlas_detail_screens.dart'
+    show showAspectSheet, showPointSheet;
 import '../atlas/chart_inspector_screen.dart'
-    show ChartInspectorMode, ChartInspectorScreen;
+    show
+        ChartInspectorMode,
+        ChartInspectorScreen,
+        aspectSheetMap,
+        pointSheetMap;
+
+/// Açı türü -> grup. Atlas'ın "Açılar" ekranıyla AYNI tasnif: kullanıcı iki
+/// ekranda aynı açıyı aynı başlık altında bulmalı.
+const Map<String, String> _kAspectGroup = {
+  'conjunction': 'focus',
+  'opposition': 'tension',
+  'square': 'tension',
+  'trine': 'flow',
+  'sextile': 'flow',
+};
 
 class SkyNowScreen extends ConsumerWidget {
   const SkyNowScreen({super.key});
@@ -48,48 +74,135 @@ class SkyNowScreen extends ConsumerWidget {
               onRetry: () => ref.invalidate(skyNowProvider),
             ),
           ),
-          data: (data) => ListView(
-            padding: const EdgeInsets.fromLTRB(0, RythoSpace.md, 0,
-                RythoSpace.xxl),
-            children: [
-              Center(
-                child: ZodiacRing(
-                  planets: List<Map<String, dynamic>>.from(data['planets']),
-                  size: 280,
-                ),
-              ),
-              // Harita İnceleme girişi (HI-turu): gökyüzü çarkının
-              // profesyonel görünümü — derece cetveli, açı ağı, tablo.
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
-                  child: TextButton.icon(
-                    onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                            builder: (_) => const ChartInspectorScreen(
-                                mode: ChartInspectorMode.sky))),
-                    icon: const Icon(Icons.open_in_full_rounded, size: 15),
-                    label: Text(l10n.chartExpandTooltip,
-                        style: RythoText.label(11,
-                            color: RythoColors.goldBright)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: RythoSpace.sm),
-              GlassPanel(child: SkyDetails(sky: data)),
-            ],
-          ),
+          data: (data) => _Govde(sky: data),
         ),
       ),
     );
   }
 }
 
-/// Ay evresi, retrolar ve açılar — ayrıntı sayfasının gövdesi.
-class SkyDetails extends StatelessWidget {
-  const SkyDetails({super.key, required this.sky});
+class _Govde extends StatelessWidget {
+  const _Govde({required this.sky});
+
+  final Map<String, dynamic> sky;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final veri = ChartData.fromSky(sky, label: l10n.chartLegendSkyNow);
+    final retros = List<String>.from(sky['retrogrades'] ?? []);
+    final boyut = MediaQuery.of(context).size.width - 72;
+
+    // Gruplama + sıralama: en dar orb en güçlü açıdır, başta durur.
+    final gruplar = <String, List<ChartAspect>>{
+      'tension': [],
+      'focus': [],
+      'flow': [],
+      'other': [],
+    };
+    for (final a in veri.aspects) {
+      gruplar[_kAspectGroup[a.kind] ?? 'other']!.add(a);
+    }
+    for (final liste in gruplar.values) {
+      liste.sort((x, y) => x.orb.abs().compareTo(y.orb.abs()));
+    }
+
+    Widget aciBolumu(String anahtar, String baslik) {
+      final liste = gruplar[anahtar]!;
+      if (liste.isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(bottom: RythoSpace.md),
+        child: GlassPanel(
+          label: baslik,
+          child: Column(children: [
+            for (final a in liste) _AciSatiri(aspect: a),
+          ]),
+        ),
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(
+          RythoSpace.lg, RythoSpace.md, RythoSpace.lg, RythoSpace.xxl),
+      children: [
+        _AnSeridi(sky: sky),
+        const SizedBox(height: RythoSpace.md),
+
+        // ---------- Çark: Atlas'takiyle AYNI bileşen ----------
+        GlassPanel(
+          padding: const EdgeInsets.all(8),
+          child: Column(children: [
+            Center(
+              child: ChartWheel(
+                data: veri,
+                size: boyut,
+                interactive: false,
+                onPlanetTap: (g) =>
+                    showPointSheet(context, pointSheetMap(g.point)),
+                onAspectTap: (a) =>
+                    showAspectSheet(context, aspectSheetMap(a)),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(10, 2, 10, 6),
+              child: Text(l10n.atlasSkyWheelNote,
+                  style: RythoText.body(11,
+                      color: RythoColors.parchmentDim, height: 1.4)),
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => const ChartInspectorScreen(
+                        mode: ChartInspectorMode.sky))),
+                icon: const Icon(Icons.open_in_full_rounded, size: 15),
+                label: Text(l10n.chartExpandTooltip,
+                    style: RythoText.label(11, color: RythoColors.goldBright)),
+              ),
+            ),
+          ]),
+        ),
+        const SizedBox(height: RythoSpace.md),
+
+        // ---------- Retrolar ----------
+        if (retros.isNotEmpty) ...[
+          GlassPanel(
+            label: l10n.retrogradeCount(retros.length),
+            child: Wrap(
+              spacing: RythoSpace.sm,
+              runSpacing: 6,
+              children: [
+                for (final r in retros)
+                  InfoChip(
+                      text: '↩️ ${l10n.retrogradeChip(r)}',
+                      color: RythoColors.magenta),
+              ],
+            ),
+          ),
+          const SizedBox(height: RythoSpace.md),
+        ],
+
+        // ---------- Açılar (natal analiziyle aynı tasnif) ----------
+        aciBolumu('tension', l10n.aspectsGroupTension),
+        aciBolumu('focus', l10n.aspectsGroupFocus),
+        aciBolumu('flow', l10n.aspectsGroupFlow),
+        aciBolumu('other', l10n.aspectsGroupOther),
+        if (veri.aspects.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, RythoSpace.md),
+            child: Text(l10n.aspectsSortNote, style: RythoType.caption),
+          ),
+
+        // ---------- Konum tablosu (çarkın erişilebilir temsili) ----------
+        ChartPositionsTable(data: veri),
+      ],
+    );
+  }
+}
+
+/// Ayın evresi ve ölçüm ANI — sayfanın dürüstlük şeridi.
+class _AnSeridi extends StatelessWidget {
+  const _AnSeridi({required this.sky});
 
   final Map<String, dynamic> sky;
 
@@ -97,60 +210,34 @@ class SkyDetails extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final moon = sky['moon_phase'] as Map<String, dynamic>? ?? {};
-    final retros = List<String>.from(sky['retrogrades'] ?? []);
-    final aspects = List<Map<String, dynamic>>.from(sky['aspects'] ?? []);
-
-    return Column(children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('${moon['emoji'] ?? ''} ${moon['name'] ?? ''}',
-              style: RythoText.body(14, w: FontWeight.w600)),
-          Text('  ·  ', style: RythoType.bodyDim),
-          Text(l10n.moonIllumination(moon['illumination'] ?? '—'),
-              style: RythoType.dataSmall),
-        ],
-      ),
-      // Aydınlanma oranı ANA bağlıdır: bir gün içinde 10 puana kadar
-      // değişir. Başka bir kaynakla kıyaslayan kullanıcının ilk sorusu
-      // "hangi ana ait?" oluyor — cevabı ekranda duruyor.
-      if (moon['as_of_utc'] != null) ...[
-        const SizedBox(height: 4),
-        Text(l10n.moonIlluminationAsOf(_yerelAn('${moon['as_of_utc']}')),
-            style: RythoType.caption),
-      ],
-      if (retros.isNotEmpty) ...[
-        const SizedBox(height: RythoSpace.md),
-        Wrap(
-          spacing: RythoSpace.sm,
-          runSpacing: 6,
-          alignment: WrapAlignment.center,
-          children: [
-            for (final r in retros)
-              InfoChip(
-                  text: '↩️ ${l10n.retrogradeChip(r)}',
-                  color: RythoColors.magenta),
-          ],
+    return GlassPanel(
+      child: Row(children: [
+        Text(moon['emoji'] as String? ?? '🌙',
+            style: const TextStyle(fontSize: 34)),
+        const SizedBox(width: RythoSpace.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('${moon['name'] ?? ''}', style: RythoText.display(18)),
+              const SizedBox(height: 2),
+              Text(l10n.moonIllumination(moon['illumination'] ?? '—'),
+                  style: RythoType.dataSmall),
+              // Aydınlanma oranı ANA bağlıdır: bir gün içinde 10 puana kadar
+              // değişir. Başka bir kaynakla kıyaslayanın ilk sorusu "hangi
+              // ana ait?" oluyor — cevabı ekranda duruyor.
+              if (moon['as_of_utc'] != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                    l10n.moonIlluminationAsOf(
+                        _yerelAn('${moon['as_of_utc']}')),
+                    style: RythoType.caption),
+              ],
+            ],
+          ),
         ),
-      ],
-      if (aspects.isNotEmpty) ...[
-        const SizedBox(height: RythoSpace.md),
-        Wrap(
-          spacing: RythoSpace.sm,
-          runSpacing: 6,
-          alignment: WrapAlignment.center,
-          children: [
-            // HA1: sunucu artık kararlı anahtarların üzerine yazmıyor;
-            // görünen ad *_local'den gelir (eski sunucuya karşı yedekli).
-            for (final a in aspects.take(8))
-              InfoChip(
-                  text: '${a['p1_local'] ?? a['p1']} '
-                      '${a['aspect_local'] ?? a['aspect']} '
-                      '${a['p2_local'] ?? a['p2']}'),
-          ],
-        ),
-      ],
-    ]);
+      ]),
+    );
   }
 
   /// UTC ISO damgasını cihazın yerel saatinde "07.08 06:12" biçimine çevirir.
@@ -159,6 +246,45 @@ class SkyDetails extends StatelessWidget {
     if (t == null) return '';
     String iki(int n) => n.toString().padLeft(2, '0');
     return '${iki(t.day)}.${iki(t.month)} ${iki(t.hour)}:${iki(t.minute)}';
+  }
+}
+
+/// Tek açı satırı — dokununca dayanak alt-sayfası açılır.
+class _AciSatiri extends StatelessWidget {
+  const _AciSatiri({required this.aspect});
+
+  final ChartAspect aspect;
+
+  @override
+  Widget build(BuildContext context) {
+    final renk = aspectColor(aspect.kind);
+    return Pressable(
+      onTap: () => showAspectSheet(context, aspectSheetMap(aspect)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 7),
+        child: Row(children: [
+          Container(
+            width: 8,
+            height: 8,
+            margin: const EdgeInsets.only(right: RythoSpace.sm),
+            decoration: BoxDecoration(color: renk, shape: BoxShape.circle),
+          ),
+          Expanded(
+            child: Text(
+              '${aspect.p1Local ?? aspect.p1} '
+              '${aspect.kindLocal ?? aspect.kind} '
+              '${aspect.p2Local ?? aspect.p2}',
+              style: RythoText.body(13.5),
+            ),
+          ),
+          Text('${aspect.orb.abs().toStringAsFixed(1)}°',
+              style: RythoText.mono(11, color: RythoColors.lilac)),
+          const SizedBox(width: 6),
+          const Icon(Icons.chevron_right_rounded,
+              size: 16, color: RythoColors.parchmentDim),
+        ]),
+      ),
+    );
   }
 }
 

@@ -49,6 +49,9 @@ class AppShell extends ConsumerStatefulWidget {
 }
 
 class _AppShellState extends ConsumerState<AppShell> {
+  /// Şimdiye kadar açılmış sekmeler (tembel kurulum — bkz. build).
+  final Set<int> _gorulen = {};
+
   @override
   void initState() {
     super.initState();
@@ -190,29 +193,37 @@ class _AppShellState extends ConsumerState<AppShell> {
       (icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded,
        label: l10n.tabProfile),
     ];
+    // Sekme ilk kez görüldüğünde kurulur, sonra Stack'te ASILI KALIR
+    // (geri dönünce durum ve kaydırma yeri korunur — Stack'in asıl sebebi).
+    // Dördünü birden açılışta kurmak, kullanıcı hiç girmediği sekmeler için
+    // de ağ isteği ateşliyordu: soğuk açılışta ~14 istek, ikisi LLM'e giden
+    // rapor POST'u. Kotayı besleyen ikinci döngü buydu.
+    _gorulen.add(index);
+
     return CosmicScaffold(
       extendBody: true,
       body: Stack(children: [
         for (var i = 0; i < 4; i++)
-          IgnorePointer(
-            ignoring: index != i,
-            child: AnimatedOpacity(
-              opacity: index == i ? 1 : 0,
-              duration: const Duration(milliseconds: 280),
-              curve: Curves.easeOutCubic,
-              child: AnimatedSlide(
-                offset: index == i ? Offset.zero : const Offset(0, 0.012),
+          if (_gorulen.contains(i))
+            IgnorePointer(
+              ignoring: index != i,
+              child: AnimatedOpacity(
+                opacity: index == i ? 1 : 0,
                 duration: const Duration(milliseconds: 280),
                 curve: Curves.easeOutCubic,
-                child: const [
-                  SkyScreen(),
-                  AtlasScreen(),
-                  FriendsScreen(),
-                  ProfileScreen(),
-                ][i],
+                child: AnimatedSlide(
+                  offset: index == i ? Offset.zero : const Offset(0, 0.012),
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                  child: const [
+                    SkyScreen(),
+                    AtlasScreen(),
+                    FriendsScreen(),
+                    ProfileScreen(),
+                  ][i],
+                ),
               ),
             ),
-          ),
       ]),
       bottomNavigationBar: CosmicDock(
         items: tabs,

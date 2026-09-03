@@ -197,15 +197,21 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
           color: RythoColors.magenta,
           backgroundColor: RythoColors.inkLight,
           onRefresh: () async {
-            // signalsProvider bu kaynaktan türetiliyor; kaynak tazelenir.
-            ref.invalidate(signalsDataProvider);
-            ref.invalidate(dailyReadingProvider);
-            // Abonelik durumu da tazelensin: satın alma sonrası webhook
-            // sunucuya islenene kadar kisa bir gecikme olabiliyor.
-            ref.invalidate(subscriptionProvider);
-            // Takvim şeridi de tazelensin: sunucu penceresi gün dönümünde
-            // kayıyor ve abonelik değişince kilit satırları açılıyor.
-            ref.invalidate(transitCalendarProvider);
+            // BEKLENİR: `invalidate` anında dönüyordu, dolayısıyla halka
+            // hemen kayboluyor ve kullanıcı "olmadı" sanıp arka arkaya
+            // çekiyordu — her çekiş dört isteği yeniden ateşliyordu.
+            // Beklemek hem dürüst geri bildirim hem istek selinin freni.
+            await Future.wait([
+              // signalsProvider bu kaynaktan türetiliyor; kaynak tazelenir.
+              ref.refresh(signalsDataProvider.future),
+              ref.refresh(dailyReadingProvider.future),
+              // Abonelik durumu da tazelensin: satın alma sonrası webhook
+              // sunucuya islenene kadar kisa bir gecikme olabiliyor.
+              ref.refresh(subscriptionProvider.future),
+              // Takvim şeridi de tazelensin: sunucu penceresi gün dönümünde
+              // kayıyor ve abonelik değişince kilit satırları açılıyor.
+              ref.refresh(transitCalendarProvider.future),
+            ]).catchError((_) => const <Object?>[]);
           },
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),

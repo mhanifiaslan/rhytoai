@@ -264,7 +264,7 @@ enum FrameQuality {
 
 /// Kılavuz ovalinin geometrisi — **tek kaynak**.
 ///
-/// Bunlar hem ekrana çizilen ovali (`FaceGuidePainter.guideOval`) hem de
+/// Bunlar hem ekrana çizilen ovali (`FaceGuidePainter.guideFrame`) hem de
 /// kalite kontrolünün beklediği hedefi belirliyor. İkisi ayrı sabitler
 /// kullanınca gerçek bir hata çıktı: oval ekranın %44'üne çiziliyor ama
 /// kontrol yüzü %50'de arıyordu. Kullanıcı kılavuzun dediğini yapıyor,

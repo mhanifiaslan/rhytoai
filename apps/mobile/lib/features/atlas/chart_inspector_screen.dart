@@ -22,6 +22,7 @@ import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/chart/chart_data.dart';
 import '../../widgets/chart/chart_palette.dart';
+import '../../widgets/chart/chart_positions.dart';
 import '../../widgets/chart/chart_wheel.dart';
 import '../../widgets/chart/wheel_glyphs.dart';
 import '../../widgets/chart/wheel_layout.dart';
@@ -29,8 +30,7 @@ import '../../widgets/chart/wheel_painter.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/motion.dart' show StagedWaiting;
-import '../../widgets/nebula_widgets.dart'
-    show kSignNamesTr, signDisplayName;
+import '../../widgets/nebula_widgets.dart' show kSignNamesTr;
 import '../chat/chat_screen.dart';
 import '../people/person_form_screen.dart' show relationLabel;
 import '../share/share_card.dart' show shareRenderedCard;
@@ -360,7 +360,7 @@ class _ChartInspectorScreenState
                         maxOrb: _maxOrb,
                         showMinors: _showMinors),
                     const SizedBox(height: RythoSpace.lg),
-                    _KonumTablosu(data: veri),
+                    ChartPositionsTable(data: veri),
                     const SizedBox(height: RythoSpace.lg),
                     OutlinedButton.icon(
                       onPressed: () => _sor(l10n),
@@ -641,7 +641,7 @@ class _Aspectarian extends StatelessWidget {
                     style: RythoText.body(13, color: renk))
                 : CustomPaint(
                     size: const Size(13, 13),
-                    painter: _MiniGlifPainter(p.name, renk)),
+                    painter: MiniGlyphPainter(p.name, renk)),
           ),
         );
 
@@ -712,7 +712,7 @@ class _AspectCell extends StatelessWidget {
         a.kind == 'sextile'
             ? CustomPaint(
                 size: const Size(10, 10),
-                painter: _MiniGlifPainter('sextile', renk))
+                painter: MiniGlyphPainter('sextile', renk))
             : Text(kAspectTextGlyphs[a.kind] ?? '·',
                 style: TextStyle(fontSize: 11, color: renk)),
         Text('${a.orb.toStringAsFixed(1)}$harf',
@@ -721,96 +721,3 @@ class _AspectCell extends StatelessWidget {
     );
   }
 }
-
-/// Kiron/Lilith/sextile mini vektör glifi (tablo hücreleri).
-class _MiniGlifPainter extends CustomPainter {
-  const _MiniGlifPainter(this.name, this.color);
-
-  final String name;
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    canvas.drawPath(
-        specialGlyphPath(
-            name, Offset(size.width / 2, size.height / 2), size.width),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.1
-          ..strokeCap = StrokeCap.round
-          ..color = color);
-  }
-
-  @override
-  bool shouldRepaint(_MiniGlifPainter old) =>
-      old.name != name || old.color != color;
-}
-
-/// Konum tablosu — çarkın erişilebilir (TalkBack) temsili.
-class _KonumTablosu extends StatelessWidget {
-  const _KonumTablosu({required this.data});
-
-  final ChartData data;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(l10n.chartPositionsTitle,
-          style: RythoText.mono(10, color: RythoColors.parchmentDim)),
-      const SizedBox(height: 6),
-      GlassPanel(
-        child: Column(children: [
-          for (var r = 0; r < data.rings.length; r++) ...[
-            if (data.isBiWheel)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Text(
-                      r == 0
-                          ? l10n.chartLegendInner(data.rings[r].label)
-                          : l10n.chartLegendOuter(data.rings[r].label),
-                      style: RythoText.label(10,
-                          color: RythoColors.parchmentDim)),
-                ),
-              ),
-            for (final p in data.rings[r].points.where((p) => !p.isAngle))
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 2.5),
-                child: Row(children: [
-                  SizedBox(
-                    width: 22,
-                    child: kPlanetTextGlyphs.containsKey(p.name)
-                        ? Text(kPlanetTextGlyphs[p.name]!,
-                            style: RythoText.body(13,
-                                color: r == 0
-                                    ? kInnerGlyphColor
-                                    : kOuterTransitColor))
-                        : CustomPaint(
-                            size: const Size(13, 13),
-                            painter: _MiniGlifPainter(
-                                p.name,
-                                r == 0
-                                    ? kInnerGlyphColor
-                                    : kOuterTransitColor)),
-                  ),
-                  Expanded(
-                      child: Text(p.localName, style: RythoText.body(13))),
-                  Text(
-                    '${signDisplayName(l10n, p.signIndex)} '
-                    "${p.degreeInSign.floor()}°"
-                    "${(((p.degreeInSign - p.degreeInSign.floor()) * 60).round()).toString().padLeft(2, '0')}'"
-                    '${p.houseNo != null ? ' · ${p.houseNo}' : ''}'
-                    '${p.retrograde ? ' · R' : ''}',
-                    style: RythoText.mono(11, color: RythoColors.lilac),
-                  ),
-                ]),
-              ),
-          ],
-        ]),
-      ),
-    ]);
-  }
-}
-

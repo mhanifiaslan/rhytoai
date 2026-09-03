@@ -1,5 +1,6 @@
 import 'dart:async' show unawaited;
 
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
@@ -27,6 +28,28 @@ import 'theme/rytho_tokens.dart';
 import 'widgets/atlas_widgets.dart';
 import 'widgets/cosmic_scaffold.dart';
 import 'widgets/motion.dart';
+
+/// Sağlayıcı yeniden deneme politikası.
+///
+/// Riverpod 3'ün VARSAYILANI her hatayı 10 kez, üstel bekleyerek (200ms →
+/// 6,4sn) yeniden dener. Bu, sunucu kotası (429) devreye girdiğinde kotayı
+/// kendi kendini besleyen bir döngüye çeviriyordu: tek 429, sağlayıcı
+/// başına ~11 isteğe; canlıdaki yedi sağlayıcı ~77 isteğe çıkıyor ve
+/// pencere hiç boşalmadığı için tek çıkış yolu uygulamayı öldürmek
+/// oluyordu. Kullanıcının "az kullanmama rağmen yoğun talep diyor"
+/// bulgusunun istemci yarısı buydu.
+///
+/// Kural: 4xx **istemci** hatasıdır — yeniden denemek durumu değiştirmez
+/// (402 paywall, 403 yetki, 429 kota, 404 yok). Yalnız geçici olabilecek
+/// hatalar (ağ kopması, zaman aşımı, 5xx) sınırlı sayıda denenir.
+Duration? rythoRetry(int retryCount, Object error) {
+  if (error is DioException) {
+    final kod = error.response?.statusCode;
+    if (kod != null && kod >= 400 && kod < 500) return null;
+  }
+  if (retryCount >= 2) return null;
+  return Duration(milliseconds: 400 * (retryCount + 1));
+}
 
 /// Web client id (google-services.json / client_type 3) — Google Sign-In için.
 const kServerClientId =
@@ -62,7 +85,7 @@ Future<void> main() async {
   // ücretsiz katmanla normal çalışır.
   await initBilling();
 
-  runApp(const ProviderScope(child: RythoApp()));
+  runApp(ProviderScope(retry: rythoRetry, child: const RythoApp()));
 }
 
 class RythoApp extends ConsumerWidget {

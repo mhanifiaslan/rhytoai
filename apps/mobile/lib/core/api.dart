@@ -94,7 +94,13 @@ final apiProvider = Provider<Dio>((ref) {
   // yalnız `localeProvider` izleniyordu ve tercih `null` kalan (yani
   // varsayılan) kullanıcıda sistem dili değişince hiçbir şey tazelenmiyordu
   // — arayüz İngilizceye geçiyor, önbellekteki yorumlar Türkçe kalıyordu.
-  final locale = ref.watch(effectiveLocaleProvider);
+  // İzlenen şey Locale NESNESİ değil DİL KODU: sistem dili "tr_TR", kullanıcı
+  // tercihi "tr" olarak kurulduğu için açılışta tercih yüklenince nesne
+  // değişiyor ve apiProvider bir kez daha kuruluyordu — ona bağlı BÜTÜN ağ
+  // sağlayıcıları soğuk açılışta ikinci kez ateşleniyordu (ölçüldü: ~14
+  // istek ~27'ye çıkıyor). Sunucu için "tr" ile "tr_TR" aynı dil.
+  final dil = ref.watch(effectiveLocaleProvider.select((l) => l.languageCode));
+  final locale = Locale(dil);
 
   final dio = Dio(BaseOptions(
     baseUrl: kApiBaseUrl,
