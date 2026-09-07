@@ -9,7 +9,7 @@ import 'package:rytho/main.dart' show rythoRetry;
 /// KL-turu: "az kullanmama rağmen yoğun talep" (429) bulgusunun istemci
 /// yarısını sabitleyen bekçiler.
 void main() {
-  DioException _hata(int kod) => DioException(
+  DioException hata(int kod) => DioException(
         requestOptions: RequestOptions(path: '/x'),
         response: Response(
             requestOptions: RequestOptions(path: '/x'), statusCode: kod),
@@ -19,21 +19,21 @@ void main() {
     test('429 ASLA yeniden denenmez', () {
       // Riverpod varsayılanı 10 kez denerdi: tek kota hatası ~11 isteğe,
       // yedi sağlayıcıda ~77 isteğe çıkıyor ve pencere hiç boşalmıyordu.
-      expect(rythoRetry(0, _hata(429)), isNull);
-      expect(rythoRetry(3, _hata(429)), isNull);
+      expect(rythoRetry(0, hata(429)), isNull);
+      expect(rythoRetry(3, hata(429)), isNull);
     });
 
     test('diğer 4xx de denenmez (402 paywall, 403 yetki, 404 yok)', () {
       for (final kod in [400, 402, 403, 404, 409]) {
-        expect(rythoRetry(0, _hata(kod)), isNull, reason: '$kod');
+        expect(rythoRetry(0, hata(kod)), isNull, reason: '$kod');
       }
     });
 
     test('5xx ve ağ hatası sınırlı sayıda denenir', () {
-      expect(rythoRetry(0, _hata(500)), isNotNull);
-      expect(rythoRetry(1, _hata(503)), isNotNull);
+      expect(rythoRetry(0, hata(500)), isNotNull);
+      expect(rythoRetry(1, hata(503)), isNotNull);
       // Üçüncüde durur: sonsuz döngü yok.
-      expect(rythoRetry(2, _hata(500)), isNull);
+      expect(rythoRetry(2, hata(500)), isNull);
       expect(
           rythoRetry(
               0,

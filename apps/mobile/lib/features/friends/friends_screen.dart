@@ -506,7 +506,7 @@ class _FriendTile extends ConsumerWidget {
                   if (friend.sunSign != null)
                     Padding(
                       padding: const EdgeInsets.only(right: 6),
-                      child: Text(friend.sunSign!,
+                      child: Text(localizedSignName(l10n, friend.sunSign),
                           style: RythoText.label(10.5,
                               color: RythoColors.lilac)),
                     ),
@@ -840,8 +840,9 @@ class _PersonTile extends StatelessWidget {
                         style: RythoText.body(14.5, w: FontWeight.w600)),
                     const SizedBox(height: 2),
                     Text(
-                      person.sunSign ??
-                          relationLabel(l10n, person.relation),
+                      person.sunSign != null
+                          ? localizedSignName(l10n, person.sunSign)
+                          : relationLabel(l10n, person.relation),
                       style: RythoText.body(11.5,
                           color: RythoColors.parchmentDim),
                     ),

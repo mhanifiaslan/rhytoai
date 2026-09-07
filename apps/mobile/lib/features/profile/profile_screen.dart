@@ -143,11 +143,20 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           child: Wrap(spacing: 8, children: [
             for (final badge in [
               if (profile['sunSign'] != null)
-                (emoji: '☀️', text: profile['sunSign'] as String),
+                (
+                  emoji: '☀️',
+                  text: localizedSignName(l10n, profile['sunSign'] as String?)
+                ),
               if (profile['moonSign'] != null)
-                (emoji: '🌙', text: profile['moonSign'] as String),
+                (
+                  emoji: '🌙',
+                  text: localizedSignName(l10n, profile['moonSign'] as String?)
+                ),
               if (profile['ascendant'] != null)
-                (emoji: '⬆️', text: profile['ascendant'] as String),
+                (
+                  emoji: '⬆️',
+                  text: localizedSignName(l10n, profile['ascendant'] as String?)
+                ),
             ])
               Builder(builder: (_) {
                 // Profildeki değerler sembol içeriyor ("Kova ♒"), birebir

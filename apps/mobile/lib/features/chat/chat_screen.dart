@@ -718,11 +718,12 @@ class MentionCandidateList extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: 2),
       itemBuilder: (_, i) {
         final aday = candidates[i];
+        final burc = localizedSignName(l10n, aday.sunSign);
         final altSatir = aday.relation != null
-            ? (aday.sunSign ?? relationLabel(l10n, aday.relation!))
+            ? (burc.isNotEmpty ? burc : relationLabel(l10n, aday.relation!))
             : [
                 if (aday.username != null) '@${aday.username}',
-                if (aday.sunSign != null) aday.sunSign!,
+                if (burc.isNotEmpty) burc,
               ].join(' · ');
         return Pressable(
           onTap: () => onSelect(aday),

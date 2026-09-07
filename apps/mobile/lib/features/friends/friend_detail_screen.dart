@@ -13,7 +13,7 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/motion.dart';
-import '../../widgets/nebula_widgets.dart' show Pressable;
+import '../../widgets/nebula_widgets.dart' show Pressable, localizedSignName;
 import '../../widgets/star_burst.dart';
 import '../chat/chat_screen.dart' show ChatScreen;
 import 'friends_screen.dart' show showFriendSafetySheet;
@@ -154,7 +154,7 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
                   border: Border.all(
                       color: RythoColors.lilac.withValues(alpha: 0.3)),
                 ),
-                child: Text(friend.sunSign!,
+                child: Text(localizedSignName(l10n, friend.sunSign),
                     style: RythoText.label(11.5, color: RythoColors.lilac)),
               ),
           ]),

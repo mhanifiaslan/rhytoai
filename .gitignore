@@ -70,3 +70,7 @@ apps/mobile/assets/models/*.tflite
 # (git'te); buradaki ham cikti kopyasi ~60MB tekrar olurdu. Kanit zinciri
 # README + manifest + stats + clean ile korunuyor.
 docs/rag_corpus/chunks/
+
+# Magaza gorselleri: ham cihaz kayitlari kisisel veri tasiyor
+# (gercek ad, dogum haritasi) — yalniz uretilmis varliklar versiyonlanir.
+store/play/raw/

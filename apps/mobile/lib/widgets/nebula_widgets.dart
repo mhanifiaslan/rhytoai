@@ -100,6 +100,24 @@ int signIndexOf(String? name) {
   return -1;
 }
 
+/// Ham burç adını kullanıcının diline çevirir.
+///
+/// Firestore ve backend burç adını **Türkçe** tutuyor (`sunSign: "Oğlak ♑"`,
+/// `sun_sign`) — bunu ekrana olduğu gibi basmak, arayüz İngilizceyken
+/// "Oğlak" yazdırıyordu. Cihazda ölçüldü (KL-turu): İngilizce hesapta ana
+/// ekranın günlük okuma kartı Türkçe burç adı gösteriyordu, hemen altındaki
+/// AI cümlesi ise doğru şekilde "Capricorn" diyordu.
+///
+/// Tanınmayan değer AYNEN döner: biçim değişirse ad kaybolmaz, yalnız
+/// çevrilmemiş kalır — boş bir çip göstermekten iyidir.
+String localizedSignName(AppLocalizations l10n, String? raw) {
+  final i = signIndexOf(raw);
+  if (i < 0) return raw?.trim() ?? '';
+  final ad = signDisplayName(l10n, i);
+  // Glif dilden bağımsız ve tasarımın parçası: ham değer taşıyorsa korunur.
+  return raw!.contains(kSignGlyphs[i]) ? '$ad ${kSignGlyphs[i]}' : ad;
+}
+
 /// Yuvarlak burç çipi: renkli degrade daire içinde glif + altta ad.
 class ZodiacChip extends StatelessWidget {
   const ZodiacChip({

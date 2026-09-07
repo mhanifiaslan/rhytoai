@@ -331,14 +331,18 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                         )
                       : ReadingCard(
                           label: () {
-                            final gunes = data['sun_sign'];
-                            final ay = data['moon_sign'];
-                            final yukselen = data['ascendant'] as String?;
+                            // Sunucu burç adını Türkçe döndürüyor; ekrana
+                            // ham basmak İngilizce arayüzde "Oğlak" yazdırıyordu.
+                            final gunes =
+                                localizedSignName(l10n, data['sun_sign'] as String?);
+                            final ay =
+                                localizedSignName(l10n, data['moon_sign'] as String?);
+                            final yukselen =
+                                localizedSignName(l10n, data['ascendant'] as String?);
                             final parcalar = <String>[
-                              if (gunes != null) '☀️ $gunes',
-                              if (ay != null) '🌙 $ay',
-                              if (yukselen != null && yukselen.isNotEmpty)
-                                '⬆️ $yukselen',
+                              if (gunes.isNotEmpty) '☀️ $gunes',
+                              if (ay.isNotEmpty) '🌙 $ay',
+                              if (yukselen.isNotEmpty) '⬆️ $yukselen',
                             ];
                             return parcalar.join(' · ');
                           }(),

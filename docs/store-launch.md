@@ -193,9 +193,84 @@ kesin kehanet dili YOK; deneme cümlesi sunucu-denemesi gerçeğiyle uyumlu
 (otomatik ücretlendirme İMA EDİLMİYOR); ücretsiz katman listesi koddaki
 kapılarla birebir (İ Ching Plus'ta — "günde 1 çekim" YAZILMADI).
 
+### Mağaza metinleri — İngilizce (KL-turu)
+
+Türkçenin çevirisi DEĞİL, aynı disiplinle yeniden yazılmış hâli: sağlık
+iddiası ("heal/cure/treat") yok, kesin kehanet dili yok, deneme cümlesi
+sunucu denemesini anlatıyor (otomatik ücretlendirme ima edilmiyor),
+ücretsiz katman listesi koddaki kapılarla birebir.
+
+> **Play'in "Yapay zeka ile çevirileri içe aktarın" düğmesini KULLANMA.**
+> Makine çevirisi "ölçülmeyen söylenmez" cümlesini ve deneme ifadesini
+> kolayca kaydırır; beyan ile kodun ayrışması kaldırılma sebebidir.
+
+**App name:** `Rytho AI` (dillerde aynı — marka tutarlılığı)
+
+**Short description** (Play sınırı 80; bu 64):
+
+```
+Your personal astrology guide, powered by real sky calculations.
+```
+
+**Full description:**
+
+```
+Rytho calculates your birth chart from real astronomical data and follows
+the sky for you, every day.
+
+WHAT'S INSIDE
+• Your birth chart: the wheel, 14 points, houses and aspects — computed
+  with Swiss Ephemeris, not filled in from a template.
+• Sky right now: moon phase, retrogrades, today's aspects.
+• Daily reading: your chart combined with today's sky, written for you.
+• Chat: a guide that knows your chart and remembers what you talked about.
+• Your circle: add your partner, your child, the people close to you, and
+  see the measurable connection between you.
+• Other traditions: BaZi (Chinese four pillars), I Ching and face reading.
+
+FREE
+Horoscopes, the live sky, your birth chart wheel and placements, the
+friends layer, 5 chat messages a day and one person in your circle — an
+account is all it takes.
+
+RYTHO+ (monthly)
+Your personal daily reading, the full natal report, solar return, inner
+calendar, BaZi, I Ching, face reading, a 10-person circle and 300 AI
+credits a month. New accounts get all Rytho+ features for the first 3
+days without entering card details; when the trial ends nothing is
+charged automatically.
+
+HONESTY
+What isn't measured isn't said: if you don't know your birth time, your
+rising sign is not calculated and you are told so plainly. Readings are
+for entertainment and personal insight; they are not medical, legal,
+financial or psychological advice. There are no ads in this app.
+```
+
+### Mağaza görselleri (KL-turu — üretildi)
+
+`store/play/` altında, hepsi uygulamanın KENDİ varlıklarından türetildi
+(marka sapması olmasın diye):
+
+| Dosya | Ölçü | Kaynak |
+|---|---|---|
+| `app-icon-512.png` | 512×512 | `assets/icon/app_icon.png` — launcher ikonunun aynısı |
+| `feature-graphic-tr.png` | 1024×500 | işaret + `rytho_theme.dart` paleti |
+| `feature-graphic-en.png` | 1024×500 | aynısının İngilizcesi |
+
+Üretici betik: `infra/store-graphics.py` (yeniden çalıştırılabilir).
+Yazı tipi Montserrat (Sora'nın geometrik karşılığı — Sora kurulu değil).
+
+**Ekran görüntüsü tuzağı:** Play "16:9 veya 9:16" oranı istiyor; tipik
+telefon ekran görüntüsü 1080×2400, yani **9:20** — olduğu gibi yüklenirse
+REDDEDİLİR. Ham kareler 1080×1920 zemine oturtulmalı.
+
 ### Google Play
 
-- Kategori: **Yaşam Tarzı** veya **Eğlence**.
+- Kategori: **Yaşam Tarzı** (KL-turu kararı — kategori standardı;
+  Sağlık/Tıp ASLA seçilmez, `safety_rules` sağlık sorularını reddettiği
+  için beyanla çelişirdi). Etiketler: Yıldız Falı, Kişisel gelişim,
+  Yaşam Tarzı, Eğlence.
 - İçerik derecelendirmesinde astroloji/fal içeriğini doğru beyan et; yanlış
   beyan kaldırma sebebidir.
 - Sosyal özellik beyanı: kullanıcılar arası etkileşim **var ama sınırlı**
