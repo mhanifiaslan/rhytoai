@@ -54,10 +54,11 @@ def kare(ham,kirp,baslik,cikti):
 
 if __name__=="__main__":
     for ham,kirp,bas,cik in [
-        ("01-sky-anonim.png",   (0,100,1080,1500), "Today, from your own chart", "shot-1-sky.png"),
-        ("02-atlas.png",        (0,300,1080,1450), "Your birth chart, computed", "shot-2-chart.png"),
-        ("03-gokyuzu.png",      (0,240,1080,1800), "The sky right now",          "shot-3-live.png"),
-        ("04-cevrem-anonim.png",(0,240,1080,2050), "The people close to you",    "shot-4-circle.png"),
+        ("01-sky-anonim.png",    (0,100,1080,1280), "Today, from your own chart", "shot-1-sky.png"),
+        ("02-atlas.png",         (0,300,1080,1440), "Your birth chart, computed", "shot-2-chart.png"),
+        ("03-gokyuzu.png",       (0,240,1080,1880), "The sky right now",          "shot-3-live.png"),
+        ("04-cevrem-anonim.png", (0,240,1080,2040), "The people close to you",    "shot-4-circle.png"),
+        ("05-sohbet-anonim.png", (0,130,1080,1812), "It knows your chart",        "shot-5-chat.png"),
     ]:
         p=kare(ham,kirp,bas,cik)
         with Image.open(p) as i: print(f"{cik}: {i.size[0]}x{i.size[1]} {os.path.getsize(p)//1024} KB")
