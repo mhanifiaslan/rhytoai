@@ -268,7 +268,11 @@ WHISPER_CIRCLE = (
     "doğal biçimde işe kat: örneğin aile teması yoğun bir günde annesinin "
     "burcunu bildiğini belli eden tek bir dokunuş yeter. Bu listede doğum "
     "haritası ölçümü YOK — derin ilişki analizi ancak ölçüm fısıltısı "
-    "geldiğinde yapılır, buradan uydurulmaz):"
+    "geldiğinde yapılır, buradan uydurulmaz. AD KURALI: eklenen yakınların "
+    "ADI SANA VERİLMEZ, yalnız ilişki etiketi verilir (eş, çocuk, anne...) "
+    "— onlara ASLA bir ad yakıştırma, 'eşin', 'kızın' diye an. Listedeki "
+    "adlar YALNIZCA o adın yazdığı arkadaşa aittir; bir arkadaşın adını "
+    "başka birine, özellikle adsız bir yakınına TAŞIMA):"
 )
 #: Çevre satırlarının küçük etiketleri.
 CIRCLE_FRIENDS_LABEL = "Arkadaşları:"

@@ -110,55 +110,77 @@ def get_subscription(uid: str) -> dict[str, Any]:
 #: kullanabilsin" — kartsız, sunucu taraflı).
 TRIAL_DAYS = 3
 
-#: Deneme kararı sıcak yolda; profil okumasını kısa süre önbellekle
-#: (`_user_tz` deseni). Yanlış negatif en fazla bu kadar gecikir.
+#: Profil okumasını kısa süre önbellekle (`_user_tz` deseni). Önbelleklenen
+#: şey KARAR DEĞİL, kararın girdisi (`createdAt`) — aşağıdaki gerekçe.
 _TRIAL_CACHE_TTL = 15 * 60
 
+#: `createdAt` okunamadı / yok işareti. Önbellekte `None` "kayıt yok"
+#: anlamına geldiği için ayrı bir sentinel gerekiyor.
+_TRIAL_YOK = 0.0
 
-def in_trial(uid: str) -> bool:
-    """Hesap ilk ``TRIAL_DAYS`` günü içinde mi? (OT6)
 
-    Kaynak profildeki ``createdAt`` (onboarding yazar). Alan yoksa deneme
-    YOK — eski hesaplar ve alan yazılmadan kalmış kayıtlar sessizce
-    ücretsiz katmanda kalır ("okunamazsa ücretsiz" doktrini).
+def _created_at_ts(uid: str) -> float:
+    """Profilin ``createdAt`` epoch değeri; yoksa/okunamazsa 0.
+
+    ## Neden karar değil GİRDİ önbellekleniyor (KL-turu onarımı)
+
+    Eskiden `in_trial`'ın **boolean sonucu** 15 dakika saklanıyordu. Deneme
+    sınırı geçildiğinde önbellekte `True` kalan bir çağrı "abone" derken,
+    önbelleği boş olan başka bir çağrı "değil" diyordu — aynı kullanıcı için
+    aynı anda iki farklı yetki cevabı. Cihazda birebir görüldü: Profil
+    ekranı "Rytho+" gösterirken `/api/v1/people` kontenjanı ücretsiz
+    katmanın 1'i olarak döndürdü ("4/1 kişi").
+
+    Cloud Run birden çok instance açtığında bellek içi önbellek instance
+    başına ayrı olduğu için sapma dakikalarca sürebiliyor.
+
+    `createdAt` **değişmeyen** bir olgudur; onu saklayıp kararı her çağrıda
+    yeniden hesaplayınca bütün yollar aynı anda dönüyor. TTL artık yalnız
+    "yeni yazılmış profili ne kadar sonra görürüz" sorusunu etkiliyor.
     """
     from core import cache  # tembel: core.cache -> core.* yonu karisik olmasin
-    anahtar = f"user-trial-{uid}"
-    karar = cache.get(anahtar)
-    if karar is None:
-        karar = False
+    anahtar = f"user-created-{uid}"
+    ts = cache.get(anahtar)
+    if ts is None:
+        ts = _TRIAL_YOK
         try:
             from services import profile_service
             olusturma = (profile_service.get_profile(uid) or {}).get(
                 "createdAt")
             if olusturma is not None and hasattr(olusturma, "timestamp"):
-                yas = (dt.datetime.now(dt.timezone.utc).timestamp()
-                       - olusturma.timestamp())
-                karar = 0 <= yas < TRIAL_DAYS * 24 * 3600
+                ts = float(olusturma.timestamp())
         except Exception as exc:
             logger.warning("Deneme durumu okunamadi (%s): %s", uid, exc)
-        cache.set(anahtar, karar, ttl_seconds=_TRIAL_CACHE_TTL,
-                  owner_uid=uid)
-    return bool(karar)
+        cache.set(anahtar, ts, ttl_seconds=_TRIAL_CACHE_TTL, owner_uid=uid)
+    return float(ts)
+
+
+def _trial_remaining(uid: str) -> float | None:
+    """Denemenin bitmesine kalan saniye; denemede değilse None."""
+    olusturma = _created_at_ts(uid)
+    if not olusturma:
+        # Alan yoksa deneme YOK — eski hesaplar ve alan yazılmadan kalmış
+        # kayıtlar sessizce ücretsiz katmanda kalır ("okunamazsa ücretsiz").
+        return None
+    yas = dt.datetime.now(dt.timezone.utc).timestamp() - olusturma
+    toplam = TRIAL_DAYS * 24 * 3600
+    if not (0 <= yas < toplam):
+        return None
+    return toplam - yas
+
+
+def in_trial(uid: str) -> bool:
+    """Hesap ilk ``TRIAL_DAYS`` günü içinde mi? (OT6)"""
+    return _trial_remaining(uid) is not None
 
 
 def trial_days_left(uid: str) -> int | None:
     """Denemede kalan TAM gün (yukarı yuvarlanır, en az 1); denemede
     değilse None. Paywall'daki geri sayım buradan beslenir."""
-    if not in_trial(uid):
+    kalan = _trial_remaining(uid)
+    if kalan is None:
         return None
-    try:
-        from services import profile_service
-        olusturma = (profile_service.get_profile(uid) or {}).get("createdAt")
-        if olusturma is None or not hasattr(olusturma, "timestamp"):
-            return None
-        kalan = (TRIAL_DAYS * 24 * 3600
-                 - (dt.datetime.now(dt.timezone.utc).timestamp()
-                    - olusturma.timestamp()))
-        return max(1, -(-int(kalan) // (24 * 3600)))
-    except Exception as exc:
-        logger.warning("Deneme suresi okunamadi (%s): %s", uid, exc)
-        return None
+    return max(1, -(-int(kalan) // (24 * 3600)))
 
 
 def is_subscriber(uid: str) -> bool:

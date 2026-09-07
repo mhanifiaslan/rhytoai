@@ -162,3 +162,33 @@ def test_fisilti_onbelleklenir(monkeypatch, bellek):
     circle_context.circle_whisper("u", "tr")
     circle_context.circle_whisper("u", "tr")
     assert sayac["n"] == 1
+
+
+class TestAdKurali:
+    """KL-turu: modelin adsız yakına arkadaş adı takması.
+
+    Cihazda ölçüldü: kullanıcı "How does this week look for me?" diye
+    sordu, cevap "your partner, **Aslan**, is navigating..." dedi.
+    "Aslan" adı fısıltıdaki ARKADAŞ listesinden geliyor; eklenen kişinin
+    adı sunucuya hiç çıkmıyor (aşağıdaki bekçi bunu ayrıca doğruluyor).
+    Yani sızıntı değil, uydurma — ama kullanıcı için sonucu aynı.
+    """
+
+    def test_kisi_satiri_AD_tasimaz(self):
+        from services import circle_context
+        satir = circle_context._kisi_satiri(
+            {"relation": "partner", "sunSign": "Aslan ♌",
+             "displayName": "Zehra", "name": "Zehra"}, "tr")
+        # Burç adı "Aslan" geçebilir (gezegen konumu); kişinin ADI geçemez.
+        assert "Zehra" not in satir
+
+    def test_promptta_ad_yakistirma_yasagi_iki_dilde_var(self):
+        from services.prompts import tr, en
+        assert "AD KURALI" in tr.WHISPER_CIRCLE
+        assert "NAMING RULE" in en.WHISPER_CIRCLE
+        # Kural iki şeyi birden söylemeli: ad verilmez + ad taşınmaz.
+        for metin, anahtarlar in ((tr.WHISPER_CIRCLE, ("ad yakıştırma", "TAŞIMA")),
+                                  (en.WHISPER_CIRCLE, ("never attach a name",
+                                                       "never carry a friend's name"))):
+            for anahtar in anahtarlar:
+                assert anahtar in metin, anahtar

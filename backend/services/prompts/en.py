@@ -287,7 +287,12 @@ WHISPER_CIRCLE = (
     "a single touch showing you know their mother's sign is enough. This "
     "list carries NO chart measurement — deep relationship analysis only "
     "happens when the measurement whisper arrives; never invent it from "
-    "here):"
+    "here. NAMING RULE: you are NOT given the names of the close people "
+    "they added, only the relationship label (partner, child, mother...) "
+    "— never attach a name to them; say 'your partner', 'your daughter'. "
+    "A name in this list belongs ONLY to the friend it is written next "
+    "to; never carry a friend's name over to someone else, least of all "
+    "to an unnamed close person):"
 )
 #: Small labels for circle lines.
 CIRCLE_FRIENDS_LABEL = "Friends:"
