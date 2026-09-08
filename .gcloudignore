@@ -6,6 +6,12 @@
 legacy/
 apps/
 docs/
+# Reklam varliklari: 4,9 GB. Cloud Build baglam arsivine giriyordu ve
+# imajda hicbir sekilde kullanilmiyor — tek bir deploy'un yuklemesini
+# saniyelerden dakikalara cikariyordu.
+ads/
+store/
+web/
 backend/.venv/
 backend/__pycache__/
 backend/cache/
