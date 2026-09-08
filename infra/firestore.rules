@@ -274,5 +274,13 @@ service cloud.firestore {
     match /aiCache/{entryId} {
       allow read, write: if false;
     }
+
+    // ---------- SMS doğrulama teşhis kaydı (phone_service.record_attempt) ----------
+    // Yalnızca sunucu (Admin SDK) yazar, yalnızca konsol/panel okur.
+    // İçerik MASKELİ numaradır ("+90532***4567") — ham numara buraya da
+    // girmez; hash dizini (phoneHashes) doktrini aynen sürüyor.
+    match /phoneAttempts/{attemptId} {
+      allow read, write: if false;
+    }
   }
 }

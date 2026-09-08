@@ -843,6 +843,25 @@
       }
     }
   },
+  "phoneWillSendTo": "The code will be sent to {number}.",
+  "@phoneWillSendTo": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneResend": "Resend code",
+  "phoneResendIn": "Resend in {seconds}s",
+  "@phoneResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneNoCodeHelp": "If the SMS still hasn't arrived it may be a carrier delay. Check your number, resend the code, or skip this step and verify later from Profile → Sign-in methods.",
+  "phoneRegionUnsupported": "Right now we can only send codes to numbers starting with +90.",
   "phoneChangeNumber": "Change number",
   "phoneLinkedDone": "Your phone is verified.",
   "phoneInvalid": "Include the country code (e.g. +15551234567).",

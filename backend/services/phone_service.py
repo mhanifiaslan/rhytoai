@@ -110,3 +110,41 @@ def release_phone(uid: str) -> None:
             client.collection("phoneHashes").document(h).delete()
     except Exception as exc:
         logger.warning("Telefon kaydı serbest bırakılamadı (%s): %s", uid, exc)
+
+# Teşhis kaydında tutulan aşamalar. Serbest metin kabul edilmez: istemci
+# ne gönderirse göndersin kayda yalnız bunlar girer.
+ATTEMPT_STAGES = {"sent", "failed", "auto", "verified"}
+
+
+def record_attempt(uid: str, stage: str, iso2: str, masked: str,
+                   code: str | None = None) -> None:
+    """SMS doğrulama denemesini teşhis için yazar (best-effort).
+
+    Neden var (2026-09-08 canlı olayı): bir kullanıcı SMS alamadı ve
+    Google tarafında her şey sağlıklı görünüyordu — istek 200 döndü, SMS
+    faturalandı, engellenmedi. Ama "numara doğruydu da operatör mü
+    düşürdü, yoksa numara yanlış mı derlendi" sorusunu AYIRT EDEMEDİK,
+    çünkü gönderdiğimiz numarayı hiçbir yere yazmıyorduk.
+
+    Yazılan MASKELİ biçimdir ("+90532***4567"): teşhis için yeterli,
+    kimlik için değil. Ham numara Firestore'a hiç girmez — hash dizini
+    doktrini (`sync_phone`) bozulmaz.
+
+    Asla fırlatmaz: telemetri doğrulama akışını düşüremez.
+    """
+    if stage not in ATTEMPT_STAGES:
+        return
+    try:
+        client = firestore_client.get_client()
+        if client is None:
+            return
+        client.collection("phoneAttempts").document().set({
+            "uid": uid,
+            "stage": stage,
+            "iso2": (iso2 or "")[:2].upper(),
+            "masked": (masked or "")[:24],
+            "code": (code or "")[:64] or None,
+            "at": dt.datetime.now(dt.timezone.utc),
+        })
+    except Exception as exc:  # pragma: no cover - telemetri
+        logger.warning("Telefon denemesi yazilamadi (%s): %s", uid, exc)

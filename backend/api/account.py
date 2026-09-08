@@ -122,6 +122,35 @@ def sync_phone(user: AuthUser = Depends(get_current_user),
     return {"status": "success", **sonuc}
 
 
+class PhoneAttempt(BaseModel):
+    """Telefon doğrulama denemesinin teşhis kaydı.
+
+    `masked` MASKELİ numaradır ("+90532***4567") — ham numara buraya da,
+    Firestore'a da girmez. İstemci beyanına güvenilir çünkü kayıt yalnız
+    teşhis amaçlıdır: hiçbir yetki, hak ya da eşleşme bu alandan türemez.
+    """
+
+    stage: str = Field(max_length=16)
+    iso2: str = Field(default="", max_length=2)
+    masked: str = Field(default="", max_length=24)
+    code: str | None = Field(default=None, max_length=64)
+
+
+@router.post("/phone/attempt")
+def phone_attempt(body: PhoneAttempt,
+                  user: AuthUser = Depends(get_current_user)):
+    """SMS denemesini kaydeder — ateşle-unut, asla hata döndürmez.
+
+    Google, SMS'i kabul edip faturalandırdığı hâlde teslim edilmediğinde
+    hiçbir iz bırakmıyor (teslim makbuzu yayınlamıyor). Bu uç, en azından
+    BİZİM tarafımızda "hangi kullanıcı, hangi ülkeye, hangi maskeli
+    numaraya, hangi aşamada" sorusunu cevaplanabilir kılıyor.
+    """
+    phone_service.record_attempt(
+        user.uid, body.stage, body.iso2, body.masked, body.code)
+    return {"status": "success"}
+
+
 # ---------------------------------------------------------------------------
 # Günlük (R2-G1)
 # ---------------------------------------------------------------------------

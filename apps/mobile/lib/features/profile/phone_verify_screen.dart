@@ -14,6 +14,8 @@
 /// ham numara Firestore'a hiç yazılmaz.
 library;
 
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
@@ -36,53 +38,164 @@ class PhoneVerifyScreen extends ConsumerStatefulWidget {
 }
 
 class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
-  /// E.164 derlenmiş numara — PhoneNumberField'dan gelir (O4): ülke
-  /// aramalı listeden, boşluk/sıfır temizliği bileşende.
-  String _numara = '';
+  /// Alanın tam durumu — ülke DE lazım: SMS bölge kapısı ve ülkeye göre
+  /// uzunluk kontrolü yalnız E.164 dizesiyle yapılamaz.
+  PhoneEntry _giris = const PhoneEntry.bos();
   final _kod = TextEditingController();
   String? _verificationId;
+
+  /// Firebase'in verdiği yeniden gönderme jetonu. Bu jetonla yapılan
+  /// çağrı YENİ bir doğrulama değil, aynı doğrulamanın TEKRARIDIR —
+  /// kötüye kullanım korumasını (17499 / Error code:39) tetiklemez.
+  /// Eskiden atılıyordu ve kullanıcının tek çaresi "numarayı değiştir"
+  /// ile sıfırdan doğrulama başlatmaktı; bu tam da korumayı tetikleyen
+  /// davranıştı (2026-09-08 canlı bulgusu).
+  int? _resendToken;
+
   bool _mesgul = false;
   String? _hata;
 
+  /// Geri sayım: 0 ise "tekrar gönder" aktif.
+  int _bekleme = 0;
+  Timer? _sayac;
+
+  /// Kod istendikten bu yana geçen saniye — yol gösterici metin bunun
+  /// eşiğinde belirir.
+  int _gecen = 0;
+
+  static const _resendSaniye = 60;
+  static const _ipucuSaniye = 45;
+
+  /// SMS bölge listesi konsolda `allowlistOnly: ["TR"]`. Buraya yazılı
+  /// olması bilinçli: liste konsolda genişletilirse burası da güncellenir,
+  /// aksi hâlde kullanıcı boşuna gönderim yapıp ücret yakar ve "kod
+  /// gelmiyor" ekranında kalır.
+  static const _smsBolgeleri = {'TR'};
+
   @override
   void dispose() {
+    _sayac?.cancel();
     _kod.dispose();
     super.dispose();
   }
 
-  Future<void> _kodGonder() async {
+  void _sayaciBaslat() {
+    _sayac?.cancel();
+    setState(() {
+      _bekleme = _resendSaniye;
+      _gecen = 0;
+    });
+    _sayac = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) {
+        t.cancel();
+        return;
+      }
+      setState(() {
+        _gecen++;
+        if (_bekleme > 0) _bekleme--;
+      });
+      if (_bekleme == 0 && _gecen > _ipucuSaniye) t.cancel();
+    });
+  }
+
+  Future<void> _kodGonder({bool tekrar = false}) async {
     final l10n = AppLocalizations.of(context);
-    final numara = _numara;
-    if (!numara.startsWith('+') || numara.length < 10) {
+    final giris = _giris;
+    final ulke = giris.country;
+
+    if (ulke == null || !giris.plausible) {
       setState(() => _hata = l10n.phoneInvalid);
       return;
     }
+    // Bölge kapısı: gönderilemeyecek numaraya gönderim denemesi yapma.
+    if (!_smsBolgeleri.contains(ulke.iso2)) {
+      setState(() => _hata = l10n.phoneRegionUnsupported);
+      return;
+    }
+
     setState(() {
       _mesgul = true;
       _hata = null;
     });
-    await FirebaseAuth.instance.verifyPhoneNumber(
-      phoneNumber: numara,
-      // Android otomatik doğrulaması: SMS beklemeden kimlik gelebilir.
-      verificationCompleted: (credential) => _bagla(credential),
-      verificationFailed: (e) {
-        if (!mounted) return;
-        setState(() {
-          _mesgul = false;
-          _hata = _firebaseHatasi(e, l10n);
-        });
-      },
-      codeSent: (verificationId, _) {
-        if (!mounted) return;
-        setState(() {
-          _mesgul = false;
-          _verificationId = verificationId;
-        });
-      },
-      codeAutoRetrievalTimeout: (verificationId) {
-        _verificationId ??= verificationId;
-      },
-    );
+
+    // try/catch ŞART: eskiden yoktu ve fırlatan her istisna (eklenti/kanal
+    // hatası, Play Services yokluğu) _mesgul'u true bırakıp ekranı sonsuz
+    // spinner'da donduruyordu — ne mesaj ne kayıt.
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+        phoneNumber: giris.e164,
+        forceResendingToken: tekrar ? _resendToken : null,
+        // Android otomatik doğrulaması: SMS beklemeden kimlik gelebilir.
+        verificationCompleted: (credential) {
+          _iz('auto');
+          _bagla(credential);
+        },
+        verificationFailed: (e) {
+          _iz('failed', kod: e.code);
+          if (!mounted) return;
+          setState(() {
+            _mesgul = false;
+            _hata = _firebaseHatasi(e, l10n);
+          });
+        },
+        codeSent: (verificationId, resendToken) {
+          _iz('sent');
+          if (!mounted) return;
+          setState(() {
+            _mesgul = false;
+            _verificationId = verificationId;
+            _resendToken = resendToken;
+          });
+          _sayaciBaslat();
+        },
+        codeAutoRetrievalTimeout: (verificationId) {
+          _verificationId ??= verificationId;
+        },
+      );
+    } on FirebaseAuthException catch (e) {
+      _iz('failed', kod: e.code);
+      if (!mounted) return;
+      setState(() {
+        _mesgul = false;
+        _hata = _firebaseHatasi(e, l10n);
+      });
+    } catch (e) {
+      _iz('failed', kod: 'throw');
+      if (!kDebugMode) {
+        FirebaseCrashlytics.instance.recordError(
+            'phone-verify send: $e', StackTrace.current,
+            fatal: false);
+      }
+      if (!mounted) return;
+      setState(() {
+        _mesgul = false;
+        _hata = l10n.genericError;
+      });
+    }
+  }
+
+  /// Ateşle-unut teşhis kaydı. Tam numara GİTMEZ — yalnız maskeli biçim
+  /// ("+90532***4567") ve ülke. Bugüne kadar başarı yolunda hiçbir iz
+  /// yoktu; "operatör mü düşürdü, numara mı yanlıştı" sorusu bu yüzden
+  /// cevaplanamıyordu.
+  void _iz(String asama, {String? kod}) {
+    final ulke = _giris.country;
+    if (ulke == null) return;
+    unawaited(() async {
+      try {
+        await ref.read(apiProvider).post(
+          '/api/v1/account/phone/attempt',
+          data: {
+            'stage': asama,
+            'iso2': ulke.iso2,
+            'masked': _giris.masked,
+            'code': ?kod,
+          },
+        );
+      } catch (_) {
+        // Teşhis kaydı doğrulama akışını ASLA düşüremez.
+      }
+    }());
   }
 
   Future<void> _kodOnayla() async {
@@ -99,7 +212,16 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
     final gezgin = Navigator.of(context);
     final mesajci = ScaffoldMessenger.of(context);
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      // Eskiden burada sessizce return ediliyordu ve _mesgul true kalıyordu:
+      // otomatik doğrulama yolunda ekran sonsuz spinner'da donuyordu.
+      if (!mounted) return;
+      setState(() {
+        _mesgul = false;
+        _hata = l10n.genericError;
+      });
+      return;
+    }
 
     setState(() {
       _mesgul = true;
@@ -116,8 +238,10 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
       // Claim ancak TAZE token'da görünür; tazelenmeden sync 400 döner.
       await user.getIdToken(true);
       await ref.read(apiProvider).post('/api/v1/account/phone/sync');
+      _iz('verified');
 
       if (!mounted) return;
+      _sayac?.cancel();
       mesajci.showSnackBar(SnackBar(content: Text(l10n.phoneLinkedDone)));
       gezgin.pop();
     } on FirebaseAuthException catch (e) {
@@ -200,13 +324,22 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
             const SizedBox(height: RythoSpace.xl),
             if (!kodAsamasi) ...[
               PhoneNumberField(
-                onChanged: (e164) => setState(() {
-                  _numara = e164;
+                onChanged: (giris) => setState(() {
+                  _giris = giris;
                   _hata = null;
                 }),
               ),
+              // Gönderim ÖNCESİ derlenmiş numarayı göster: yanlış derlenmiş
+              // ya da yanlış yazılmış numaraya karşı en ucuz savunma bu.
+              // Firebase yanlış numarayı da kabul edip faturalandırıyor,
+              // kullanıcının gördüğü tek şey "kod gelmiyor" oluyor.
+              if (_giris.plausible) ...[
+                const SizedBox(height: RythoSpace.md),
+                Text(l10n.phoneWillSendTo(_giris.e164),
+                    style: RythoType.caption),
+              ],
             ] else ...[
-              Text(l10n.phoneCodeSentTo(_numara), style: RythoType.body),
+              Text(l10n.phoneCodeSentTo(_giris.e164), style: RythoType.body),
               const SizedBox(height: RythoSpace.md),
               TextField(
                 controller: _kod,
@@ -217,19 +350,48 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                 onChanged: (_) => setState(() => _hata = null),
               ),
               const SizedBox(height: RythoSpace.sm),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _mesgul
-                      ? null
-                      : () => setState(() {
-                            _verificationId = null;
-                            _kod.clear();
-                          }),
-                  child: Text(l10n.phoneChangeNumber,
-                      style: RythoType.caption),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // TEKRAR GÖNDER: forceResendingToken ile, yani AYNI
+                  // doğrulamanın tekrarı. "Numarayı değiştir" yolu sıfırdan
+                  // yeni doğrulama başlatır ve Firebase'in kötüye kullanım
+                  // korumasını tetikler — kurtarma yolu bu olmalı, o değil.
+                  TextButton(
+                    onPressed: (_mesgul || _bekleme > 0)
+                        ? null
+                        : () => _kodGonder(tekrar: true),
+                    child: Text(
+                      _bekleme > 0
+                          ? l10n.phoneResendIn(_bekleme)
+                          : l10n.phoneResend,
+                      style: RythoType.caption,
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _mesgul
+                        ? null
+                        : () {
+                            _sayac?.cancel();
+                            setState(() {
+                              _verificationId = null;
+                              _bekleme = 0;
+                              _gecen = 0;
+                              _kod.clear();
+                            });
+                          },
+                    child: Text(l10n.phoneChangeNumber,
+                        style: RythoType.caption),
+                  ),
+                ],
               ),
+              // Kod gelmediğinde kullanıcı ne yapacağını bilsin. Bugünkü
+              // canlı olayda kullanıcı 8 dakika bekleyip kaydı bıraktı;
+              // ekranda ne tekrar gönderme ne yönlendirme vardı.
+              if (_gecen >= _ipucuSaniye) ...[
+                const SizedBox(height: RythoSpace.md),
+                Text(l10n.phoneNoCodeHelp, style: RythoType.caption),
+              ],
             ],
             if (_hata != null) ...[
               const SizedBox(height: RythoSpace.md),

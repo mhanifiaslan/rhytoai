@@ -1700,6 +1700,27 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String phoneWillSendTo(String number) {
+    return 'The code will be sent to $number.';
+  }
+
+  @override
+  String get phoneResend => 'Resend code';
+
+  @override
+  String phoneResendIn(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get phoneNoCodeHelp =>
+      'If the SMS still hasn\'t arrived it may be a carrier delay. Check your number, resend the code, or skip this step and verify later from Profile → Sign-in methods.';
+
+  @override
+  String get phoneRegionUnsupported =>
+      'Right now we can only send codes to numbers starting with +90.';
+
+  @override
   String get phoneChangeNumber => 'Change number';
 
   @override

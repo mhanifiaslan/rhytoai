@@ -103,6 +103,48 @@ Kalan işler:
 
 Not: SMS gönderimi Blaze planında ücretlidir (Türkiye ~0,01-0,05 USD/SMS).
 
+## 1a. Firebase: SMS teşhisi (SMS-turu, 2026-09-08 canlı olayı)
+
+**Olay:** bir kullanıcı kayıt sihirbazının telefon adımında SMS alamadı.
+Ölçüldü (Cloud Monitoring): `SendVerificationCode` **200** döndü, SMS
+`region TR / +90 / tier 2` olarak **faturalandı**, `blocked_sms_count`
+**0**, kota aşımı yok, Blaze açık, App Check zorlanmıyor. Yani kopma
+Google'dan SONRA — **operatör teslimatı**. Google teslim makbuzu
+yayınlamıyor, o hop bizden görünmüyor.
+
+Asıl sorun teşhisin ZOR olmasıydı. Sırasıyla:
+
+- [ ] **Auth istek günlüğünü AÇ** — Firebase Console → Authentication →
+      Settings → *User activity / request logging* (Identity Platform
+      `monitoring.requestLogging`). **Şu an KAPALI**: Cloud Logging'de tek
+      satır auth kaydı yok, teşhis Monitoring metriklerinden dolaylı
+      yapıldı. Açıldıktan sonra doğrula:
+      `gcloud logging read 'protoPayload.serviceName="identitytoolkit.googleapis.com"' --project=rhytoai`
+      artık satır dönmeli. **Bu listedeki en yüksek kaldıraçlı madde.**
+- [ ] **Test numarasını gözden geçir** — Authentication → Sign-in method →
+      Phone → *Phone numbers for testing*: `+905542732455` → `356625`
+      kayıtlı. Gerçek görünümlü bir TR numarası; o numaraya **asla SMS
+      gitmez**. Seninse kalsın, değilse sil.
+- [ ] **SMS bölge listesi kararı** — şu an `allowlistOnly: ["TR"]`.
+      Uygulamadaki ülke seçici tüm dünyayı sunuyordu; istemciye
+      `_smsBolgeleri = {'TR'}` kapısı kondu (boşa gönderim + boşa ücret
+      olmasın). **Listeyi konsolda genişletirsen `phone_verify_screen.dart`
+      içindeki kümeyi de güncelle** — iki yer aynı gerçeği söylemeli.
+- [ ] **(İsteğe bağlı)** Daha çok ülkeye açılmadan önce reCAPTCHA
+      Enterprise'ı etkinleştir (SMS toll-fraud koruması). Şu an kapalı.
+
+⚠️ `gcloud config` aktif projesi **`xanthixai`** — telefon/SMS ile ilgili
+her komutta `--project=rhytoai` şart, yoksa sessizce yanlış projeye
+bakılır.
+
+Kod tarafında kapatılanlar (aynı tur): tekrar gönderme jetonu artık
+saklanıyor ve 60 sn geri sayımlı "Kodu tekrar gönder" düğmesi var
+(eskiden tek çare "numarayı değiştir"di — o YENİ doğrulama başlatır ve
+Firebase'in kötüye kullanım korumasını tetikler); `verifyPhoneNumber`
+try/catch'e alındı (sonsuz spinner); `00532…` gibi girişler artık doğru
+derleniyor; her deneme maskeli olarak `phoneAttempts`'e yazılıp panelde
+Kullanıcı 360'ta görünüyor.
+
 ## 1b. Firebase: e-posta şablon dili (OT2 — şifre sıfırlama)
 
 Kod tarafı hazır (1.12.0+28): uygulama `setLanguageCode` ile Firebase'e

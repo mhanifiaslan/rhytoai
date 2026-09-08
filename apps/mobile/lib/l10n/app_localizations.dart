@@ -3122,6 +3122,36 @@ abstract class AppLocalizations {
   /// **'{number} numarasına kod gönderildi.'**
   String phoneCodeSentTo(String number);
 
+  /// No description provided for @phoneWillSendTo.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kod {number} numarasına gönderilecek.'**
+  String phoneWillSendTo(String number);
+
+  /// No description provided for @phoneResend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kodu tekrar gönder'**
+  String get phoneResend;
+
+  /// No description provided for @phoneResendIn.
+  ///
+  /// In tr, this message translates to:
+  /// **'Tekrar gönder ({seconds} sn)'**
+  String phoneResendIn(int seconds);
+
+  /// No description provided for @phoneNoCodeHelp.
+  ///
+  /// In tr, this message translates to:
+  /// **'SMS hâlâ gelmediyse operatör gecikmesi olabilir. Numaranı kontrol et, kodu tekrar gönder ya da bu adımı atlayıp sonra Profil → Giriş yöntemleri\'nden doğrula.'**
+  String get phoneNoCodeHelp;
+
+  /// No description provided for @phoneRegionUnsupported.
+  ///
+  /// In tr, this message translates to:
+  /// **'Şu an yalnız +90 ile başlayan numaralara kod gönderebiliyoruz.'**
+  String get phoneRegionUnsupported;
+
   /// No description provided for @phoneChangeNumber.
   ///
   /// In tr, this message translates to:

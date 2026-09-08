@@ -48,7 +48,9 @@ class _SahteKoleksiyon:
         self._depo = depo
         self._yol = yol
 
-    def document(self, ad):
+    def document(self, ad=None):
+        if ad is None:  # auto-id (record_attempt)
+            ad = f"auto{len([k for k in self._depo if k.startswith(self._yol)])}"
         return _SahteDoc(self._depo, f"{self._yol}/{ad}")
 
 
@@ -129,3 +131,67 @@ def test_release_hash_dizinini_temizler(depo):
 
 def test_hash_normalize_bosluk(depo):
     assert phone_service.phone_hash(" +905551112233 ") == _hash()
+
+
+# ---------------------------------------------------------------------------
+# Teşhis kaydı (2026-09-08 canlı olayı)
+#
+# Bir kullanıcı SMS alamadı; Google tarafında her şey sağlıklıydı (istek
+# 200, SMS faturalandı, engellenmedi) ama "numara doğruydu da operatör mü
+# düşürdü, yoksa numara yanlış mı derlendi" sorusunu ayırt edemedik —
+# gönderdiğimiz numarayı hiçbir yere yazmıyorduk. record_attempt bunu
+# kapatıyor; bu testler MASKENİN maske kalmasını garanti ediyor.
+# ---------------------------------------------------------------------------
+
+
+def _denemeler(depo):
+    return [v for k, v in depo.items() if k.startswith("phoneAttempts/")]
+
+
+def test_deneme_kaydi_yazilir(depo):
+    phone_service.record_attempt("u1", "sent", "TR", "+90532***4567")
+    kayit = _denemeler(depo)
+    assert len(kayit) == 1
+    assert kayit[0]["uid"] == "u1"
+    assert kayit[0]["stage"] == "sent"
+    assert kayit[0]["iso2"] == "TR"
+    assert kayit[0]["at"] is not None
+
+
+def test_deneme_kaydinda_HAM_numara_yok(depo):
+    # Maske sunucuda da maske kalmalı: kayıt teşhis içindir, kimlik için değil.
+    phone_service.record_attempt("u1", "sent", "TR", "+90532***4567")
+    metin = str(_denemeler(depo))
+    assert "***" in metin
+    assert "+905321234567" not in metin
+
+
+def test_bilinmeyen_asama_yazilmaz(depo):
+    # İstemci ne gönderirse göndersin kayda yalnız bilinen aşamalar girer.
+    phone_service.record_attempt("u1", "rastgele", "TR", "+90532***4567")
+    assert _denemeler(depo) == []
+
+
+def test_asiri_uzun_alanlar_kirpilir(depo):
+    phone_service.record_attempt("u1", "failed", "TRXX", "x" * 100, "y" * 200)
+    kayit = _denemeler(depo)[0]
+    assert kayit["iso2"] == "TR"
+    assert len(kayit["masked"]) <= 24
+    assert len(kayit["code"]) <= 64
+
+
+def test_firestore_yoksa_sessiz(monkeypatch):
+    # Telemetri doğrulama akışını ASLA düşüremez.
+    monkeypatch.setattr(phone_service.firestore_client, "get_client",
+                        lambda: None)
+    phone_service.record_attempt("u1", "sent", "TR", "+90532***4567")
+
+
+def test_firestore_firlatirsa_sessiz(monkeypatch):
+    class _Patlayan:
+        def collection(self, ad):
+            raise RuntimeError("firestore down")
+
+    monkeypatch.setattr(phone_service.firestore_client, "get_client",
+                        lambda: _Patlayan())
+    phone_service.record_attempt("u1", "sent", "TR", "+90532***4567")

@@ -250,6 +250,35 @@
       'class="grafik grafik-kisa" role="img" ' +
       'aria-label="Özellik kırılımı"></canvas></div></div>' +
 
+      // SMS-turu: "kod gelmiyor" başvurusunda ilk bakılacak yer. Google
+      // teslim makbuzu yayınlamadığı için bizim tarafımızdaki tek iz bu.
+      '<div class="panel"><h2>Telefon denemeleri</h2>' +
+      (function () {
+        var liste = d.phoneAttempts || [];
+        if (!liste.length) {
+          return '<p class="dipnot" style="margin-top:0">Kayıt yok.</p>';
+        }
+        var ASAMA = {
+          sent: ['bildirim', 'Kod gönderildi'],
+          auto: ['kivilcim', 'Otomatik doğrulandı'],
+          verified: ['kayit', 'Doğrulandı'],
+          failed: ['sistem', 'Hata']
+        };
+        return '<div class="satir-liste">' + liste.map(function (a) {
+          var m = ASAMA[a.stage] || ['kivilcim', a.stage || '—'];
+          return b.satir({
+            ikon: m[0],
+            baslik: m[1],
+            alt: (a.masked || '—') + ' · ' + (a.iso2 || '—') +
+              (a.code ? ' · ' + a.code : ''),
+            sagAlt: b.tarih(a.at, true),
+            ikonSinif: a.stage === 'failed' ? 'eksi' : ''
+          });
+        }).join('') + '</div>' +
+        '<p class="dipnot">Numara maskeli tutulur; ham numara hiçbir ' +
+        'yere yazılmaz.</p>';
+      })() + '</div>' +
+
       '</div>' +
 
       '<div class="izgara-2">' +

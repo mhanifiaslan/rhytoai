@@ -843,6 +843,25 @@
       }
     }
   },
+  "phoneWillSendTo": "Kod {number} numarasına gönderilecek.",
+  "@phoneWillSendTo": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "phoneResend": "Kodu tekrar gönder",
+  "phoneResendIn": "Tekrar gönder ({seconds} sn)",
+  "@phoneResendIn": {
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "phoneNoCodeHelp": "SMS hâlâ gelmediyse operatör gecikmesi olabilir. Numaranı kontrol et, kodu tekrar gönder ya da bu adımı atlayıp sonra Profil → Giriş yöntemleri'nden doğrula.",
+  "phoneRegionUnsupported": "Şu an yalnız +90 ile başlayan numaralara kod gönderebiliyoruz.",
   "phoneChangeNumber": "Numarayı değiştir",
   "phoneLinkedDone": "Telefonun doğrulandı.",
   "phoneInvalid": "Numarayı ülke koduyla yaz (örn. +905xxxxxxxxx).",

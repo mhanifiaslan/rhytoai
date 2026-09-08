@@ -165,6 +165,20 @@ def user_360(uid: str) -> dict[str, Any] | None:
         # Composite indeks henüz kurulmadıysa buraya düşer — 360 düşmez.
         logger.warning("usageEvents okunamadı (%s): %s", uid, exc)
 
+    # Telefon doğrulama denemeleri (SMS-turu). "SMS gelmiyor" başvurusu
+    # geldiğinde ilk bakılacak yer burası: hangi ülkeye, hangi maskeli
+    # numaraya, hangi aşamada. Composite indeks yoksa sessizce boş kalır.
+    telefon: list[dict[str, Any]] = []
+    try:
+        from google.cloud.firestore_v1.base_query import FieldFilter
+        for kayit in (client.collection("phoneAttempts")
+                      .where(filter=FieldFilter("uid", "==", uid))
+                      .order_by("at", direction="DESCENDING")
+                      .limit(20).stream()):
+            telefon.append(kayit.to_dict() or {})
+    except Exception as exc:
+        logger.warning("phoneAttempts okunamadı (%s): %s", uid, exc)
+
     sayilar = {
         "conversations": _count(client.collection("users").document(uid)
                                 .collection("conversations")),
@@ -214,6 +228,7 @@ def user_360(uid: str) -> dict[str, Any] | None:
         "notifications": notifications,
         "revenueEvents": gelir,
         "usage": {"recent": kullanim, **kullanim_toplam},
+        "phoneAttempts": telefon,
         "economics": ekonomi,
         "counts": sayilar,
     }

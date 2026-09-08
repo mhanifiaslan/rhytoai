@@ -1697,6 +1697,27 @@ class AppLocalizationsTr extends AppLocalizations {
   }
 
   @override
+  String phoneWillSendTo(String number) {
+    return 'Kod $number numarasına gönderilecek.';
+  }
+
+  @override
+  String get phoneResend => 'Kodu tekrar gönder';
+
+  @override
+  String phoneResendIn(int seconds) {
+    return 'Tekrar gönder ($seconds sn)';
+  }
+
+  @override
+  String get phoneNoCodeHelp =>
+      'SMS hâlâ gelmediyse operatör gecikmesi olabilir. Numaranı kontrol et, kodu tekrar gönder ya da bu adımı atlayıp sonra Profil → Giriş yöntemleri\'nden doğrula.';
+
+  @override
+  String get phoneRegionUnsupported =>
+      'Şu an yalnız +90 ile başlayan numaralara kod gönderebiliyoruz.';
+
+  @override
   String get phoneChangeNumber => 'Numarayı değiştir';
 
   @override

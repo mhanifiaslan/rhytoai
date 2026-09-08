@@ -62,20 +62,105 @@ class CountryDirectory {
 /// gönderildi" diyebiliyor; SMS hiç var olmayan numaraya gider ve
 /// kullanıcının gördüğü şey "kod gelmiyor" olur.
 String composeE164(Country country, String national) {
-  // Rakam dışı her şey atılır ('+' dahil).
+  return '+${country.dialCode}${nationalDigits(country, national)}';
+}
+
+/// Ulusal kısmın temizlenmiş hâli (ülke kodu ve baştaki sıfırlar olmadan).
+///
+/// Sıra ÖNEMLİ ve canlı bir hatadan öğrenildi (2026-09-08): baştaki sıfır
+/// tek seferlik kırpılıyordu, bu yüzden "00532..." → "+9005321234567"
+/// üretiliyordu. Bu numara E.164 sınırları içinde kaldığı için Firebase
+/// onu KABUL EDİP faturalıyor, SMS ise var olmayan bir numaraya gidiyor;
+/// kullanıcının gördüğü tek şey "kod gelmiyor" oluyor.
+String nationalDigits(Country country, String national) {
   var n = national.replaceAll(RegExp(r'\D'), '');
-  // Ülke kodu ulusal alana da yazıldıysa kırpılır ("90532..." → "532...")
-  // — kalan uzunluk gerçek bir ulusal numarayı andırıyorsa.
   final kod = country.dialCode;
+  // 1) Uluslararası çevirme öneki ("00 90 532...") — ülke kodundan ÖNCE.
+  if (n.startsWith('00')) n = n.substring(2);
+  // 2) Ülke kodu ulusal alana da yazıldıysa kırpılır ("90532..." → "532...")
+  //    — kalan uzunluk gerçek bir ulusal numarayı andırıyorsa.
   if (n.startsWith(kod) && n.length - kod.length >= 8) {
     n = n.substring(kod.length);
   }
-  // Ulusal yazımın baştaki sıfırı uluslararası biçimde yer almaz.
-  if (n.startsWith('0')) n = n.substring(1);
-  return '+$kod$n';
+  // 3) Ulusal yazımın baştaki sıfırı uluslararası biçimde yer almaz.
+  //    DÖNGÜ: "0532" kadar "00532" de tek doğru numaraya inmeli.
+  while (n.startsWith('0')) {
+    n = n.substring(1);
+  }
+  return n;
 }
 
-/// Ülke + ulusal numara girişi; her değişimde E.164'ü bildirir.
+/// Ulusal numara uzunluğu bu ülke için makul mü?
+///
+/// Genel kural E.164: ülke kodu + ulusal en fazla 15 hane, ulusal en az 4.
+/// Bilinen ülkeler için daha dar: yanlış numaraya SMS gönderip ücret
+/// ödemenin ve kullanıcıyı "kod gelmiyor" ekranında bırakmanın önüne
+/// geçen tek ucuz kapı bu.
+bool isPlausibleNational(Country country, String digits) {
+  if (digits.isEmpty) return false;
+  final beklenen = _ulusalUzunluk[country.iso2];
+  if (beklenen != null && !beklenen.contains(digits.length)) return false;
+  // TR cep/sabit numaraları 0 ile başlamaz (o zaten kırpıldı) ve 1-9 arası.
+  if (country.iso2 == 'TR' && !RegExp(r'^[2-9]').hasMatch(digits)) {
+    return false;
+  }
+  final toplam = country.dialCode.length + digits.length;
+  return digits.length >= 4 && toplam <= 15;
+}
+
+/// Yalnız sık kullanılan ülkeler; listede olmayan ülke genel E.164
+/// kuralına düşer (aşırı kısıtlayıp meşru numarayı reddetmeyelim).
+const Map<String, Set<int>> _ulusalUzunluk = {
+  'TR': {10},
+  'DE': {10, 11},
+  'GB': {10},
+  'US': {10},
+  'CA': {10},
+  'NL': {9},
+  'FR': {9},
+  'AZ': {9},
+  'AT': {10, 11},
+  'BE': {9},
+  'CH': {9},
+  'SE': {9},
+};
+
+/// Alanın o anki durumu: ekranın hem numarayı hem ÜLKEYİ bilmesi gerekir
+/// (bölge kapısı ve uzunluk kontrolü için) — yalnız E.164 dizesi yetmiyor.
+class PhoneEntry {
+  const PhoneEntry({
+    required this.e164,
+    required this.country,
+    required this.national,
+  });
+
+  const PhoneEntry.bos()
+      : e164 = '',
+        country = null,
+        national = '';
+
+  /// Derlenmiş E.164 ("+90532..."); ulusal alan boşsa ''.
+  final String e164;
+  final Country? country;
+
+  /// Temizlenmiş ulusal haneler (ülke kodu ve baştaki sıfırlar yok).
+  final String national;
+
+  /// Bu ülke için makul uzunlukta mı — gönderim kapısı bunu kullanır.
+  bool get plausible =>
+      country != null && isPlausibleNational(country!, national);
+
+  /// Kayda/telemetriye giden maskeli biçim: "+90532***4567".
+  /// Tam numara ASLA sunucuya yazılmaz (phone_service.phone_hash doktrini).
+  String get masked {
+    if (country == null || national.length < 4) return '';
+    final bas = national.substring(0, national.length > 3 ? 3 : 1);
+    final son = national.substring(national.length - 4);
+    return '+${country!.dialCode}$bas***$son';
+  }
+}
+
+/// Ülke + ulusal numara girişi; her değişimde durumu bildirir.
 class PhoneNumberField extends StatefulWidget {
   const PhoneNumberField({
     super.key,
@@ -83,8 +168,7 @@ class PhoneNumberField extends StatefulWidget {
     this.initialIso2 = 'TR',
   });
 
-  /// Derlenmiş E.164 ("+90532...") — ulusal alan boşsa boş string.
-  final ValueChanged<String> onChanged;
+  final ValueChanged<PhoneEntry> onChanged;
 
   final String initialIso2;
 
@@ -117,7 +201,16 @@ class _PhoneNumberFieldState extends State<PhoneNumberField> {
   void _bildir() {
     final ulke = _ulke;
     final n = _ulusal.text.trim();
-    widget.onChanged(ulke == null || n.isEmpty ? '' : composeE164(ulke, n));
+    if (ulke == null || n.isEmpty) {
+      widget.onChanged(const PhoneEntry.bos());
+      return;
+    }
+    final haneler = nationalDigits(ulke, n);
+    widget.onChanged(PhoneEntry(
+      e164: haneler.isEmpty ? '' : '+${ulke.dialCode}$haneler',
+      country: ulke,
+      national: haneler,
+    ));
   }
 
   Future<void> _ulkeSec() async {
