@@ -129,7 +129,8 @@ def should_extract(history: list[dict[str, Any]]) -> bool:
 
 def extract_and_store(uid: str, history: list[dict[str, Any]],
                       last_message: str,
-                      source: str | None = None) -> dict[str, Any] | None:
+                      source: str | None = None,
+                      seed_answer: bool = False) -> dict[str, Any] | None:
     """Konuşmadan olgu çıkarıp hafızaya yazar. Arka planda çağrılmak üzeredir.
 
     Hiçbir hata isteği etkilemez: çıkarım en iyi çaba (best effort) bir
@@ -140,9 +141,16 @@ def extract_and_store(uid: str, history: list[dict[str, Any]],
     ürünün kendi sorduğu sorunun cevabı ("Bugün nasıl geçti?" → "Kötü,
     işten kötü haber aldım") hafızaya hiç düşmezdi; oysa bu, döngünün
     bütün amacı.
+
+    ``seed_answer`` (SS-turu): aynı ayrıcalık, ama SUNUCUNUN kendi
+    bilgisinden. `source` çıplak bir istemci beyanıdır (`ChatRequest`),
+    yani herkes kota yükseltmesi isteyebilir; `seed_answer` ise konu
+    dokümanında Rytho'nun cevaplanmamış sorusu DURDUĞU için doğrudur.
+    Yeni istemci bu yolu kullanır; `source == "checkin"` geriye uyum
+    için olduğu gibi kalır.
     """
     try:
-        checkin = source == "checkin"
+        checkin = source == "checkin" or seed_answer
         if not checkin and not should_extract(history):
             return None
 

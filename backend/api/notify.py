@@ -29,6 +29,7 @@ from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
 from services import (
+    chat_history,
     notification_service,
     profile_service,
     prompts,
@@ -298,9 +299,20 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
             if checkin is None:
                 atlanan["soru-yok"] = atlanan.get("soru-yok", 0) + 1
                 continue
-            baslik, govde = checkin
+            baslik, govde = checkin.baslik, checkin.govde
             veri = {"type": "checkin", "route": "chat",
                     "q": govde, "q_date": gun}
+            # SS-turu: gövde bir SORUysa Rytho sohbette ÖNCE yazar.
+            # Karar tür adından değil üreticinin beyanından (`soru`)
+            # geliyor. `dry_run` tohumlamaz: prova iz bırakmaz.
+            # `cid` yüke `push_service.send`'den ÖNCE girmek zorunda,
+            # bu yüzden tohum döngünün içinde kalıyor.
+            if checkin.soru and not dry_run:
+                cid = chat_history.seed_assistant_message(
+                    profil["uid"], govde, lang, gun)
+                if cid:
+                    veri["route"] = "chat_answer"
+                    veri["cid"] = cid
         else:
             baslik, govde = notification_service.streak_push(profil, lang)
             # BY-turu: "okumanı açmadın" dokununca okumayı AÇAR (hikâye) —

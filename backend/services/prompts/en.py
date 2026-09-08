@@ -320,6 +320,22 @@ FACT_GUARD_RETRY = (
     "a sign, house or aspect."
 )
 WHISPER_SKY = "TODAY'S ACTUAL SKY (calculated with Swiss Ephemeris):"
+
+# SS-turu: Rytho opened this conversation (the evening check-in question).
+# Two texts because the claim changes between turns: on the first turn the
+# user's message IS the answer, later it is not.
+WHISPER_SEED_PENDING = (
+    "YOU STARTED THIS CONVERSATION. This evening you asked the user: "
+    "\"{question}\"\n"
+    "The user's message below is the ANSWER to that question. Do not repeat "
+    "the question; receive the answer: acknowledge it first, then connect it "
+    "to the sky in a single sentence if it helps."
+)
+WHISPER_SEED_PAST = (
+    "YOU STARTED THIS CONVERSATION. Your opening question was: "
+    "\"{question}\"\n"
+    "The conversation has moved on; this is context only."
+)
 USER_MESSAGE_LABEL = "THE READER'S MESSAGE"
 
 # Sky lines attached to chat. Language-bound as well: Turkish labels inside an

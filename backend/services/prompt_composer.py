@@ -263,6 +263,7 @@ def compose_chat_message(message: str, passages: list[dict],
                          memory: str = "", chart: str = "",
                          sky: str = "", relationship: str = "",
                          circle: str = "",
+                         seed_question: str = "", seed_pending: bool = False,
                          lang: str | None = None) -> str:
     """Bilgi tabanı pasajlarını, kullanıcı hafızasını, haritasını ve bugünün
     gökyüzünü mesaja iliştirir.
@@ -316,8 +317,9 @@ def compose_chat_message(message: str, passages: list[dict],
     sky = (sky or "").strip()
     relationship = (relationship or "").strip()
     circle = (circle or "").strip()
+    seed_question = (seed_question or "").strip()
     if (not whispers and not memory and not chart and not sky
-            and not relationship and not circle):
+            and not relationship and not circle and not seed_question):
         return message
 
     # Etiketler dile göre gelir: İngilizce sohbette Türkçe başlık görmek modeli
@@ -340,6 +342,14 @@ def compose_chat_message(message: str, passages: list[dict],
         parts.append(labels.WHISPER_RAG + "\n" + "\n".join(whispers))
     if memory:
         parts.append(labels.WHISPER_MEMORY + "\n" + memory)
+    # SS-turu: konuşmayı Rytho açtıysa açılış sorusu EN SONA, kullanıcı
+    # mesajının hemen üstüne girer — cevabın neye cevap olduğu modele en
+    # yakın yerde dursun. İddia turdan tura değişir: yalnız tohum HENÜZ
+    # cevaplanmamışken "bu mesaj sorunun cevabıdır" denir.
+    if seed_question:
+        kalip = (labels.WHISPER_SEED_PENDING if seed_pending
+                 else labels.WHISPER_SEED_PAST)
+        parts.append(kalip.format(question=seed_question))
 
     return ("\n\n".join(parts)
             + f"\n\n{labels.USER_MESSAGE_LABEL}: {message}")

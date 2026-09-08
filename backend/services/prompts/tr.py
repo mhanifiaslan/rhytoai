@@ -297,6 +297,22 @@ FACT_GUARD_RETRY = (
     "Yalnız orada yazanı kullanarak yeniden yaz. Burç, ev veya açı uydurma."
 )
 WHISPER_SKY = "BUGÜNÜN GERÇEK GÖKYÜZÜ (Swiss Ephemeris ile hesaplandı):"
+
+# SS-turu: bu konuşmayı RYTHO açtı (akşam check-in sorusu). İki ayrı metin
+# çünkü iddia turdan tura değişir: ilk turda kullanıcının mesajı sorunun
+# CEVABIDIR, sonraki turlarda değildir — tek metin kullanılsaydı model
+# beşinci turda hâlâ "bu benim soruma cevap" sanırdı.
+WHISPER_SEED_PENDING = (
+    "BU KONUŞMAYI SEN BAŞLATTIN. Akşam kullanıcıya şunu sordun: "
+    "\"{question}\"\n"
+    "Kullanıcının aşağıdaki mesajı bu sorunun CEVABIDIR. Soruyu tekrar "
+    "etme, cevabı karşıla: önce duyduğunu belli et, sonra gerekiyorsa "
+    "gökyüzü bağlamını tek cümleyle bağla."
+)
+WHISPER_SEED_PAST = (
+    "BU KONUŞMAYI SEN BAŞLATTIN. Açılış sorun şuydu: \"{question}\"\n"
+    "Konuşma sürüyor; bu bilgi yalnız bağlam içindir."
+)
 USER_MESSAGE_LABEL = "KULLANICININ MESAJI"
 
 # Sohbete iliştirilen gökyüzü satırları. Bunlar da dile bağlı: İngilizce

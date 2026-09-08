@@ -352,8 +352,18 @@ enum NotificationRouteKind {
   /// Günlük okumanın kendisi (hikâye): route=story, yedek-daily, streak.
   dailyStory,
 
-  /// Soru yazılı sohbet.
+  /// Soru yazılı sohbet — ESKİ yol: soru kullanıcının giriş kutusuna
+  /// yazılır. Yalnız `cid` taşımayan (eski sunucu) yükler için kalıyor.
   checkinChat,
+
+  /// RYTHO SORDU: soru zaten sohbette Rytho'nun mesajı olarak duruyor;
+  /// dokunuş o konuşmayı açar ve kullanıcı CEVAPLAR (SS-turu).
+  ///
+  /// Ayrım bildirimin TÜRÜNDEN değil gövdesinin biçiminden geliyor:
+  /// sunucu, gövdesi soru olan bildirime `route=chat_answer` + `cid`
+  /// koyuyor. Yarın başka bir tür de soru sorarsa buraya kendiliğinden
+  /// düşer.
+  rythoAsks,
 
   /// Arkadaşla ilişki ekranı (bugün aranıza dokunan gökyüzü).
   friendRelation,
@@ -371,7 +381,7 @@ enum NotificationRouteKind {
 class NotificationRoute {
   const NotificationRoute(this.kind,
       {this.sign, this.friendUid, this.personId, this.question,
-      this.questionDate});
+      this.questionDate, this.conversationId});
 
   final NotificationRouteKind kind;
   final String? sign;
@@ -379,6 +389,9 @@ class NotificationRoute {
   final String? personId;
   final String? question;
   final String? questionDate;
+
+  /// SS-turu: Rytho'nun sorusunun YAZILI OLDUĞU konuşma.
+  final String? conversationId;
 }
 
 /// Yükten hedef kararı. Eski sunucu yükleri (route'suz daily, src'siz
@@ -387,6 +400,16 @@ class NotificationRoute {
 NotificationRoute resolveNotificationRoute(Map<String, String> data) {
   switch (data['type']) {
     case 'checkin':
+      // Gövde bir SORUysa sunucu onu sohbete zaten yazdı ve konuşmanın
+      // kimliğini yolladı: dokunuş o konuşmayı açar, kullanıcı cevaplar.
+      // `cid` yoksa eski sunucu yükü demektir — eski davranışa düşülür
+      // (soru giriş kutusuna yazılır). Bu dalın türe değil YÜKE bakması
+      // bilinçli: yarın başka bir tür de soru sorarsa aynı yoldan geçer.
+      final cid = data['cid'];
+      if (data['route'] == 'chat_answer' && cid != null && cid.isNotEmpty) {
+        return NotificationRoute(NotificationRouteKind.rythoAsks,
+            conversationId: cid, question: data['q']);
+      }
       return NotificationRoute(NotificationRouteKind.checkinChat,
           question: data['q'], questionDate: data['q_date']);
     case 'daily':

@@ -164,7 +164,20 @@ def chat(request: ChatRequest, background: BackgroundTasks,
     # yazımı arka planda (kullanıcı Firestore'u beklemez). Kırpma 422 yerine:
     # uzun yazan kullanıcının mesajını reddetmek yerine kısaltıyoruz.
     mesaj_metni = chat_history.clip_message(request.message)
-    hazir_konu = chat_history.prepare(user.uid, request.conversation_id)
+
+    # SS4b — yayın günü tuzağı. Güncellenmemiş istemci `cid`'yi bilmez:
+    # akşam sorusunu giriş kutusuna yazar ve `conversation_id: null` ile
+    # gönderir. O tur SUNUCUDA tohumun içine yönlendirilmezse kullanıcı
+    # başına günde İKİ neredeyse aynı konuşma oluşur (biri cevaplanmış,
+    # biri yetim tohum). Eski istemci zaten gereken işareti gönderiyor:
+    # `source == "checkin"` + kimlik yok. Yeni istemci `cid` gönderdiği
+    # için buraya hiç düşmez.
+    hedef_konu = request.conversation_id
+    if not hedef_konu and request.source == "checkin":
+        hedef_konu = chat_history.seed_conversation_id(
+            entitlements.user_local_date(user.uid).isoformat())
+
+    hazir_konu = chat_history.prepare(user.uid, hedef_konu)
 
     try:
         # Prompt geçmişi tavanlı (K4): son 12 mesaj × 1.200 karakter —
@@ -188,15 +201,27 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         # haritanın o konuyla ilgili faktörleriyle yapılıyor. "İşimle ilgili
         # ne yapmalıyım?" diye aramak kadim metinde hiçbir şeye denk gelmez;
         # "meslek, statü + Satürn 10. evde + Güneş Kare Mars" gelir.
+        # SS2b: tohuma verilen cevap çoğu zaman iki kelimedir ("kötü
+        # geçti"). Kapılar YALNIZ kullanıcı mesajına baksaydı RAG kapanır
+        # ve sorgu boşalırdı — oysa konu bellidir, çünkü soruyu biz sorduk.
+        # Bu yüzden yalnız TOHUM CEVABI turunda kapıların gördüğü metne
+        # soru da katılır. Mesajın kendisi (prompt'a ve arşive giden)
+        # DEĞİŞMEZ.
+        tohum_soru = (hazir_konu.seed_question if hazir_konu else None) or ""
+        tohum_bekliyor = bool(hazir_konu and hazir_konu.seed_pending
+                              and tohum_soru)
+        kapi_metni = (f"{tohum_soru} {request.message}" if tohum_bekliyor
+                      else request.message)
+
         passages = []
-        if should_use_rag(request.message, lang):
-            sorgu = chart_query.build_query(request.message, facts, lang=lang)
+        if should_use_rag(kapi_metni, lang):
+            sorgu = chart_query.build_query(kapi_metni, facts, lang=lang)
             # RD3: kullanıcının konusu + GERÇEK harita faktörleri getirmeyi
             # kişiselleştirir — aynı soruda farklı haritalar farklı
             # pasajlar çeker (metadata'lı yeniden sıralama).
             passages = retrieve_passages(
                 sorgu, top_k=2, lang=lang,
-                boost=chart_query.boost_hints(request.message, facts,
+                boost=chart_query.boost_hints(kapi_metni, facts,
                                               lang=lang))
 
         # Kullanıcı hafızası: "seni tanıyor" hissinin kaynağı burası. Okuma
@@ -316,7 +341,10 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         message = compose_chat_message(mesaj_metni, passages,
                                        memory=memory, chart=chart, sky=sky,
                                        relationship=relationship,
-                                       circle=circle, lang=lang)
+                                       circle=circle,
+                                       seed_question=tohum_soru,
+                                       seed_pending=tohum_bekliyor,
+                                       lang=lang)
         if message == mesaj_metni:
             # Hiçbir fısıltı kurulamadı — "sadece burcumu biliyor"
             # şikâyetinin en ağır hâli. Sessiz kalmasın (KA8).
@@ -350,6 +378,9 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         background.add_task(
             memory_extractor.extract_and_store, user.uid, history,
             request.message, source=request.source,
+            # SS6: tohum cevabı ayrıcalığı istemci beyanından DEĞİL,
+            # konu dokümanından gelir (bkz. memory_extractor docstring).
+            seed_answer=tohum_bekliyor,
         )
 
         # Arşiv yazımı da arka planda (Revize R4). Hafıza çıkarıcı AYNEN

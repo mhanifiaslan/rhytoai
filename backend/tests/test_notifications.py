@@ -19,6 +19,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from core import cache, config
+from services import chat_history
 from services import notification_service as ns
 
 try:
@@ -1251,8 +1252,15 @@ def test_checkin_fcm_yuku_soruyu_tasir(monkeypatch):
                         lambda uid, tur, gun, extra=None: None)
     monkeypatch.setattr(
         ns, "checkin_push",
-        lambda p, lang, today=None: ("Rytho merak ediyor",
-                                     "Bugün iş tarafı nasıl geçti?"))
+        lambda p, lang, today=None: ns.PushIcerik(
+            "Rytho merak ediyor", "Bugün iş tarafı nasıl geçti?", soru=True))
+    # SS-turu: soru biçimli gövde sohbete de yazılır; tohum kimliği yüke
+    # `cid` olarak girer ve rota "chat_answer" olur.
+    tohumlar = []
+    monkeypatch.setattr(
+        chat_history, "seed_assistant_message",
+        lambda uid, text, lang, gun: (tohumlar.append((uid, text, gun))
+                                      or f"ask-{gun}"))
 
     yakalanan = []
 
@@ -1268,9 +1276,14 @@ def test_checkin_fcm_yuku_soruyu_tasir(monkeypatch):
     assert yanit.status_code == 200 and yanit.json()["sent"] == 1
     veri = yakalanan[0].data
     assert veri["type"] == "checkin"
-    assert veri["route"] == "chat"
+    assert veri["route"] == "chat_answer"
+    assert veri["cid"] == f"ask-{veri['q_date']}"
+    # Eski istemciler HÂLÂ q/q_date okuyor: kaldırılsaydı güncellemeyen
+    # kullanicida check-in dokunusu olurdu.
     assert veri["q"] == "Bugün iş tarafı nasıl geçti?"
     assert veri["q_date"]
+    assert len(tohumlar) == 1
+    assert tohumlar[0][1] == "Bugün iş tarafı nasıl geçti?"
 
     # Soru yoksa: kullanıcı "soru-yok" ile atlanır, streak işine kalır.
     monkeypatch.setattr(notify, "_iter_profiles",

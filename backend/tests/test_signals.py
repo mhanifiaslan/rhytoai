@@ -842,9 +842,13 @@ class TestOnbellekVeBildirim:
             signal_service, "cached_insight_bundle",
             lambda ham, lang, generate_if_missing=True: {
                 "insights": ["x"], "checkin_question": "Bugün nasıl geçti?"})
-        baslik, govde = notification_service.checkin_push(PROFIL, "tr")
-        assert govde == "Bugün nasıl geçti?"
-        assert baslik == "🔮 Rytho merak ediyor"  # OB5 emoji başlığı
+        icerik = notification_service.checkin_push(PROFIL, "tr")
+        assert icerik.govde == "Bugün nasıl geçti?"
+        assert icerik.baslik == "🔮 Rytho merak ediyor"  # OB5 emoji başlığı
+        # SS-turu: gövde `checkin_question` alanından geliyor, yani tanım
+        # gereği SORU. Ayrımı üretici beyan eder; notify.py tür adına
+        # bakmaz.
+        assert icerik.soru is True
 
     def test_bildirim_hatada_dusmez(self, monkeypatch):
         """Sinyal hesabı düşerse bildirim düşmez; None ile yedeğe geçilir."""

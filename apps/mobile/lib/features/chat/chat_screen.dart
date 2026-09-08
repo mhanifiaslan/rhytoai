@@ -54,12 +54,22 @@ class ChatScreen extends ConsumerStatefulWidget {
       this.initialText,
       this.friendUid,
       this.personId,
-      this.source});
+      this.source,
+      this.seedFallback});
 
   final String? conversationId;
   final String? initialText;
   final String? friendUid;
   final String? personId;
+
+  /// SS-turu: Rytho'nun bu konuşmayı açarken sorduğu soru.
+  ///
+  /// Normalde soru ARŞİVDEN gelir (`_seed`). Bu alan yalnız arşiv boş
+  /// dönerse devreye girer: bildirim ile Firestore yazımının görünürlüğü
+  /// arasında saniyelik bir pencere var ve kullanıcı o anda dokunursa
+  /// ekran bomboş kalırdı — Rytho'nun sorduğu soru kaybolmuş gibi.
+  /// Metin zaten FCM yükünde geliyor, ek maliyeti yok.
+  final String? seedFallback;
 
   /// KA-turu: konuşmanın nereden açıldığı ("checkin" = akşam bildirimi).
   /// Sunucu bunu hafıza çıkarımında kullanır: check-in cevabı tek mesajlık
@@ -82,6 +92,17 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   /// Arşiv tohumu yükleniyor mu (yalnızca var olan konu açılırken).
   bool _seeding = false;
 
+  /// Tohum yüklemesi. `_send` geçmişi kurmadan ÖNCE bunu bekler: kullanıcı
+  /// hızlı cevap yazarsa Rytho'nun sorusu geçmişten düşer ve model neye
+  /// cevap verdiğini göremezdi.
+  Future<void>? _seedFuture;
+
+  /// Widget'tan gelen bağlam STATE'e taşınır: "+" ile yeni konu açılınca
+  /// üçü birlikte sıfırlanmalı, yoksa eski ekranın kişisi/arkadaşı yeni
+  /// konuya sızar.
+  String? _friendUid;
+  String? _personId;
+
   /// @-bahsetme durumu (GT6): mesaj başına TEK bağlam; ikinci seçim
   /// ilkini değiştirir; ✕ temizler; başarılı gönderimde sıfırlanır.
   /// Metinden adı elle silmek çipi otomatik DÜŞÜRMEZ (✕ kaçış yolu —
@@ -95,7 +116,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
   void initState() {
     super.initState();
     _conversationId = widget.conversationId;
-    if (_conversationId != null) _seed();
+    _friendUid = widget.friendUid;
+    _personId = widget.personId;
+    if (_conversationId != null) _seedFuture = _seed();
     final tohum = widget.initialText;
     if (tohum != null && tohum.isNotEmpty) _controller.text = tohum;
     // Dinleyici girece hareketlerini de yakalar — FocusNode gerekmez.
@@ -154,8 +177,24 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       final gecmis = await loadConversation(uid, id);
       if (!mounted) return;
       setState(() {
-        _messages.insertAll(
-            0, gecmis.map((m) => (sender: m.sender, text: m.text)));
+        if (gecmis.isNotEmpty) {
+          _messages.insertAll(
+              0, gecmis.map((m) => (sender: m.sender, text: m.text)));
+          return;
+        }
+        // SS-turu: arşiv BOŞ döndü. Rytho'nun sorduğu soru bildirimin
+        // yükünde de var; ekranı boş bırakmak yerine onu çiziyoruz.
+        // Koşul "boş döndü"; İSTİSNA değil — okuma hata verdiyse konu
+        // muhtemelen duruyor ve tekrar açılışta gerçek metniyle gelir,
+        // yedeği o yola koymak balonu ikizlerdi.
+        // Başa eklenir, "liste boşsa" diye sorulmaz: kullanıcı tohum
+        // yüklenirken hızlıca yazdıysa mesajı zaten 0'da durur ve soru
+        // onun ÜSTÜNE girmelidir. `_seed` bir kez koştuğu için ikizleme
+        // riski yok.
+        final yedek = widget.seedFallback;
+        if (yedek != null && yedek.isNotEmpty) {
+          _messages.insert(0, (sender: 'AI', text: yedek));
+        }
       });
       _scrollDown();
     } catch (e) {
@@ -175,6 +214,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     setState(() {
       _messages.clear();
       _conversationId = null;
+      _seedFuture = null;
+      _friendUid = null;
+      _personId = null;
     });
   }
 
@@ -200,6 +242,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollDown();
 
     try {
+      // SS-turu: tohum yüklemesi bitmeden geçmiş KURULMAZ. Kullanıcı
+      // bildirime dokunup hemen cevap yazarsa Rytho'nun sorusu henüz
+      // arşivden gelmemiş olur ve model neye cevap verildiğini göremezdi.
+      await _seedFuture;
       final dio = ref.read(apiProvider);
       // Bağlam penceresi: sunucu zaten son 20 turla sınırlıyor; uzun
       // arşivli konuda tamamını taşımak boşuna bant genişliği.
@@ -216,7 +262,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       // kimlik gider (gizlilik kuralı: etiket cihazda kalır).
       // GT6: @-bahsetme her şeyi döver — açık niyet sezgiden önce gelir.
       String? adEslesen;
-      if (widget.friendUid == null && widget.personId == null &&
+      if (_friendUid == null && _personId == null &&
           _mentionPersonId == null && _mentionFriendUid == null) {
         final kisiler = ref.read(peopleProvider).value ?? const <Person>[];
         adEslesen = matchPersonIdByLabel(text, kisiler);
@@ -230,8 +276,8 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         ...chatContextFields(
           mentionPersonId: _mentionPersonId,
           mentionFriendUid: _mentionFriendUid,
-          widgetPersonId: widget.personId,
-          widgetFriendUid: widget.friendUid,
+          widgetPersonId: _personId,
+          widgetFriendUid: _friendUid,
           labelMatch: adEslesen,
         ),
         // KA-turu: check-in cevabı tek mesajlık da olsa hafızaya işlensin.

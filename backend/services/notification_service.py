@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
+from dataclasses import dataclass
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -449,14 +450,36 @@ def signal_push(profile: dict[str, Any], lang: str,
         return None
 
 
+@dataclass(frozen=True)
+class PushIcerik:
+    """Bir bildirimin metni + gövdesinin BİÇİMİ.
+
+    ``soru`` bu turun (SS) çekirdek ayrımı. Kullanıcının koyduğu kural
+    bildirimin TÜRÜYLE değil gövdesinin biçimiyle ilgili: gövde bir
+    SORUysa Rytho sohbette önce yazar ve kullanıcı cevaplar; İFADEyse
+    dokunuş bugünkü gibi kullanıcının sorusunu ön-doldurur.
+
+    Kararı ÜRETİCİ verir, çağıran değil. `notify.py` yalnız bu bayrağa
+    bakar; hiçbir yerde `if type == "checkin"` yazmaz. Yeni bir soru
+    biçimli bildirim eklemek tek satır: `soru=True`.
+    """
+
+    baslik: str
+    govde: str
+    soru: bool = False
+
+
 def checkin_push(profile: dict[str, Any], lang: str,
-                 today: dt.date | None = None) -> tuple[str, str] | None:
+                 today: dt.date | None = None) -> PushIcerik | None:
     """Akşam check-in sorusu (KA4) — YALNIZ önbellekten, LLM yakmaz.
 
     Soru sabahki toplu üretimin son satırıdır; akşam işi yalnız okur
     (`generate_if_missing=False`). Paket yoksa ya da o gün "önemli
     sinyal" çıkmadıysa None döner — çağıran kullanıcıyı atlar ve :10'daki
     seri hatırlatması normal davranır.
+
+    ``soru=True`` döner: gövde `checkin_question` alanından geliyor, yani
+    tanım gereği bir sorudur.
     """
     try:
         from services import signal_service
@@ -468,7 +491,8 @@ def checkin_push(profile: dict[str, Any], lang: str,
         soru = (paket or {}).get("checkin_question")
         if not soru:
             return None
-        return prompts.get(lang).PUSH_CHECKIN_TITLE, soru
+        return PushIcerik(prompts.get(lang).PUSH_CHECKIN_TITLE, soru,
+                          soru=True)
     except Exception as exc:
         logger.warning("Check-in bildirimi uretilemedi (%s): %s",
                        profile.get("uid"), exc)

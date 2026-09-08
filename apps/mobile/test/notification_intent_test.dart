@@ -77,6 +77,37 @@ void main() {
       expect(rota.questionDate, '2026-08-29');
     });
 
+    test('SS-turu: route=chat_answer + cid → Rytho SORDU', () {
+      // Ayrım TÜRE değil YAPIYA bağlı: gövde bir soruysa sunucu konuyu
+      // tohumlar ve yüke cid koyar. Tür adına bakan bir kural, ileride
+      // eklenecek soru biçimli başka bir bildirimde yanlış çalışırdı.
+      final rota = r({
+        'type': 'checkin',
+        'route': 'chat_answer',
+        'cid': 'ask-2026-09-08',
+        'q': 'Bugün iş tarafı nasıl geçti?',
+        'q_date': '2026-09-08',
+      });
+      expect(rota.kind, NotificationRouteKind.rythoAsks);
+      expect(rota.conversationId, 'ask-2026-09-08');
+      // Soru yalnız YEDEK olarak taşınır (arşiv boş dönerse çizilir);
+      // giriş kutusuna YAZILMAZ — o davranış tam da onarılan hataydı.
+      expect(rota.question, 'Bugün iş tarafı nasıl geçti?');
+    });
+
+    test('SS-turu: cid yoksa ESKİ davranışa düşer (tohum yazılamadı)', () {
+      // Sunucu tohumu yazamazsa yüke cid KOYMAZ; bildirim yine gider ve
+      // dokunuş eski yolu izler — kullanıcı bir şey kaybetmez.
+      final rota = r({
+        'type': 'checkin',
+        'route': 'chat_answer',
+        'q': 'Nasıl geçti?',
+        'q_date': '2026-09-08',
+      });
+      expect(rota.kind, NotificationRouteKind.checkinChat);
+      expect(rota.conversationId, isNull);
+    });
+
     test('öğle çift ânı ve kabul → o İLİŞKİNİN ekranı', () {
       final ogle = r({'type': 'friend', 'src': 'midday', 'fromUid': 'f1'});
       expect(ogle.kind, NotificationRouteKind.friendRelation);

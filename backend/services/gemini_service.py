@@ -255,6 +255,15 @@ def chat(history: list[dict], user_message: str,
     contents = []
     for msg in history[-20:]:
         role = "user" if msg.get("sender") == "USER" else "model"
+        # SS-turu: `contents` "model" rolüyle BAŞLAYAMAZ. Rytho'nun ilk
+        # sözüyle açılan konuşmalarda (akşam check-in'i) geçmişin ilk —
+        # bazen tek — kalemi asistan mesajıdır. Baştaki asistan kalemleri
+        # atlanır; soru zaten prompt'a WHISPER_SEED_* ile giriyor, yani
+        # bağlam kaybolmuyor. Koruma ucuz, alternatifi pahalı: geçersiz
+        # istek üç yapılandırma varyantını da yakar, `chat` None döner ve
+        # kullanıcının jetonu iade edilir.
+        if not contents and role != "user":
+            continue
         contents.append({"role": role, "parts": [{"text": msg.get("text", "")}]})
     contents.append({"role": "user", "parts": [{"text": user_message}]})
 

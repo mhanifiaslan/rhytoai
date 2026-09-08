@@ -110,6 +110,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     if (!mounted) return;
 
     switch (rota.kind) {
+      case NotificationRouteKind.rythoAsks:
+        _rythoSorduNiyeti(rota);
       case NotificationRouteKind.checkinChat:
         _checkinNiyeti(rota);
       case NotificationRouteKind.dailyStory:
@@ -153,6 +155,21 @@ class _AppShellState extends ConsumerState<AppShell> {
       case NotificationRouteKind.signalSheet:
         break; // yukarıda elendi
     }
+  }
+
+  /// RYTHO SORDU (SS-turu): soru zaten sohbette Rytho'nun mesajı olarak
+  /// duruyor; dokunuş o konuşmayı açar ve kullanıcı CEVAPLAR.
+  ///
+  /// `initialText` GEÇMEZ — soru kullanıcının ağzına konmaz. Bayat tarih
+  /// kapısı da ARANMAZ: konuşma kalıcı, dünkü bildirime dokunmak da o
+  /// konuşmayı açmalı. `seedFallback`, arşiv yazımı henüz görünmüyorsa
+  /// (ya da konu temizlendiyse) ekranın boş kalmaması için.
+  void _rythoSorduNiyeti(NotificationRoute rota) {
+    Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => ChatScreen(
+              conversationId: rota.conversationId,
+              seedFallback: rota.question,
+            )));
   }
 
   /// Akşam check-in bildirimi (KA5): dokunma sohbeti SORUYLA açar.

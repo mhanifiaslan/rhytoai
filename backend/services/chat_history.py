@@ -130,11 +130,21 @@ class PreparedConversation:
     def __init__(self, conversation_id: str, create: bool,
                  title_prefix: str | None, message_count: int,
                  friend_uid: str | None = None,
-                 person_id: str | None = None):
+                 person_id: str | None = None,
+                 seed_question: str | None = None,
+                 seed_pending: bool = False):
         self.conversation_id = conversation_id
         self.create = create
         self.title_prefix = title_prefix
         self.message_count = message_count
+        #: SS-turu: konuşmayı RYTHO açtıysa sorduğu soru. Bağlam geçmişten
+        #: değil KONU DOKÜMANINDAN gelir — geçmiş penceresi (son 12 mesaj)
+        #: kayarken soru düşmesin diye.
+        self.seed_question = seed_question
+        #: Tohum HENÜZ cevaplanmadı mı (yalnız Rytho'nun mesajı var).
+        #: Bu turda gelen kullanıcı mesajı sorunun CEVABIDIR; sonraki
+        #: turlarda artık öyle değil ve model bunu iddia etmemeli.
+        self.seed_pending = seed_pending
         #: KA7: konuya yapışmış bağlam. İstemci konuşmayı listeden yeniden
         #: açınca friend/person kimliğini geri gönderemiyordu ve bağlam
         #: KALICI kayboluyordu; artık konu dokümanında durur ve `prepare`
@@ -166,7 +176,12 @@ def prepare(uid: str, requested_id: str | None) -> PreparedConversation | None:
                     return PreparedConversation(
                         requested_id, False, None, adet,
                         friend_uid=veri.get("friendUid"),
-                        person_id=veri.get("personId"))
+                        person_id=veri.get("personId"),
+                        seed_question=veri.get("seedQuestion"),
+                        # Yalnız Rytho'nun mesajı varsa tohum bekliyor
+                        # demektir (SS2).
+                        seed_pending=(veri.get("openedBy") == "rytho"
+                                      and adet <= 1))
                 # Konu doldu: devam konusu. İstemci dönen kimliği izlediği
                 # için konuşma kesintisiz sürer; eski konu arşivde kalır.
                 # Bağlam da devam konusuna taşınır.
@@ -174,7 +189,8 @@ def prepare(uid: str, requested_id: str | None) -> PreparedConversation | None:
                     koleksiyon.document().id, True,
                     str(veri.get("title", "")), 0,
                     friend_uid=veri.get("friendUid"),
-                    person_id=veri.get("personId"))
+                    person_id=veri.get("personId"),
+                    seed_question=veri.get("seedQuestion"))
             # İstemcinin elindeki kimlik silinmiş (temizlik/tahliye): aynı
             # kimliğe YENİ doküman kurulur, istemci fark etmez.
             return PreparedConversation(requested_id, True, None, 0)
@@ -250,6 +266,82 @@ def write_turn(uid: str, prepared: PreparedConversation,
     except Exception as exc:
         # Arşiv yazımı yanıtın parçası değil; düşerse yalnızca loglanır.
         logger.warning("Sohbet arşivine yazılamadı (%s): %s", uid, exc)
+
+
+#: Cevaplanmamış tohumun ömrü. 30 gün DEĞİL: soru "bugün"e ait ve
+#: cevaplanmazsa kendi kendini toplamalı — aksi hâlde arşiv listesini ve
+#: panel sayaçlarını ay boyunca şişirir. Kullanıcı cevap verdiği an
+#: `write_turn` bunu RETENTION_DAYS'e çeker ve konu sıradanlaşır.
+SEED_RETENTION_DAYS = 2
+
+
+def seed_conversation_id(gun: str) -> str:
+    """Tohum konusunun DETERMİNİST kimliği (kullanıcının yerel günü).
+
+    Zamanlayıcı saatlik koşuyor ve gönderim düşerse aynı akşam yeniden
+    deniyor; rastgele kimlik her denemede yeni bir konu açardı.
+    """
+    return f"ask-{gun}"
+
+
+def seed_assistant_message(uid: str, text: str, lang: str,
+                           gun: str) -> str | None:
+    """Rytho'nun İLK SÖZÜNÜ konuşmaya yazar; konu kimliğini döndürür.
+
+    Bugüne kadar asistan yazarlı tekil mesaj kavramı yoktu: `write_turn`
+    tek yazıcıydı ve her zaman USER+AI çiftini birlikte yazıyordu. Soru
+    biçimli bildirimlerde (akşam check-in'i) soru kullanıcının GİRİŞ
+    KUTUSUNA yazılıyordu — yani kullanıcı kendi sorusunu soruyormuş gibi.
+    Artık soru gerçekten Rytho'nun mesajı olarak konuşmada duruyor.
+
+    ## İki kasıtlı karar
+
+    **Tahliye ÇAĞRILMAZ.** `_evict_oldest_if_needed` bugün yalnız
+    `write_turn` içinden koşuyor, yani her silme kullanıcının kendi
+    eyleminin sonucu. Buradan çağrılsaydı 20 konusu dolu bir kullanıcının
+    en eski GERÇEK konuşması her akşam, kullanıcı hiçbir şey yapmadan,
+    kalıcı olarak silinirdi (geri alma yok). 20 tavanı bir maliyet
+    koruması; kullanıcının açtığı bir sonraki konu zaten koleksiyonu
+    20'ye çeker — kendi kendini onarır.
+
+    **`sender` "AI" kalır.** İstemci ayrımı `m.sender != 'AI'` ile
+    yapıyor; yeni bir gönderen değeri KULLANICI balonu olarak çizilirdi.
+
+    Asla fırlatmaz: bildirim akışı bir arşiv yazımı yüzünden düşmemeli.
+    """
+    metin = (text or "").strip()
+    if not metin:
+        return None
+    client = firestore_client.get_client()
+    if client is None:
+        return None
+
+    kimlik = seed_conversation_id(gun)
+    try:
+        conv_ref = _conversations(client, uid).document(kimlik)
+        if conv_ref.get().exists:
+            # Aynı akşam ikinci koşu: mesajı ÇOĞALTMA, kimliği döndür.
+            return kimlik
+
+        simdi = _now()
+        conv_ref.set({
+            "title": title_from(metin),
+            "createdAt": simdi,
+            "updatedAt": simdi,
+            "messageCount": 1,
+            "expireAt": simdi + dt.timedelta(days=SEED_RETENTION_DAYS),
+            "lang": lang,
+            "openedBy": "rytho",
+            "seedQuestion": clip_message(metin),
+        })
+        conv_ref.collection("messages").document().set({
+            "sender": "AI", "text": clip_message(metin),
+            "createdAt": simdi,
+        })
+        return kimlik
+    except Exception as exc:
+        logger.warning("Rytho tohumu yazılamadı (%s): %s", uid, exc)
+        return None
 
 
 def delete_conversation(uid: str, conversation_id: str) -> int:
