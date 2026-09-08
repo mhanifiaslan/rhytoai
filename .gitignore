@@ -74,3 +74,21 @@ docs/rag_corpus/chunks/
 # Magaza gorselleri: ham cihaz kayitlari kisisel veri tasiyor
 # (gercek ad, dogum haritasi) — yalniz uretilmis varliklar versiyonlanir.
 store/play/raw/
+
+# Reklam varliklari git'e GIRMEZ (4,9 GB olculdu). Ham cihaz kayitlari
+# kisisel veri tasiyor (gercek dogum haritasi), uretilmis kareler ve
+# kurgu ciktilarinin ise git'te durmasi depoyu kullanilmaz hale getirir.
+# Versiyonlanan tek sey URETICI BETIKLER ve README — cikti onlardan
+# yeniden uretilebilir. Nihai mp4'ler dis paylasimla dagitilir.
+ads/*/plates/
+ads/*/clips/
+ads/*/cut*/
+ads/*/frames/
+ads/*/keyframes/
+ads/*/reklam/
+ads/*/rough/
+ads/*/ses/
+ads/*/shots/
+ads/*/fonts/
+ads/*/__pycache__/
+ads/*/*.mp4
