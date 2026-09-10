@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display:none">
+  <symbol id="moon" viewBox="0 0 24 24"><path d="M20 15.5A8.5 8.5 0 0 1 8.5 4 8.5 8.5 0 1 0 20 15.5Z"/></symbol>
+  <symbol id="coin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M9 9.5c.5-1 1.45-1.5 3-1.5 1.7 0 3 .85 3 2.2 0 3.05-6 1.15-6 4.15 0 1.05 1.1 1.75 2.8 1.75 1.45 0 2.55-.48 3.2-1.5M12 6.4v11.2"/></symbol>
+  <symbol id="flame" viewBox="0 0 24 24"><path d="M13.2 3.5c.45 3.05-2.5 4.1-2.5 6.55 0 1.1.8 1.9 1.82 1.9 1.55 0 2.12-1.56 1.26-3.36 3.34 1.55 4.36 4.05 3.4 7.1A5.9 5.9 0 0 1 6 15.35c0-3.82 2.08-6.62 4.25-8.36.05 1.43.54 2.22 1.2 2.22 1.06 0 1.95-2.4 1.75-5.71Z"/></symbol>
+  <symbol id="orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><ellipse cx="12" cy="12" rx="9.2" ry="4.3" transform="rotate(-28 12 12)"/><path d="m18.3 5.8.01.01"/></symbol>
+  <symbol id="full-moon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M8.5 9.2h.01M15.6 8h.01M10.2 15.5h.01M16.2 14h.01"/></symbol>
+  <symbol id="sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M21.5 12h-2M4.5 12h-2M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4M18.7 18.7l-1.4-1.4M6.7 6.7 5.3 5.3"/></symbol>
+  <symbol id="lines" viewBox="0 0 24 24"><path d="M4 6h16M4 10h6m4 0h6M4 14h16M4 18h6m4 0h6"/></symbol>
+  <symbol id="chat" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-8 7.45A8.8 8.8 0 0 1 8.3 18L4 19l1.15-3.6A7.1 7.1 0 0 1 4 11.5 7.5 7.5 0 0 1 12 4a7.5 7.5 0 0 1 8 7.5Z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></symbol>
+</svg>

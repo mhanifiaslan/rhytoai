@@ -17,6 +17,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Manrope:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/rytho.css?v=2">
+  <link rel="preload" href="/assets/space/hero-nebula.png" as="image" fetchpriority="high">
 </head>
 <body>
   <div class="gokyuzu"><canvas id="yildizlar"></canvas></div>
@@ -38,27 +39,49 @@
       <div class="sag">
         <a class="dil-sec" href="/">TR</a>
         <a class="buton kucuk" href="https://play.google.com/store/apps/details?id=ai.rytho">Get the app</a>
+        <details class="mobil-menu">
+          <summary aria-label="Open navigation"><span class="menu-cizgileri" aria-hidden="true"><i></i><i></i><i></i></span></summary>
+          <nav class="mobil-menu-panel" aria-label="Mobile navigation">
+            <a href="#features">Features</a>
+            <a href="#how">How it works</a>
+            <a href="#engine">The engine</a>
+            <a href="#plan">Rytho+</a>
+            <a href="#faq">FAQ</a>
+            <a class="mobil-menu-cta" href="https://play.google.com/store/apps/details?id=ai.rytho">Get it on Google Play</a>
+          </nav>
+        </details>
       </div>
     </div>
   </header>
 
   <!-- ---------- HERO ---------- -->
   <section class="kahraman">
-    <div class="dunya"></div>
+    <div class="hero-space" aria-hidden="true">
+      <div class="hero-fallback"></div>
+      <div class="hero-video-mask">
+        <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="/assets/space/hero-nebula.png">
+          <source src="/assets/space/hero-space.mp4" type="video/mp4" media="(min-width: 981px)">
+        </video>
+      </div>
+      <div class="hero-dust"></div>
+      <div class="hero-glow"></div>
+      <div class="hero-curve"></div>
+      <div class="hero-vignette"></div>
+    </div>
 
     <div class="uyarilar acil" style="--i:4">
       <div class="uyari">
-        <div class="im">🌙</div>
+        <div class="im"><svg class="kozmik-ikon" aria-hidden="true"><use href="/assets/cosmic-icons.svg#moon"></use></svg></div>
         <div><b>The Moon entered Pisces</b>
         <p>Intuition runs high today, boundaries run thin. Postpone what can wait.</p></div>
       </div>
       <div class="uyari">
-        <div class="im">🪙</div>
+        <div class="im"><svg class="kozmik-ikon" aria-hidden="true"><use href="/assets/cosmic-icons.svg#coin"></use></svg></div>
         <div><b>Your daily cast is ready</b>
         <p>If something is on your mind, today's hexagram is speaking to it.</p></div>
       </div>
       <div class="uyari">
-        <div class="im">🔥</div>
+        <div class="im"><svg class="kozmik-ikon" aria-hidden="true"><use href="/assets/cosmic-icons.svg#flame"></use></svg></div>
         <div><b>7 days in a row</b>
         <p>The streak holds — today's reading is waiting for you.</p></div>
       </div>
@@ -94,26 +117,26 @@
       </div>
       <div class="dortlu">
         <div class="oge acil" style="--i:1">
-          <div class="kure k1"></div>
+          <div class="kure k1"><img src="/assets/space/planet-transits.png" alt="" width="1024" height="1024" loading="lazy" decoding="async"></div>
           <h3>Daily Transits</h3>
           <p>Today's sky collides with your natal chart. Not a generic
           sun-sign horoscope — the aspects are yours.</p>
         </div>
         <div class="oge acil" style="--i:2">
-          <div class="kure k2"></div>
+          <div class="kure k2"><img src="/assets/space/planet-natal.png" alt="" width="1024" height="1024" loading="lazy" decoding="async"></div>
           <h3>Birth Chart</h3>
           <p>Planets, houses, aspects. Your ascendant is only as precise as
           your birth time — if it's unknown, Rytho says so instead of
           inventing it.</p>
         </div>
         <div class="oge acil" style="--i:3">
-          <div class="kure k3"></div>
+          <div class="kure k3"><img src="/assets/space/planet-bazi.png" alt="" width="1024" height="1024" loading="lazy" decoding="async"></div>
           <h3>BaZi &amp; I Ching</h3>
           <p>Four Pillars analysis, Day Master strength, luck cycles; one
           hexagram cast a day with its moving lines.</p>
         </div>
         <div class="oge acil" style="--i:4">
-          <div class="kure k4"></div>
+          <div class="kure k4"><img src="/assets/space/planet-firaset.png" alt="" width="1024" height="1024" loading="lazy" decoding="async"></div>
           <h3>Physiognomy</h3>
           <p>The face reading tradition. Measurement happens on your phone —
           your photo never reaches a server.</p>
@@ -158,20 +181,7 @@
         <div class="telefon-sahne acil" style="--i:2">
           <div class="telefon">
             <div class="centik"></div>
-            <div class="ekran-etiket">Today, for you</div>
-            <div class="okuma">
-              <h4>Leo · August 5</h4>
-              <p>The Moon's passage through Pisces falls in your sixth
-              house: what your body wants is speaking loudly today.
-              Mercury's retrograde will be felt not in your messages but in
-              the promises you make…</p>
-            </div>
-            <div class="okuma">
-              <h4>Hexagram of the day</h4>
-              <p>䷰ Ge — Revolution. Moving line: the fourth. The change
-              isn't coming from outside; it's coming from your decision.</p>
-            </div>
-            <div class="satir-mono"><span>☉ 132.40°</span><span>☽ 344.91°</span><span>↑ Libra</span></div>
+            <img class="telefon-ekrani" src="/assets/screens/shot-1-sky.png" alt="Rytho's Sky screen" width="1080" height="1920" loading="lazy" decoding="async">
           </div>
         </div>
       </div>
@@ -186,17 +196,17 @@
         reading — all in your own time zone, with respect for your quiet hours.</p>
       </div>
       <div class="kure-sahne">
-        <div class="buyuk-kure acil"></div>
+        <div class="buyuk-kure acil"><img src="/assets/space/planet-alerts.png" alt="" width="1024" height="1024" loading="lazy" decoding="async"></div>
         <div class="cipler">
-          <div class="cip c1 acil" style="--i:1"><span class="im">☿</span>
+          <div class="cip c1 acil" style="--i:1"><span class="im"><svg class="kozmik-ikon" aria-hidden="true"><use href="/assets/cosmic-icons.svg#orbit"></use></svg></span>
             <div><b>Mercury stations retrograde</b><span>3 weeks · contracts and promises</span></div></div>
-          <div class="cip c2 acil" style="--i:2"><span class="im">🌕</span>
+          <div class="cip c2 acil" style="--i:2"><span class="im"><svg class="kozmik-ikon" aria-hidden="true"><use href="/assets/cosmic-icons.svg#full-moon"></use></svg></span>
             <div><b>Full Moon in Aquarius</b><span>Finish what is ending</span></div></div>
-          <div class="cip c3 acil" style="--i:3"><span class="im">☀️</span>
+          <div class="cip c3 acil" style="--i:3"><span class="im"><svg class="kozmik-ikon" aria-hidden="true"><use href="/assets/cosmic-icons.svg#sun"></use></svg></span>
             <div><b>The Sun entered your sign</b><span>A new solar year</span></div></div>
-          <div class="cip c4 acil" style="--i:4"><span class="im">🀄</span>
+          <div class="cip c4 acil" style="--i:4"><span class="im"><svg class="kozmik-ikon" aria-hidden="true"><use href="/assets/cosmic-icons.svg#lines"></use></svg></span>
             <div><b>New luck cycle</b><span>Your Da Yun pillar changed</span></div></div>
-          <div class="cip c5 acil" style="--i:5"><span class="im">💬</span>
+          <div class="cip c5 acil" style="--i:5"><span class="im"><svg class="kozmik-ikon" aria-hidden="true"><use href="/assets/cosmic-icons.svg#chat"></use></svg></span>
             <div><b>Rytho is waiting</b><span>Yesterday's talk, right where it paused</span></div></div>
         </div>
       </div>
@@ -328,10 +338,16 @@ I Ching      1/16 · 5/16 · 7/16 · 3/16</div>
             </span>
           </div>
         </div>
-        <div class="mini-telefonlar">
-          <div class="mini-telefon"><i class="kisa"></i><i class="buyuk"></i><i></i><i class="kisa"></i><i></i></div>
-          <div class="mini-telefon orta"><i class="kisa"></i><i></i><i class="buyuk"></i><i></i><i class="kisa"></i><i></i></div>
-          <div class="mini-telefon"><i class="kisa"></i><i></i><i></i><i class="buyuk"></i><i class="kisa"></i></div>
+        <div class="mini-telefonlar" aria-label="Rytho app screens">
+          <button class="mini-telefon" type="button" aria-label="Bring the Sky screen forward" aria-pressed="false">
+            <img src="/assets/screens/shot-1-sky.png" alt="Rytho Sky screen" width="1080" height="1920" loading="lazy" decoding="async"><span class="mockup-etiketi">Sky</span>
+          </button>
+          <button class="mini-telefon is-selected" type="button" aria-label="Bring the Chart screen forward" aria-pressed="true">
+            <img src="/assets/screens/shot-2-chart.png" alt="Rytho Chart screen" width="1080" height="1920" loading="lazy" decoding="async"><span class="mockup-etiketi">Chart</span>
+          </button>
+          <button class="mini-telefon" type="button" aria-label="Bring the Chat screen forward" aria-pressed="false">
+            <img src="/assets/screens/shot-5-chat.png" alt="Rytho Chat screen" width="1080" height="1920" loading="lazy" decoding="async"><span class="mockup-etiketi">Chat</span>
+          </button>
         </div>
       </div>
     </section>
@@ -411,6 +427,9 @@ I Ching      1/16 · 5/16 · 7/16 · 3/16</div>
   </footer>
 
   <script src="/assets/starfield.js" defer></script>
+  <script src="/assets/hero-parallax.js" defer></script>
+  <script src="/assets/app-showcase.js" defer></script>
+  <script src="/assets/mobile-nav.js" defer></script>
   <script>
     (function () {
       'use strict';

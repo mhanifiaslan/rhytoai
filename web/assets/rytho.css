@@ -83,8 +83,13 @@ a { color: var(--lilac); }
 .gokyuzu canvas { width: 100%; height: 100%; display: block; }
 
 /* ---- Yerleşim ---- */
-.sarici { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
-section { padding: 84px 0; }
+.sarici { width: min(1180px, 100%); margin: 0 auto; padding: 0 clamp(20px, 3vw, 32px); }
+section { padding: clamp(76px, 8vw, 112px) 0; scroll-margin-top: 78px; }
+/* .sarici yatay dolgu verdiği için bölümler padding ile ayrışmaz. Akıştaki
+   her bölüm arasına kontrollü bir ritim, plan kartı ile CTA arasına da biraz
+   daha güçlü bir nefes payı bırakılır. */
+main > section.sarici + section.sarici { margin-top: clamp(48px, 5vw, 80px); }
+#plan + section { margin-top: clamp(56px, 6vw, 96px); }
 .bolum-etiket {
   font-size: 11.5px; font-weight: 700; letter-spacing: 1.4px;
   text-transform: uppercase; color: var(--lilac); margin-bottom: 10px;
@@ -105,7 +110,7 @@ section { padding: 84px 0; }
   background: var(--glass-fill);
   border: 1px solid var(--glass-stroke);
   border-radius: var(--r-card);
-  padding: 22px;
+  padding: clamp(20px, 2.15vw, 30px);
   overflow: hidden;
 }
 .panel::before {
@@ -122,8 +127,8 @@ section { padding: 84px 0; }
 
 /* ---- GoldButton: degrade CTA ---- */
 .buton {
-  display: inline-flex; align-items: center; gap: 9px;
-  padding: 14px 30px;
+  display: inline-flex; min-height: 50px; align-items: center; justify-content: center; gap: 9px;
+  padding: 13px 22px;
   border-radius: var(--r-pill);
   background: var(--primary-gradient);
   color: #fff;
@@ -136,13 +141,14 @@ section { padding: 84px 0; }
   white-space: nowrap;
 }
 .buton:active { transform: scale(0.96); }
+.buton:hover { transform: translateY(-2px); }
 .buton.ikincil {
   background: rgba(255, 255, 255, 0.05);
   box-shadow: none;
   border-color: var(--glass-stroke);
   color: var(--parchment);
 }
-.buton.kucuk { padding: 10px 20px; font-size: 13.5px; }
+.buton.kucuk { min-height: 40px; padding: 8px 18px; font-size: 13.5px; }
 
 /* ---- Üst gezinti ---- */
 .gezinti {
@@ -177,29 +183,110 @@ section { padding: 84px 0; }
   border: 1px solid var(--glass-stroke); border-radius: var(--r-pill);
   padding: 7px 13px;
 }
+.mobil-menu { display: none; }
 
-/* ---- Hero: gezegen kavisi ---- */
+/* ---- Hero: sinematik uzay sahnesi ---- */
 .kahraman {
   position: relative;
-  /* Üst boşluk gezegen kavisi + (geniş ekranda) yüzen kartlar içindir. */
-  padding: clamp(140px, 34vw, 440px) 24px 90px;
+  /* Üst boşluk yüzen bildirimler ve hero gezegeni içindir. */
+  padding: clamp(180px, 27vw, 390px) 24px 90px;
   text-align: center;
   overflow: hidden;
+  isolation: isolate;
 }
-/* Dünya limbi: dev daire, çoğu ekran dışında — üst kenarda kavis ve
-   atmosfer ışığı bırakır (referans kompozisyonu). */
-.dunya {
-  position: absolute; left: 50%; top: -142vw;
-  width: 170vw; height: 170vw;
-  transform: translateX(-50%);
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 93%,
-      #4a2280 0%, #2a1250 38%, #150b28 62%, #0B0710 78%);
-  box-shadow:
-    inset 0 -2px 0 rgba(183, 156, 255, 0.55),
-    0 0 160px 60px rgba(123, 47, 247, 0.3);
-  pointer-events: none;
+.hero-space {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
   z-index: -1;
+  background: #07050d;
+  pointer-events: none;
+}
+.hero-fallback,
+.hero-dust,
+.hero-vignette {
+  position: absolute;
+  inset: -40px;
+  width: calc(100% + 80px);
+  height: calc(100% + 80px);
+}
+.hero-fallback {
+  /* Kavisin altı, sitenin önceki koyu ve sakin hero zemini olarak kalır.
+     Video burada değil, yalnız üst uzay penceresinde görünür. */
+  background:
+    radial-gradient(ellipse at 72% 78%, rgba(82, 39, 127, 0.26), transparent 46%),
+    linear-gradient(180deg, #0B0710 0%, #0B0710 48%, #14091E 100%);
+  z-index: 0;
+}
+.hero-fallback::before { display: none; }
+.hero-video-mask {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  /* Dev dairenin İÇİ, kavis çizgisinin üstünde kalan uzay penceresidir.
+     Şeffaf dış alan, alttaki eski hero zeminini görünür bırakır. */
+  -webkit-mask-image: radial-gradient(circle 85vw at 50% -57vw, #000 0 99.8%, transparent 100%);
+  mask-image: radial-gradient(circle 85vw at 50% -57vw, #000 0 99.8%, transparent 100%);
+}
+.hero-video {
+  position: absolute;
+  inset: -40px;
+  width: calc(100% + 80px);
+  height: calc(100% + 80px);
+  object-fit: cover;
+  object-position: center center;
+  /* Video sabit kadrajda kalır; imleçle hiçbir zaman blok gibi yer değiştirmez. */
+  transform: scale(1.04);
+  filter: saturate(1.12) brightness(1.1);
+}
+.hero-dust {
+  z-index: 2;
+  opacity: 0.7;
+  background-image:
+    radial-gradient(circle at 14% 26%, rgba(255,255,255,0.58) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 81% 42%, rgba(183,156,255,0.62) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 36% 71%, rgba(255,194,75,0.42) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 70% 79%, rgba(255,255,255,0.4) 0 1px, transparent 1.5px);
+  background-size: 180px 180px, 260px 260px, 340px 340px, 410px 410px;
+  transform: translate3d(var(--hero-dust-x, 0px), var(--hero-dust-y, 0px), 0) scale(1.02);
+  transition: transform var(--base) var(--enter);
+}
+.hero-glow {
+  position: absolute;
+  z-index: 2;
+  left: 50%; top: 62%;
+  width: min(54vw, 680px); aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(183,156,255,0.17), rgba(123,47,247,0.07) 32%, transparent 68%);
+  transform: translate3d(calc(-50% + var(--hero-glow-x, 0px)), calc(-50% + var(--hero-glow-y, 0px)), 0);
+  transition: transform var(--base) var(--enter);
+}
+/* Kavis artık opak bir yüzey değil: sadece üstteki video penceresinin sınırını
+   çizen ince atmosfer limbi. */
+.hero-curve {
+  position: absolute;
+  z-index: 3;
+  left: 50%; top: -142vw;
+  width: 170vw; height: 170vw;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid rgba(183, 156, 255, 0.5);
+  box-shadow:
+    0 10px 58px rgba(123, 47, 247, 0.26);
+  transform: translateX(-50%);
+}
+.hero-vignette {
+  inset: 0;
+  width: 100%; height: 100%;
+  z-index: 4;
+  background:
+    linear-gradient(180deg, rgba(11,7,16,0.14) 0%, rgba(11,7,16,0.02) 28%, rgba(11,7,16,0.56) 100%),
+    radial-gradient(ellipse at 50% 55%, transparent 0 32%, rgba(11,7,16,0.25) 76%, rgba(11,7,16,0.62) 100%);
+}
+.kahraman > :not(.hero-space):not(.uyarilar) {
+  position: relative;
+  z-index: 1;
 }
 .kahraman .rozet {
   display: inline-flex; align-items: center; gap: 8px;
@@ -218,7 +305,14 @@ section { padding: 84px 0; }
   margin: 20px auto 34px;
   max-width: 560px; font-size: 17px;
 }
-.magaza { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.magaza {
+  display: grid; width: min(100%, 520px); grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px; margin-inline: auto; align-items: start;
+}
+.magaza > a,
+.magaza > span { min-width: 0; width: 100%; }
+.magaza > .buton { width: 100%; align-self: start; }
+.magaza > span .buton { width: 100%; }
 .magaza .yakinda {
   font-size: 11px; color: var(--parchment-dim);
   display: block; margin-top: 7px; text-align: center;
@@ -242,8 +336,13 @@ section { padding: 84px 0; }
 }
 .uyari .im {
   width: 30px; height: 30px; flex: none; border-radius: 10px;
-  display: grid; place-items: center; font-size: 15px;
+  display: grid; place-items: center;
   background: rgba(123, 47, 247, 0.22);
+}
+.kozmik-ikon {
+  width: 16px; height: 16px; display: block;
+  color: var(--gold-bright); fill: none; stroke: currentColor;
+  stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
 }
 .uyari b { display: block; font-size: 13px; font-weight: 700; }
 .uyari p { font-size: 11.5px; color: var(--parchment-dim); line-height: 1.45; }
@@ -274,17 +373,19 @@ section { padding: 84px 0; }
 .dortlu .oge { text-align: center; }
 .kure {
   width: 112px; height: 112px; margin: 0 auto 18px;
-  border-radius: 50%; position: relative;
+  border-radius: 50%; position: relative; overflow: hidden;
+  background: var(--ink-light);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
 }
 .kure::after {
   content: ''; position: absolute; inset: -14px;
   border-radius: 50%; border: 1px solid rgba(183, 156, 255, 0.18);
 }
-.kure.k1 { background: radial-gradient(circle at 32% 28%, #FFD98A, #E88A3C 45%, #7a3410 100%); }
-.kure.k2 { background: radial-gradient(circle at 32% 28%, #C9A6FF, #7B2FF7 48%, #2a0f57 100%); }
-.kure.k3 { background: radial-gradient(circle at 32% 28%, #9FE8FF, #3C8FE8 48%, #10305e 100%); }
-.kure.k4 { background: radial-gradient(circle at 32% 28%, #FFAEE6, #E64ACF 48%, #5c1350 100%); }
+.kure img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform var(--slow) var(--enter), filter var(--slow) var(--enter);
+}
+.oge:hover .kure img { transform: scale(1.08); filter: saturate(1.08) brightness(1.05); }
 .dortlu h3 { font-size: 17px; margin-bottom: 7px; }
 .dortlu p { font-size: 13.5px; color: var(--parchment-dim); }
 
@@ -315,7 +416,7 @@ section { padding: 84px 0; }
 }
 
 /* ---- Telefon maketi ---- */
-.telefon-sahne { display: grid; place-items: center; position: relative; }
+.telefon-sahne { display: grid; place-items: center; position: relative; perspective: 1100px; }
 .telefon-sahne::before {
   content: ''; position: absolute; width: 320px; height: 320px;
   border-radius: 50%; background: radial-gradient(circle,
@@ -324,31 +425,32 @@ section { padding: 84px 0; }
 }
 .telefon {
   position: relative; width: min(272px, 78vw);
-  border-radius: 36px; padding: 14px 13px 20px;
+  border-radius: 36px; padding: 9px;
   background: linear-gradient(180deg, #1a1024, #120a1c);
   border: 1px solid rgba(255, 255, 255, 0.09);
   box-shadow: 0 34px 90px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  transform: rotateY(-7deg) rotateX(2deg);
+  transition: transform var(--slow) var(--enter), box-shadow var(--slow) var(--enter), border-color var(--slow) var(--enter);
+}
+.telefon::after {
+  content: ''; position: absolute; z-index: 2; pointer-events: none;
+  inset: 9px; border-radius: 28px;
+  background: linear-gradient(120deg, rgba(255,255,255,0.16), transparent 21%, transparent 76%, rgba(183,156,255,0.09));
+}
+.telefon-sahne:hover .telefon {
+  transform: translateY(-14px) rotateY(-1deg) rotateX(0);
+  border-color: rgba(183, 156, 255, 0.35);
+  box-shadow: 0 46px 110px rgba(0, 0, 0, 0.7), 0 0 46px rgba(123, 47, 247, 0.22);
 }
 .telefon .centik {
+  position: absolute; z-index: 1; top: 13px; left: 50%;
   width: 74px; height: 5px; border-radius: 99px;
-  background: rgba(255, 255, 255, 0.15); margin: 0 auto 16px;
+  background: rgba(11, 7, 16, 0.76); transform: translateX(-50%);
 }
-.telefon .ekran-etiket {
-  font-size: 10.5px; letter-spacing: 1.2px; text-transform: uppercase;
-  color: var(--lilac); margin-bottom: 8px;
-}
-.telefon .okuma {
-  background: rgba(255, 255, 255, 0.045);
-  border: 1px solid var(--glass-stroke);
-  border-radius: 16px; padding: 14px; margin-bottom: 11px;
-}
-.telefon .okuma h4 { font-size: 14px; margin-bottom: 6px; }
-.telefon .okuma p { font-size: 11.5px; color: var(--parchment-dim); line-height: 1.5; }
-.telefon .satir-mono {
-  font-family: 'JetBrains Mono', monospace; font-size: 10px;
-  color: var(--lilac); display: flex; justify-content: space-between;
-  padding: 9px 12px; border-radius: 12px;
-  background: rgba(123, 47, 247, 0.14);
+.telefon-ekrani {
+  position: relative; z-index: 1; display: block; width: 100%; aspect-ratio: 9 / 16;
+  height: auto; object-fit: cover; object-position: top; border-radius: 28px;
 }
 
 /* ---- Küre sahnesi (bildirim çipleri) ---- */
@@ -358,13 +460,12 @@ section { padding: 84px 0; }
 }
 .buyuk-kure {
   width: min(460px, 84vw); aspect-ratio: 1; border-radius: 50%;
-  background:
-    radial-gradient(circle at 34% 26%, rgba(183,156,255,0.22), transparent 55%),
-    radial-gradient(circle at 50% 50%, #241046 0%, #16092c 62%, #0d0618 100%);
+  background: #16092c;
   border: 1px solid rgba(183, 156, 255, 0.22);
   box-shadow: 0 0 100px rgba(123, 47, 247, 0.28), inset 0 0 60px rgba(0,0,0,0.6);
   position: relative; overflow: hidden;
 }
+.buyuk-kure img { width: 100%; height: 100%; object-fit: cover; display: block; }
 /* Meridyenler: hafif enlem çizgileri */
 .buyuk-kure::after {
   content: ''; position: absolute; inset: 0; border-radius: 50%;
@@ -380,7 +481,10 @@ section { padding: 84px 0; }
   padding: 10px 13px; backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 }
-.cip .im { font-size: 15px; }
+.cip .im {
+  width: 18px; height: 18px; flex: none; display: grid; place-items: center;
+}
+.cip .kozmik-ikon { color: var(--lilac); }
 .cip b { display: block; font-size: 12.5px; }
 .cip span { font-size: 11px; color: var(--parchment-dim); }
 
@@ -401,35 +505,73 @@ section { padding: 84px 0; }
 
 /* ---- İndirme bandı ---- */
 .indir-bandi {
-  border-radius: 28px; padding: 44px;
+  border-radius: 28px; padding: clamp(28px, 4vw, 52px);
   background:
     radial-gradient(circle at 12% 20%, rgba(230, 74, 207, 0.22), transparent 55%),
     linear-gradient(135deg, #2a1250, #170c2c);
   border: 1px solid rgba(183, 156, 255, 0.2);
-  display: grid; grid-template-columns: 1fr 1fr; gap: 34px; align-items: center;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(28px, 4vw, 56px); align-items: center;
 }
 .indir-bandi h2 { font-size: clamp(23px, 3.2vw, 33px); line-height: 1.2; }
 .indir-bandi p { color: var(--parchment-dim); margin: 14px 0 24px; font-size: 15px; }
-.mini-telefonlar { display: flex; justify-content: center; gap: 14px; }
+/* Üç gerçek ekran, koleksiyon vitrini gibi katmanlanır. Varsayılan olarak
+   ortadaki harita öndedir; hover, odak ya da dokunuşla seçilen ekran öne gelir. */
+.mini-telefonlar {
+  display: flex; justify-content: center; align-items: center; gap: 12px;
+  min-height: 276px; padding: 18px 4px 10px; perspective: 1100px;
+}
 .mini-telefon {
-  width: 108px; height: 216px; border-radius: 20px;
+  position: relative; z-index: 1; flex: none;
+  width: 122px; height: 244px; border-radius: 25px;
   background: linear-gradient(180deg, #1d1229, #120a1c);
   border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55);
-  padding: 10px 8px; display: grid; gap: 7px; align-content: start;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255,255,255,0.08);
+  padding: 5px; overflow: hidden; appearance: none; color: inherit; font: inherit; cursor: pointer;
+  transform: rotateY(10deg) rotateZ(-2deg) translateX(8px);
+  transition: transform var(--slow) var(--enter), box-shadow var(--slow) var(--enter), border-color var(--slow) var(--enter), filter var(--base) var(--enter), opacity var(--base) var(--enter);
 }
-.mini-telefon i {
-  display: block; border-radius: 7px; background: rgba(255,255,255,0.06);
-  height: 9px;
+.mini-telefon::before {
+  content: ''; position: absolute; z-index: 3; left: 50%; top: 9px;
+  width: 37px; height: 4px; border-radius: 99px; background: rgba(11, 7, 16, 0.8);
+  transform: translateX(-50%);
 }
-.mini-telefon i.buyuk { height: 44px; background: rgba(123, 47, 247, 0.3); }
-.mini-telefon i.kisa { width: 60%; }
-.mini-telefon.orta { transform: translateY(-16px); }
+.mini-telefon::after {
+  content: ''; position: absolute; z-index: 2; pointer-events: none;
+  inset: 5px; border-radius: 20px;
+  background: linear-gradient(118deg, rgba(255,255,255,0.14), transparent 20%, transparent 74%, rgba(183,156,255,0.1));
+}
+.mini-telefon img { position: relative; z-index: 1; display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 19px; }
+.mockup-etiketi {
+  position: absolute; z-index: 4; left: 50%; bottom: 10px; padding: 3px 8px;
+  transform: translate(-50%, 8px); border-radius: var(--r-pill);
+  background: rgba(11,7,16,0.7); color: var(--parchment); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.25px; opacity: 0; transition: opacity var(--fast) var(--enter), transform var(--fast) var(--enter);
+}
+.mini-telefon:nth-child(3) { transform: rotateY(-10deg) rotateZ(2deg) translateX(-8px); }
+.mini-telefon.is-selected {
+  z-index: 3; opacity: 1; filter: saturate(1.05);
+  transform: translateY(-20px) scale(1.045);
+  border-color: rgba(183, 156, 255, 0.3);
+  box-shadow: 0 34px 82px rgba(0, 0, 0, 0.66), 0 0 32px rgba(123,47,247,0.2);
+}
+.mini-telefon:not(.is-selected) { opacity: 0.72; filter: saturate(0.78) brightness(0.8); }
+.mini-telefon:hover,
+.mini-telefon:focus-visible {
+  z-index: 5; opacity: 1; filter: saturate(1.08) brightness(1.06);
+  transform: translateY(-30px) scale(1.1);
+  border-color: rgba(255, 217, 138, 0.52);
+  box-shadow: 0 42px 94px rgba(0, 0, 0, 0.72), 0 0 42px rgba(230,74,207,0.28);
+  outline: none;
+}
+.mini-telefon.is-selected .mockup-etiketi,
+.mini-telefon:hover .mockup-etiketi,
+.mini-telefon:focus-visible .mockup-etiketi { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---- Kanıt kartları ---- */
-.kanit { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.kanit { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(16px, 2vw, 26px); align-items: stretch; }
 .kanit .panel h3 { font-size: 16.5px; margin-bottom: 8px; }
 .kanit .panel p { color: var(--parchment-dim); font-size: 14px; }
+#plan .kanit .panel { min-height: 270px; }
 
 /* ---- SSS ---- */
 .sss details { border-bottom: 1px solid var(--line); padding: 17px 0; }
@@ -478,24 +620,85 @@ footer .satir {
 
 /* ---- Duyarlılık ---- */
 @media (max-width: 980px) {
-  /* Menü bağlantıları kalkar; marka ve indirme çağrısı kalır — hamburger
-     yerine sadeleştirme (sayfa zaten tek akış, bölümler aşağıda). */
-  .gezinti nav { display: none; }
-  .gezinti .ic { gap: 12px; }
+  /* Telefon ve tablet: erişilebilir açılır menü, sabit yüksekliği olan bir
+     header ve videonun yerine aynı kompozisyonun statik hero karesi. */
+  .gezinti .ic { min-height: 62px; padding: 10px 18px; gap: 12px; }
+  .gezinti .ic > nav { display: none; }
   .gezinti .sag { margin-left: auto; }
+  .gezinti .sag > .buton.kucuk { display: none; }
+  .mobil-menu { display: block; position: relative; }
+  .mobil-menu summary {
+    display: grid; width: 40px; height: 40px; place-items: center;
+    list-style: none; cursor: pointer; border: 1px solid var(--glass-stroke);
+    border-radius: 50%; background: rgba(255,255,255,0.04);
+  }
+  .mobil-menu summary::-webkit-details-marker { display: none; }
+  .mobil-menu summary:focus-visible { outline: 2px solid var(--lilac); outline-offset: 3px; }
+  .menu-cizgileri { display: grid; gap: 4px; }
+  .menu-cizgileri i { display: block; width: 16px; height: 1.5px; border-radius: 2px; background: var(--parchment); transition: transform var(--fast) var(--enter), opacity var(--fast) var(--enter); }
+  .mobil-menu[open] .menu-cizgileri i:first-child { transform: translateY(5.5px) rotate(45deg); }
+  .mobil-menu[open] .menu-cizgileri i:nth-child(2) { opacity: 0; }
+  .mobil-menu[open] .menu-cizgileri i:last-child { transform: translateY(-5.5px) rotate(-45deg); }
+  .gezinti .mobil-menu-panel {
+    display: none; position: absolute; z-index: 70; top: calc(100% + 10px); right: 0;
+    width: min(360px, calc(100vw - 36px)); padding: 10px;
+    border: 1px solid rgba(183,156,255,0.2); border-radius: 18px;
+    background: rgba(18, 10, 28, 0.98); box-shadow: 0 24px 60px rgba(0,0,0,0.46);
+  }
+  .mobil-menu[open] .mobil-menu-panel { display: grid; }
+  .gezinti .mobil-menu-panel a {
+    padding: 12px 13px; border-radius: 11px; color: var(--parchment);
+    font-size: 14px; font-weight: 700; text-decoration: none;
+  }
+  .gezinti .mobil-menu-panel a:hover { background: rgba(183,156,255,0.12); }
+  .gezinti .mobil-menu-panel .mobil-menu-cta {
+    margin-top: 4px; text-align: center; color: #fff;
+    background: var(--primary-gradient);
+  }
+  .hero-video-mask { display: none; }
+  .hero-fallback::before {
+    content: ''; display: block; position: absolute; inset: 0;
+    background: #07050d url('/assets/space/hero-nebula.png') center / cover no-repeat;
+    -webkit-mask-image: radial-gradient(circle 85vw at 50% -57vw, #000 0 99.8%, transparent 100%);
+    mask-image: radial-gradient(circle 85vw at 50% -57vw, #000 0 99.8%, transparent 100%);
+  }
+  .kahraman { padding: clamp(152px, 25vw, 240px) 24px 76px; }
+  .hero-dust, .hero-glow { transform: none; transition: none; }
   .dortlu { grid-template-columns: repeat(2, 1fr); gap: 30px 20px; }
   .ikili { grid-template-columns: 1fr; gap: 34px; }
-  .indir-bandi { grid-template-columns: 1fr; padding: 32px 24px; text-align: center; }
+  .telefon-sahne { margin-top: 8px; }
+  .indir-bandi { grid-template-columns: 1fr; padding: 34px 28px; text-align: center; }
   .indir-bandi .magaza { justify-content: center; }
   footer .ust-alan { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 620px) {
-  section { padding: 60px 0; }
+  section { padding: 72px 0; }
+  .sarici { padding-inline: 18px; }
+  .kahraman { padding: 132px 18px 64px; }
+  .kahraman .rozet { font-size: 11px; padding: 6px 12px; margin-bottom: 20px; }
+  .kahraman h1 { font-size: clamp(34px, 10vw, 44px); }
+  .kahraman .slogan { margin: 16px auto 26px; font-size: 15px; line-height: 1.55; }
+  .uyarilar { grid-auto-columns: min(78vw, 280px); margin: 30px -18px 0; padding-left: 18px; }
+  .guven-satiri { margin-top: 24px; gap: 8px 16px; font-size: 11.5px; }
   .kanit { grid-template-columns: 1fr; }
+  .kanit .panel { min-height: 0; }
+  #plan .kanit .panel { min-height: 0; }
   .kure { width: 92px; height: 92px; }
+  .dortlu { gap: 34px 14px; }
+  .panel { border-radius: 20px; }
+  .indir-bandi { border-radius: 24px; padding: 30px 20px; gap: 24px; }
+  .indir-bandi p { margin-bottom: 22px; }
+  .magaza { gap: 10px; }
+  .mini-telefonlar { gap: 7px; min-height: 210px; padding-top: 14px; }
   .mini-telefon { width: 88px; height: 176px; }
+  .mini-telefon.is-selected { transform: translateY(-14px) scale(1.035); }
+  .mini-telefon:hover,
+  .mini-telefon:focus-visible { transform: translateY(-18px) scale(1.055); }
   footer .ust-alan { grid-template-columns: 1fr; gap: 26px; }
   .gezinti .marka span { display: none; }
+}
+@media (max-width: 400px) {
+  .magaza { width: min(100%, 290px); grid-template-columns: 1fr; }
 }
 
 /* ---- Reduce-motion: tasarım sistemi kuralı — hareket hiç kurulmaz ---- */
@@ -503,4 +706,8 @@ footer .satir {
   html { scroll-behavior: auto; }
   .acil { opacity: 1; transform: none; transition: none; }
   .buton { transition: none; }
+  .hero-video-mask { display: none; }
+  .hero-dust, .hero-glow, .hero-curve { transition: none; }
+  .kure img { transition: none; }
+  .telefon, .mini-telefon, .mockup-etiketi { transition: none; }
 }
