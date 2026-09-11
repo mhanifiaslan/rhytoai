@@ -2072,6 +2072,12 @@ abstract class AppLocalizations {
   /// **'Paralar havada...'**
   String get iChingCoinsInAir;
 
+  /// No description provided for @iChingCoinsLanding.
+  ///
+  /// In tr, this message translates to:
+  /// **'Paralar düşüyor… {n}/6'**
+  String iChingCoinsLanding(int n);
+
   /// No description provided for @iChingHexagramLabel.
   ///
   /// In tr, this message translates to:
@@ -3241,6 +3247,12 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Google Play\'de güncelle'**
   String get forceUpdateAction;
+
+  /// No description provided for @forceUpdateStoreFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Mağaza açılamadı — Google Play\'de \"Rytho\" diye arat.'**
+  String get forceUpdateStoreFailed;
 
   /// No description provided for @signInMethodsRow.
   ///

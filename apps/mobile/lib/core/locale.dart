@@ -1,3 +1,5 @@
+import 'dart:async' show Completer;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/legacy.dart'
@@ -24,6 +26,20 @@ class LocaleController extends StateNotifier<Locale?> {
     _load();
   }
 
+  final Completer<void> _ready = Completer<void>();
+
+  /// Kalıcı tercih SharedPreferences'tan okundu (ya da okunamadı).
+  ///
+  /// Başlangıçta `state` her zaman `null`dır — tercih ASENKRON yüklenir.
+  /// Bunu bilmeyen bir okuyucu (PBZ öncesi bildirim senkronu) açılışta
+  /// "tercih yok" sanıp sistem dilini sunucuya yazıyor, tercih yüklenince
+  /// ikinci yazım geliyor ve ikisi yarışıyordu. Dili kalıcı bir yere
+  /// yazacak herkes ÖNCE bunu bekler (bkz. language_sync.dart).
+  ///
+  /// Her iki yolda da tamamlanır: okuma düşerse de bekleyen kimse askıda
+  /// kalmaz — tamamlanmayan bir Completer sessiz bir kilit olurdu.
+  Future<void> get ready => _ready.future;
+
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -33,6 +49,8 @@ class LocaleController extends StateNotifier<Locale?> {
       }
     } catch (_) {
       // Okunamazsa sistem dilinde kalır.
+    } finally {
+      if (!_ready.isCompleted) _ready.complete();
     }
   }
 

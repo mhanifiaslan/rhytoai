@@ -86,4 +86,10 @@ class Analytics {
 
   /// Kullanıcı hesabını sildi. Kayıp analizinde en anlamlı sinyal.
   static void accountDeleted() => _log('account_deleted');
+
+  // --- Zorunlu güncelleme ---
+
+  /// Güncelleme ekranı açıldı (PBZ). Eşik yükseltildiğinde kaç kullanıcının
+  /// kilitlendiği ölçülmezse eşiğin bedeli bilinemez.
+  static void forceUpdateShown() => _log('force_update_shown');
 }

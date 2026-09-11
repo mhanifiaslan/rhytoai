@@ -1087,6 +1087,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get iChingCoinsInAir => 'Coins in the air...';
 
   @override
+  String iChingCoinsLanding(int n) {
+    return 'Coins landing… $n/6';
+  }
+
+  @override
   String iChingHexagramLabel(Object number) {
     return 'HEXAGRAM $number';
   }
@@ -1767,6 +1772,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get forceUpdateAction => 'Update on Google Play';
+
+  @override
+  String get forceUpdateStoreFailed =>
+      'Couldn\'t open the store — search for \"Rytho\" on Google Play.';
 
   @override
   String get signInMethodsRow => 'Sign-in methods';

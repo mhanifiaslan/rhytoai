@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:rytho/widgets/atlas_widgets.dart' show AstrolabeSpinner;
 import 'package:rytho/widgets/motion.dart';
 
 /// R12-A0 hareket altyapısının değişmezleri.
@@ -65,6 +66,26 @@ void main() {
           _sar(const StagedWaiting(stages: ['bekle'])));
       expect(find.text('bekle'), findsOneWidget);
       await tester.pump(const Duration(seconds: 6));
+      expect(find.text('bekle'), findsOneWidget);
+    });
+
+    // PBZ: `visual` düz alan — verilmeyince usturlap, verilince yalnız
+    // verilen sahne (BaZi luopan bu yoldan giriyor).
+    testWidgets('visual verilmeyince AstrolabeSpinner var', (tester) async {
+      await tester.pumpWidget(
+          _sar(const StagedWaiting(stages: ['bekle'])));
+      expect(find.byType(AstrolabeSpinner), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 300));
+    });
+
+    testWidgets('visual verilince AstrolabeSpinner YOK, sahne var',
+        (tester) async {
+      await tester.pumpWidget(_sar(const StagedWaiting(
+        stages: ['bekle'],
+        visual: SizedBox(key: Key('luopan'), width: 10, height: 10),
+      )));
+      expect(find.byType(AstrolabeSpinner), findsNothing);
+      expect(find.byKey(const Key('luopan')), findsOneWidget);
       expect(find.text('bekle'), findsOneWidget);
     });
   });

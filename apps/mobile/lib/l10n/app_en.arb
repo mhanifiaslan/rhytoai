@@ -460,6 +460,14 @@
   "iChingQuestionRequired": "Write your question first.",
   "iChingQuestionInvalid": "The oracle found no question to read in this text — put your intention into a sentence about your own life.",
   "iChingCoinsInAir": "Coins in the air...",
+  "iChingCoinsLanding": "Coins landing… {n}/6",
+  "@iChingCoinsLanding": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "iChingHexagramLabel": "HEXAGRAM {number}",
   "@iChingHexagramLabel": {
     "placeholders": {
@@ -877,6 +885,7 @@
   "forceUpdateTitle": "Update required",
   "forceUpdateBody": "This version of Rytho is no longer supported. Update the app to continue — the stars are waiting.",
   "forceUpdateAction": "Update on Google Play",
+  "forceUpdateStoreFailed": "Couldn't open the store — search for \"Rytho\" on Google Play.",
   "signInMethodsRow": "Sign-in methods",
   "signInMethodsTitle": "Sign-in methods",
   "signInMethodsBody": "You can attach more than one way to sign in: whichever method you use, you reach the same account.",

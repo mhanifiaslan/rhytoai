@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/frame_sequence.dart';
 import '../../widgets/motion.dart';
 import '../paywall/plus_locked_card.dart';
 import '../../core/api.dart' show friendlyError;
@@ -21,11 +22,23 @@ class BaziTab extends ConsumerWidget {
 
     return bazi.when(
       // Rapor LLM üretimi — bekleyiş uzun; sahne dört sütun diliyle (R12-B3).
-      loading: () => StagedWaiting(stages: [
-        l10n.baziWaitStage1,
-        l10n.baziWaitStage2,
-        l10n.baziWaitStage3,
-      ]),
+      // Usturlap yerine bronz luopan kare dizisi (PBZ-K3): halkalar döner,
+      // ibre titrer — BaZi'nin kendi aleti. Yalnız yüklenirken monte,
+      // sonuçla sökülür; reduce-motion'da son kare statik.
+      loading: () => StagedWaiting(
+        visual: const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: AnimStage(
+            child: FrameSequence(
+                asset: 'assets/anim/bazi_wait.webp', loop: true),
+          ),
+        ),
+        stages: [
+          l10n.baziWaitStage1,
+          l10n.baziWaitStage2,
+          l10n.baziWaitStage3,
+        ],
+      ),
       error: (e, _) => Center(
         child: Text(friendlyError(e, l10n),
             style: RythoText.body(13, color: RythoColors.parchmentDim)),

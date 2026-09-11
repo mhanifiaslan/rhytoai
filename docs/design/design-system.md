@@ -134,13 +134,13 @@ Yeni kod çıplak süre/eğri yazmaz; eski ekranlar dokunuldukça geçer.
 | Desen | Araç | Nerede |
 |---|---|---|
 | Kademeli giriş | `RythoReveal(index)` — stagger×index + fadeIn(slow) + slideY(enter) | onboarding, okuma sayfası, boş durumlar, listeler |
-| Uzun bekleyiş | `StagedWaiting(stages)` — usturlap + sırayla değişen, SONDA DURAN aşama metinleri; yüzde çubuğu yasak | yüz okuma, natal, BaZi, onboarding kaydı |
+| Uzun bekleyiş | `StagedWaiting(stages, visual:)` — varsayılan usturlap; `visual:` sahneyi değiştirir (BaZi: bronz luopan kare dizisi `AnimStage(FrameSequence('bazi_wait'))`, PBZ) + sırayla değişen, SONDA DURAN aşama metinleri; yüzde çubuğu yasak | yüz okuma, natal, BaZi (luopan), onboarding kaydı |
 | İçerik açılışı | `FadeThroughRoute` — eski sayfa ~90ms, gelen fade+scale 0.96→1; Hero bilerek yok | kart→okuma, kilit→paywall |
 | Kutlama | `StarBurst` — Starfield boyacısından tek atış parçacık; asla döngü | satın alma, streak, tepki |
 | İskelet | `SkeletonPanel` — GlassPanel hacmi + shimmer 1200ms | profil, konu listesi |
-| Morph | `AnimatedSwitcher(base)` sabit hücrede kimlik değişimi | dots→balon, paralar→heksagram, spinner→kart |
+| Morph | `AnimatedSwitcher(base)` sabit hücrede kimlik değişimi | dots→balon, atış-güdümlü reveal → heksagram (her iniş bir çizgi, `CastScene`; sabit stagger YOK), spinner→kart |
 | Dokunuş | `Pressable` scale 0.96 + lightImpact | tüm basılabilirler |
-| Sürekli nefes | yalnız dock merkez butonu + yıldız alanı + usturlap | başka yerde YASAK — çok nefes ekranı ucuzlatır |
+| Sürekli nefes | yalnız dock merkez butonu + yıldız alanı + usturlap | başka yerde YASAK — çok nefes ekranı ucuzlatır. Tek istisna: bekleme sahnesi kare dizileri (`FrameSequence`, PBZ) yalnız `_busy`/loading sırasında monte edilir, sonuçla sökülür |
 
 **Reduce-motion:** `reduceMotion(context)` tek kapı — sürekli animatörler
 tek karede durur, girişler hiç kurulmaz, kutlamalar çizilmez. Yeni animasyon
@@ -148,6 +148,15 @@ eklerken bu kapıdan geçmeyen hareket PR'dan dönmeli.
 
 **Test kuralı:** sonsuz repeat içeren ağaçta `pumpAndSettle` YASAK —
 süreli `tester.pump(...)` adımları.
+
+**Kare dizileri (PBZ):** `FrameSequence` — animasyonlu WebP, `dart:ui`
+codec + Ticker, video eklentisi YOK (`lib/widgets/frame_sequence.dart`).
+Klipler SAF SİYAH zeminde üretilir, `ads/oracle-anim/build.py` siyahı ALFA'ya çevirir; `AnimStage` yalnız 16:9 oranı sabitler, zemin/kart çizmez — paralar uygulamanın kendi yıldızlı zemininin üstünde durur (tepsi/mekân/"video penceresi" YOK).
+içinde; chroma-key yok. Reduce-motion'da SON kare statik, `onDone` hemen,
+`onLoop` hiç. Kesme yalnız döngü sınırında (`onLoop`) — iniş klipleri
+havadaki ilk kareden başlar, sıçrama yok. Varlık bütçesi: klip ≤1 MB,
+toplam ≤5 MB (`test/anim_assets_test.dart` zorlar; aşarsa 640×400 / q75).
+Üretim hattı `ads/oracle-anim/README.md`.
 
 **Bilinçli sükûnet:** ayar/hukuk sayfaları, biyometrik rıza formu, paywall
 fiyat metinleri, hesap silme — bu yüzeylerde süs animasyonu yok; sükûnet de
@@ -166,6 +175,7 @@ numpy ile sentezlenen WAV'lar (`apps/mobile/assets/sounds/`):
 | `success` | ~280ms C6-E6-G6 arpej | Başarı anları (R12-C1) |
 | `streak` | ~180ms parlak tık + beşli | Günlük seri artışı (R12-C1) |
 | `purchase` | ~450ms dolu çift vuruş (cast ailesi) | Satın alma kutlaması (R12-C1) |
+| `coin_land` | ~300ms inharmonik metalik clink, ikinci sönük temas (para bir kez seker) | Her para inişi — altı kez, iniş klibi başında (PBZ) |
 
 Ses seviyesi 0.3–0.5; Profil > Ayarlar > "Sesler" anahtarıyla kapatılır
 (shared_preferences, varsayılan açık).

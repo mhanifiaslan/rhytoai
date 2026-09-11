@@ -63,9 +63,13 @@ WINDOW_SECONDS = 60.0
 # dakikada birbirini düşürebilirdi. Uç zaten paylaşılan gizli anahtarla korunuyor.
 # İstatistik toplayıcı da muaftır (W5): scheduler'ın diğer uçlarıyla aynı
 # Authorization başlığını (dolayısıyla aynı kovayı) paylaşır.
+# Açılış yapılandırması da muaftır (PBZ): kimliksiz çağrıldığı için tüm
+# istemciler NAT arkasında aynı IP kovasını paylaşabilir ve 429 istemcide
+# "eşik okunamadı" sayılırdı — zorunlu güncelleme kapısı kotaya kurban
+# edilmez.
 EXEMPT_PATHS = {"/", "/healthz", "/health", "/docs", "/openapi.json", "/redoc",
                 "/api/v1/billing/revenuecat", "/api/v1/notify/run",
-                "/api/v1/admin/collect"}
+                "/api/v1/admin/collect", "/api/v1/config/app"}
 
 # Kota mesajı dile göre core/messages.py'den gelir. Burası middleware olduğu
 # için FastAPI bağımlılığı kullanılamaz; başlık doğrudan okunur.

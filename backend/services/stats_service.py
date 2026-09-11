@@ -19,7 +19,7 @@ import logging
 import time
 from typing import Any
 
-from core import firestore as firestore_client
+from core import app_gate, firestore as firestore_client
 
 logger = logging.getLogger(__name__)
 
@@ -113,6 +113,8 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
     dil: dict[str, int] = {}
     saat_dilimi: dict[str, int] = {}
     platformlar: dict[str, int] = {}
+    surumler: dict[str, int] = {}
+    surum_bilinmiyor = 0
     for veri in _iter_users(client):
         toplam += 1
         if veri.get("onboardingCompleted") is True:
@@ -139,6 +141,30 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
         # olmayan eski kullanıcılar dürüstçe "bilinmiyor".
         pf = str(veri.get("platform") or "bilinmiyor")
         platformlar[pf] = platformlar.get(pf, 0) + 1
+        # Sürüm aynası (PBZ, core/auth.get_current_user yazar). Başlık
+        # göndermeyen ≤34 istemciler alanı hiç taşımaz → "bilinmiyor";
+        # panel bunu "eşiğin altında" sayısından AYRI gösterir.
+        sb = app_gate.parse_build(veri.get("appBuild"))
+        if sb > 0:
+            surumler[str(sb)] = surumler.get(str(sb), 0) + 1
+        else:
+            surum_bilinmiyor += 1
+
+    # ---- Sürüm kırılımı: eşiğin altında kaç kişi (PBZ) ----
+    # Ayrı count() sorgusu YOK — yukarıdaki tek geçişten türetilir.
+    surum_blok: dict[str, Any] = {"byBuild": {}, "min": -1,
+                                  "belowMin": -1, "unknown": -1}
+    try:
+        esik = app_gate.current_min_build()
+        surum_blok = {
+            "byBuild": surumler,
+            "min": esik,
+            "belowMin": sum(n for b, n in surumler.items()
+                            if int(b) < esik) if esik > 0 else 0,
+            "unknown": surum_bilinmiyor,
+        }
+    except Exception as exc:
+        logger.warning("Sürüm kırılımı hesaplanamadı: %s", exc)
 
     # ---- Abonelikler: HAM collection-group sorgusu (is_subscriber YASAK) ----
     aktif = 0
@@ -322,6 +348,8 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
             "byFeature": ai_ozellik,
         },
         "notify": bildirim,
+        # PBZ: zorunlu güncelleme paneli. Eski dokümanlarda yok → "—".
+        "builds": surum_blok,
     }
 
     client.collection("adminStats").document(tarih_str).set(dokuman)

@@ -11,6 +11,11 @@ Ciktilar apps/mobile/assets/sounds/ altina yazilir:
     success.wav          C6-E6-G6 arpej (~280ms) — onboarding/basari ani
     streak.wav           parlak tik + besli (~180ms) — seri artisi
     purchase.wav         dolu chime, cast ailesinden (~450ms) — satin alma
+    coin_land.wav        para inisi "clink" (<=400ms, PBZ) — kaynak once
+                         tools/sounds_src/coin_land_foley.wav (Higgsfield
+                         kling klibinden kesilmis GERCEK metal temasi, kendi
+                         hesabimizin uretimi); dosya yoksa sentez yedegi
+    coin_land.wav        metalik "clink" (~300ms, inharmonik) — para inisi (PBZ)
 
 Hepsi in-house sentez (R12-C1): dis kaynak/lisans kaydi gerekmez.
 """
@@ -151,6 +156,62 @@ def purchase() -> None:
     _write("purchase.wav", sig, peak=0.5)
 
 
+FOLEY_DIR = Path(__file__).resolve().parent / "sounds_src"
+
+
+def _foley(name: str, peak: float) -> bool:
+    """Kaynak klasorunde gercek kayit varsa onu normalize edip yazar."""
+    src = FOLEY_DIR / name
+    if not src.exists():
+        return False
+    with wave.open(str(src), "rb") as f:
+        assert f.getnchannels() == 1 and f.getframerate() == SAMPLE_RATE, src
+        data = np.frombuffer(f.readframes(f.getnframes()), dtype=np.int16)
+    sig = data.astype(np.float64) / 32768.0
+    sig[-64:] *= np.linspace(1, 0, 64)
+    _write(name.replace("_foley", ""), sig, peak=peak)
+    return True
+
+
+def coin_land() -> None:
+    """Para inisi (PBZ). Once GERCEK foley: tools/sounds_src/coin_land_foley.wav
+    (kling3_0 inis klibinin ses kanalindan kesildi, 380 ms, kendi uretimimiz).
+    Dosya yoksa asagidaki sentez yedegi calisir.
+
+    Sentez: metalik 'clink' — Can degil para — yuksek, ince,
+    cabuk sonen inharmonik parsiyeller (1 / 1.53 / 2.19 / 2.94 / 3.76) +
+    atakta 2 ms metal temasi gurultusu; 90 ms sonra daha sonuk ikinci temas
+    (para bir kez seker). Toplam 300 ms (<=400 ms), deterministik."""
+    if _foley("coin_land_foley.wav", peak=0.45):
+        return
+    dur = 0.30
+    n = int(SAMPLE_RATE * dur)
+    base = 2350.0
+    rng = np.random.default_rng(7)
+
+    def temas(m: int, guc: float) -> np.ndarray:
+        tt = np.linspace(0, m / SAMPLE_RATE, m, endpoint=False)
+        sig = np.zeros(m)
+        for oran, agirlik, sonum in (
+            (1.0, 1.0, 9.0),
+            (1.53, 0.6, 12.0),
+            (2.19, 0.45, 15.0),
+            (2.94, 0.3, 18.0),
+            (3.76, 0.18, 22.0),
+        ):
+            sig += agirlik * np.sin(2 * np.pi * base * oran * tt) * _envelope(
+                m, attack=0.001, decay=sonum
+            )
+        k = int(SAMPLE_RATE * 0.002)
+        sig[:k] += rng.uniform(-1, 1, k) * 0.5 * np.linspace(1, 0, k)
+        return sig * guc
+
+    sig = temas(n, 1.0)
+    delay = int(SAMPLE_RATE * 0.09)
+    sig[delay:] += temas(n - delay, 0.45)
+    _write("coin_land.wav", sig, peak=0.45)
+
+
 if __name__ == "__main__":
     message_send()
     message_receive()
@@ -159,4 +220,5 @@ if __name__ == "__main__":
     success()
     streak()
     purchase()
+    coin_land()
     print("Tum sesler uretildi.")

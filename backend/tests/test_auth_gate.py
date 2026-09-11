@@ -237,3 +237,121 @@ def test_dogrulama_olay_dongusunu_bloklamaz(monkeypatch):
 
     assert kullanici.uid == "u1"
     assert isaret["kosti"], "olay dongusu bloklandi"
+
+
+# ---------------------------------------------------------------------------
+# Surum aynasi (PBZ, K10): users/{uid}.appBuild
+# ---------------------------------------------------------------------------
+
+class _SahteAyna:
+    """Yalnizca users/{uid}.set(..., merge=True) yuzeyi; yazimlari sayar."""
+
+    def __init__(self):
+        self.yazimlar: list = []
+        self._uid = None
+
+    def collection(self, ad):
+        assert ad == "users"
+        return self
+
+    def document(self, uid):
+        self._uid = uid
+        return self
+
+    def set(self, veri, merge=False):
+        self.yazimlar.append((self._uid, veri, merge))
+
+
+@pytest.fixture()
+def ayna(monkeypatch):
+    """Dogrulanmis token yolu (DEV_MODE kapali) + sahte Firestore."""
+    from core import app_gate
+
+    depo = _SahteAyna()
+    monkeypatch.setattr(app_gate.firestore_client, "get_client", lambda: depo)
+    monkeypatch.setattr(auth, "_firebase_ready", True)
+    monkeypatch.setattr(auth, "_verify", lambda t: {"uid": "u1"})
+    monkeypatch.setattr(config, "DEV_MODE", False)
+    app_gate.reset_memo()
+    yield depo
+    app_gate.reset_memo()
+
+
+def _dogrula(**kw):
+    return asyncio.run(auth.get_current_user(
+        credentials=_SahteToken(), lang="tr", **kw))
+
+
+def test_ayna_uid_basina_bir_kez(ayna):
+    """Her kimlikli istek buradan geciyor; yazim uid basina gunde bir."""
+    for _ in range(5):
+        kullanici = _dogrula(x_app_build="35")
+        assert kullanici.uid == "u1"
+    assert ayna.yazimlar == [("u1", {"appBuild": 35}, True)]
+
+
+def test_ayna_surum_degisince_yeniden_yazar(ayna):
+    """Gun icinde guncelleyen kullanici eski surumde gorunmemeli."""
+    _dogrula(x_app_build="35")
+    _dogrula(x_app_build="36")
+    _dogrula(x_app_build="36")
+    assert [v["appBuild"] for _, v, _ in ayna.yazimlar] == [35, 36]
+
+
+def test_basliksiz_ve_bozuk_baslik_yazmaz(ayna):
+    """Baslik yoksa 'bilinmiyor' durustce bilinmiyor kalir (0 yazilmaz)."""
+    _dogrula(x_app_build=None)
+    _dogrula(x_app_build="abc")
+    _dogrula(x_app_build="0")
+    _dogrula(x_app_build="-2")
+    assert ayna.yazimlar == []
+
+
+def test_depends_disi_cagri_sentinel_yazmaz(ayna):
+    """api/admin.py collect ve bu dosyadaki testler `x_app_build` vermeden
+    cagiriyor; o yolda parametre None DEGIL, FastAPI'nin truthy Header
+    nesnesi olur. Dizgi sanilip yazilmamali, kimlik de dusmemeli."""
+    kullanici = _dogrula()
+    assert kullanici.uid == "u1"
+    assert ayna.yazimlar == []
+
+
+def test_ayna_dusunce_kimlik_dusmez(ayna, monkeypatch):
+    """Best-effort: Firestore patlasa da istek 401'e DONMEZ."""
+    from core import app_gate
+
+    class _Bozuk:
+        def collection(self, ad):
+            raise RuntimeError("Firestore dustu")
+
+    monkeypatch.setattr(app_gate.firestore_client, "get_client",
+                        lambda: _Bozuk())
+    kullanici = _dogrula(x_app_build="35")
+    assert kullanici.uid == "u1"
+
+
+def test_ayna_yazim_dusunce_memo_kurulmaz(ayna, monkeypatch):
+    """Gecici hata: bir sonraki istek yeniden dener (24 saat beklemez)."""
+    from core import app_gate
+
+    class _Bozuk:
+        def collection(self, ad):
+            raise RuntimeError("Firestore dustu")
+
+    monkeypatch.setattr(app_gate.firestore_client, "get_client",
+                        lambda: _Bozuk())
+    _dogrula(x_app_build="35")
+    monkeypatch.setattr(app_gate.firestore_client, "get_client", lambda: ayna)
+    _dogrula(x_app_build="35")
+    assert ayna.yazimlar == [("u1", {"appBuild": 35}, True)]
+
+
+def test_dev_mode_anonim_yolunda_ayna_yok(ayna, monkeypatch):
+    """DEV_MODE'un dev-user'i icin ayna yazilmaz — dogrulanmis token yolu
+    disinda yazim yok."""
+    monkeypatch.setattr(config, "DEV_MODE", True)
+    monkeypatch.setattr(auth, "_init_firebase", lambda: False)
+    kullanici = asyncio.run(auth.get_current_user(
+        credentials=None, lang="tr", x_app_build="35"))
+    assert kullanici.uid == "dev-user"
+    assert ayna.yazimlar == []

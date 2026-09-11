@@ -11,7 +11,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../features/shell/app_shell.dart' show shellTabProvider;
 import 'analytics.dart';
-import 'locale.dart';
 import 'providers.dart';
 
 /// Bildirim izni, cihaz bilgisi senkronu ve tercihler.
@@ -23,7 +22,9 @@ import 'providers.dart';
 /// 2. **Saat dilimi** — bildirimin kullanıcının sabahına denk gelmesi için.
 ///    Doğum şehri kullanılamaz; kişi doğduğu yerde yaşamıyor olabilir.
 /// 3. **Dil** — sunucu istek başlığı görmediği için `Accept-Language` burada
-///    işe yaramaz.
+///    işe yaramaz. Dilin yazıcısı BURASI DEĞİL: `core/language_sync.dart`
+///    (PBZ) — buradan da yazıldığı dönemde soğuk açılışta iki yazım
+///    yarışıyor ve profil dili gidip geliyordu.
 ///
 /// İzin isteme zamanı da bilinçli: uygulama ilk açılışta değil, kullanıcı
 /// onboarding'i bitirip ilk değeri gördükten sonra sorulur. Değer görmeden
@@ -91,11 +92,14 @@ Future<String?> _deviceTimezone() async {
   }
 }
 
-/// Sunucunun bildirim gönderebilmesi için gereken cihaz bilgisini yazar.
+/// Sunucunun bildirim gönderebilmesi için gereken cihaz bilgisini yazar:
+/// yalnız saat dilimi + FCM token.
 ///
 /// Her açılışta çağrılır: token yenilenebilir, kullanıcı seyahat edebilir,
-/// yaz saati değişebilir, dil değişebilir.
-Future<void> syncNotificationContext({String? languageCode}) async {
+/// yaz saati değişebilir. Dil BURADAN YAZILMAZ — tek yazıcısı
+/// `LanguageSync` (language_sync.dart); ikinci bir yazıcı yarışı geri
+/// getirir.
+Future<void> syncNotificationContext() async {
   final uid = FirebaseAuth.instance.currentUser?.uid;
   if (uid == null) return;
 
@@ -103,7 +107,6 @@ Future<void> syncNotificationContext({String? languageCode}) async {
 
   final tz = await _deviceTimezone();
   if (tz != null && tz.isNotEmpty) guncelleme['timezone'] = tz;
-  if (languageCode != null) guncelleme['language'] = languageCode;
 
   try {
     // Token yalnızca izin verilmişse alınabilir; izin yoksa sessizce geçilir
@@ -543,8 +546,11 @@ void _bildirimAcildi(RemoteMessage mesaj, ValueChanged<int> onSelectTab,
 /// Bildirim altyapısını oturuma bağlar.
 ///
 /// [billingIdentityProvider] ile aynı desen: izlenmezse hiç kurulmaz.
-/// Oturum açıldığında (ve dil değiştiğinde) cihaz bilgisi sunucuya yazılır,
+/// Oturum açıldığında cihaz bilgisi (saat dilimi + token) sunucuya yazılır,
 /// token yenilemesi dinlenir ve bildirime dokunma yönlendirmesi kurulur.
+/// Dil ayrı yolda: `languageSyncListenerProvider` (language_sync.dart) —
+/// eskiden burada hem auth hem `localeProvider` dinleyicisi dil yazıyor,
+/// soğuk açılışta ikisi yarışıyordu.
 final notificationSyncProvider = Provider<void>((ref) {
   var dinleyiciKuruldu = false;
 
@@ -552,11 +558,7 @@ final notificationSyncProvider = Provider<void>((ref) {
     final user = next.value;
     if (user == null) return;
 
-    // Dil profile yazılır: bildirim sunucuda üretildiği için istemcinin
-    // Accept-Language başlığı oraya ulaşmıyor.
-    final dil = ref.read(localeProvider)?.languageCode ??
-        WidgetsBinding.instance.platformDispatcher.locale.languageCode;
-    syncNotificationContext(languageCode: dil);
+    syncNotificationContext();
 
     if (dinleyiciKuruldu) return;
     dinleyiciKuruldu = true;
@@ -567,14 +569,4 @@ final notificationSyncProvider = Provider<void>((ref) {
       ref.read(pendingNotificationProvider.notifier).set(veri);
     });
   }, fireImmediately: true);
-
-  // Dil değişimini de yansıt: kullanıcı İngilizceye geçtiyse bildirimler de
-  // İngilizce gelmeli.
-  ref.listen<Locale?>(localeProvider, (previous, next) {
-    if (FirebaseAuth.instance.currentUser == null) return;
-    syncNotificationContext(
-      languageCode: next?.languageCode ??
-          WidgetsBinding.instance.platformDispatcher.locale.languageCode,
-    );
-  });
 });

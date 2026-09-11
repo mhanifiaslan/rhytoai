@@ -14,6 +14,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/api.dart';
 import 'core/app_config.dart';
 import 'core/deep_links.dart';
+import 'core/language_sync.dart';
 import 'core/locale.dart';
 import 'core/notifications.dart';
 import 'core/providers.dart';
@@ -101,22 +102,27 @@ class RythoApp extends ConsumerWidget {
     // şablon dilini BURADAN alır — hiç çağrılmadığı için Türk kullanıcıya
     // İngilizce "Reset your password" gidiyor ve spam sanılıyordu.
     // Çağrı ucuz ve idempotent; dil değişince kendiliğinden güncellenir.
+    // GEÇERLİ dil (tercih yoksa sistem dili) — `SystemLocaleObserver`
+    // sayesinde "Sistem" tercihinde telefon dili değişince de güncellenir.
     unawaited(FirebaseAuth.instance.setLanguageCode(
-        (locale ?? WidgetsBinding.instance.platformDispatcher.locale)
-            .languageCode));
+        ref.watch(effectiveLocaleProvider.select((l) => l.languageCode))));
 
     return SystemLocaleObserver(
-      child: MaterialApp(
-        title: 'Rytho',
-        debugShowCheckedModeBanner: false,
-        theme: buildRythoTheme(),
-        // Sunucu 402 döndüğünde paywall'ı hangi ekranda olursak olalım
-        // açabilmek için (bkz. core/api.dart).
-        navigatorKey: rythoNavigatorKey,
-        locale: locale,
-        supportedLocales: kSupportedLocales,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        home: const _Gate(),
+      // Ön plana dönüşte zorunlu güncelleme eşiği yeniden okunur
+      // (bkz. core/app_config.dart).
+      child: UpdateGateObserver(
+        child: MaterialApp(
+          title: 'Rytho',
+          debugShowCheckedModeBanner: false,
+          theme: buildRythoTheme(),
+          // Sunucu 402 döndüğünde paywall'ı hangi ekranda olursak olalım
+          // açabilmek için (bkz. core/api.dart).
+          navigatorKey: rythoNavigatorKey,
+          locale: locale,
+          supportedLocales: kSupportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          home: const _Gate(),
+        ),
       ),
     );
   }
@@ -135,14 +141,18 @@ class _Gate extends ConsumerWidget {
     // Bildirim altyapısı: FCM token, saat dilimi ve dil sunucuya yazılır,
     // bildirime dokunma yönlendirmesi kurulur (bkz. core/notifications.dart).
     ref.watch(notificationSyncProvider);
+    // Bildirim dili: profildeki `language` alanının tek yazıcısı, geçerli
+    // dili izler (bkz. core/language_sync.dart).
+    ref.watch(languageSyncListenerProvider);
     // Davet bağlantılarını yakalar (bkz. core/deep_links.dart).
     ref.watch(deepLinkProvider);
 
-    // Zorunlu güncelleme kapısı (F3): sunucu bu derlemeyi asgari sürümün
-    // altında ilan ettiyse giriş/onboarding/kabuğa hiç girilmez. Yanıt
-    // beklenmez ve hata kilitlemez (fail-open): yalnız kesin "true"
-    // cevabı kapıyı kapatır — splash gecikmesi de yaşanmaz.
-    if (ref.watch(updateRequiredProvider).value == true) {
+    // Zorunlu güncelleme kapısı (F3 → PBZ): sunucu bu derlemeyi asgari
+    // sürümün altında ilan ettiyse giriş/onboarding/kabuğa hiç girilmez.
+    // İki kaynak: açılış okuması (sunucuya ulaşılamazsa son bilinen eşik)
+    // ve açık oturumda herhangi bir isteğe dönen 426. Yanıt beklenmez —
+    // splash gecikmesi yok; yalnız kesin "kilitle" kapıyı kapatır.
+    if (ref.watch(mustForceUpdateProvider)) {
       return const ForceUpdateScreen();
     }
 

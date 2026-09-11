@@ -310,6 +310,16 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "tr": "Böyle bir heksagram yok (1-64 arası olmalı).",
         "en": "No such hexagram (it must be between 1 and 64).",
     },
+
+    # --- Zorunlu güncelleme (HTTP 426, core/app_gate.py) ---
+    # ≤34 istemciler 426'yı tanımaz ve `detail`i SnackBar'da olduğu gibi
+    # basar (K6); ham "update_required" kodu ayrı `code` alanında kalır.
+    "update_required": {
+        "tr": "Rytho'nun bu sürümü artık desteklenmiyor — Google Play'den "
+              "güncelle.",
+        "en": "This version of Rytho is no longer supported — update it "
+              "from Google Play.",
+    },
 }
 
 

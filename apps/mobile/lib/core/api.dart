@@ -7,6 +7,12 @@ import '../features/auth/device_conflict_screen.dart';
 import '../features/paywall/paywall_screen.dart';
 import '../features/paywall/token_store_screen.dart';
 import '../l10n/app_localizations.dart';
+import 'app_config.dart'
+    show
+        appBuildInterceptor,
+        appBuildProvider,
+        forceUpdateProvider,
+        updateRequiredInterceptor;
 import 'device_claim.dart' show resetDeviceTakeoverPrompt;
 import 'device_id.dart';
 import 'locale.dart';
@@ -107,6 +113,13 @@ final apiProvider = Provider<Dio>((ref) {
     connectTimeout: const Duration(seconds: 20),
     receiveTimeout: const Duration(seconds: 120),
   ));
+  // Zorunlu güncelleme (PBZ): her istek derleme numarasını taşır; sunucu
+  // eşiğin altındaysa 426 döner ve kapı O ANDA kapanır — açık oturum da.
+  // Eski kapı yalnız açılışta ve yalnız istemcide bakıyordu.
+  dio.interceptors
+      .add(appBuildInterceptor(() => ref.read(appBuildProvider.future)));
+  dio.interceptors.add(updateRequiredInterceptor(
+      () => ref.read(forceUpdateProvider.notifier).state = true));
   dio.interceptors.add(InterceptorsWrapper(
     onRequest: (options, handler) async {
       final user = FirebaseAuth.instance.currentUser;

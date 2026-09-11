@@ -15,11 +15,11 @@ vazgeçiyordu. O yüzden buradaki iki değişmez korunmalı:
 """
 import logging
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends, Header, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from starlette.concurrency import run_in_threadpool
 
-from core import config, gcp_credentials
+from core import app_gate, config, gcp_credentials
 from core.i18n import get_language
 from core.messages import text
 
@@ -112,12 +112,18 @@ def _verify(token: str) -> dict:
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(_bearer),
     lang: str = Depends(get_language),
+    x_app_build: str | None = Header(default=None),
 ) -> AuthUser:
     """Oturum doğrulama.
 
     Dil bağımlılığı yalnızca hata metni için: 401 yanıtının `detail` alanı
     istemcide doğrudan kullanıcıya gösteriliyor, o yüzden kullanıcının dilinde
     olmak zorunda.
+
+    `x_app_build` (PBZ, K10): sürüm aynası. Her kimlikli istek buradan
+    geçtiği için `users/{uid}.appBuild` en ucuz burada yazılır; panelin
+    "eşiğin altında kaç kişi" sorusunu ve eşik yükseltme doğrulamasını (K9)
+    besler. Kapının kendisi (426) middleware'de — burası yalnız ayna.
     """
     if credentials is not None and _init_firebase():
         try:
@@ -126,7 +132,18 @@ async def get_current_user(
             # bir işlevin içinde doğrudan çağrılırsa o ağ turu boyunca olay
             # döngüsü durur ve TÜM istekler bekler.
             decoded = await run_in_threadpool(_verify, credentials.credentials)
-            return AuthUser(uid=decoded["uid"], email=decoded.get("email"),
+            uid = decoded["uid"]
+            # Sentinel tuzağı: bu fonksiyon Depends zinciri DIŞINDAN da
+            # çağrılıyor (api/admin.py collect, testler) — o yolda
+            # `x_app_build` None DEĞİL, FastAPI'nin truthy `Header` nesnesi
+            # olur. Yalnız gerçek başlık dizgisi işlenir. Ayna best-effort
+            # ve uid başına günde bir; Firestore yazımı bloklar, havuzda.
+            if isinstance(x_app_build, str):
+                build = app_gate.parse_build(x_app_build)
+                if build and not app_gate.build_remembered(uid, build):
+                    await run_in_threadpool(app_gate.remember_build,
+                                            uid, build)
+            return AuthUser(uid=uid, email=decoded.get("email"),
                             phone=decoded.get("phone_number"),
                             admin=decoded.get("admin") is True)
         except Exception as exc:

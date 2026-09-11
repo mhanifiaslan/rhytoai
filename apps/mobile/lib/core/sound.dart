@@ -71,4 +71,8 @@ class SoundFx {
 
   /// Satın alma kutlaması (R12-C1) — cast ailesinden dolu çift vuruş.
   static Future<void> purchase() => _play('purchase.wav', 0.45);
+
+  /// Para inişi (PBZ) — kısa inharmonik metalik "clink"; her iniş klibi
+  /// başında, altı kez.
+  static Future<void> coinLand() => _play('coin_land.wav', 0.4);
 }

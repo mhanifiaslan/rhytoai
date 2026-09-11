@@ -2,7 +2,7 @@
 description: "RythoAI - Kisisel Kozmik Zeka Platformu"
 publish_to: 'none'
 # Play yÃ¼klemeleri: versionCode (+N) her yÃ¼klemede artmalÄ±, benzersizdir.
-version: 1.14.2+34
+version: 1.15.0+35
 
 environment:
   sdk: ^3.12.0
@@ -100,6 +100,10 @@ flutter:
 
   assets:
     - assets/sounds/
+    # Kehanet bekleme sahneleri (PBZ): animasyonlu WebP kare dizileri —
+    # widgets/frame_sequence.dart dart:ui codec'iyle surer, video eklentisi yok.
+    # Butce: klip <=1 MB, toplam <=5 MB (test/anim_assets_test.dart zorlar).
+    - assets/anim/
     # Åehir + Ã¼lke dizinleri (O1): GeoNames'ten build_gazetteer.py Ã¼retir.
     # CC-BY 4.0 â€” atÄ±f hukuk sayfasÄ±nda.
     - assets/data/

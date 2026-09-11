@@ -92,3 +92,11 @@ ads/*/shots/
 ads/*/fonts/
 ads/*/__pycache__/
 ads/*/*.mp4
+# Kehanet sahnesi hatti (ads/oracle-anim): ham still/klipler ve ffmpeg ciktilari
+ads/*/raw/
+ads/*/stills/
+ads/*/out/
+ads/*/*.png
+ads/*/*.wav
+ads/*/*.webp
+ads/*/mock/*.png

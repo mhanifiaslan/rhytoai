@@ -585,6 +585,18 @@ def insight_bundle(ham: dict[str, Any], lang: str,
     return {"insights": yorumlar, "checkin_question": soru}
 
 
+def bundle_key(fp: str, lang: str) -> str:
+    """Yorum paketinin önbellek anahtarı — uç, sabah ve akşam yolları AYNI
+    kaydı bu anahtarla bulur.
+
+    Tek yerde kurulur (PBZ-turu): eskiden `notification_service` yeniden
+    üretim yolunda elle ikinci kez kuruluyordu; biçim değişse iki yol
+    sessizce ayrışır, sabah yazılan paketi akşam bulamazdı. Dil değişen
+    günün akşamı "diğer dilde paket var mı" araması da buradan geçer.
+    """
+    return f"signals-bundle-{fp}-{lang}"
+
+
 def cached_insight_bundle(ham: dict[str, Any], lang: str,
                           generate_if_missing: bool = True
                           ) -> dict[str, Any] | None:
@@ -601,7 +613,7 @@ def cached_insight_bundle(ham: dict[str, Any], lang: str,
     from core import cache
     if not ham.get("signals"):
         return None
-    anahtar = f"signals-bundle-{signals_fingerprint(ham)}-{lang}"
+    anahtar = bundle_key(signals_fingerprint(ham), lang)
     paket = cache.get(anahtar)
     if paket is None and generate_if_missing:
         paket = insight_bundle(ham, lang)

@@ -27,6 +27,7 @@ from api.notify import router as notify_router
 from api.people import router as people_router
 from api.reports import router as reports_router
 from api.sky import router as sky_router
+from core.app_gate import AppGateMiddleware
 from core.ratelimit import RateLimitMiddleware
 
 logging.basicConfig(level=logging.INFO)
@@ -70,6 +71,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Zorunlu güncelleme kapısı (PBZ): `/api/v1/` altında X-App-Build < eşik
+# → 426. SIRA BİLİNÇLİ: Starlette'te son eklenen ilk koşar
+# (`applications.py` insert(0, …)); CORS'tan SONRA, RateLimit'ten ÖNCE
+# eklenince istek `security_headers → RateLimit → AppGate → CORS → router`
+# olur — 426'lar kotaya tabi kalır, preflight (OPTIONS geçirilir) en
+# içteki CORS'a ulaşır. Panel aynı origin'den Hosting rewrite ile geliyor
+# ve tüm yolları muaf; 426'nın CORS başlığı taşımaması sorun değil.
+app.add_middleware(AppGateMiddleware)
 
 # İstek kotası: LLM uçları 10/dk, diğerleri 60/dk (bkz. core/ratelimit.py)
 app.add_middleware(RateLimitMiddleware)

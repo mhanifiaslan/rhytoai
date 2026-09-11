@@ -20,6 +20,7 @@ Calistirma:  .venv\\Scripts\\python.exe -m pytest tests/test_language_isolation.
 """
 from __future__ import annotations
 
+import datetime as dt
 import re
 
 import pytest
@@ -443,6 +444,9 @@ PUSH_SABLONLARI = [
     "PUSH_MIDDAY_TITLE", "PUSH_MIDDAY_PAIR_TITLE",
     "PUSH_INVITE_TITLE", "PUSH_INVITE_BODY",
     "PUSH_INVITE_ACCEPTED_TITLE", "PUSH_INVITE_ACCEPTED_BODY",
+    # PBZ-turu: "dünkü cümleyi yineleme" bloğu prompt'a giriyor; tek dilde
+    # kalsaydı Ingilizce prompt Turkce talimat tasirdi.
+    "SIGNALS_AVOID_BLOCK",
 ]
 
 
@@ -490,6 +494,63 @@ def test_ingilizce_sablon_bildirimleri_turkce_icermez():
 
     baslik, govde = ns.friend_push("Ada", "🔥", "Keep the streak", "en")
     assert not turkce_kalinti(baslik + govde)
+
+
+def test_turkce_avoid_ingilizce_prompta_girmez(monkeypatch, temiz_onbellek):
+    """PBZ-turu: dil degisen sabah dunku TURKCE govde `avoid=` ile Ingilizce
+    prompta giriyordu (prompts/en.py'nin kendi uyarisi). Artik dunku hafiza
+    yalniz ayni dilde okunur. Gemini'ye giden HER prompt yakalanir ve
+    TURKCE_HARFLER ile taranir.
+
+    Hash esitligi ZORLANIR (dunku kayit bugunku Ingilizce govdenin hash'ini
+    tasir): iki dilde bayt-ayni govde gercekte cikmaz; eski kod yolu bu
+    girdide avoid'i kesin enjekte ederdi — test kapinin hash'e degil DILE
+    baktigini sabitler."""
+    from services import notification_service as ns
+    from services import signal_service
+
+    ham = {"generated_for": "2026-06-15", "signals": [
+        {"transit": "Saturn", "natal": "Moon", "aspect": "Square",
+         "orb": 0.3, "theme": "inner", "active": True,
+         "exact_on": "2026-06-18", "days_to_exact": 3,
+         "movement": "applying"}]}
+    bugun_en = "Saturn asks for a quiet review of what you carry."
+    dun_tr = "Dünkü cümle: iç dünyanda kapanış var, şükret."
+    promptlar: list[str] = []
+
+    def sahte(prompt, lang=None, **k):
+        promptlar.append(prompt)
+        return f"1. {bugun_en}\nQUESTION: -"
+
+    monkeypatch.setattr(signal_service.gemini_service, "generate", sahte)
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+
+    onceki = {"day": "2026-06-14", "body": dun_tr,
+              "bodyHash": ns._body_hash(bugun_en), "lang": "tr",
+              "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
+              "theme": "inner"}
+    sonuc = ns.signal_push({"uid": "u-avoid-en", "language": "en"}, "en",
+                           today=dt.date(2026, 6, 15), onceki=onceki)
+    assert sonuc is not None and sonuc[1] == bugun_en
+    assert promptlar, "Ingilizce sinyal prompt'u hic uretilmedi"
+    for prompt in promptlar:
+        assert not turkce_kalinti(prompt), \
+            f"Ingilizce sinyal prompt'unda Turkce: {turkce_kalinti(prompt)}"
+
+    # Karsi kontrol: ayni dilde (tr etiketi + tr kosusu) blok GERCEKTEN
+    # girer — yakalama duzenegi calisiyor, test bosuna gecmiyor.
+    promptlar.clear()
+    dunku_tr = "Aynı cümle."
+    monkeypatch.setattr(signal_service.gemini_service, "generate",
+                        lambda prompt, lang=None, **k: (
+                            promptlar.append(prompt)
+                            or f"1. {dunku_tr}\nSORU: -"))
+    onceki_tr = {**onceki, "body": dunku_tr,
+                 "bodyHash": ns._body_hash(dunku_tr), "lang": "tr"}
+    ns.signal_push({"uid": "u-avoid-tr", "language": "tr"}, "tr",
+                   today=dt.date(2026, 6, 15), onceki=onceki_tr)
+    assert len(promptlar) == 2 and dunku_tr in promptlar[-1]
 
 
 def test_tepki_etiketleri_dile_gore_farkli():

@@ -60,6 +60,22 @@ service cloud.firestore {
             && request.resource.data.termsConsent == resource.data.termsConsent);
     }
 
+    // Sürüm aynası (PBZ, K10) — faceConsent ile aynı model. `appBuild`
+    // alanını SUNUCU yazar (core/auth.get_current_user, Admin SDK): her
+    // kimlikli istekteki X-App-Build başlığı uid başına günde bir kez
+    // buraya düşer. Alan listede (merge yazımlar düşmesin — platform
+    // vakasının dersi) ama DEĞİŞMEZ: istemci kendi sürüm numarasını
+    // uyduramaz. Uydurabilseydi eşik doğrulaması (K9: "eşiğin üstünde en
+    // az bir kullanıcı görülmüş olmalı") ve panelin "eşiğin altında N"
+    // sayımı istemcinin insafına kalırdı; sahte 999 tek başına 999'luk
+    // bir eşiğin yazılmasına kapı açardı.
+    function appBuildDegismedi() {
+      return !('appBuild' in request.resource.data)
+        || (resource != null
+            && 'appBuild' in resource.data
+            && request.resource.data.appBuild == resource.data.appBuild);
+    }
+
     // ---------- Kullanıcı profili (HASSAS — yalnızca sahibi) ----------
     // Doğum tarihi + saati + yeri hassas bir üçlüdür (kimlik doğrulama
     // sorularında kullanılır). Firestore kuralları okumada alan filtreleyemediği
@@ -104,13 +120,17 @@ service cloud.firestore {
           // faceConsent/residenceCity vakalarının ÜÇÜNCÜSÜ (KT1'de canlıda
           // yaşandı ve kapatıldı). Ders: sunucu yazımlı alan da buraya girer.
           'platform',
+          // Sürüm aynası (PBZ): SUNUCU yazar (X-App-Build → appBuild),
+          // platform gibi listede, faceConsent gibi DEĞİŞMEZ (yukarıya bak).
+          'appBuild',
           // Biyometrik işleme rızası — LİSTEDE ama DEĞİŞMEZ (aşağıya bak).
           'faceConsent',
           // Şartlar/gizlilik kabulü (O3) — LİSTEDE ama DEĞİŞMEZ.
           'termsConsent'
         ])
         && faceConsentDegismedi()
-        && termsConsentDegismedi();
+        && termsConsentDegismedi()
+        && appBuildDegismedi();
       allow delete: if isOwner(uid);
 
       // ---------- Sohbet arşivi (Revize R4) ----------

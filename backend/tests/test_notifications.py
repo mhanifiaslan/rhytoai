@@ -19,7 +19,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from core import cache, config
-from services import chat_history
+from services import chat_history, prompts
 from services import notification_service as ns
 
 try:
@@ -429,10 +429,11 @@ def test_midday_sabahin_kopyasini_gondermez(monkeypatch):
             "insights": ["Kariyer cümlesi.", sabah_govde],
             "checkin_question": None,
         })
+    # PBZ-turu: hafıza dil etiketi taşır; koruma yalnız aynı dilde çalışır.
     monkeypatch.setattr(
         ns, "last_daily_sent",
         lambda uid: {"day": "2026-06-15", "body": sabah_govde,
-                     "bodyHash": ns._body_hash(sabah_govde),
+                     "bodyHash": ns._body_hash(sabah_govde), "lang": "tr",
                      "focusFp": "Saturn-Square-Moon", "focusIdx": 1,
                      "theme": "inner"})
 
@@ -464,7 +465,7 @@ def test_midday_tum_adaylar_kopyaysa_atlanir(monkeypatch):
     monkeypatch.setattr(
         ns, "last_daily_sent",
         lambda uid: {"day": "2026-06-15", "body": sabah_govde,
-                     "bodyHash": ns._body_hash(sabah_govde),
+                     "bodyHash": ns._body_hash(sabah_govde), "lang": "tr",
                      "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
                      "theme": "inner"})
     monkeypatch.setattr(circle_context, "list_accepted_friend_uids",
@@ -539,8 +540,9 @@ def test_signal_push_dunla_ayni_govdeyi_yeniden_uretir(monkeypatch):
 
     monkeypatch.setattr(signal_service, "insight_bundle", sahte_uretim)
 
+    # PBZ-turu: koruma yalnız dünkü gövde bugünkü dilde gittiyse çalışır.
     onceki = {"day": "2026-06-14", "body": dunku,
-              "bodyHash": ns._body_hash(dunku),
+              "bodyHash": ns._body_hash(dunku), "lang": "tr",
               "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
               "theme": "inner"}
     sonuc = ns.signal_push(profil(), "tr", today=dt.date(2026, 6, 15),
@@ -562,6 +564,380 @@ def test_signal_push_dunla_ayni_govdeyi_yeniden_uretir(monkeypatch):
     assert sonuc is not None
     _, govde, _iz, _idx, _extra = sonuc
     assert "3 gün sonra" in govde  # gün-farkındalıklı teknik satır
+
+
+# --- PBZ-turu: bildirim dili aktif dili izler ---
+
+class _SahteAnlik:
+    """Firestore DocumentSnapshot taklidi — yalnız `exists` + `to_dict`."""
+
+    exists = True
+
+    def __init__(self, veri):
+        self._veri = veri
+
+    def to_dict(self):
+        return self._veri
+
+
+class _SahteDoc:
+    def __init__(self, veri):
+        self._veri = veri
+
+    def get(self):
+        return _SahteAnlik(self._veri)
+
+
+def test_daily_sent_fields_dil_etiketi_tasir(monkeypatch):
+    """PBZ-turu: sabah hafızası gövdenin DİLİNİ de taşır ve `last_daily_sent`
+    onu `lang` olarak geri okur. Etiketsiz eski kayıt "" döner: hash kıyası
+    yine yapılır (deploy günü koruma kapanmaz), yalnız gövdesi `avoid=`
+    ile prompta girmez — bkz. `ns._hash_kiyaslanir`."""
+    sinyal = {"transit": "Saturn", "aspect": "Square", "natal": "Moon",
+              "theme": "inner"}
+    alanlar = ns.daily_sent_fields("2026-06-15", "Quiet review.", 1,
+                                   sinyal, "en")
+    assert alanlar["dailyBodyLang"] == "en"
+    assert alanlar["dailyBodyHash"] == ns._body_hash("Quiet review.")
+
+    # Yazılan alanlar okununca dil geri gelir (tam tur).
+    monkeypatch.setattr(
+        ns, "_notification_doc",
+        lambda uid: _SahteDoc({**alanlar, "dailyLastSent": "2026-06-15"}))
+    hafiza = ns.last_daily_sent("u1")
+    assert hafiza is not None and hafiza["lang"] == "en"
+    assert hafiza["day"] == "2026-06-15"
+
+    # Etiketsiz eski kayıt: dil boş ("").
+    eski = {k: v for k, v in alanlar.items() if k != "dailyBodyLang"}
+    monkeypatch.setattr(ns, "_notification_doc", lambda uid: _SahteDoc(eski))
+    assert ns.last_daily_sent("u1")["lang"] == ""
+
+    # Kıyas kuralı: aynı dil ya da etiketsiz → evet; başka dil → hayır.
+    assert ns._hash_kiyaslanir({"lang": "en"}, "en")
+    assert ns._hash_kiyaslanir({"lang": ""}, "en")
+    assert ns._hash_kiyaslanir({}, "en")
+    assert not ns._hash_kiyaslanir({"lang": "tr"}, "en")
+
+
+def _tek_sinyal_ham():
+    return {"generated_for": "2026-06-15", "signals": [
+        {"transit": "Saturn", "natal": "Moon", "aspect": "Square",
+         "orb": 0.3, "theme": "inner", "active": True,
+         "exact_on": "2026-06-18", "days_to_exact": 3,
+         "movement": "applying"}]}
+
+
+def test_signal_push_dil_degisince_avoid_enjekte_edilmez(monkeypatch):
+    """PBZ-turu kök kusuru: dün TÜRKÇE giden gövde, bugün İngilizce koşuda
+    `avoid=` ile İngilizce promptun içine giriyordu. Artık dünkü hafıza
+    yalnız AYNI dilde okunur: hash karşılaştırılmaz, yeniden üretim yok,
+    bugünkü İngilizce gövde olduğu gibi gider.
+
+    Hash eşitliği ZORLANIR (dünkü kayıt bugünkü gövdenin hash'ini taşır):
+    gerçek hayatta iki dilde bayt-aynı gövde çıkmaz; test kapının hash'e
+    değil DİLE baktığını sabitler — eski kod bu girdide avoid'i enjekte
+    ederdi."""
+    from services import signal_service
+
+    ham = _tek_sinyal_ham()
+    bugun_en = "A quiet review of what you carry."
+    dun_tr = "Dünkü Türkçe cümle."
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+
+    def paket(h, lang, generate_if_missing=True):
+        # Dil ATILMAZ: yanlış dilde paket istenirse görünür olmalı.
+        assert lang == "en", f"paket yanlis dilde istendi: {lang}"
+        return {"insights": [bugun_en], "checkin_question": None}
+
+    monkeypatch.setattr(signal_service, "cached_insight_bundle", paket)
+
+    cagrilar: list = []
+
+    def sahte_uretim(h, lang, avoid=None):
+        cagrilar.append(avoid)
+        return {"insights": ["Regenerated line."], "checkin_question": None}
+
+    monkeypatch.setattr(signal_service, "insight_bundle", sahte_uretim)
+
+    onceki = {"day": "2026-06-14", "body": dun_tr,
+              "bodyHash": ns._body_hash(bugun_en), "lang": "tr",
+              "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
+              "theme": "inner"}
+    sonuc = ns.signal_push(profil(language="en"), "en",
+                           today=dt.date(2026, 6, 15), onceki=onceki)
+    assert sonuc is not None
+    _, govde, _iz, _idx, extra = sonuc
+    assert govde == bugun_en          # bugünkü gövde, dokunulmadan
+    assert cagrilar == []             # avoid'li yeniden üretim YOK
+    assert extra["dailyBodyLang"] == "en"
+
+
+def test_signal_push_ayni_dilde_avoid_verilir(monkeypatch):
+    """Karşı kontrol: dünkü kayıt bugünkü dildeyse OT1.3 koruması aynen —
+    dünkü cümle negatif örnek olarak TEK yeniden üretime girer."""
+    from services import signal_service
+
+    ham = _tek_sinyal_ham()
+    dunku = "Aynı cümle."
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+
+    def paket(h, lang, generate_if_missing=True):
+        assert lang == "tr", f"paket yanlis dilde istendi: {lang}"
+        return {"insights": [dunku], "checkin_question": None}
+
+    monkeypatch.setattr(signal_service, "cached_insight_bundle", paket)
+
+    cagrilar: list = []
+
+    def sahte_uretim(h, lang, avoid=None):
+        cagrilar.append((lang, avoid))
+        return {"insights": ["Yepyeni bir açı."], "checkin_question": None}
+
+    monkeypatch.setattr(signal_service, "insight_bundle", sahte_uretim)
+
+    onceki = {"day": "2026-06-14", "body": dunku,
+              "bodyHash": ns._body_hash(dunku), "lang": "tr",
+              "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
+              "theme": "inner"}
+    sonuc = ns.signal_push(profil(), "tr", today=dt.date(2026, 6, 15),
+                           onceki=onceki)
+    assert sonuc is not None
+    _, govde, _iz, _idx, extra = sonuc
+    assert govde == "Yepyeni bir açı."
+    assert cagrilar == [("tr", dunku)]   # tam 1 yeniden üretim, aynı dilde
+    assert extra["dailyBodyLang"] == "tr"
+
+
+def test_signal_push_eski_kayit_dilsiz_hash_kiyaslanir_avoid_verilmez(
+        monkeypatch):
+    """Deploy günü açığı: bu deploy'dan ÖNCE yazılmış dünkü kayıt dil
+    etiketi taşımaz (`last_daily_sent` → `lang` ""). "Hiçbir dille
+    eşleşmez" sayılsaydı o gün eski kayıtlı HERKES için dünle-aynılık
+    koruması sessizce kapanır, dünkü cümlenin kopyası giderdi. Artık
+    etiketsiz kayıt HASH kıyasına girer (aynı gövde olduğu gibi gitmez,
+    yeniden üretilir); ama gövdesi hangi dilde bilinmediğinden `avoid=`
+    ile prompta SOKULMAZ — yeniden üretim negatif örneksiz. Başka dil
+    etiketi taşıyan kayıt hâlâ kıyaslanmaz
+    (`test_signal_push_dil_degisince_avoid_enjekte_edilmez`)."""
+    from services import signal_service
+
+    ham = _tek_sinyal_ham()
+    dunku = "Aynı cümle."
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    monkeypatch.setattr(
+        signal_service, "cached_insight_bundle",
+        lambda h, lang, generate_if_missing=True: {
+            "insights": [dunku], "checkin_question": None})
+
+    cagrilar: list = []
+
+    def sahte_uretim(h, lang, avoid=None):
+        cagrilar.append((lang, avoid))
+        return {"insights": ["Yepyeni bir açı."], "checkin_question": None}
+
+    monkeypatch.setattr(signal_service, "insight_bundle", sahte_uretim)
+
+    etiketsiz = {"day": "2026-06-14", "body": dunku,
+                 "bodyHash": ns._body_hash(dunku),
+                 "lang": "",     # deploy öncesi kayıt: etiket yok
+                 "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
+                 "theme": "inner"}
+    sonuc = ns.signal_push(profil(), "tr", today=dt.date(2026, 6, 15),
+                           onceki=etiketsiz)
+    assert sonuc is not None
+    _, govde, _iz, _idx, _extra = sonuc
+    assert govde == "Yepyeni bir açı."       # dünkü kopya gitmedi
+    assert cagrilar == [("tr", "")]          # 1 yeniden üretim, avoid BOŞ
+
+
+def test_midday_sabah_hash_yalniz_ayni_dilde(monkeypatch):
+    """Öğle kopya koruması da dil etiketine bakar: sabah gövdesi BAŞKA
+    dilde gittiyse karşılaştırılacak ortak metin yok, 'sabahla-ayni'
+    üretilmez. Hash eşitliği burada da ZORLANMIŞTIR (iki dilde bayt-aynı
+    gövde gerçekte çıkmaz); test kapının dile baktığını sabitler."""
+    from services import signal_service
+
+    ham = {"generated_for": "2026-06-15", "signals": [
+        {"transit": "Saturn", "natal": "Moon", "aspect": "Square",
+         "orb": 0.3, "theme": "inner", "active": True,
+         "exact_on": "2026-06-15", "days_to_exact": 0}]}
+    govde_tr = "Bugün iç dünyanda kapanış var."
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+
+    def paket(h, lang, generate_if_missing=True):
+        assert lang == "tr", f"paket yanlis dilde istendi: {lang}"
+        return {"insights": [govde_tr], "checkin_question": None}
+
+    monkeypatch.setattr(signal_service, "cached_insight_bundle", paket)
+    # Sabah İngilizce gitti; (zorlanmış) hash bugünkü Türkçe gövdeyle aynı.
+    monkeypatch.setattr(
+        ns, "last_daily_sent",
+        lambda uid: {"day": "2026-06-15", "body": "A morning line.",
+                     "bodyHash": ns._body_hash(govde_tr), "lang": "en",
+                     "focusFp": "Saturn-Square-Moon", "focusIdx": 0,
+                     "theme": "inner"})
+
+    sonuc, gerekce = ns.midday_push(profil(), "tr",
+                                    today=dt.date(2026, 6, 15))
+    assert gerekce == "gonderilecek" and sonuc is not None
+    assert sonuc[1] == govde_tr
+
+
+def test_midday_eski_kayit_dilsiz_yine_sabahla_ayni(monkeypatch):
+    """Deploy günü açığı: bu deploy'dan ÖNCE yazılmış sabah kaydı
+    `dailyBodyLang` taşımaz, `last_daily_sent` dil "" döner. Etiketsiz
+    kayıt "hiçbir dille eşleşmez" sayılsaydı o gün eski kayıtlı HERKES
+    için "sabahın kopyası asla" koruması sessizce kapanırdı. Artık
+    etiketsiz kayıt hash kıyasına girer: sabah gövdesi atlanır, paketten
+    farklı sinyal döner. Gerçek `last_daily_sent`; yalnız doküman sahte."""
+    from services import signal_service
+
+    ham = _midday_ham(gunler=0)
+    sabah_govde = "Bugün iç dünyanda kapanış var."
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    monkeypatch.setattr(
+        signal_service, "cached_insight_bundle",
+        lambda h, lang, generate_if_missing=True: {
+            "insights": ["Kariyer cümlesi.", sabah_govde],
+            "checkin_question": None})
+    # Eski kayıt: bugünün alanları, dil alanı YOK.
+    eski = {k: v for k, v in ns.daily_sent_fields(
+        "2026-06-15", sabah_govde, 1, ham["signals"][1], "tr").items()
+        if k != "dailyBodyLang"}
+    monkeypatch.setattr(ns, "_notification_doc", lambda uid: _SahteDoc(eski))
+    assert ns.last_daily_sent("u1")["lang"] == ""    # önkoşul: etiketsiz
+
+    sonuc, gerekce = ns.midday_push(profil(), "tr",
+                                    today=dt.date(2026, 6, 15))
+    assert sonuc is not None and gerekce == "gonderilecek"
+    _, govde, veri = sonuc
+    assert govde != sabah_govde            # değişmez: kopya yasak
+    assert govde == "Kariyer cümlesi." and veri["idx"] == "0"
+
+
+def test_checkin_dil_degisince_bir_kez_uretir(monkeypatch):
+    """PBZ-turu: sabah paketi TÜRKÇE üretildi, akşama dil İngilizce oldu.
+    Eskiden `generate_if_missing=False` paketi yalnız yeni dilde arıyor ve
+    check-in 'soru-yok' ile sessizce düşüyordu. Artık diğer dilde bugünün
+    paketi VARSA (sabah push gitti demek) yeni dilde BİR KEZ üretilir;
+    ikinci koşu önbellekten okur, LLM'e dönmez. Gerçek önbellek + gerçek
+    `cached_insight_bundle`; yalnız LLM sahte."""
+    from services import signal_service
+
+    ham = _midday_ham(gunler=0)     # odak: bugün kesinleşen 2. sinyal
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    iz = signal_service.signals_fingerprint(ham)
+    # O sabah kullanıcıya TÜRKÇE push gitmişti.
+    cache.set(signal_service.bundle_key(iz, "tr"),
+              {"insights": ["Kariyer cümlesi.", "İç dünya cümlesi."],
+               "checkin_question": "Bugün içinde ne kapandı?"},
+              ttl_seconds=3600)
+
+    sayac = {"n": 0}
+    diller: list = []
+
+    def sahte(prompt, lang=None, **_):
+        sayac["n"] += 1
+        diller.append(lang)
+        return ("1. Career opens a door today.\n"
+                "2. Something inside is closing today.\n"
+                "QUESTION: What closed inside you today?")
+
+    monkeypatch.setattr(signal_service.gemini_service, "generate", sahte)
+
+    sonuc = ns.checkin_push(profil(language="en"), "en",
+                            today=dt.date(2026, 6, 15))
+    assert sonuc is not None and sonuc.soru is True
+    assert sonuc.govde == "What closed inside you today?"
+    assert sonuc.baslik == prompts.get("en").PUSH_CHECKIN_TITLE
+    assert sayac["n"] == 1 and diller == ["en"]
+
+    # İkinci koşu (yeniden deneme): önbellekten, üretim YOK.
+    tekrar = ns.checkin_push(profil(language="en"), "en",
+                             today=dt.date(2026, 6, 15))
+    assert tekrar == sonuc
+    assert sayac["n"] == 1
+
+    # Türkçe koşu sabahki paketi okur; o da üretmez.
+    tr = ns.checkin_push(profil(), "tr", today=dt.date(2026, 6, 15))
+    assert tr is not None and tr.govde == "Bugün içinde ne kapandı?"
+    assert sayac["n"] == 1
+
+
+def test_checkin_paket_hic_yoksa_uretmez(monkeypatch):
+    """Hiçbir dilde paket yoksa akşam yolu ESKİSİ gibi: LLM yakmaz, None
+    ('soru-yok'). Dil-değişimi istisnası yalnız o sabah gerçekten push
+    gitmiş kullanıcı içindir; sabah paketi olmayan herkese akşam üretim
+    yapmak birim ekonomi kuralını bozardı."""
+    from services import signal_service
+
+    ham = _midday_ham(gunler=0)
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    sayac = {"llm": 0, "paket": 0}
+
+    def sahte_llm(prompt, lang=None, **_):
+        sayac["llm"] += 1
+        return "1. One.\n2. Two.\nQUESTION: Why?"
+
+    def sahte_paket(h, lang, avoid=None):
+        sayac["paket"] += 1
+        return {"insights": ["One.", "Two."], "checkin_question": "Why?"}
+
+    # Sayaçla ölçülür — `raise` olsaydı checkin_push'un try/except'i
+    # yutar, None döner ve test boşuna geçerdi.
+    monkeypatch.setattr(signal_service.gemini_service, "generate", sahte_llm)
+    monkeypatch.setattr(signal_service, "insight_bundle", sahte_paket)
+
+    assert ns.checkin_push(profil(language="en"), "en",
+                           today=dt.date(2026, 6, 15)) is None
+    assert ns.checkin_push(profil(), "tr",
+                           today=dt.date(2026, 6, 15)) is None
+    assert sayac == {"llm": 0, "paket": 0}
+
+
+def test_checkin_dil_degisince_soru_yoksa_uretmez(monkeypatch):
+    """Dil-değişimi istisnasının ölçütü SORU, yorum değil: diğer dildeki
+    sabah paketi sorusuzsa (önemli sinyal yok — `significant_signal`
+    determinist ve dilden bağımsız) yeni dilde üretilecek paket de sorusuz
+    çıkar; akşam LLM yakıp sonucu kullanamazdı. None, üretim yok, yeni
+    dilde paket yazılmaz."""
+    from services import signal_service
+
+    ham = _midday_ham(gunler=5)   # kesinleşme uzak, 1. sinyal orb 2.1
+    assert signal_service.significant_signal(ham) is None
+    monkeypatch.setattr(signal_service, "cached_signals",
+                        lambda p, today=None: ham)
+    iz = signal_service.signals_fingerprint(ham)
+    # O sabah TÜRKÇE push gitti; paket yorumlu ama SORUSUZ.
+    cache.set(signal_service.bundle_key(iz, "tr"),
+              {"insights": ["Kariyer cümlesi.", "İç dünya cümlesi."],
+               "checkin_question": None},
+              ttl_seconds=3600)
+    sayac = {"llm": 0, "paket": 0}
+
+    def sahte_llm(prompt, lang=None, **_):
+        sayac["llm"] += 1
+        return "1. One.\n2. Two.\nQUESTION: Why?"
+
+    def sahte_paket(h, lang, avoid=None):
+        sayac["paket"] += 1
+        return {"insights": ["One.", "Two."], "checkin_question": None}
+
+    monkeypatch.setattr(signal_service.gemini_service, "generate", sahte_llm)
+    monkeypatch.setattr(signal_service, "insight_bundle", sahte_paket)
+
+    assert ns.checkin_push(profil(language="en"), "en",
+                           today=dt.date(2026, 6, 15)) is None
+    assert sayac == {"llm": 0, "paket": 0}
+    assert cache.get(signal_service.bundle_key(iz, "en")) is None
 
 
 def test_teknik_satir_geri_sayimli():

@@ -460,6 +460,14 @@
   "iChingQuestionRequired": "Önce kalbindeki soruyu yaz.",
   "iChingQuestionInvalid": "Kâhin bu metinde yorumlayacağı bir soru bulamadı — niyetini kendi yaşamınla ilgili bir cümleyle yaz.",
   "iChingCoinsInAir": "Paralar havada...",
+  "iChingCoinsLanding": "Paralar düşüyor… {n}/6",
+  "@iChingCoinsLanding": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "iChingHexagramLabel": "HEKSAGRAM {number}",
   "@iChingHexagramLabel": {
     "placeholders": {
@@ -877,6 +885,7 @@
   "forceUpdateTitle": "Yeni sürüm gerekli",
   "forceUpdateBody": "Rytho'nun bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — yıldızlar bekliyor.",
   "forceUpdateAction": "Google Play'de güncelle",
+  "forceUpdateStoreFailed": "Mağaza açılamadı — Google Play'de \"Rytho\" diye arat.",
   "signInMethodsRow": "Giriş yöntemleri",
   "signInMethodsTitle": "Giriş yöntemleri",
   "signInMethodsBody": "Hesabına birden fazla giriş yolu bağlayabilirsin: hangi yöntemle girersen gir aynı hesaba ulaşırsın.",

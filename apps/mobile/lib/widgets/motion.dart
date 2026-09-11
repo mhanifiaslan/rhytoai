@@ -73,6 +73,7 @@ class StagedWaiting extends StatefulWidget {
     required this.stages,
     this.interval = const Duration(milliseconds: 2600),
     this.spinnerSize = 44,
+    this.visual,
   });
 
   /// Sırayla gösterilecek aşama metinleri (en az 1).
@@ -82,6 +83,11 @@ class StagedWaiting extends StatefulWidget {
   final Duration interval;
 
   final double spinnerSize;
+
+  /// Usturlap yerine geçen sahne (PBZ): BaZi luopan kare dizisi gibi.
+  /// Düz alan, varsayılan yok — kurucu `const` kalsın; null ise
+  /// `AstrolabeSpinner(size: spinnerSize)`.
+  final Widget? visual;
 
   @override
   State<StagedWaiting> createState() => _StagedWaitingState();
@@ -116,7 +122,7 @@ class _StagedWaitingState extends State<StagedWaiting> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AstrolabeSpinner(size: widget.spinnerSize),
+          widget.visual ?? AstrolabeSpinner(size: widget.spinnerSize),
           const SizedBox(height: 20),
           AnimatedSwitcher(
             duration: RythoMotion.slow,

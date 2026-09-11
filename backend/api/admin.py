@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
-from core import config, firestore as firestore_client
+from core import app_gate, config, firestore as firestore_client
 from core import wallet
 from core.auth import AuthUser, get_current_user, require_admin
 from core.i18n import get_language
@@ -337,6 +337,68 @@ def audit(limit: int = Query(default=50, ge=1, le=200),
         return {"status": "ok", "entries": admin_service.audit_list(limit)}
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+# ---------------------------------------------------------------------------
+# Zorunlu güncelleme eşiği (PBZ) — sıcak anahtar `config/app.minBuild`
+# ---------------------------------------------------------------------------
+
+class MinBuildRequest(BaseModel):
+    """Eşik: 0 = kapı kapalı; gerekçe ZORUNLU (denetim izi)."""
+    min_build: int = Field(ge=0, le=100000)
+    reason: str = Field(min_length=3, max_length=300)
+
+
+def _min_build_durumu() -> dict[str, Any]:
+    esik = app_gate.current_min_build()
+    try:
+        dokuman = app_gate.read_doc()
+    except Exception as exc:
+        logger.warning("config/app okunamadı: %s", exc)
+        dokuman = None
+    return {
+        "min_build": esik,
+        "env_floor": config.MIN_APP_BUILD,
+        "doc": dokuman,
+        # Eşik kapalıyken sayım anlamsız ve bir aggregation okuması boşa.
+        "below_min_live": app_gate.count_below(esik) if esik > 0 else 0,
+    }
+
+
+@router.get("/min-build")
+def min_build_status(user: AuthUser = Depends(require_admin)):
+    """Etkin eşik + env tabanı + doküman + canlı "eşiğin altında" sayısı.
+
+    `min_build` = max(env, doküman); panel ikisini ayrı gösterir ki
+    "0 yazdım ama hâlâ 40" durumu env tabanına bağlansın.
+    """
+    return {"status": "ok", **_min_build_durumu()}
+
+
+@router.post("/min-build")
+def min_build_set(req: MinBuildRequest,
+                  user: AuthUser = Depends(require_admin)):
+    """Eşiği yazar (K9 doğrulaması): `min_build > 0` ise `appBuild >=
+    min_build` olan EN AZ BİR kullanıcı canlı görülmüş olmalı.
+
+    Yazım hatasıyla (350 yerine 35) herkesi kilitlemek böyle imkânsızlaşır;
+    operatörün kendi cihazında açtığı yeni sürüm şartı sağlar. Sıfır (geri
+    alma) her zaman kabul — kilidi açmanın önkoşulu olmaz.
+    """
+    if firestore_client.get_client() is None:
+        raise HTTPException(status_code=500, detail="Firestore erişilemiyor.")
+    if req.min_build > 0 and not app_gate.build_seen_at_or_above(req.min_build):
+        raise HTTPException(
+            status_code=400,
+            detail="Eşiğin üstünde hiç kullanıcı görülmedi — önce yeni "
+                   "sürümü bir cihazda aç.")
+    try:
+        app_gate.set_min_build(req.min_build, req.reason, user.uid)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    _audit(user, "config.min_build",
+           params={"min_build": req.min_build, "reason": req.reason})
+    return {"status": "ok", **_min_build_durumu()}
 
 
 # ---------------------------------------------------------------------------

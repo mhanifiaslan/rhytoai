@@ -176,7 +176,11 @@ def sahte(monkeypatch):
     depo = SahteFirestore(_ornek_veri())
     monkeypatch.setattr(
         "services.stats_service.firestore_client.get_client", lambda: depo)
-    return depo
+    # Eşik memo'su süreç içi (PBZ): önceki testin değeri sızmasın.
+    from core import app_gate
+    app_gate.reset_memo()
+    yield depo
+    app_gate.reset_memo()
 
 
 def test_toplama_sayilari(sahte, monkeypatch):
@@ -236,6 +240,35 @@ def test_toplama_ap_ekleri(sahte, monkeypatch):
     assert d["notify"]["daily"] == {"sent": 4, "failed": 1,
                                     "skippedTotal": 3}
     assert d["users"]["byPlatform"] == {"bilinmiyor": 3}
+
+
+def test_toplama_surum_kirilimi(sahte, monkeypatch):
+    """PBZ: `appBuild` aynasından sürüm kırılımı. Alanı olmayan ≤34
+    istemciler 'unknown', eşiğin altındakiler AYRI sayılır — ek count()
+    sorgusu yok, tek geçişten türetilir."""
+    sahte._veriler["users"] = [
+        ("u1", {"appBuild": 35}),
+        ("u2", {"appBuild": 36}),
+        ("u3", {"appBuild": 36}),
+        ("u4", {"displayName": "başlıksız eski istemci"}),
+        ("u5", {"appBuild": "bozuk"}),  # bozuk değer de bilinmiyor
+    ]
+    monkeypatch.setattr(stats_service.app_gate, "current_min_build",
+                        lambda: 36)
+
+    d = stats_service.collect()
+
+    assert d["builds"] == {"byBuild": {"35": 1, "36": 2}, "min": 36,
+                           "belowMin": 1, "unknown": 2}
+
+
+def test_toplama_esik_kapaliyken_altinda_sifir(sahte, monkeypatch):
+    sahte._veriler["users"] = [("u1", {"appBuild": 35})]
+    monkeypatch.setattr(stats_service.app_gate, "current_min_build",
+                        lambda: 0)
+    d = stats_service.collect()
+    assert d["builds"]["belowMin"] == 0
+    assert d["builds"]["min"] == 0
 
 
 def test_toplama_idempotent(sahte):

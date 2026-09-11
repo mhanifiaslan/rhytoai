@@ -370,3 +370,75 @@ Adımlar:
 - `rytho-notify-daily` / `rytho-notify-streak` işleri güncellendi.
 - Backend revizyon 00027 yayında; Firestore kuralları ve collection-group
   indeksi deploy edildi.
+
+## 6. Zorunlu güncelleme anahtarı (PBZ, 1.15.0+35)
+
+Kod tarafı hazır: eşik artık **sunucuda zorlanıyor** — `/api/v1/`
+altındaki her istek `X-App-Build` başlığıyla eşiğe vurulur, küçükse
+**426** + yerelleştirilmiş `detail` (`backend/core/app_gate.py`,
+`AppGateMiddleware`). **Sıcak anahtar** Firestore `config/app.minBuild`
+dokümanında yaşar; `RYTHO_MIN_BUILD` env'i deploy betiğinden ÇIKARILDI
+(her deploy'da 0'a sıfırlanıyordu) ve artık yalnız isteğe bağlı TABAN:
+etkin eşik = **max(env, doküman)**. Panel yazımı 60 sn içinde her
+instance'a yansır (süreç içi memo), deploy gerektirmez, sonraki deploy
+da silmez. Başlık göndermeyen istek **0 sayılır** (K7): eşik > 0 iken
+açık oturumdaki ≤34 istemciler de ilk istekte kilitlenir — bilinçli.
+
+**Sıra (BOZMA):** rules → backend → AAB 35 mağazada → eşik.
+
+1. `firebase deploy --only firestore:rules` — `users.appBuild` (sunucu
+   yazımlı sürüm aynası) `hasOnly` listesine girdi ve `appBuildDegismedi()`
+   ile değişmez. Deploy edilmezse 35'in İLK kimlikli isteğinden sonra
+   istemcinin tüm profil yazımları permission-denied ile düşer
+   (faceConsent/platform vakasının aynısı — merge'de motor SONUÇ
+   dokümana bakar).
+2. `infra/deploy-backend.ps1` — kapı + `/api/v1/admin/min-build` uçları.
+3. `infra/build-aab.ps1` → 1.15.0+35 Play'e. Başlığı gönderen İLK
+   derleme bu; ≤34 hiç göndermiyor.
+4. **35'i kendi cihazında aç ve bir kez giriş yap** — ayna
+   `users/{uid}.appBuild = 35` ilk kimlikli istekte yazılır.
+5. Eşik: **panel → Sistem → "Zorunlu güncelleme"** → yeni eşik + gerekçe
+   → onay. Denetim izinde `config.min_build` satırı düşer.
+
+**Sunucu > 0'ı ancak o sürümü canlı görmüşse kabul eder (K9):** `users`
+içinde `appBuild ≥ eşik` olan en az bir kullanıcı yoksa **400**
+"Eşiğin üstünde hiç kullanıcı görülmedi — önce yeni sürümü bir cihazda
+aç." Yani 4. adım atlanırsa 5. adım reddedilir; yazım hatasıyla (350)
+herkesi kilitlemek de böyle imkânsız. Sıfır (geri alma) her zaman kabul.
+
+**Alternatif (panel düşükse) — Admin SDK, K9 doğrulamasını ATLAR,
+sayıyı iki kez kontrol et:**
+
+    backend/.venv/Scripts/python -c "import datetime as dt, firebase_admin; from firebase_admin import firestore; firebase_admin.initialize_app(options={'projectId': 'rhytoai'}); firestore.client().collection('config').document('app').set({'minBuild': 35, 'reason': 'elle (konsol)', 'updatedBy': 'konsol', 'updatedAt': dt.datetime.now(dt.timezone.utc)}, merge=True)"
+
+`config/{doc}` için kural YOK = istemciye kapalı; Admin SDK kuralları
+atladığı için yalnız sunucu/konsol okur-yazar. `gcloud config` aktif
+projesi `xanthixai` — ADC'nin `rhytoai`'ye baktığından emin ol.
+
+**Doğrulama (canlı, `B=https://rytho-backend-770582338651.us-central1.run.app`):**
+
+    curl -si $B/api/v1/config/app
+      → 200 · {"min_build": 35} · Cache-Control: no-store (kota + kapı muaf)
+    curl -si -H "X-App-Build: 34" $B/api/v1/reports/iching/status
+      → 426 · {"status":"error","code":"update_required","detail":"Rytho'nun bu sürümü…","min_build":35}
+    curl -si -H "X-App-Build: 34" -H "Accept-Language: en" $B/api/v1/reports/iching/status
+      → 426 · detail İngilizce
+    curl -si -H "X-App-Build: 35" $B/api/v1/reports/iching/status
+      → 401 (kapıdan GEÇTİ, token yok — kilit değil; token'la 200)
+    curl -si $B/api/v1/reports/iching/status
+      → 426 (başlıksız = 0; ≤34 bilerek kilitli)
+    curl -si $B/health
+      → 200 (/api/v1/ dışı — kapı dokunmaz, panel çağırıyor)
+
+Panel → Sistem: "Etkin eşik" 35, "Env tabanı" 0, "Eşiğin altında
+(canlı)" N, "Bilinmiyor (≤34)" M, sürüm tablosu; Denetim izinde
+`config.min_build`. `deploy-backend.ps1` yeniden koşunca eşik KORUNUR
+(betik artık env'i yazmıyor). Cihaz (35): uygulama açıkken eşik 36 →
+ilk istekte ForceUpdateScreen, geri tuşu geçmez; uçak modu + bilinen
+eşik → kilit; eşik 0 → normal (test-raporu 33/115/120-122).
+
+**Geri alma:** panelden eşik **0** + gerekçe (K9 şartı yok, anında).
+Env tabanı tanımlıysa o taban kalır — kontrol:
+`gcloud run services describe rytho-backend --region us-central1 --project rhytoai --format "value(spec.template.spec.containers[0].env)"`;
+kaldırmak için `--remove-env-vars RYTHO_MIN_BUILD` (deploy betiği artık
+tanımlamadığı için bir sonraki deploy da siler).

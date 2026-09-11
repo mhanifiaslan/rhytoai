@@ -163,11 +163,18 @@ def _body_hash(metin: str) -> str:
 
 
 def daily_sent_fields(gun: str, govde: str, idx: int,
-                      sinyal: dict[str, Any]) -> dict[str, Any]:
-    """Sabah gönderiminin `mark_sent(extra=...)` alanları (OT1.1)."""
+                      sinyal: dict[str, Any], lang: str) -> dict[str, Any]:
+    """Sabah gönderiminin `mark_sent(extra=...)` alanları (OT1.1).
+
+    ``dailyBodyLang`` (PBZ-turu): gövde hangi dilde gittiyse o. Etiket
+    olmayınca dil değişen günün sabahı dünkü Türkçe cümle İngilizce
+    promptun içine `avoid=` olarak giriyordu; öğle kopya koruması da
+    başka dildeki sabah gövdesiyle karşılaştırıyordu.
+    """
     return {
         "dailyBody": govde[:200],
         "dailyBodyHash": _body_hash(govde),
+        "dailyBodyLang": lang,
         "dailyFocusFp": (f"{sinyal.get('transit')}-{sinyal.get('aspect')}"
                          f"-{sinyal.get('natal')}"),
         "dailyFocusIdx": idx,
@@ -198,11 +205,30 @@ def last_daily_sent(uid: str) -> dict[str, Any] | None:
     return {
         "body": veri.get("dailyBody") or "",
         "bodyHash": veri["dailyBodyHash"],
+        # Etiketsiz eski kayıt (bu deploy'dan önce yazılmış) "" döner:
+        # hash kıyasına girer, gövdesi prompta girmez (`_hash_kiyaslanir`).
+        "lang": veri.get("dailyBodyLang") or "",
         "focusFp": veri.get("dailyFocusFp") or "",
         "focusIdx": veri.get("dailyFocusIdx"),
         "theme": veri.get("dailyTheme") or "",
         "day": veri.get("dailyBodyDay") or veri.get("dailyLastSent") or "",
     }
+
+
+def _hash_kiyaslanir(hafiza: dict[str, Any], lang: str) -> bool:
+    """Hafızadaki gövdeyle HASH kıyası yapılır mı (PBZ-turu).
+
+    Etiket bugünkü dilse evet. Etiket YOKSA ("" — bu deploy'dan önce
+    yazılmış kayıt) da evet: aksi halde deploy günü eski kayıtlı herkes
+    için "dünün/sabahın kopyası asla" koruması sessizce kapanırdı; hash
+    aynıysa metin aynıdır, dili bilinmese de. Etiket BAŞKA dilse hayır —
+    karşılaştırılacak ortak metin yok.
+
+    Bu yalnız KIYAS kararıdır. Gövdeyi prompta sokmak (`avoid=`) etiketin
+    bugünkü dille tam eşitliğini ister: etiketsiz gövde hangi dilde
+    bilinmez, İngilizce promptun içine Türkçe cümle girebilirdi.
+    """
+    return (hafiza.get("lang") or "") in ("", lang)
 
 
 # ---------------------------------------------------------------------------
@@ -386,6 +412,15 @@ def signal_push(profile: dict[str, Any], lang: str,
     cümle negatif örnek), o da tutmazsa geri sayımlı teknik satır —
     hiçbir yolda dünkü metnin kopyası gönderilmez.
 
+    PBZ-turu: aynılık koruması dünkü gövde BAŞKA dilde gittiyse çalışmaz.
+    Dil değişen sabah dünkü hafıza başka dildedir — hash'i karşılaştırmak
+    anlamsız, gövdesini `avoid=` ile prompta sokmak ise Türkçe cümleyi
+    İngilizce promptun içine koymak demek (prompts/en.py'nin kendi
+    uyarısı). Etiketsiz eski kayıt (bu deploy'dan önce yazılmış) hash
+    kıyasına GİRER — deploy günü koruma kapanmaz — ama gövdesi `avoid=`
+    ile prompta girmez (`_hash_kiyaslanir`). Tema çarkı dilden
+    bağımsızdır, o hep dünü okur.
+
     Üretilemezse None döner ve çağıran paylaşımlı burç satırına düşer;
     bildirim ASLA atlanmaz.
     """
@@ -397,6 +432,11 @@ def signal_push(profile: dict[str, Any], lang: str,
         gun = (today or dt.date.today()).isoformat()
 
         dun = onceki if (onceki and onceki.get("day") != gun) else None
+        # Hash kıyası: aynı dil YA DA etiketsiz eski kayıt. `avoid=` ise
+        # yalnız etiket bugünkü dille TAM eşitse (etiketsiz gövdenin dili
+        # bilinmez; prompta girmez).
+        hash_kiyaslanir = dun is not None and _hash_kiyaslanir(dun, lang)
+        ayni_dil = dun is not None and dun.get("lang") == lang
         idx = signal_service.daily_focus_index(
             ham,
             prev_theme=(dun or {}).get("theme") or None,
@@ -407,7 +447,9 @@ def signal_push(profile: dict[str, Any], lang: str,
         govde = _bundle_body(paket, idx, yerel, lang)
 
         # Dünle aynılık koruması (OT1.3) — sınırlı: 1 ek LLM çağrısı.
-        if govde and dun and _body_hash(govde) == dun.get("bodyHash"):
+        # Başka dildeki dünkü gövdeyle kıyas yok: ortak metin yok.
+        if (govde and hash_kiyaslanir
+                and _body_hash(govde) == dun.get("bodyHash")):
             for aday in range(len(yerel)):
                 if aday == idx:
                     continue
@@ -416,13 +458,14 @@ def signal_push(profile: dict[str, Any], lang: str,
                     idx, govde = aday, aday_govde
                     break
             else:
+                # Dünkü cümle negatif örnek olarak YALNIZ aynı dilde girer.
                 yeni = signal_service.insight_bundle(
-                    ham, lang, avoid=dun.get("body") or "")
+                    ham, lang,
+                    avoid=(dun.get("body") or "") if ayni_dil else "")
                 if yeni:
-                    from core import cache
                     cache.set(
-                        f"signals-bundle-"
-                        f"{signal_service.signals_fingerprint(ham)}-{lang}",
+                        signal_service.bundle_key(
+                            signal_service.signals_fingerprint(ham), lang),
                         yeni, ttl_seconds=signal_service.BUNDLE_TTL_OK)
                     aday_govde = _bundle_body(yeni, idx, yerel, lang)
                     if aday_govde and _body_hash(aday_govde) != dun["bodyHash"]:
@@ -439,7 +482,7 @@ def signal_push(profile: dict[str, Any], lang: str,
         p = prompts.get(lang)
         iz = signal_service.signals_fingerprint(ham)
         extra = daily_sent_fields(gun, govde, idx,
-                                  (ham.get("signals") or [])[idx])
+                                  (ham.get("signals") or [])[idx], lang)
         return (p.PUSH_SIGNAL_TITLE.format(
                     emoji=prompts.theme_emoji(sinyal.get("theme")),
                     theme=sinyal["theme_local"]),
@@ -469,6 +512,27 @@ class PushIcerik:
     soru: bool = False
 
 
+def _bundle_in_other_language(fp: str, lang: str) -> bool:
+    """Bugünün paketi ``lang`` DIŞINDA bir dilde SORULU üretilmiş mi?
+
+    Yalnız önbellek okur. Kayıt yorum taşıyorsa o sabah push gitmiştir;
+    ama akşam üretiminin tek anlamı SORU: `checkin_question` odak
+    sinyaline bağlıdır (`significant_signal` — determinist, dilden
+    bağımsız). Diğer dildeki paket sorusuzsa (önemli sinyal yok) yeni
+    dilde üretilecek paket de sorusuz çıkar; LLM boşa yanardı. Ölçüt bu
+    yüzden `insights` değil `checkin_question`.
+    """
+    from services import signal_service
+    for diger in i18n.SUPPORTED:
+        if diger == lang:
+            continue
+        kayit = cache.get(signal_service.bundle_key(fp, diger))
+        if (kayit and not kayit.get("failed")
+                and kayit.get("checkin_question")):
+            return True
+    return False
+
+
 def checkin_push(profile: dict[str, Any], lang: str,
                  today: dt.date | None = None) -> PushIcerik | None:
     """Akşam check-in sorusu (KA4) — YALNIZ önbellekten, LLM yakmaz.
@@ -477,6 +541,13 @@ def checkin_push(profile: dict[str, Any], lang: str,
     (`generate_if_missing=False`). Paket yoksa ya da o gün "önemli
     sinyal" çıkmadıysa None döner — çağıran kullanıcıyı atlar ve :10'daki
     seri hatırlatması normal davranır.
+
+    Tek istisna (PBZ-turu, dil değişen gün): paket bugünkü dilde yok ama
+    BAŞKA desteklenen dilde var — yani sabah bu kullanıcıya o dilde push
+    gitti, sonra dil değişti. Eskiden akşam "soru-yok" ile sessizce
+    düşüyordu. Şimdi yeni dilde BİR KEZ üretilir; `cached_insight_bundle`
+    önbelleğe yazdığı için aynı günün ikinci koşusu yeniden üretmez.
+    Hiçbir dilde paket yoksa eskisi gibi: LLM yakılmaz, None.
 
     ``soru=True`` döner: gövde `checkin_question` alanından geliyor, yani
     tanım gereği bir sorudur.
@@ -488,6 +559,10 @@ def checkin_push(profile: dict[str, Any], lang: str,
             return None
         paket = signal_service.cached_insight_bundle(
             ham, lang, generate_if_missing=False)
+        if paket is None and _bundle_in_other_language(
+                signal_service.signals_fingerprint(ham), lang):
+            paket = signal_service.cached_insight_bundle(
+                ham, lang, generate_if_missing=True)
         soru = (paket or {}).get("checkin_question")
         if not soru:
             return None
@@ -527,9 +602,13 @@ def midday_push(profile: dict[str, Any], lang: str,
         gun = today.isoformat()
 
         # Sabah hafızası (OT1.1): bugün gönderilen gövdenin kopyası yasak.
+        # PBZ-turu: sabah gövdesi BAŞKA dilde gittiyse (dil öğlene kadar
+        # değişti) karşılaştırılacak ortak metin yok; etiketsiz eski kayıt
+        # yine kıyaslanır (`_hash_kiyaslanir`).
         dun = last_daily_sent(profile.get("uid") or "")
         sabah_hash = (dun or {}).get("bodyHash") \
-            if (dun or {}).get("day") == gun else None
+            if ((dun or {}).get("day") == gun
+                and _hash_kiyaslanir(dun or {}, lang)) else None
         sabahla_ayni = False
 
         # --- a) kendi haritasında bugün kesinleşen ---

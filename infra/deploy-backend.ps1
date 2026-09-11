@@ -59,9 +59,14 @@ Write-Host "2/2 Cloud Run'a deploy ediliyor..."
 # DIKKAT: --set-env-vars mevcut degiskenleri TUMUYLE degistirir.
 # Konsoldan elle verilen bayraklar bir sonraki deploy'da SESSIZCE
 # silinir - kalici olacak her bayrak asagidaki satira yazilmali.
-# RYTHO_MIN_BUILD (F3): istemci versionCode'u bundan kucukse zorunlu
-# guncelleme ekranina kilitlenir. 0 = kapi kapali. Eski surumleri
-# dislayacak bir yayin yapildiginda buradaki deger artirilir.
+# RYTHO_MIN_BUILD (F3 -> PBZ): BILEREK YOK. Eskiden burada 0 duruyordu
+# ve her deploy --set-env-vars ile onu yeniden yazip elle gcloud'la
+# verilen esigi SESSIZCE sifirliyordu; 34 surumdur kapi hic kurulmadi.
+# Zorunlu guncelleme anahtari artik Firestore config/app.minBuild
+# dokumaninda yasar (panel -> Sistem -> "Zorunlu guncelleme"; 60 sn
+# icinde her instance gorur, deploy gerektirmez). Env yalnizca ISTEGE
+# BAGLI TABAN: etkin esik = max(env, dokuman). Tanimlanirsa panel o
+# tabanin altina inemez - bu satira EKLEME, bkz. backend/core/app_gate.py.
 # RYTHO_TOKENS_ENFORCE=1 (K5, 2026-08-13): jeton zorlamasi ACIK -
 # bakiye yetmezse 402 + X-Paywall-Reason: tokens. Kuru calisma bitti;
 # maliyet tavanlari artik gercekten uygulaniyor.
@@ -82,7 +87,7 @@ Invoke-Gcloud -Adim "Cloud Run deploy" -Arguments @(
     "--timeout", "300",
     "--max-instances", "3",
     "--min-instances", "1",
-    "--set-env-vars", "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_MIN_BUILD=0,RYTHO_TOKENS_ENFORCE=1",
+    "--set-env-vars", "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_TOKENS_ENFORCE=1",
     "--set-secrets", "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest")
 
 # --min-instances 1 BILINCLI VE UCRETLI bir karar.

@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -16,6 +16,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/frame_sequence.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart';
 
@@ -27,6 +28,34 @@ final ichingStatusProvider =
   final yanit = await dio.get('/api/v1/reports/iching/status');
   return Map<String, dynamic>.from(yanit.data['data'] as Map);
 });
+
+/// Para klipleri (PBZ): havada döngü + dört iniş varyantı. İndeks 0 hava,
+/// 1..4 iniş k=0..3 (k = logo yüzü yukarı para sayısı). Sekme açılınca
+/// önbelleğe alınır ki ilk çekimde diskten okuma gecikmesi olmasın.
+const kCoinAssets = [
+  'assets/anim/coins_air.webp',
+  'assets/anim/coins_land_0.webp',
+  'assets/anim/coins_land_1.webp',
+  'assets/anim/coins_land_2.webp',
+  'assets/anim/coins_land_3.webp',
+];
+
+/// Sunucunun satır değerlerini (ALTTAN ÜSTE 6/7/8/9, `iching_service.py`
+/// `line_values`) iniş klibi varyantına çevirir: k = değer − 6 = logo yüzü
+/// yukarı para sayısı (logo yüzü = "3"/yazı; 6 = üç ters yüz, 9 = üç logo).
+/// Sunucu paraların sırasını değil toplamı döndürür → dört klip yeter, API
+/// değişmez (K2). Sıra korunur: i. iniş alttan i. çizgiyi çizer. 6..9 dışı
+/// `ArgumentError` — sunucu sözleşmesi bozulmuş demektir.
+List<int> landingVariants(List<int> lineValues) => [
+      for (final v in lineValues)
+        switch (v) {
+          6 => 0,
+          7 => 1,
+          8 => 2,
+          9 => 3,
+          _ => throw ArgumentError.value(v, 'lineValues', '6..9 bekleniyordu'),
+        },
+    ];
 
 /// I Ching: soru sor → gerçek olasılık dağılımıyla çekim → heksagram +
 /// hareketli çizgiler + Rytho yorumu.
@@ -44,6 +73,13 @@ class _IChingTabState extends ConsumerState<IChingTab> {
   String _method = 'coins';
   bool _busy = false;
   Map<String, dynamic>? _result;
+
+  @override
+  void initState() {
+    super.initState();
+    // Para klipleri baytları önbelleğe: ilk çekimde disk gecikmesi yok.
+    FrameSequence.precache(kCoinAssets);
+  }
 
   @override
   void dispose() {
@@ -75,11 +111,16 @@ class _IChingTabState extends ConsumerState<IChingTab> {
       _result = null;
     });
     SoundFx.cast();
+    // Başarıda _busy BURADA düşmez (PBZ): paralar inerken (~5 s) buton
+    // meşgul kalır, çift çekim olmaz; CastScene.onFinished düşürür. Hata
+    // yolunda sahne havadan düşer.
+    var basarili = false;
     try {
       final dio = ref.read(apiProvider);
       final response = await dio.post('/api/v1/reports/iching',
           data: {'question': question, 'method': _method});
       setState(() => _result = Map<String, dynamic>.from(response.data['data']));
+      basarili = true;
       Analytics.ichingCast(_method);
       // Abone çekimi cüzdandan 2 token düşer; sohbetteki bakiye çipi
       // bayat kalmasın (İ0). Kota rozeti de tazelensin (İ6).
@@ -98,8 +139,17 @@ class _IChingTabState extends ConsumerState<IChingTab> {
             SnackBar(content: Text(friendlyError(e, l10n))));
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted && !basarili) setState(() => _busy = false);
     }
+  }
+
+  /// Yanıttaki satır değerleri (alttan üste); yanıt yokken null → paralar
+  /// havada.
+  static List<int>? _lineValues(Map<String, dynamic>? result) {
+    if (result == null) return null;
+    final cast = result['cast'];
+    if (cast is! Map) return const [];
+    return List<int>.from(cast['line_values'] as List? ?? const []);
   }
 
   @override
@@ -194,11 +244,12 @@ class _IChingTabState extends ConsumerState<IChingTab> {
           ),
         );
       }),
-      // Paralar → çizgiler nedenselliği (R12-C2): _CoinToss eskiden sonuç
-      // gelince tek karede sökülüyordu; iki sahne arasında bağ yoktu.
-      // Şimdi aynı switcher hücresi: paralar sönerek toplanır (çıkış
-      // scale 1→0.85 + fade), sonuç aynı hizadan büyüyerek gelir ve
-      // heksagramın çizgileri alttan yukarı reveal'ini oynatır.
+      // Paralar → çizgiler nedenselliği (R12-C2 → PBZ): eskiden paralar
+      // sonuç gelince sönüp heksagramla değişiyordu; hangi paranın nasıl
+      // düştüğü hiç görünmüyordu. Şimdi CastScene atışı OYNATIR: yanıt
+      // gelince altı iniş sırayla düşer (k = logo yüzü sayısı = değer − 6),
+      // her iniş alttan bir çizgiyi çizer; bitince aynı switcher hücresinde
+      // sonuç büyüyerek gelir.
       AnimatedSwitcher(
         duration: reduceMotion(context)
             ? Duration.zero
@@ -213,16 +264,16 @@ class _IChingTabState extends ConsumerState<IChingTab> {
           ),
         ),
         child: _busy
-            ? Column(key: const ValueKey('firlat'), children: [
-                const SizedBox(height: 36),
-                const Center(child: _CoinToss()),
-                const SizedBox(height: 12),
-                Center(
-                  child: Text(l10n.iChingCoinsInAir,
-                      style: RythoText.mono(12,
-                          color: RythoColors.parchmentDim)),
+            ? Padding(
+                key: const ValueKey('firlat'),
+                padding: const EdgeInsets.only(top: 24),
+                child: CastScene(
+                  lineValues: _lineValues(_result),
+                  onFinished: () {
+                    if (mounted) setState(() => _busy = false);
+                  },
                 ),
-              ])
+              )
             : _result != null
                 ? Column(key: const ValueKey('sonuc'), children: [
                     const SectionDivider(),
@@ -252,80 +303,247 @@ const _dolguKelimeler = {
 bool _meaningfulQuestion(String question) {
   final kelimeler = question
       .toLowerCase()
-      .replaceAll('\u0307', '') // İ küçülünce kalan birleşik nokta
+      .replaceAll('̇', '') // İ küçülünce kalan birleşik nokta
       .split(RegExp(r"[^\p{L}\p{N}']+", unicode: true));
   final anlamli =
       kelimeler.where((k) => k.isNotEmpty && !_dolguKelimeler.contains(k));
   return anlamli.length >= 2;
 }
 
-/// Üç paranın 3D dönüş animasyonu — çekim sürerken oynar.
-class _CoinToss extends StatefulWidget {
-  const _CoinToss();
+enum _CastPhase { airborne, landing, done }
+
+/// Çekim sahnesi durum makinesi (PBZ 1.2):
+///
+/// | Faz | Sahne | Geçiş |
+/// |---|---|---|
+/// | airborne | `coins_air` döngü + "paralar havada" | [lineValues] gelince varyantlar hesaplanır, bir sonraki döngü SINIRI beklenir |
+/// | landing(i) | `coins_land_{k_i}` + sağda canlı glif (6 yuva, `revealed` kadar dolu) + "düşüyor i+1/6" | klip BAŞINDA [onLand]; `onDone` → `revealed = i+1` → sonraki |
+/// | done | son iniş karesi tutulur | i=5 bitince [onFinished] BİR kez |
+///
+/// - Yanıt döngü sınırından ÖNCE gelirse en fazla bir döngü (1,5 s) beklenir;
+///   iniş klipleri havadaki ilk kareyle aynı görüntüden başladığı için
+///   kesme yalnız sınırda ve sıçrama yok. Klip hiç sınır vermezse (varlık
+///   bozuk/eksik) 2,5 s'de yine de inilir — üst `_busy` askıda kalmasın.
+/// - Tepsiye dokunma iniş sırasında `done`'a atlar (ritüel atlanabilir;
+///   görünür etiket yok).
+/// - reduce-motion: hava statik kare, sınır yok → hemen iniş; her iniş
+///   anında biter → çizgiler anında dolar (giriş animasyonu kurulmaz).
+///   Clink yalnız İLK inişte: altı iniş ~6 karede bittiğinden altı clink
+///   üst üste binip tek gürültü olurdu.
+/// - Üst geri çağrılar (`onFinished` / `onLand`) build fazından ÇAĞRILMAZ:
+///   yanıt `didChangeDependencies` / `didUpdateWidget` içinde emilir, oradan
+///   doğrudan üst `setState` framework assertion'ıdır. O yollardan çıkan
+///   geçişler kare bitince (post-frame, mounted korumalı) uygulanır.
+///
+/// Public: reduce-motion ve iniş sırası testten sürülür
+/// (`iching_cast_test.dart`).
+class CastScene extends StatefulWidget {
+  const CastScene({
+    super.key,
+    required this.lineValues,
+    required this.onFinished,
+    this.onLand = SoundFx.coinLand,
+  });
+
+  /// Sunucu yanıtı — alttan üste 6/7/8/9; null iken paralar havada.
+  final List<int>? lineValues;
+
+  /// Altı iniş bitince (ya da atlanınca) bir kez.
+  final VoidCallback onFinished;
+
+  /// Her iniş klibi BAŞINDA (reduce-motion'da yalnız ilkinde) — varsayılan
+  /// metalik "clink"; test sayaç verir.
+  final Future<void> Function() onLand;
 
   @override
-  State<_CoinToss> createState() => _CoinTossState();
+  State<CastScene> createState() => CastSceneState();
 }
 
-class _CoinTossState extends State<_CoinToss>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1100))
-    ..repeat();
+/// Public: testler `revealed` / `isLanding` / `isDone` okur.
+class CastSceneState extends State<CastScene> {
+  _CastPhase _faz = _CastPhase.airborne;
+  List<int>? _bekleyen; // iniş varyantları (k); yanıt gelince dolar
+  int _inis = 0; // şu anki iniş indeksi (alttan)
+  int _acilan = 0; // çizilen çizgi sayısı (alt yuvalardan)
+  Timer? _emniyet;
+  bool _hazir = false;
+
+  @visibleForTesting
+  int get revealed => _acilan;
+
+  @visibleForTesting
+  bool get isLanding => _faz == _CastPhase.landing;
+
+  @visibleForTesting
+  bool get isDone => _faz == _CastPhase.done;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Yanıt daha monte edilirken elde olabilir; reduceMotion için context
+    // gerektiğinden initState yerine burada (bir kez).
+    if (_hazir) return;
+    _hazir = true;
+    final degerler = widget.lineValues;
+    if (degerler != null) _emdir(degerler);
+  }
+
+  @override
+  void didUpdateWidget(CastScene oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final degerler = widget.lineValues;
+    if (degerler != null && _bekleyen == null) _emdir(degerler);
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _emniyet?.cancel();
     super.dispose();
+  }
+
+  /// Yanıt geldi: varyantlar hesaplanır, iniş için sınır beklenir.
+  ///
+  /// `didChangeDependencies` / `didUpdateWidget` içinden — yani build
+  /// fazından — çağrılır. Üst widget'a geri çağrı (`onFinished` / `onLand`)
+  /// buradan DOĞRUDAN yapılamaz: `_IChingTabState.setState` build sırasında
+  /// atada "setState() called during build" assertion'ıyla düşer. Bu yüzden
+  /// hemen sonuç veren iki yol (boş varyant → bit; reduce-motion → in) kare
+  /// bitince uygulanır; zamanlayıcı zaten sonra çalışır.
+  void _emdir(List<int> degerler) {
+    List<int> varyantlar;
+    try {
+      varyantlar = landingVariants(degerler);
+    } on ArgumentError catch (e) {
+      // Sunucu sözleşmesi bozuk (6..9 dışı): sahne kilitlenmesin, bit.
+      debugPrint('CastScene: $e');
+      varyantlar = const [];
+    }
+    _bekleyen = varyantlar;
+    if (varyantlar.isEmpty) {
+      _kareSonra(_bitir);
+      return;
+    }
+    if (reduceMotion(context)) {
+      // Statik sahnede döngü sınırı hiç gelmez — ilk karenin ardından in.
+      _kareSonra(_inisBasla);
+      return;
+    }
+    _emniyet = Timer(const Duration(milliseconds: 2500), _inisBasla);
+  }
+
+  /// Build fazından üst geri çağrıya giden geçişler için: kare bitince,
+  /// hâlâ monteyse. Geçişlerin kendi faz korumaları var; arada döngü sınırı
+  /// gelip inişi başlatmışsa ikinci başlatma boşa düşer.
+  void _kareSonra(VoidCallback gecis) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) gecis();
+    });
+  }
+
+  /// Hava klibinin döngü sınırı: yanıt eldeyse inişe geç.
+  void _sinir() {
+    if (_bekleyen != null && _faz == _CastPhase.airborne) _inisBasla();
+  }
+
+  void _inisBasla() {
+    _emniyet?.cancel();
+    _emniyet = null;
+    if (!mounted || _faz != _CastPhase.airborne) return;
+    setState(() {
+      _faz = _CastPhase.landing;
+      _inis = 0;
+    });
+    widget.onLand();
+  }
+
+  /// İniş klibi bitti: alttan bir çizgi daha, sonra sıradaki iniş.
+  void _indi() {
+    if (_faz != _CastPhase.landing) return;
+    final bekleyen = _bekleyen!;
+    final sonraki = _inis + 1;
+    if (sonraki >= bekleyen.length) {
+      setState(() => _acilan = bekleyen.length);
+      _bitir();
+      return;
+    }
+    setState(() {
+      _acilan = sonraki;
+      _inis = sonraki;
+    });
+    // reduce-motion'da her iniş bir post-frame'de biter: altı clink ~6
+    // karede üst üste binip tek gürültü olurdu. Statik sahnede foley yalnız
+    // İLK inişte (_inisBasla) çalar — sonrakiler sessiz.
+    if (!reduceMotion(context)) widget.onLand();
+  }
+
+  /// Tepsiye dokunma: kalan inişler atlanır, çizgiler tamamlanır.
+  void _atla() {
+    if (_faz != _CastPhase.landing) return;
+    setState(() => _acilan = _bekleyen?.length ?? 0);
+    _bitir();
+  }
+
+  void _bitir() {
+    if (_faz == _CastPhase.done) return;
+    _emniyet?.cancel();
+    _emniyet = null;
+    setState(() => _faz = _CastPhase.done);
+    widget.onFinished();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (_, _) => Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < 3; i++)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              child: Transform.translate(
-                offset: Offset(
-                    0,
-                    -14 *
-                        math.sin((_controller.value + i * 0.23) * math.pi)
-                            .abs()),
-                child: Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.002) // perspektif
-                    ..rotateX((_controller.value + i * 0.23) * 2 * math.pi),
-                  child: Container(
-                  width: 34,
-                  height: 34,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [RythoColors.gold, RythoColors.magenta],
-                    ),
-                    boxShadow: [
-                      BoxShadow(color: RythoColors.magentaGlow, blurRadius: 14),
-                    ],
-                  ),
-                    child: Text('中',
-                        style: TextStyle(
-                            fontSize: 15,
-                            color: RythoColors.ink.withValues(alpha: 0.85))),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
+    final l10n = AppLocalizations.of(context);
+    final degerler = widget.lineValues ?? const <int>[];
+    // Yanıt yokken 6 boş yuva: glif yerini korur, iniş başlayınca dolar.
+    final cizgiler = degerler.isEmpty
+        ? List<int>.filled(6, 1)
+        : [for (final v in degerler) v.isOdd ? 1 : 0];
+    final hareketli = [
+      for (var i = 0; i < degerler.length; i++)
+        if (degerler[i] == 6 || degerler[i] == 9) i + 1,
+    ];
+    final bekleyen = _bekleyen;
+    final inisVar = bekleyen != null && bekleyen.isNotEmpty &&
+        _faz != _CastPhase.airborne;
+    final Widget klip = inisVar
+        // Her iniş kendi anahtarıyla: aynı k art arda gelse de klip baştan.
+        ? FrameSequence(
+            key: ValueKey('land-$_inis'),
+            asset: kCoinAssets[1 + bekleyen[_inis]],
+            onDone: _indi,
+          )
+        : FrameSequence(
+            key: const ValueKey('air'),
+            asset: kCoinAssets[0],
+            loop: true,
+            onLoop: _sinir,
+          );
+    final etiket = _faz == _CastPhase.airborne
+        ? l10n.iChingCoinsInAir
+        : l10n.iChingCoinsLanding(
+            _faz == _CastPhase.done ? _acilan : _inis + 1);
+
+    return Column(children: [
+      Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+        Expanded(
+          child: Pressable(
+            onTap: _faz == _CastPhase.landing ? _atla : null,
+            child: AnimStage(child: klip),
+          ),
+        ),
+        const SizedBox(width: 16),
+        _HexagramGlyph(
+          lines: cizgiler,
+          moving: hareketli,
+          values: degerler,
+          revealedCount: _acilan,
+        ),
+      ]),
+      const SizedBox(height: 12),
+      Text(etiket,
+          style: RythoText.mono(12, color: RythoColors.parchmentDim)),
+    ]);
   }
 }
 
@@ -376,10 +594,9 @@ class _HexagramView extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start,
             children: [
           Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            // Çizgiler alttan yukarı sırayla belirir — çekimin kendisi
-            // gibi (İ6 reveal sahnesi).
-            _HexagramGlyph(
-                lines: lines, moving: moving, values: values, reveal: true),
+            // Çizgiler çekim sahnesinde (CastScene) iniş iniş çizildi;
+            // burada tamamı hazır durur.
+            _HexagramGlyph(lines: lines, moving: moving, values: values),
             if (transformed != null) ...[
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
@@ -577,12 +794,17 @@ class _LiuYaoTable extends StatelessWidget {
 
 /// Heksagram çizimi: 6 çizgi alttan üste; hareketli çizgiler bakır renkte
 /// ve ucunda klasik işaret taşır — ○ eski yang (9), × eski yin (6).
+///
+/// ⚠️ Yön: `lines`/`values` ALTTAN ÜSTE indekslidir, Column ise
+/// `for i = 5..0` ile üstten aşağı çizer. [revealedCount] ALT yuvaları
+/// doldurur (i < revealedCount görünür) — iniş i alttan i. çizgidir; ters
+/// indekslenirse yanlış çizgi animasyon alır.
 class _HexagramGlyph extends StatelessWidget {
   const _HexagramGlyph({
     required this.lines,
     required this.moving,
     this.values = const [],
-    this.reveal = false,
+    this.revealedCount,
   });
   final List<int> lines;
   final List<int> moving;
@@ -590,19 +812,24 @@ class _HexagramGlyph extends StatelessWidget {
   /// 6/7/8/9 değerleri — işaret seçimi için; boşsa işaret çizilmez.
   final List<int> values;
 
-  /// Çizgiler alttan yukarı sırayla belirsin mi (sonuç sahnesi).
-  final bool reveal;
+  /// Alttan kaç çizgi görünür; null → hepsi (`lines.length`). Görünmeyen
+  /// çizgi yerini korur (yuva) — glif iniş boyunca zıplamaz. Sabit stagger
+  /// KALKTI (PBZ): çizgi, kendi inişi bitince belirir.
+  final int? revealedCount;
 
   @override
   Widget build(BuildContext context) {
+    final gorunen = revealedCount ?? lines.length;
+    final azalt = reduceMotion(context);
     return Column(
       children: [
-        for (var i = lines.length - 1; i >= 0; i--) _satir(i),
+        for (var i = lines.length - 1; i >= 0; i--)
+          _satir(i, i < gorunen, azalt),
       ],
     );
   }
 
-  Widget _satir(int i) {
+  Widget _satir(int i, bool gorunur, bool azalt) {
     final cizgi = Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -625,12 +852,15 @@ class _HexagramGlyph extends StatelessWidget {
         ),
       ]),
     );
-    if (!reveal) return cizgi;
-    // Alttan üste: i=0 (en alt) önce belirir.
-    return cizgi
-        .animate(delay: (140 * i).ms)
-        .fadeIn(duration: 260.ms)
-        .slideX(begin: -0.08, curve: Curves.easeOutCubic);
+    // Örtük animasyon: baştan görünür çizgi (sonuç sahnesi) hiç animasyon
+    // almaz; iniş sırasında açılan çizgi kısa fade ile gelir, reduce-motion
+    // açıkken anında.
+    return AnimatedOpacity(
+      opacity: gorunur ? 1 : 0,
+      duration: azalt ? Duration.zero : RythoMotion.base,
+      curve: RythoMotion.enter,
+      child: cizgi,
+    );
   }
 
   String _isaret(int i) {
