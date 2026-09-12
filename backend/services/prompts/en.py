@@ -431,6 +431,11 @@ PUSH_INVITE_BODY = "You can answer the invite from the Friends tab."
 PUSH_INVITE_ACCEPTED_TITLE = "🎉 {name} accepted your invite"
 PUSH_INVITE_ACCEPTED_BODY = "You're friends now — see the sky between you."
 
+#: Admin "send myself a test" button (AD8): when the run queued nothing
+#: for this account, a fixed message goes out — proves token/channel/lang.
+PUSH_TEST_TITLE = "🛠️ Rytho test notification"
+PUSH_TEST_BODY = "This is a test — your notification channel works."
+
 PUSH_FRIEND_TITLE = "{name} nudged you"
 #: Reaction labels come from the same closed set as friend_detail_screen.
 PUSH_FRIEND_BODY = "{emoji} {label}"

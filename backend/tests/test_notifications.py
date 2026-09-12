@@ -962,16 +962,16 @@ def test_gecici_fcm_hatasi_gunu_yakmaz(monkeypatch):
     """OT1.5: eskiden yalnız ölü token'lar işaretlenmiyordu — geçici FCM
     hatası alan kullanıcı 'gönderildi' sayılıp o günü kaybediyordu.
     Artık failed_uids'teki hiçbir kullanıcı işaretlenmez."""
-    from api import notify
+    from services import notify_runner
     from services import push_service
 
     monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
-    monkeypatch.setattr(notify, "_iter_profiles", lambda: iter([
+    monkeypatch.setattr(notify_runner, "_iter_profiles", lambda: iter([
         profil(uid="tamam", quietFrom=0, quietTo=0),
         profil(uid="gecici-hata", fcmToken="token-2",
                quietFrom=0, quietTo=0),
     ]))
-    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(notify_runner, "get_sky_now", lambda: SAHTE_GOKYUZU)
     monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
     monkeypatch.setattr(ns, "last_daily_sent", lambda uid: None)
     monkeypatch.setattr(
@@ -1024,13 +1024,13 @@ class _KosuClient:
 
 
 def _kosu_ortami(monkeypatch, yazilan):
-    from api import notify
+    from services import notify_runner
     from services import push_service
 
     monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
-    monkeypatch.setattr(notify, "_iter_profiles", lambda: iter([
+    monkeypatch.setattr(notify_runner, "_iter_profiles", lambda: iter([
         profil(uid="tamam", quietFrom=0, quietTo=0)]))
-    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(notify_runner, "get_sky_now", lambda: SAHTE_GOKYUZU)
     monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
     monkeypatch.setattr(ns, "last_daily_sent", lambda uid: None)
     monkeypatch.setattr(
@@ -1041,7 +1041,7 @@ def _kosu_ortami(monkeypatch, yazilan):
                         lambda uid, tur, gun, extra=None: None)
     monkeypatch.setattr(push_service, "send", lambda m: push_service.SendResult(
         sent=len(m), failed=0, pruned=[], failed_uids=[]))
-    monkeypatch.setattr(notify.firestore_client, "get_client",
+    monkeypatch.setattr(notify_runner.firestore_client, "get_client",
                         lambda: _KosuClient(yazilan))
 
 
@@ -1531,15 +1531,15 @@ def test_force_tekrar_korumasini_atlamaz(monkeypatch):
 @uygulama_gerekir
 def test_prova_gondermez_ve_kaydetmez(monkeypatch):
     """dry_run sifir riskli olmali: ne bildirim gider ne gonderim kaydi yazilir."""
-    from api import notify
+    from services import notify_runner
     from services import push_service
 
     monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
     # Sessiz saat KAPALI (quietFrom == quietTo): aksi halde test duvar
     # saatine bagli olurdu ve gece calistirildiginda kirmizi donerdi.
-    monkeypatch.setattr(notify, "_iter_profiles",
+    monkeypatch.setattr(notify_runner, "_iter_profiles",
                         lambda: iter([profil(quietFrom=0, quietTo=0)]))
-    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(notify_runner, "get_sky_now", lambda: SAHTE_GOKYUZU)
     monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
     monkeypatch.setattr(ns.gemini_service, "generate",
                         lambda prompt, **k: "Bugun kisa bir aralik var.")
@@ -1570,13 +1570,13 @@ def test_daily_fcm_yuku_derin_baglanti_alanlari_tasir(monkeypatch):
     """KA5: sabah bildiriminin data yükü route/fp/idx/d taşır — istemci
     dokununca ilgili sinyal kartının dayanak sayfasını açar. Eski yük
     yalnız {type, sign} idi ve dokunma sekme numarasından öteye gidemezdi."""
-    from api import notify
+    from services import notify_runner
     from services import push_service
 
     monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
-    monkeypatch.setattr(notify, "_iter_profiles",
+    monkeypatch.setattr(notify_runner, "_iter_profiles",
                         lambda: iter([profil(quietFrom=0, quietTo=0)]))
-    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(notify_runner, "get_sky_now", lambda: SAHTE_GOKYUZU)
     monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
     isaretler: list = []
     monkeypatch.setattr(
@@ -1617,13 +1617,13 @@ def test_daily_fcm_yuku_derin_baglanti_alanlari_tasir(monkeypatch):
 def test_checkin_fcm_yuku_soruyu_tasir(monkeypatch):
     """KA4/KA5: check-in yükü soruyu ve gününü taşır (soğuk açılışta ağ
     turu olmadan sohbet soruyla açılır); soru yoksa kullanıcı atlanır."""
-    from api import notify
+    from services import notify_runner
     from services import push_service
 
     monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
-    monkeypatch.setattr(notify, "_iter_profiles",
+    monkeypatch.setattr(notify_runner, "_iter_profiles",
                         lambda: iter([profil(quietFrom=0, quietTo=0)]))
-    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(notify_runner, "get_sky_now", lambda: SAHTE_GOKYUZU)
     monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
     monkeypatch.setattr(ns, "mark_sent",
                         lambda uid, tur, gun, extra=None: None)
@@ -1663,7 +1663,7 @@ def test_checkin_fcm_yuku_soruyu_tasir(monkeypatch):
     assert tohumlar[0][1] == "Bugün iş tarafı nasıl geçti?"
 
     # Soru yoksa: kullanıcı "soru-yok" ile atlanır, streak işine kalır.
-    monkeypatch.setattr(notify, "_iter_profiles",
+    monkeypatch.setattr(notify_runner, "_iter_profiles",
                         lambda: iter([profil(quietFrom=0, quietTo=0)]))
     monkeypatch.setattr(ns, "checkin_push", lambda p, lang, today=None: None)
     with TestClient(app) as client:
@@ -1753,12 +1753,12 @@ def test_kosu_ayni_jeton_iki_profilde_yalniz_en_yeni_sahibe_gider(
     jetonuyla — ikisine de push gidip aynı telefona düşüyordu. Yalnız en son
     sahiplenen kuyruğa girer; diğeri `jeton-baska-hesapta` ile atlanır ve
     bayat jetonu silinir."""
-    from api import notify
+    from services import notify_runner
     from services import push_service
 
     yazilan: list = []
     _kosu_ortami(monkeypatch, yazilan)
-    monkeypatch.setattr(notify, "_iter_profiles", lambda: iter([
+    monkeypatch.setattr(notify_runner, "_iter_profiles", lambda: iter([
         profil(uid="eski-hesap", quietFrom=0, quietTo=0,
                fcmToken="vivo", lastSeenDaily="2026-09-07", language="en"),
         profil(uid="sahip", quietFrom=0, quietTo=0,
@@ -1774,9 +1774,9 @@ def test_kosu_ayni_jeton_iki_profilde_yalniz_en_yeni_sahibe_gider(
                                        failed_uids=[])
     monkeypatch.setattr(push_service, "send", sahte_send)
     silinen: list = []
-    monkeypatch.setattr(notify, "_bayat_jetonu_sil", silinen.append)
+    monkeypatch.setattr(notify_runner, "_bayat_jetonu_sil", silinen.append)
 
-    with TestClient(app) as client, caplog.at_level(logging.WARNING, "api.notify"):
+    with TestClient(app) as client, caplog.at_level(logging.WARNING, "services.notify_runner"):
         yanit = client.post("/api/v1/notify/run?type=daily&force=true",
                             headers={"Authorization": "dogru"}).json()
 
@@ -1789,12 +1789,12 @@ def test_kosu_ayni_jeton_iki_profilde_yalniz_en_yeni_sahibe_gider(
 
 @uygulama_gerekir
 def test_kosu_prova_bayat_jetonu_silmez(monkeypatch):
-    from api import notify
+    from services import notify_runner
     from services import push_service
 
     yazilan: list = []
     _kosu_ortami(monkeypatch, yazilan)
-    monkeypatch.setattr(notify, "_iter_profiles", lambda: iter([
+    monkeypatch.setattr(notify_runner, "_iter_profiles", lambda: iter([
         profil(uid="eski", quietFrom=0, quietTo=0, fcmToken="vivo",
                lastSeenDaily="2026-09-07"),
         profil(uid="yeni", quietFrom=0, quietTo=0, fcmToken="vivo",
@@ -1803,7 +1803,7 @@ def test_kosu_prova_bayat_jetonu_silmez(monkeypatch):
     monkeypatch.setattr(push_service, "send", lambda m: push_service.SendResult(
         sent=len(m), failed=0, pruned=[], failed_uids=[]))
     silinen: list = []
-    monkeypatch.setattr(notify, "_bayat_jetonu_sil", silinen.append)
+    monkeypatch.setattr(notify_runner, "_bayat_jetonu_sil", silinen.append)
 
     with TestClient(app) as client:
         yanit = client.post(

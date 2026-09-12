@@ -246,3 +246,48 @@ zincirinden geçer; `ChartInspectorScreen` tam ekran inceleme yüzeyidir.
 - Emoji: kart/rapor GÖVDE metinlerine serpiştirilmez (bildirim başlığı
   ve sohbetteki ölçülü kullanım §1'deki doktrinle serbesttir).
 - Blur yalnızca alt barda; kartlarda performans için düz dolgu.
+
+## 10. Admin paneli dili (AD-turu, `web/rytho-admin`)
+
+Aynı kozmik zemin, **işletme masası yoğunluğunda**. Mock kapısı (G0)
+1440 ve 390 px'te kullanıcı onayıyla geçti; kurallar:
+
+- **Tipografi:** Sora yalnız sayfa başlığı (22) ve KPI/hero değerlerinde
+  (26/34, tabular); gövde Manrope 13,5–14; sayılar JetBrains Mono.
+  Küçük etiketler (12 px, uppercase, +1 px izleme) `--parchment-mid`
+  (= parchment %70 + parchment-dim); `--parchment-dim` yalnız ≥12 px.
+- **Yüzeyler:** zemin `--ink` + yıldız alanı (`starfield.js`,
+  reduced-motion'da statik). Kart `--yuzey` (ink-light %92) + `--cizgi`
+  (line %80), köşe `--r-md` (16); `--r-card` (22) yalnız modal/sheet.
+  `body{overflow-x:clip}` — site CSS'inin `hidden`ı yapışkanı bozar;
+  site `section` dolgusu panelde sıfırlanır (bölüm = kart).
+- **Vurgu tek:** `--gold` aktif sekme çizgisi, altın KPI, aktif aralık
+  çipi; `--violet` %14 zemin aktif menü/metrik çipi; `--celadon`/`--madder`
+  yalnız anlam (pozitif/hata, delta pilleri, dikkat noktaları);
+  `--lilac` odak halkası, bağlantı, nötr grafik çizgisi; `--magenta`
+  hero çizgi. Çıplak hex yok; türetim `color-mix()`.
+- **Kabuk:** sol menü 240 px → 72 px ikon rayı (`title` + `aria-label`);
+  <1080 çekmece (odak tuzağı, perde). Üst çubuk: kırıntı (mobilde
+  yalnız son parça), Ctrl K komut paleti (mobilde yalnız ikon), dikkat
+  zili (sayaç), avatar + rol rozeti (Sahip/Destek).
+- **Sayfa deseni:** başlık + alt satır + sağda birincil eylemler; bant
+  (bilgi/uyarı/hata) başlığın hemen altında; KPI ızgarası
+  (auto-fit ≥176 px, delta pili nowrap, kıvılcım sağ-üst); modül =
+  başlık satırı (sol h2 + alt yazı, sağ kontrol çipleri `.adm-cip`).
+- **Veri tablosu (`veriTablosu`):** yapışkan başlık, sıralanır başlık
+  DÜĞMELERİ (`aria-sort`), ilk hücre bağlantı (`role=link`), ↑/↓ satır
+  gezintisi, cursor "Daha fazla", yoğunluk anahtarı; sayılar sağa
+  hizalı mono; boş/hata/iskelet satırları.
+- **Eylem disiplini:** hiçbir `confirm()`/`prompt()`/`alert()`. Her yazım
+  modal/sheet'te gerekçe alanıyla; yıkıcılarda yazılı onay ("SIL"),
+  `--madder` düğme; sonuç toast (aria-live). Rol'e kapalı eylem
+  GİZLENMEZ, `disabled` + "Yalnız sahip" ipucuyla görünür.
+- **Grafikler:** çizgi/alan, çubuk, yığın, halka, kıvılcım; klavye
+  (←/→) ve dokunma ipucu; sr-only veri tablosu; boş durum METİN.
+  "Veri yok" tuvale çizilmez.
+- **Hedefler ve odak:** etkileşimli her şey ≥44 px; `:focus-visible`
+  lila halka; rota değişimi `aria-live` ile duyurulur, h1 odaklanır.
+- **Yapılmayacaklar:** açık tema (bilinçli yok), inline `style=`,
+  tabloda 100'den uzun sayfasız liste, canlı tarama tetikleyen
+  panel açılışı (panel rollup okur; canlı tarama yalnız sahibin
+  "yeniden hesapla"sında).

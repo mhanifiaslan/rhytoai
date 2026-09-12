@@ -48,6 +48,27 @@ _REVENUE_EVENTS = {
     "NON_RENEWING_PURCHASE", "REFUND",
 }
 
+#: Parasal OLMAYAN ama abonelik geçmişi için anlamlı olaylar (AD5). Aynı
+#: deftere `price=0, monetary=false` ile yazılır: `private/subscription`
+#: `set()` ile ezildiği için "ne zaman iptal etti, ödeme sorunu ne zaman
+#: başladı" sorusunun tek kalıcı cevabı bu kayıtlardır. Panel gelir
+#: toplamlarında `monetary` süzgeciyle ayrışırlar.
+_NON_MONETARY_EVENTS = {
+    "CANCELLATION", "BILLING_ISSUE", "EXPIRATION", "SUBSCRIPTION_PAUSED",
+    "TRIAL_STARTED", "UNCANCELLATION", "PRODUCT_CHANGE",
+    "SUBSCRIPTION_EXTENDED",
+}
+
+#: RevenueCat ortamı: `PRODUCTION` | `SANDBOX`. Alanı olmayan eski
+#: olaylar backfill'de SANDBOX etiketlenir (kapalı test öncesi gerçek
+#: satış yok); webhook'ta alan yoksa PRODUCTION varsayılır — canlıda
+#: RevenueCat alanı her olayda gönderir.
+_DEFAULT_ENVIRONMENT = "PRODUCTION"
+
+
+def _environment(event: dict[str, Any]) -> str:
+    return str(event.get("environment") or _DEFAULT_ENVIRONMENT).upper()
+
 #: Aboneligi bir kimlikten digerine tasiyan olay.
 #:
 #: Anonim bir kimlikle satin alma yapilip sonra oturum acildiginda RevenueCat
@@ -226,6 +247,13 @@ def _handle_transfer(client, event: dict[str, Any]) -> dict[str, Any]:
              "updatedAt": dt.datetime.now(dt.timezone.utc)}
     for hedef in hedefler:
         _subscription_ref(client, hedef).set(kayit)
+        _mirror_plan(client, hedef, kayit)
+        # Zaman çizelgesi (AD5): hedef başına ayrı doküman — TRANSFER'in
+        # tek `event.id`'si var ama iki hedef aynı kaydı ezmemeli.
+        _record_revenue_event(event, _TRANSFER_EVENT, hedef, monetary=False,
+                              doc_id=f"{event.get('id')}-{hedef}")
+    for kaynak in kaynaklar:
+        _mirror_plan(client, kaynak, {"active": False})
 
     # Cüzdan da taşınır: satın alınmış bakiye kullanıcının parası, kimlik
     # değişiminde kaybolamaz.
@@ -237,14 +265,82 @@ def _handle_transfer(client, event: dict[str, Any]) -> dict[str, Any]:
             "active": bool(kayit.get("active"))}
 
 
+def _plan_from(record: dict[str, Any] | None,
+               now: dt.datetime | None = None) -> str:
+    """Abonelik kaydından panel planı: `plus` | `trial` | `free` (AD5).
+
+    `active` ve süresi geçmemiş (`expiresAt` yok ya da gelecekte) kayıt
+    deneme dönemindeyse `trial`, değilse `plus`; gerisi `free`. Sunucu
+    taraflı 3 günlük deneme (`createdAt`) BURAYA GİRMEZ — o "yeni"
+    rozetidir, mağaza denemesi değil.
+    """
+    record = record or {}
+    if not record.get("active"):
+        return "free"
+    expires_at = record.get("expiresAt")
+    if expires_at is not None:
+        try:
+            simdi = now or dt.datetime.now(dt.timezone.utc)
+            if expires_at.timestamp() < simdi.timestamp():
+                return "free"
+        except AttributeError:
+            pass
+    return "trial" if record.get("isTrial") is True else "plus"
+
+
+def _mirror_plan(client, uid: str, record: dict[str, Any] | None) -> None:
+    """`users/{uid}.{plan, planAt, planProduct}` aynası — best-effort.
+
+    `update()` BİLEREK (`set(merge)` değil): doküman yoksa yazım düşer ve
+    bu doğru — anonim RevenueCat kimlikleri (`$RCAnonymousID:…`) için
+    hayalet `users` dokümanı üretilmemeli. Panelin plan süzgeci ve
+    kohort tablosu bu alandan okur; abonelik gerçeği `private/subscription`.
+    """
+    try:
+        client.collection("users").document(uid).update({
+            "plan": _plan_from(record),
+            "planAt": dt.datetime.now(dt.timezone.utc),
+            "planProduct": (record or {}).get("productId"),
+        })
+    except Exception as exc:
+        logger.info("Plan aynası yazılamadı (%s): %s", uid, exc)
+
+
+def _bump_revenue_totals(client, uid: str, environment: str,
+                         event_type: str, price: float) -> None:
+    """`users/{uid}/private/revenueTotals.{ENV:{grossUsd, refundsUsd,
+    events}}` — yalnız PARASAL olaylarda, Increment ile (AD5).
+
+    Kullanıcı 360 "toplam gelir"i artık revenueEvents'i taramadan buradan
+    okur. `grossUsd` satışların toplamı, `refundsUsd` iadelerin MUTLAK
+    toplamı; net = gross − refunds. Backfill (`--totals`) MUTLAK yazar.
+    """
+    from google.cloud import firestore as gcf
+    tutar = abs(float(price or 0))
+    alanlar: dict[str, Any] = {"events": gcf.Increment(1)}
+    if event_type == "REFUND":
+        alanlar["refundsUsd"] = gcf.Increment(tutar)
+    else:
+        alanlar["grossUsd"] = gcf.Increment(tutar)
+    (client.collection("users").document(uid)
+     .collection("private").document("revenueTotals")
+     ).set({environment: alanlar}, merge=True)
+
+
 def _record_revenue_event(event: dict[str, Any], event_type: str,
-                          uid: str) -> None:
-    """Parasal olayi append-only gelir defterine yazar (W3).
+                          uid: str, *, monetary: bool = True,
+                          doc_id: str | None = None) -> None:
+    """Olayi append-only gelir/abonelik defterine yazar (W3 → AD5).
 
     Abonelik dokumani ``set()`` ile ezildigi icin gecmis tutmuyor; para
     cinsinden gelirin TEK gercegi ``revenueEvents`` koleksiyonudur. Dokuman
     kimligi RevenueCat ``event.id`` — ayni olayin tekrari ayni dokumani ezer
     (ledger deseniyle ayni dogal idempotency, bkz. core/wallet.py).
+
+    AD5: parasal OLMAYAN olaylar da (``monetary=False``, ``price=0``) aynı
+    deftere girer — Kullanıcı 360 zaman çizelgesi ve churn sayımı
+    buradan. ``environment`` her olayda; panel test alımlarını bununla
+    ayırır. Parasal olay ayrıca ``private/revenueTotals``ı artırır.
 
     Yazim EN-IYI-CABA: gelir kaydi dusse bile abonelik/cuzdan islemeye devam
     eder — muhasebe kaydi ugruna kullanicinin erisimi kesilmez.
@@ -258,6 +354,7 @@ def _record_revenue_event(event: dict[str, Any], event_type: str,
     if client is None:
         logger.warning("Gelir defteri yazilamadi (Firestore yok): %s", event_id)
         return
+    environment = _environment(event)
     try:
         # Ortak atfi (W7): kod kullanmis kullanicinin geliri ortagina islenir.
         # Kod sistemi kurulana kadar dokuman yoktur ve alan null kalir.
@@ -267,7 +364,8 @@ def _record_revenue_event(event: dict[str, Any], event_type: str,
         if getattr(attribution, "exists", False):
             partner_id = (attribution.to_dict() or {}).get("partnerId")
 
-        client.collection("revenueEvents").document(event_id).set({
+        fiyat = event.get("price") if monetary else 0
+        client.collection("revenueEvents").document(doc_id or event_id).set({
             "uid": uid,
             "eventType": event_type,
             "productId": event.get("product_id"),
@@ -275,8 +373,9 @@ def _record_revenue_event(event: dict[str, Any], event_type: str,
             # `price` RevenueCat'in USD normalize degeri; satin alinan para
             # birimindeki ham deger ayrica tasinir. REFUND'da isaret HAM
             # birakilir — yorum panelin isi (eventType zaten ayirt ediyor).
-            "price": event.get("price"),
-            "priceInPurchasedCurrency": event.get("price_in_purchased_currency"),
+            "price": fiyat,
+            "priceInPurchasedCurrency": (
+                event.get("price_in_purchased_currency") if monetary else 0),
             "currency": event.get("currency"),
             "countryCode": event.get("country_code"),
             "isTrial": str(event.get("period_type") or "").upper() == "TRIAL",
@@ -284,9 +383,23 @@ def _record_revenue_event(event: dict[str, Any], event_type: str,
             "at": (_ms_to_datetime(event.get("event_timestamp_ms"))
                    or dt.datetime.now(dt.timezone.utc)),
             "recordedAt": dt.datetime.now(dt.timezone.utc),
+            # AD5 alanları.
+            "environment": environment,
+            "monetary": bool(monetary),
+            "periodType": (str(event.get("period_type")).upper()
+                           if event.get("period_type") else None),
+            "cancelReason": event.get("cancel_reason"),
+            "expirationAt": _ms_to_datetime(event.get("expiration_at_ms")),
         })
     except Exception as exc:
         logger.warning("Gelir defteri yazilamadi (%s): %s", event_id, exc)
+        return
+    if monetary:
+        try:
+            _bump_revenue_totals(client, uid, environment, event_type,
+                                 float(event.get("price") or 0))
+        except Exception as exc:
+            logger.warning("Gelir toplamı yazılamadı (%s): %s", uid, exc)
 
 
 @router.post("/revenuecat")
@@ -411,10 +524,14 @@ async def revenuecat_webhook(
     }
 
     _subscription_ref(client, uid).set(record)
+    _mirror_plan(client, uid, record)
 
-    # Parasal abonelik olaylari gelir defterine de islenir (W3).
+    # Parasal abonelik olaylari gelir defterine de islenir (W3); parasal
+    # olmayanlar zaman çizelgesi için price=0 ile (AD5).
     if event_type in _REVENUE_EVENTS:
-        _record_revenue_event(event, event_type, uid)
+        _record_revenue_event(event, event_type, uid, monetary=True)
+    elif event_type in _NON_MONETARY_EVENTS:
+        _record_revenue_event(event, event_type, uid, monetary=False)
 
     # Yeni/yenilenen donem aylik token hakkini tazeler. Idempotent: ayni
     # donemin tekrarlanan webhook'u hakki iki kez veremez (isaret esitligi).

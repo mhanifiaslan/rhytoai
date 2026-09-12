@@ -10,7 +10,7 @@ sayılmaz — kısa başlıklar ve nötr metinler yüzünden bildirim düşmez.
 
 1. `i18n.guess_language` / `language_conflicts` — saf fonksiyon.
 2. Üretici muhafızları — `_bundle_body` (sabah + öğle) ve `checkin_push`.
-3. `notify.run` son emniyet ağı + `diller=` gözlemlenebilirliği.
+3. `notify_runner` (notify.run gövdesi) son emniyet ağı + `diller=` gözlemlenebilirliği.
 
 Çalıştırma:  .venv\\Scripts\\python.exe -m pytest tests/test_language_guard.py -q
 """
@@ -332,12 +332,12 @@ def test_checkin_ingilizce_soru_none_doner(monkeypatch, caplog):
 # --------------------------------------------------------------------------
 
 def _kosu_ortami(monkeypatch, gonderilen: list):
-    from api import notify
+    from services import notify_runner
     from services import push_service
 
     monkeypatch.setattr(config, "NOTIFY_SCHEDULER_SECRET", "dogru")
-    monkeypatch.setattr(notify, "get_sky_now", lambda: SAHTE_GOKYUZU)
-    monkeypatch.setattr(notify.firestore_client, "get_client", lambda: None)
+    monkeypatch.setattr(notify_runner, "get_sky_now", lambda: SAHTE_GOKYUZU)
+    monkeypatch.setattr(notify_runner.firestore_client, "get_client", lambda: None)
     monkeypatch.setattr(ns, "already_sent", lambda uid, tur, gun: False)
     monkeypatch.setattr(ns, "mark_sent",
                         lambda uid, tur, gun, extra=None: None)
@@ -360,11 +360,11 @@ def test_kosu_dil_uyusmazligini_atlar_ve_sayar(monkeypatch, caplog):
     """Şablon İngilizceye ZORLANIR (üretici muhafızı olmayan streak dalı),
     profil dili Türkçe: son ağ push'u düşürür, `dil-uyusmaz` sayar, uyarı
     uid/tur/lang taşır ve özet satırı `diller=` içerir."""
-    from api import notify
+    from services import notify_runner
 
     gonderilen: list = []
     _kosu_ortami(monkeypatch, gonderilen)
-    monkeypatch.setattr(notify, "_iter_profiles",
+    monkeypatch.setattr(notify_runner, "_iter_profiles",
                         lambda: iter([profil(quietFrom=0, quietTo=0)]))
     monkeypatch.setattr(
         ns, "streak_push",
@@ -392,12 +392,12 @@ def test_kosu_dil_uyusmazligini_atlar_ve_sayar(monkeypatch, caplog):
 def test_kosu_dogru_dilde_diller_sayar(monkeypatch, caplog):
     """Karşı kontrol: doğru dilde şablon gider, `languages` ve özet
     satırındaki `diller=` dili sayar; prova satırı da aynı sayımı taşır."""
-    from api import notify
+    from services import notify_runner
 
     gonderilen: list = []
     _kosu_ortami(monkeypatch, gonderilen)
     monkeypatch.setattr(
-        notify, "_iter_profiles",
+        notify_runner, "_iter_profiles",
         lambda: iter([profil(quietFrom=0, quietTo=0),
                       profil(uid="u2", fcmToken="token-2", language="en",
                              quietFrom=0, quietTo=0)]))
@@ -417,7 +417,7 @@ def test_kosu_dogru_dilde_diller_sayar(monkeypatch, caplog):
     caplog.clear()
     gonderilen.clear()
     monkeypatch.setattr(
-        notify, "_iter_profiles",
+        notify_runner, "_iter_profiles",
         lambda: iter([profil(quietFrom=0, quietTo=0)]))
     with caplog.at_level(logging.INFO), TestClient(app) as client:
         yanit = _kos(client, "&dry_run=true")
@@ -435,11 +435,11 @@ def test_kosu_checkin_yanlis_dilde_sohbete_tohum_atmaz(monkeypatch):
     """Son ağ sohbet tohumundan ÖNCE: üretici muhafızı atlansa bile
     (checkin_push sahte) yanlış dilde soru ne sohbete yazılır ne push
     olur."""
-    from api import notify
+    from services import notify_runner
 
     gonderilen: list = []
     _kosu_ortami(monkeypatch, gonderilen)
-    monkeypatch.setattr(notify, "_iter_profiles",
+    monkeypatch.setattr(notify_runner, "_iter_profiles",
                         lambda: iter([profil(quietFrom=0, quietTo=0)]))
     monkeypatch.setattr(
         ns, "checkin_push",
@@ -448,7 +448,7 @@ def test_kosu_checkin_yanlis_dilde_sohbete_tohum_atmaz(monkeypatch):
             "What closed inside you today?", soru=True))
     tohumlar: list = []
     monkeypatch.setattr(
-        notify.chat_history, "seed_assistant_message",
+        notify_runner.chat_history, "seed_assistant_message",
         lambda uid, text, lang, gun: tohumlar.append(text) or "cid-1")
 
     with TestClient(app) as client:

@@ -444,6 +444,8 @@ PUSH_SABLONLARI = [
     "PUSH_MIDDAY_TITLE", "PUSH_MIDDAY_PAIR_TITLE",
     "PUSH_INVITE_TITLE", "PUSH_INVITE_BODY",
     "PUSH_INVITE_ACCEPTED_TITLE", "PUSH_INVITE_ACCEPTED_BODY",
+    # AD-turu: panelin "kendime test gönder" sabit metni.
+    "PUSH_TEST_TITLE", "PUSH_TEST_BODY",
     # PBZ-turu: "dünkü cümleyi yineleme" bloğu prompt'a giriyor; tek dilde
     # kalsaydı Ingilizce prompt Turkce talimat tasirdi.
     "SIGNALS_AVOID_BLOCK",

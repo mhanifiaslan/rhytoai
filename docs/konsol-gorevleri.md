@@ -285,6 +285,28 @@ deploy-backend.ps1'e kalıcı yazılacak.
   kaydında yaşar — mobilde "Hesabı sil" testi yapıp hesabı yeniden
   kurarsan claim SİLİNİR ve panel seni sahte-404'e atar ("giriş
   yapamıyorum" gibi görünür). Çözüm: set_admin.py ile yeniden bas.
+- **Roller (AD1, Panel v3):** claim artık `{admin:true, role:'owner'|'support'}`.
+  `role` taşımayan eski `admin:true` sunucuda owner sayılır (geçiş) —
+  yine de bir kez yeniden bas:
+  `backend/.venv/Scripts/python tools/set_admin.py --email aslan.mh@gmail.com --role owner`
+  Destek personeli: `... --role support` (okur; kredi, cihaz kilidi,
+  auth-link, bildirim provası/kendine test yazar). Owner-only: sil, devre
+  dışı, sürüm eşiği, ortak yazımları, CSV dışa aktarım, yeniden hesapla,
+  duyuru, elle "Topla". `--revoke` iki claim'i de kaldırır. Yerelde
+  destek kapılarını denemek: `RYTHO_DEV_ADMIN=1 RYTHO_DEV_ROLE=support`.
+  Rol teyidi: `GET /api/v1/admin/me` → `{uid, email, role}`. Admin
+  çağrıları artık ayrı kotada (240/dk, `/admin/collect` muaf).
+- **`RYTHO_SUB_PRICES_USD` (AD7, Cloud Run env):** MRR hesabı ürün
+  fiyatını mağazadan değil buradan okur (RevenueCat aylık fiyat raporu
+  elle). JSON sözlük, `productId → aylık USD`; örnek:
+  `RYTHO_SUB_PRICES_USD={"rytho_plus_monthly":4.99,"rytho_plus_yearly":3.33}`
+  (yıllık ürün 12'ye bölünmüş aylık karşılığıyla yazılır). Boşsa MRR 0
+  görünür — panelde "fiyat tablosu yok" uyarısı. `infra/deploy-backend.ps1`
+  env listesine eklenir; değişince yeniden deploy gerekir.
+- **Denetim izi fail-closed (AD3):** sil / devre dışı / eşik / hakediş
+  ödemesi / dışa aktarım önce `adminAudit`'e `phase:intent` yazar;
+  yazılamazsa **503 "Denetim izi yazılamadı; işlem yapılmadı."** ve eylem
+  hiç yapılmaz. Panelde bu mesajı görürsen Firestore'a bak, tekrar dene.
 - **Panel girişi OAuth adımı (AP onarımı, 2026-08-29):** Chrome COOP'u
   çapraz-origin popup'ı kırdığı için panel `authDomain` artık
   `rhytoai.web.app` (same-origin işleyici). Bunun çalışması için OAuth

@@ -85,11 +85,29 @@ def reset_firebase_state() -> None:
 
 _bearer = HTTPBearer(auto_error=False)
 
+#: Panel rolleri (AD1). Claim `{admin: true, role: 'owner'|'support'}`.
+#: `role` yoksa ama `admin: true` varsa geçiş dönemi: owner sayılır
+#: (mevcut tek admin'in claim'i role taşımıyor). Yeni rol eklemek =
+#: buraya yazmak + `tools/set_admin.py --role` seçeneğine eklemek.
+ROLES = ("owner", "support")
+
+
+def _rol_coz(decoded: dict) -> str | None:
+    """Claim'lerden rol: bilinmeyen rol admin'de owner'a düşer, admin
+    olmayanda yok sayılır — `role:'x'` yazdırılmış sahte claim yetki
+    vermez (zaten istemci claim yazamaz; savunma derinliği)."""
+    rol = decoded.get("role")
+    admin = decoded.get("admin") is True
+    if rol not in ROLES:
+        rol = "owner" if admin else None
+    return rol
+
 
 class AuthUser:
     def __init__(self, uid: str, email: str | None = None,
                  anonymous: bool = False, phone: str | None = None,
-                 admin: bool = False, auth_time: int = 0):
+                 admin: bool = False, auth_time: int = 0,
+                 role: str | None = None):
         self.uid = uid
         self.email = email
         self.anonymous = anonymous
@@ -105,6 +123,10 @@ class AuthUser:
         #: oturumu AÇTIĞI an. Token yenilemede değişmez; tek cihaz kilidinin
         #: "son giriş kazanır" hakemi (TC-turu K1). DEV_MODE'da 0.
         self.auth_time = auth_time
+        #: Panel rolü (AD1): `owner` | `support` | None. Owner-only uçlar
+        #: [require_owner] ile kapılanır; destek personeli okur ve
+        #: sınırlı yazar (kredi, cihaz kilidi, bildirim provası).
+        self.role = role
 
 
 def _verify(token: str) -> dict:
@@ -147,10 +169,22 @@ async def get_current_user(
                 if build and not app_gate.build_remembered(uid, build):
                     await run_in_threadpool(app_gate.remember_build,
                                             uid, build)
+            # Arama aynası (AD4): `users/{uid}.{emailLower, usernameLower,
+            # nameLower, ...}` sunucu yazımlı; her kimlikli istek en ucuz
+            # kanca. `ensure` uid başına 24 saatte bir ve diff-only —
+            # hiç fırlatmaz; modül yoksa (henüz dağıtılmadı) sessiz.
+            try:
+                from services import search_mirror
+                await run_in_threadpool(search_mirror.ensure, uid)
+            except ImportError:
+                pass
+            except Exception as exc:
+                logger.debug("Arama aynası atlandı (%s): %s", uid, exc)
             return AuthUser(uid=uid, email=decoded.get("email"),
                             phone=decoded.get("phone_number"),
                             admin=decoded.get("admin") is True,
-                            auth_time=int(decoded.get("auth_time") or 0))
+                            auth_time=int(decoded.get("auth_time") or 0),
+                            role=_rol_coz(decoded))
         except Exception as exc:
             logger.info("Token doğrulanamadı: %s", exc)
             if not config.DEV_MODE:
@@ -162,18 +196,36 @@ async def get_current_user(
         # değişmez): geliştirme kolaylığı yönetim yetkisine dönüşemez.
         # Yerelde admin uçlarını denemek isteyen, ayrı ve AÇIK bir bayrak
         # kaldırır (RYTHO_DEV_ADMIN=1).
+        # Rol de ayrı bayraktan (RYTHO_DEV_ROLE, varsayılan owner): destek
+        # kapılarını yerelde denemek için `support` verilir.
+        dev_rol = (config.DEV_ADMIN_ROLE
+                   if config.DEV_ADMIN_ROLE in ROLES else "owner")
         return AuthUser(uid="dev-user", anonymous=True,
-                        admin=config.DEV_ADMIN)
+                        admin=config.DEV_ADMIN,
+                        role=dev_rol if config.DEV_ADMIN else None)
 
     raise HTTPException(status_code=401, detail=text("auth_required", lang))
 
 
 def require_admin(user: AuthUser = Depends(get_current_user)) -> AuthUser:
-    """Yönetim uçlarının kapısı (W4): custom claim `admin: true` şart.
+    """Yönetim uçlarının kapısı (W4/AD1): `admin: true` claim'i YA DA
+    tanınan bir panel rolü (`owner`/`support`) şart.
 
     403 döner, 401 değil — kimlik geçerli ama yetki yok. Yanıt jenerik
     tutulur; ucun varlığı hakkında ipucu vermez.
     """
-    if not user.admin:
+    if not (user.admin or user.role in ROLES):
+        raise HTTPException(status_code=403, detail="Yetkisiz.")
+    return user
+
+
+def require_owner(user: AuthUser = Depends(require_admin)) -> AuthUser:
+    """Sahip kapısı (AD1): yıkıcı/mali/yapılandırma uçları.
+
+    Sil, devre dışı, sürüm eşiği, ortak yazımları, dışa aktarım, yeniden
+    hesapla, duyuru, elle toplama. Destek rolü 403 alır — mesaj yine
+    jenerik; "sahip gerekir" demek ucun varlığını ve rol modelini sızdırır.
+    """
+    if user.role != "owner":
         raise HTTPException(status_code=403, detail="Yetkisiz.")
     return user

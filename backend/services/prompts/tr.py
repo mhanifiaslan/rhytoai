@@ -413,6 +413,12 @@ PUSH_INVITE_BODY = "Daveti Arkadaşlar sekmesinden yanıtlayabilirsin."
 PUSH_INVITE_ACCEPTED_TITLE = "🎉 {name} davetini kabul etti"
 PUSH_INVITE_ACCEPTED_BODY = "Artık arkadaşsınız — aranızdaki göğe bakın."
 
+#: Panelin "kendime test gönder" düğmesi (AD8): koşu bu hesaba bir şey
+#: kuyruklamadıysa (deneme dışı, soru yok, sessiz saat…) sabit metin gider
+#: — jeton/kanal/dil zincirinin çalıştığı görülür.
+PUSH_TEST_TITLE = "🛠️ Rytho test bildirimi"
+PUSH_TEST_BODY = "Bu bir test — bildirim kanalın çalışıyor."
+
 PUSH_FRIEND_TITLE = "{name} seni dürttü"
 #: Tepki etiketleri friend_detail_screen ile aynı kümeden gelir.
 PUSH_FRIEND_BODY = "{emoji} {label}"

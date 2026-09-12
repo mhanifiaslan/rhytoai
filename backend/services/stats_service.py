@@ -1,25 +1,36 @@
-"""Admin istatistik toplayıcısı (W5).
+"""Admin istatistik toplayıcısı (W5 → AD7 rollup'lar).
 
 Gecelik `rytho-stats` Scheduler işi (ya da panelden elle tetikleme) tüm
-sayımları BURADA yapar ve sonucu `adminStats/{YYYY-MM-DD}` dokümanına yazar;
-panel hazır dokümanları okur. Böylece panel açılışında binlerce doküman
-taranmaz — toplama gecenin sakin saatinde bir kez koşar.
+sayımları BURADA yapar ve sonucu iki dokümana yazar:
+
+* `adminStats/{YYYY-MM-DD}` — panelin okuduğu günlük özet. İki yarım:
+  `_snapshot_users` (BUGÜNÜN kullanıcı/abonelik taraması: DAU, plan
+  dağılımı, kohortlar, MRR) + `_day_events` (O GÜNÜN olayları: gelir
+  ortam/ürün/mağaza/ülke kırılımı, olay sayıları, AI maliyeti, jeton
+  akışı, bildirim koşuları). Geçmiş bir gün yeniden hesaplanırken
+  (`snapshot=False`) yalnız olay bölümleri merge edilir — dünün DAU'su
+  bugünkü taramadan üretilemez, uydurulmaz.
+* `adminEconomics/{YYYY-MM-DD}` — kullanıcı başına gün ekonomisi
+  (`{uid: {r, rs, c, n, t}}`, top-500 + `others`). Panelin ekonomi
+  tablosu 90 günü bu dokümanlardan BİRLEŞTİRİR; canlı tarama yok.
 
 KRİTİK KURAL: abonelik sayımı HAM Firestore dokümanından yapılır —
 `entitlements.is_subscriber` ASLA kullanılmaz. O fonksiyon RYTHO_FORCE_PLUS=1
 (test dönemi) iken herkese True döner ve istatistiği zehirler.
 
-Desen emsalleri: sayfalı tarama api/notify.py `_iter_profiles`,
-sonuç şeması `RunResult`.
+Parasal toplamlar yalnız `monetary == True` olaylardan (alanı olmayan eski
+kayıt parasal sayılır; `environment` yoksa SANDBOX — kapalı test öncesi
+gerçek satış yok, backfill de aynı varsayımla etiketler).
 """
 from __future__ import annotations
 
 import datetime as dt
 import logging
+import threading
 import time
 from typing import Any
 
-from core import app_gate, firestore as firestore_client
+from core import app_gate, config, firestore as firestore_client
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +38,31 @@ PAGE_SIZE = 500
 
 #: Streak histogram kovaları — panel bu adlarla gösterir.
 _STREAK_KOVALARI = ("0", "1-3", "4-7", "8+")
+
+#: adminEconomics'te ad ad tutulan en fazla kullanıcı; gerisi `others`.
+ECONOMICS_TOP_N = 500
+
+#: Yeniden hesaplamanın tek seferde kabul ettiği en uzun aralık.
+RECOMPUTE_MAX_DAYS = 90
+
+#: Panelde takip edilen RevenueCat olay türleri — eventCounts anahtarları
+#: hep bu sırayla ve tam listeyle döner (panel "0" ile "yok"u ayırmasın).
+EVENT_TYPES = ("INITIAL_PURCHASE", "RENEWAL", "CANCELLATION", "EXPIRATION",
+               "BILLING_ISSUE", "REFUND", "TRIAL_STARTED", "TRIAL_CONVERTED")
+
+#: Ortam etiketleri; alanı olmayan eski olay SANDBOX sayılır.
+ENVIRONMENTS = ("PRODUCTION", "SANDBOX")
+_LEGACY_ENV = "SANDBOX"
+
+#: Bildirim türleri (api/notify.run ile aynı küme).
+_NOTIFY_TYPES = ("daily", "midday", "checkin", "streak")
+
+#: Geçmiş gün merge'inde ezilen üst alanlar — kullanıcı taraması
+#: (`users`, `subs`, …) DOKUNULMAZ.
+_EVENT_SECTIONS = ("date", "eventsRecomputedAt", "revenue", "tokens", "ai",
+                   "notify")
+
+_recompute_lock = threading.Lock()
 
 
 def _streak_kovasi(deger: int) -> str:
@@ -83,38 +119,65 @@ def _gun_araligi(tarih: dt.date) -> tuple[dt.datetime, dt.datetime]:
     return baslangic, baslangic + dt.timedelta(days=1)
 
 
-def collect(tarih: dt.date | None = None) -> dict[str, Any]:
-    """Günün istatistiklerini toplar ve `adminStats/{tarih}` dokümanına yazar.
+def _ts(value: Any) -> float:
+    try:
+        return value.timestamp()
+    except AttributeError:
+        return 0.0
 
-    İdempotent: aynı gün için ikinci çalıştırma dokümanı ezer (toplamlar
-    yeniden hesaplanır, birikmez). Dönen sözlük yazılanın aynısıdır.
+
+def _ay(value: Any) -> str | None:
+    """createdAt → 'YYYY-MM' (kohort anahtarı); damgasız kayıt kohortsuz."""
+    if value is None or not hasattr(value, "strftime"):
+        return None
+    try:
+        return value.strftime("%Y-%m")
+    except Exception:
+        return None
+
+
+def _urun_mrr(product_id: str) -> float:
+    """Ürünün aylık USD katkısı: yıllık ürün /12. Fiyat girilmediyse 0."""
+    fiyat = float(config.SUBSCRIPTION_PRICES_USD.get(product_id, 0) or 0)
+    if "yearly" in product_id or "annual" in product_id:
+        return round(fiyat / 12, 4)
+    return fiyat
+
+
+def _artir(kova: dict[str, dict[str, Any]], anahtar: str,
+           tutar: float) -> None:
+    satir = kova.setdefault(anahtar, {"gross": 0.0, "count": 0})
+    satir["gross"] = round(satir["gross"] + tutar, 4)
+    satir["count"] += 1
+
+
+# ---------------------------------------------------------------------------
+# Bugünün taraması: kullanıcılar + abonelikler + hafif sayımlar
+# ---------------------------------------------------------------------------
+
+def _snapshot_users(client, tarih: dt.date,
+                    simdi: dt.datetime) -> dict[str, Any]:
+    """Kullanıcı ve abonelik durumunun BUGÜNKÜ fotoğrafı.
+
+    Tek geçişte dağılımlar (dil, saat dilimi, platform, sürüm, plan,
+    kohort); abonelikler HAM collection-group sorgusundan (MRR, deneme,
+    3 gün içinde bitecek deneme); sosyal/sistem count() sayımları.
     """
-    client = firestore_client.get_client()
-    if client is None:
-        raise RuntimeError("Firestore erişilemiyor; istatistik toplanamadı.")
-
     from google.cloud.firestore_v1.base_query import FieldFilter
 
-    tarih = tarih or dt.datetime.now(dt.timezone.utc).date()
     tarih_str = tarih.isoformat()
-    baslangic = time.monotonic()
-    simdi = dt.datetime.now(dt.timezone.utc)
     gun_bas, gun_son = _gun_araligi(tarih)
 
-    # ---- Kullanıcı taraması: dağılımlar tek geçişte ----
-    toplam = 0
-    onboarded = 0
-    bugun_yeni = 0
-    dau = 0
-    push = 0
-    rehber_acik = 0
-    seri_gorunur = 0
+    toplam = onboarded = bugun_yeni = dau = push = 0
+    rehber_acik = seri_gorunur = 0
     streak_kovalar = {k: 0 for k in _STREAK_KOVALARI}
     dil: dict[str, int] = {}
     saat_dilimi: dict[str, int] = {}
     platformlar: dict[str, int] = {}
     surumler: dict[str, int] = {}
     surum_bilinmiyor = 0
+    planlar: dict[str, int] = {"free": 0, "trial": 0, "plus": 0}
+    kohortlar: dict[str, dict[str, int]] = {}
     for veri in _iter_users(client):
         toplam += 1
         if veri.get("onboardingCompleted") is True:
@@ -149,6 +212,18 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
             surumler[str(sb)] = surumler.get(str(sb), 0) + 1
         else:
             surum_bilinmiyor += 1
+        # Plan aynası (AD5, api/billing._mirror_plan yazar); alanı olmayan
+        # kullanıcı ücretsizdir — backfill_search_fields tamamlar.
+        plan = str(veri.get("plan") or "free")
+        planlar[plan] = planlar.get(plan, 0) + 1
+        # Kohort: kayıt ayı → kayıt sayısı + bugün Plus olan sayısı. Ödeme
+        # dönüşümü (Plus/kayıt) panelde buradan; deneme ayrı sayılmaz.
+        ay = _ay(olusturma)
+        if ay:
+            k = kohortlar.setdefault(ay, {"signups": 0, "plus": 0})
+            k["signups"] += 1
+            if plan == "plus":
+                k["plus"] += 1
 
     # ---- Sürüm kırılımı: eşiğin altında kaç kişi (PBZ) ----
     # Ayrı count() sorgusu YOK — yukarıdaki tek geçişten türetilir.
@@ -172,6 +247,10 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
     magaza: dict[str, int] = {}
     deneme = 0
     iptal_ama_aktif = 0
+    mrr = 0.0
+    mrr_urun: dict[str, float] = {}
+    deneme_bitiyor = 0
+    uc_gun = simdi + dt.timedelta(days=3)
     try:
         abonelikler = (client.collection_group("private")
                        .where(filter=FieldFilter("active", "==", True))
@@ -184,19 +263,113 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
             urun[u] = urun.get(u, 0) + 1
             m = str(veri.get("store") or "-")
             magaza[m] = magaza.get(m, 0) + 1
-            if veri.get("isTrial") is True:
-                deneme += 1
             if veri.get("willRenew") is False:
                 iptal_ama_aktif += 1
+            if veri.get("isTrial") is True:
+                deneme += 1
+                if _ts(veri.get("expiresAt")) < uc_gun.timestamp():
+                    deneme_bitiyor += 1
+                continue  # deneme MRR'a girmez: henüz para yok
+            katki = _urun_mrr(u)
+            mrr += katki
+            mrr_urun[u] = round(mrr_urun.get(u, 0.0) + katki, 4)
     except Exception as exc:
         logger.warning("Abonelik sorgusu düştü (indeks?): %s", exc)
         aktif = -1
+
+    # ---- Hafif sayımlar: count() aggregation ----
+    arkadaslik = _count(
+        client.collection_group("friends")
+        .where(filter=FieldFilter("status", "==", "accepted")))
+    if arkadaslik > 0:
+        arkadaslik //= 2  # çift taraflı yazım — tek ilişki iki doküman
+    sikayet = _count(client.collection("reports"))
+    onbellek = _count(client.collection("aiCache"))
+    konusma = _count(client.collection_group("conversations"))
+    kullanici_adi = _count(client.collection("usernames"))
+
+    return {
+        "users": {
+            "total": toplam,
+            "onboarded": onboarded,
+            "newToday": bugun_yeni,
+            "dau": dau,
+            "push": push,
+            "contactMatchOn": rehber_acik,
+            "streakVisibleOn": seri_gorunur,
+            "usernames": kullanici_adi,
+            "streakBuckets": streak_kovalar,
+            "byLanguage": dil,
+            "byTimezone": saat_dilimi,
+            "byPlatform": platformlar,
+            # AD7 ekleri.
+            "byPlan": planlar,
+        },
+        "cohorts": kohortlar,
+        "subs": {
+            "active": aktif,
+            "byProduct": urun,
+            "byStore": magaza,
+            "trial": deneme,
+            "cancelledButActive": iptal_ama_aktif,
+            # AD7 ekleri: MRR tahmini (config.SUBSCRIPTION_PRICES_USD).
+            "trialing": deneme,
+            "mrrUsd": round(mrr, 2),
+            "mrrByProduct": mrr_urun,
+            "trialExpiring3d": deneme_bitiyor,
+        },
+        "social": {
+            "friendships": arkadaslik,
+            "reportsOpen": sikayet,
+        },
+        "system": {
+            "aiCacheCount": onbellek,
+            "conversationsCount": konusma,
+        },
+        # PBZ: zorunlu güncelleme paneli. Eski dokümanlarda yok → "—".
+        "builds": surum_blok,
+    }
+
+
+# ---------------------------------------------------------------------------
+# O günün olayları: gelir + jeton + AI + bildirim (+ kullanıcı ekonomisi)
+# ---------------------------------------------------------------------------
+
+def _kullanici_kovasi(kovalar: dict[str, dict[str, Any]],
+                      uid: str) -> dict[str, Any]:
+    return kovalar.setdefault(uid, {"r": 0.0, "rs": 0.0, "c": 0.0,
+                                    "n": 0, "t": 0})
+
+
+def _day_events(client, tarih: dt.date,
+                simdi: dt.datetime) -> tuple[dict[str, Any], dict[str, Any]]:
+    """`tarih` gününün olay bölümleri + adminEconomics dokümanı.
+
+    Döner: (`{"revenue","tokens","ai","notify"}`, `adminEconomics` dokümanı).
+    Her kaynak kendi try'ında — indeksi kurulmamış bir sorgu diğerlerini
+    düşürmez; düşen kaynak `-1`/boş ile dürüstçe işaretlenir.
+    """
+    from google.cloud.firestore_v1.base_query import FieldFilter
+
+    tarih_str = tarih.isoformat()
+    gun_bas, gun_son = _gun_araligi(tarih)
+    kullanicilar: dict[str, dict[str, Any]] = {}
+    paylasimli = {"c": 0.0, "n": 0}
 
     # ---- Gelir: revenueEvents günlük filtre ----
     brut = 0.0
     para_birimi: dict[str, float] = {}
     paket_satis: dict[str, int] = {}
     iade = 0
+    by_env: dict[str, dict[str, Any]] = {
+        env: {"gross": 0.0, "refunds": 0.0, "count": 0, "byProduct": {},
+              "byStore": {}, "byCountry": {},
+              "eventCounts": {t: 0 for t in EVENT_TYPES}}
+        for env in ENVIRONMENTS}
+    by_product: dict[str, dict[str, Any]] = {}
+    by_store: dict[str, dict[str, Any]] = {}
+    by_country: dict[str, dict[str, Any]] = {}
+    event_counts: dict[str, int] = {t: 0 for t in EVENT_TYPES}
     try:
         olaylar = (client.collection("revenueEvents")
                    .where(filter=FieldFilter("at", ">=", gun_bas))
@@ -204,18 +377,54 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
                    .stream())
         for anlik in olaylar:
             veri = anlik.to_dict() or {}
+            tur = str(veri.get("eventType") or "-")
+            env = str(veri.get("environment") or _LEGACY_ENV).upper()
+            if env not in by_env:
+                by_env[env] = {"gross": 0.0, "refunds": 0.0, "count": 0,
+                               "byProduct": {}, "byStore": {},
+                               "byCountry": {},
+                               "eventCounts": {t: 0 for t in EVENT_TYPES}}
+            kova = by_env[env]
+            kova["eventCounts"][tur] = kova["eventCounts"].get(tur, 0) + 1
+            event_counts[tur] = event_counts.get(tur, 0) + 1
+
+            # Parasal olmayan olay (CANCELLATION vb.) sayılır, toplanmaz.
+            parasal = veri.get("monetary")
+            if parasal is False:
+                continue
             fiyat = float(veri.get("price") or 0)
-            if veri.get("eventType") == "REFUND":
+            uid = str(veri.get("uid") or "")
+            if tur == "REFUND":
                 iade += 1
                 brut -= abs(fiyat)
-            else:
-                brut += fiyat
-                pb = str(veri.get("currency") or "-")
-                ham = float(veri.get("priceInPurchasedCurrency") or 0)
-                para_birimi[pb] = para_birimi.get(pb, 0.0) + ham
-                u = str(veri.get("productId") or "")
-                if u.startswith("rytho_tokens_"):
-                    paket_satis[u] = paket_satis.get(u, 0) + 1
+                kova["refunds"] = round(kova["refunds"] + abs(fiyat), 4)
+                kova["count"] += 1
+                if uid:
+                    k = _kullanici_kovasi(kullanicilar, uid)
+                    k["r" if env == "PRODUCTION" else "rs"] = round(
+                        k["r" if env == "PRODUCTION" else "rs"]
+                        - abs(fiyat), 4)
+                continue
+            brut += fiyat
+            pb = str(veri.get("currency") or "-")
+            ham = float(veri.get("priceInPurchasedCurrency") or 0)
+            para_birimi[pb] = para_birimi.get(pb, 0.0) + ham
+            u = str(veri.get("productId") or "-")
+            if u.startswith("rytho_tokens_"):
+                paket_satis[u] = paket_satis.get(u, 0) + 1
+            kova["gross"] = round(kova["gross"] + fiyat, 4)
+            kova["count"] += 1
+            _artir(kova["byProduct"], u, fiyat)
+            _artir(kova["byStore"], str(veri.get("store") or "-"), fiyat)
+            _artir(kova["byCountry"], str(veri.get("countryCode") or "-"),
+                   fiyat)
+            _artir(by_product, u, fiyat)
+            _artir(by_store, str(veri.get("store") or "-"), fiyat)
+            _artir(by_country, str(veri.get("countryCode") or "-"), fiyat)
+            if uid:
+                k = _kullanici_kovasi(kullanicilar, uid)
+                alan = "r" if env == "PRODUCTION" else "rs"
+                k[alan] = round(k[alan] + fiyat, 4)
     except Exception as exc:
         logger.warning("Gelir sorgusu düştü: %s", exc)
         brut = -1.0
@@ -240,6 +449,11 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
                 harcanan_toplam += adet
                 oz = str(veri.get("feature") or "unknown")
                 jeton_harcanan[oz] = jeton_harcanan.get(oz, 0) + adet
+                # Yol: users/{uid}/private/wallet/ledger/{id}
+                yol = getattr(getattr(anlik, "reference", None), "path", "")
+                parcalar = str(yol).split("/")
+                if len(parcalar) > 1 and parcalar[0] == "users":
+                    _kullanici_kovasi(kullanicilar, parcalar[1])["t"] += adet
             elif veri.get("type") in ("credit", "promo", "admin"):
                 kredi_toplam += adet
         jeton_harcanan_toplam = harcanan_toplam
@@ -251,6 +465,9 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
     ai_cagri = -1
     ai_maliyet = -1.0
     ai_ozellik: dict[str, int] = {}
+    maliyet_ozellik: dict[str, float] = {}
+    token_ozellik: dict[str, dict[str, int]] = {}
+    model_kirilim: dict[str, dict[str, Any]] = {}
     try:
         cagri = 0
         maliyet = 0.0
@@ -258,10 +475,28 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
                       .where(filter=FieldFilter("day", "==", tarih_str))
                       .stream()):
             veri = anlik.to_dict() or {}
+            bedel = float(veri.get("estCostUsd") or 0)
             cagri += 1
-            maliyet += float(veri.get("estCostUsd") or 0)
+            maliyet += bedel
             oz = str(veri.get("feature") or "unknown")
             ai_ozellik[oz] = ai_ozellik.get(oz, 0) + 1
+            maliyet_ozellik[oz] = round(maliyet_ozellik.get(oz, 0.0) + bedel, 6)
+            tk = token_ozellik.setdefault(oz, {"prompt": 0, "output": 0})
+            tk["prompt"] += int(veri.get("promptTokens") or 0)
+            tk["output"] += (int(veri.get("outputTokens") or 0)
+                             + int(veri.get("thinkingTokens") or 0))
+            md = str(veri.get("model") or "-")
+            mk = model_kirilim.setdefault(md, {"calls": 0, "cost": 0.0})
+            mk["calls"] += 1
+            mk["cost"] = round(mk["cost"] + bedel, 6)
+            uid = str(veri.get("uid") or "")
+            if uid:
+                k = _kullanici_kovasi(kullanicilar, uid)
+                k["c"] = round(k["c"] + bedel, 6)
+                k["n"] += 1
+            else:
+                paylasimli["c"] = round(paylasimli["c"] + bedel, 6)
+                paylasimli["n"] += 1
         ai_cagri = cagri
         ai_maliyet = round(maliyet, 6)
     except Exception as exc:
@@ -270,7 +505,7 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
     # ---- Bildirim koşuları: notifyRuns {gün}-{tür} (AP-turu) ----
     bildirim: dict[str, Any] = {}
     try:
-        for tur in ("daily", "midday", "checkin", "streak"):
+        for tur in _NOTIFY_TYPES:
             anlik = (client.collection("notifyRuns")
                      .document(f"{tarih_str}-{tur}").get())
             if getattr(anlik, "exists", False):
@@ -281,62 +516,28 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
                     "skippedTotal": sum(
                         int(v or 0)
                         for v in (veri.get("skipped") or {}).values()),
+                    # AD7: dil dağılımı + budanan ölü jeton.
+                    "languages": {str(k): int(v or 0) for k, v in
+                                  (veri.get("languages") or {}).items()},
+                    "pruned": int(veri.get("pruned") or 0),
                 }
     except Exception as exc:
         logger.warning("notifyRuns okunamadı: %s", exc)
 
-    # ---- Hafif sayımlar: count() aggregation ----
-    arkadaslik = _count(
-        client.collection_group("friends")
-        .where(filter=FieldFilter("status", "==", "accepted")))
-    if arkadaslik > 0:
-        arkadaslik //= 2  # çift taraflı yazım — tek ilişki iki doküman
-    sikayet = _count(client.collection("reports"))
-    onbellek = _count(client.collection("aiCache"))
-    konusma = _count(client.collection_group("conversations"))
-    kullanici_adi = _count(client.collection("usernames"))
-
-    dokuman = {
-        "date": tarih_str,
-        "generatedAt": simdi,
-        "durationMs": int((time.monotonic() - baslangic) * 1000),
-        "users": {
-            "total": toplam,
-            "onboarded": onboarded,
-            "newToday": bugun_yeni,
-            "dau": dau,
-            "push": push,
-            "contactMatchOn": rehber_acik,
-            "streakVisibleOn": seri_gorunur,
-            "usernames": kullanici_adi,
-            "streakBuckets": streak_kovalar,
-            "byLanguage": dil,
-            "byTimezone": saat_dilimi,
-            "byPlatform": platformlar,
-        },
-        "subs": {
-            "active": aktif,
-            "byProduct": urun,
-            "byStore": magaza,
-            "trial": deneme,
-            "cancelledButActive": iptal_ama_aktif,
-        },
+    bolumler = {
         "revenue": {
             "grossToday": round(brut, 2),
             "byCurrency": {k: round(v, 2) for k, v in para_birimi.items()},
             "packSalesToday": paket_satis,
             "refundsToday": iade,
+            # AD7: ortam ayrımı + kırılımlar. Üst düzey kırılımlar TÜM
+            # ortamların toplamı; ortam başına olanlar `byEnv` içinde.
+            "byEnv": by_env,
+            "byProduct": by_product,
+            "byStore": by_store,
+            "byCountry": by_country,
+            "eventCounts": event_counts,
         },
-        "social": {
-            "friendships": arkadaslik,
-            "reportsOpen": sikayet,
-        },
-        "system": {
-            "aiCacheCount": onbellek,
-            "conversationsCount": konusma,
-        },
-        # AP-turu ekleri. Eski dokümanlarda bu anahtarlar yok; panel
-        # yokluğu "—" gösterir (geriye uyum sözleşmesi).
         "tokens": {
             "spentToday": jeton_harcanan,
             "spentTotalToday": jeton_harcanan_toplam,
@@ -346,16 +547,110 @@ def collect(tarih: dt.date | None = None) -> dict[str, Any]:
             "callsToday": ai_cagri,
             "estCostToday": ai_maliyet,
             "byFeature": ai_ozellik,
+            # AD7 ekleri.
+            "costByFeature": maliyet_ozellik,
+            "tokensByFeature": token_ozellik,
+            "byModel": model_kirilim,
         },
         "notify": bildirim,
-        # PBZ: zorunlu güncelleme paneli. Eski dokümanlarda yok → "—".
-        "builds": surum_blok,
     }
 
-    client.collection("adminStats").document(tarih_str).set(dokuman)
-    logger.info("adminStats/%s yazıldı (%d kullanıcı, %d ms)",
-                tarih_str, toplam, dokuman["durationMs"])
+    # ---- adminEconomics: top-N kullanıcı + gerisi tek kovada ----
+    sirali = sorted(kullanicilar.items(),
+                    key=lambda kv: kv[1]["r"] + kv[1]["rs"] + kv[1]["c"],
+                    reverse=True)
+    ustler = dict(sirali[:ECONOMICS_TOP_N])
+    digerleri = {"r": 0.0, "rs": 0.0, "c": 0.0, "n": 0, "t": 0}
+    for _, k in sirali[ECONOMICS_TOP_N:]:
+        for alan in digerleri:
+            digerleri[alan] = round(digerleri[alan] + k[alan], 6)
+    ekonomi = {
+        "date": tarih_str,
+        "generatedAt": simdi,
+        "users": ustler,
+        "others": digerleri,
+        "shared": paylasimli,
+        "count": len(kullanicilar),
+    }
+    return bolumler, ekonomi
+
+
+# ---------------------------------------------------------------------------
+# Toplama + yeniden hesaplama
+# ---------------------------------------------------------------------------
+
+def collect(tarih: dt.date | None = None, *,
+            snapshot: bool = True) -> dict[str, Any]:
+    """Günün istatistiklerini toplar; `adminStats/{tarih}` ve
+    `adminEconomics/{tarih}` dokümanlarını yazar.
+
+    `snapshot=True` (bugün): tam doküman ezilir — idempotent, birikmez.
+    `snapshot=False` (geçmiş gün): yalnız olay bölümleri (`revenue`,
+    `tokens`, `ai`, `notify`) merge edilir; o günün DAU/plan fotoğrafı
+    varsa korunur, yoksa uydurulmaz. Dönen sözlük yazılanın aynısıdır.
+    """
+    client = firestore_client.get_client()
+    if client is None:
+        raise RuntimeError("Firestore erişilemiyor; istatistik toplanamadı.")
+
+    tarih = tarih or dt.datetime.now(dt.timezone.utc).date()
+    tarih_str = tarih.isoformat()
+    baslangic = time.monotonic()
+    simdi = dt.datetime.now(dt.timezone.utc)
+
+    bolumler, ekonomi = _day_events(client, tarih, simdi)
+
+    if snapshot:
+        dokuman: dict[str, Any] = {"date": tarih_str, "generatedAt": simdi}
+        dokuman.update(_snapshot_users(client, tarih, simdi))
+        dokuman.update(bolumler)
+        dokuman["durationMs"] = int((time.monotonic() - baslangic) * 1000)
+        client.collection("adminStats").document(tarih_str).set(dokuman)
+        logger.info("adminStats/%s yazıldı (%d kullanıcı, %d ms)",
+                    tarih_str, dokuman["users"]["total"],
+                    dokuman["durationMs"])
+    else:
+        dokuman = {"date": tarih_str, "eventsRecomputedAt": simdi}
+        dokuman.update(bolumler)
+        client.collection("adminStats").document(tarih_str).set(
+            dokuman, merge=list(_EVENT_SECTIONS))
+        logger.info("adminStats/%s olay bölümleri yeniden yazıldı", tarih_str)
+
+    client.collection("adminEconomics").document(tarih_str).set(ekonomi)
     return dokuman
+
+
+def recompute(start_date: dt.date, end_date: dt.date) -> dict[str, Any]:
+    """Aralıktaki her günü yeniden toplar (sahip tetikler, AD7).
+
+    Tek koşu kilidi: eşzamanlı ikinci istek `RuntimeError("busy")` (uç
+    409'a çevirir). En fazla `RECOMPUTE_MAX_DAYS` gün (`ValueError`).
+    Bugün tam fotoğraf (`snapshot=True`), geçmiş günler yalnız olaylar.
+    Gelecek günler atlanır. Bitince ekonomi önbelleği temizlenir ki panel
+    eski birleşimi 10 dakika daha göstermesin.
+    """
+    if end_date < start_date:
+        raise ValueError("Bitiş tarihi başlangıçtan önce olamaz.")
+    gun_sayisi = (end_date - start_date).days + 1
+    if gun_sayisi > RECOMPUTE_MAX_DAYS:
+        raise ValueError(f"En fazla {RECOMPUTE_MAX_DAYS} gün.")
+    if not _recompute_lock.acquire(blocking=False):
+        raise RuntimeError("busy")
+    try:
+        bugun = dt.datetime.now(dt.timezone.utc).date()
+        gunler: list[str] = []
+        for i in range(gun_sayisi):
+            gun = start_date + dt.timedelta(days=i)
+            if gun > bugun:
+                break
+            collect(gun, snapshot=(gun == bugun))
+            gunler.append(gun.isoformat())
+        from services import admin_service  # döngüsel import kırıcı
+        admin_service.clear_economics_cache()
+        return {"days": len(gunler), "from": start_date.isoformat(),
+                "to": end_date.isoformat(), "recomputed": gunler}
+    finally:
+        _recompute_lock.release()
 
 
 def read_days(days: int) -> list[dict[str, Any]]:

@@ -54,6 +54,15 @@ LLM_LIMIT_PER_MINUTE = 20
 DEFAULT_LIMIT_PER_MINUTE = 60
 WINDOW_SECONDS = 60.0
 
+# Admin paneli kovası (AD2). Panel tek bir Authorization özetiyle çalışır
+# ve bir sayfa açılışı 5-8 uç çağırır; Genel Bakış + Kullanıcılar + bir
+# 360 gezintisi genel kotanın 60'ını bir dakikada bitiriyordu. Ayrı kova
+# (`adm:` öneki) + kendi sınırı: panel trafiği mobil kotayı, mobil
+# trafik panel kotasını YEMEZ. `/admin/collect` muaf kalır (EXEMPT_PATHS;
+# scheduler'ın diğer işleriyle aynı başlığı paylaşıyor).
+ADMIN_PREFIX = "/api/v1/admin/"
+ADMIN_LIMIT_PER_MINUTE = 240
+
 # Kota dışı tutulan hafif uçlar.
 # RevenueCat webhook'u da muaftır: tüm olaylar aynı Authorization başlığıyla
 # gelir, yani tek bir kovayı paylaşırlar ve yoğun anlarda abonelik olayları
@@ -115,9 +124,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         is_llm = (request.method == "POST"
                   and path.startswith(LLM_PREFIXES)
                   and not path.startswith(LLM_EXEMPT_PREFIXES))
-        limit = LLM_LIMIT_PER_MINUTE if is_llm else DEFAULT_LIMIT_PER_MINUTE
-        # LLM ve genel kotalar ayrı sayaçlarda tutulur
-        key = f"{'llm' if is_llm else 'std'}:{self._client_key(request)}"
+        is_admin = path.startswith(ADMIN_PREFIX)
+        if is_admin:
+            kova, limit = "adm", ADMIN_LIMIT_PER_MINUTE
+        elif is_llm:
+            kova, limit = "llm", LLM_LIMIT_PER_MINUTE
+        else:
+            kova, limit = "std", DEFAULT_LIMIT_PER_MINUTE
+        # Admin, LLM ve genel kotalar ayrı sayaçlarda tutulur
+        key = f"{kova}:{self._client_key(request)}"
 
         now = time.monotonic()
         self._prune(now)

@@ -87,7 +87,7 @@ Invoke-Gcloud -Adim "Cloud Run deploy" -Arguments @(
     "--timeout", "300",
     "--max-instances", "3",
     "--min-instances", "1",
-    "--set-env-vars", "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_TOKENS_ENFORCE=1",
+    "--set-env-vars", "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_TOKENS_ENFORCE=1,RYTHO_SUB_PRICES_USD={`"rytho_plus_monthly`":4.4}",
     "--set-secrets", "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest")
 
 # --min-instances 1 BILINCLI VE UCRETLI bir karar.

@@ -20,6 +20,9 @@ DEV_MODE: bool = os.getenv("RYTHO_DEV_MODE", "1") == "1"
 # bilerek: DEV_MODE tek basina yonetim yetkisi VEREMEZ — verseydi her yerel
 # calistirma admin uclarini acardi. Uretimde ASLA 1 olmamali.
 DEV_ADMIN: bool = os.getenv("RYTHO_DEV_ADMIN", "0") == "1"
+# DEV_ADMIN açıkken dev-user'in panel rolü (AD1): owner | support. Destek
+# kapılarını (403 bekleyen uçları) yerelde denemek için "support" verilir.
+DEV_ADMIN_ROLE: str = os.getenv("RYTHO_DEV_ROLE", "owner")
 
 # SABİT SÜRÜM — takma ad DEĞİL (S-turu).
 #
@@ -100,3 +103,29 @@ def _int_env(ad: str, varsayilan: int) -> int:
 # Kalıcı değer infra/deploy-backend.ps1'deki --set-env-vars satırında —
 # gcloud ile elle verilen değer bir sonraki deploy'da silinir.
 MIN_APP_BUILD: int = _int_env("RYTHO_MIN_BUILD", 0)
+
+
+def _json_env(ad: str, varsayilan: dict) -> dict:
+    """Bozuk JSON'da varsayılana düşer — MRR tahmini bir gösterge, kapı
+    değil; yanlış yazılmış bir env yüzünden toplayıcı düşmemeli."""
+    import json
+    ham = os.getenv(ad, "").strip()
+    if not ham:
+        return dict(varsayilan)
+    try:
+        veri = json.loads(ham)
+        if not isinstance(veri, dict):
+            return dict(varsayilan)
+        return {str(k): float(v) for k, v in veri.items()}
+    except (ValueError, TypeError):
+        return dict(varsayilan)
+
+
+# Abonelik ürünlerinin USD fiyatı (AD7) — panelin MRR tahmini. Mağaza
+# fiyatı bölgeye göre değiştiği için sunucuya "liste fiyatı" olarak
+# elle girilir (docs/konsol-gorevleri.md §3c); RevenueCat raporu esastır.
+# Yıllık ürün MRR'a /12 ile girer (stats_service). Varsayılan 0: fiyat
+# girilmeden panel MRR'ı 0 gösterir — uydurma sayı yok.
+SUBSCRIPTION_PRICES_USD: dict[str, float] = _json_env(
+    "RYTHO_SUB_PRICES_USD",
+    {"rytho_plus_monthly": 0.0, "rytho_plus_yearly": 0.0})

@@ -4,98 +4,109 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="dark">
   <title>Rytho Yönetim</title>
   <link rel="icon" href="/assets/rytho_logo.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=Manrope:wght@400;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/assets/rytho.css?v=2">
-  <link rel="stylesheet" href="/rytho-admin/admin.css">
+  <link rel="stylesheet" href="/rytho-admin/admin.css?v=3">
 </head>
 <body>
   <!-- Sitedeki canlı gökyüzü: starfield.js #yildizlar'ı bulur;
        prefers-reduced-motion'da tek statik kare çizer. -->
-  <div class="gokyuzu"><canvas id="yildizlar"></canvas></div>
+  <div class="gokyuzu" aria-hidden="true"><canvas id="yildizlar"></canvas></div>
+
+  <a class="atla" href="#icerik">İçeriğe atla</a>
+  <div id="rota-duyuru" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+  <div id="toast-kibar" class="toast-kap" role="status" aria-live="polite"></div>
+  <div id="toast-acil" class="toast-kap acil" role="alert" aria-live="assertive"></div>
 
   <!-- Jenerik görünüm: yetkisiz herkese — panelin varlığını ele vermez. -->
-  <div id="bulunamadi" class="orta" style="display:none">
-    <div style="font-size:40px;color:var(--gold)">✦</div>
-    <h1 style="font-size:22px">Bu gökyüzünde böyle bir sayfa yok</h1>
+  <div id="bulunamadi" class="orta" hidden>
+    <div class="yildiz" aria-hidden="true">✦</div>
+    <h1>Bu gökyüzünde böyle bir sayfa yok</h1>
     <a class="buton ikincil" href="/">Ana sayfa</a>
   </div>
 
-  <!-- Giriş: tek buton. Sayfa hiçbir yerden linklenmez. -->
-  <div id="giris" class="orta" style="display:none">
+  <!-- Giriş: sayfa hiçbir yerden linklenmez. -->
+  <div id="giris" class="orta" hidden>
     <img src="/assets/rytho_logo.svg" alt="">
     <div class="giris-kart">
       <form id="eposta-form" class="giris-form">
-        <input class="girdi" name="email" type="email" placeholder="E-posta"
-               autocomplete="username" aria-label="E-posta">
-        <input class="girdi" name="password" type="password" placeholder="Şifre"
-               autocomplete="current-password" aria-label="Şifre">
+        <label class="sr-only" for="giris-eposta">E-posta</label>
+        <input class="girdi" id="giris-eposta" name="email" type="email" placeholder="E-posta"
+               autocomplete="username" required>
+        <label class="sr-only" for="giris-sifre">Şifre</label>
+        <input class="girdi" id="giris-sifre" name="password" type="password" placeholder="Şifre"
+               autocomplete="current-password" required>
         <button class="buton" type="submit">Giriş yap</button>
       </form>
       <div class="giris-ayrac"><span>ya da</span></div>
-      <button id="google-gir" class="buton ikincil">Google ile devam et</button>
-      <button id="sifre-unut" class="giris-unut" type="button">
-        Şifreni mi unuttun?</button>
+      <button id="google-gir" class="buton ikincil" type="button">Google ile devam et</button>
+      <button id="sifre-unut" class="giris-unut" type="button">Şifreni mi unuttun?</button>
     </div>
-    <p id="giris-hata" role="alert"
-       style="display:none;color:var(--madder);font-size:13px;max-width:340px"></p>
-    <p id="giris-bilgi" role="status"
-       style="display:none;color:var(--celadon);font-size:13px;max-width:340px"></p>
+    <p id="giris-hata" class="giris-mesaj hata" role="alert" hidden></p>
+    <p id="giris-bilgi" class="giris-mesaj bilgi" role="status" hidden></p>
   </div>
 
-  <!-- Panel kabuğu: yan menü (geniş) / üst pill (dar) -->
-  <div id="uygulama" class="kabuk">
-    <aside class="yan-menu">
+  <!-- Panel kabuğu: 240px yan menü / 72px ray / <1080 çekmece -->
+  <div id="uygulama" class="kabuk" hidden>
+    <div class="perde" id="perde" aria-hidden="true"></div>
+    <aside class="yan-menu" id="yan-menu" aria-label="Yan menü">
       <div class="marka">
         <img src="/assets/rytho_logo.svg" alt="">
         <div><b>Rytho</b><span>Yönetim</span></div>
       </div>
-      <div class="profil-blok">
-        <div class="avatar" id="admin-avatar">?</div>
-        <div class="kim">
-          <span class="rol">Yönetici</span>
-          <span id="admin-eposta" class="mono"></span>
-        </div>
-      </div>
-      <nav aria-label="Bölümler" id="yan-nav">
-        <a href="#/genel" data-ikon="panel">Genel Bakış</a>
-        <a href="#/kullanicilar" data-ikon="kullanicilar">Kullanıcılar</a>
-        <a href="#/ekonomi" data-ikon="ekonomi">Ekonomi</a>
-        <a href="#/ai" data-ikon="ai">AI Kullanımı</a>
-        <a href="#/ortaklar" data-ikon="ortaklar">Ortaklar</a>
-        <a href="#/sistem" data-ikon="sistem">Sistem</a>
+      <nav class="yan-nav" aria-label="Bölümler" id="yan-nav">
+        <a href="#/genel" data-ikon="panel"><span class="etiket">Genel Bakış</span></a>
+        <a href="#/kullanicilar" data-ikon="kullanicilar"><span class="etiket">Kullanıcılar</span></a>
+        <a href="#/gelir" data-ikon="gelir"><span class="etiket">Gelir &amp; Abonelik</span></a>
+        <a href="#/kullanim" data-ikon="ai"><span class="etiket">Kullanım &amp; AI</span></a>
+        <a href="#/bildirimler" data-ikon="bildirim"><span class="etiket">Bildirimler</span></a>
+        <a href="#/ortaklar" data-ikon="ortaklar"><span class="etiket">Ortaklar</span></a>
+        <a href="#/sistem" data-ikon="sistem"><span class="etiket">Sistem</span><span class="sayac" id="sistem-sayac"></span></a>
       </nav>
-      <div class="alt">
-        <div class="durum-satir">
+      <div class="yan-alt">
+        <div class="durum-satir" id="backend-satir">
           <span class="durum-nokta" id="backend-nokta"></span>
-          <span id="backend-durum">Backend</span>
+          <span class="etiket" id="backend-durum">Backend</span>
         </div>
-        <button id="cikis" class="cikis-dugme">Çıkış</button>
+        <button id="cikis" class="cikis-dugme" type="button"><span class="etiket">Çıkış</span></button>
+        <button id="daralt" class="daralt" type="button" aria-label="Menüyü daralt"><span class="etiket">Menüyü daralt</span></button>
       </div>
     </aside>
 
     <div class="ana">
       <header class="ust-cubuk">
-        <h1 id="sayfa-baslik">Rytho Yönetim</h1>
-        <label class="genel-ara" id="genel-ara-kutu">
-          <span id="ara-ikon" aria-hidden="true"></span>
-          <input id="genel-ara" placeholder="Kullanıcı ara…"
-                 aria-label="Kullanıcı ara">
-        </label>
-        <span id="sunucu-saat" class="mono"></span>
+        <button class="ust-ikon cekmece-ac" id="cekmece-ac" type="button" aria-label="Menü"
+                aria-controls="yan-menu" aria-expanded="false"></button>
+        <nav class="kirinti" id="kirinti" aria-label="Konum"></nav>
+        <button class="palet" id="palet-ac" type="button" aria-label="Ara veya komut çalıştır (Ctrl K)">
+          <span class="ikon" aria-hidden="true"></span>
+          <span>Kullanıcı, sayfa ya da eylem ara…</span>
+          <kbd aria-hidden="true">Ctrl K</kbd>
+        </button>
+        <div class="zil-kap">
+          <button class="ust-ikon" id="zil" type="button" aria-label="Dikkat"
+                  aria-haspopup="true" aria-expanded="false" aria-controls="zil-menu">
+            <span class="rozet-sayac" id="zil-sayac"></span>
+          </button>
+          <div class="zil-menu" id="zil-menu" hidden>
+            <div class="baslik">Dikkat</div>
+            <div class="liste" id="zil-liste"></div>
+          </div>
+        </div>
+        <div class="kimlik">
+          <div class="avatar" id="admin-avatar" aria-hidden="true">?</div>
+          <div class="kim">
+            <span class="rol" id="admin-rol"></span>
+            <span id="admin-eposta"></span>
+          </div>
+        </div>
       </header>
-      <nav class="sekme-ust" aria-label="Bölümler">
-        <a href="#/genel">Genel</a>
-        <a href="#/kullanicilar">Kullanıcılar</a>
-        <a href="#/ekonomi">Ekonomi</a>
-        <a href="#/ai">AI</a>
-        <a href="#/ortaklar">Ortaklar</a>
-        <a href="#/sistem">Sistem</a>
-      </nav>
-      <main id="icerik" class="icerik-alan" aria-busy="false"></main>
+      <main id="icerik" class="icerik" tabindex="-1" aria-busy="false"></main>
     </div>
   </div>
 
@@ -105,16 +116,17 @@
   <script src="/__/firebase/init.js"></script>
 
   <script src="/assets/starfield.js"></script>
-  <script src="/rytho-admin/api.js"></script>
-  <script src="/rytho-admin/ikonlar.js"></script>
-  <script src="/rytho-admin/bilesenler.js"></script>
-  <script src="/rytho-admin/charts.js"></script>
-  <script src="/rytho-admin/gorunumler/genel.js"></script>
-  <script src="/rytho-admin/gorunumler/kullanicilar.js"></script>
-  <script src="/rytho-admin/gorunumler/ekonomi.js"></script>
-  <script src="/rytho-admin/gorunumler/ai.js"></script>
-  <script src="/rytho-admin/gorunumler/ortaklar.js"></script>
-  <script src="/rytho-admin/gorunumler/sistem.js"></script>
-  <script src="/rytho-admin/app.js"></script>
+  <script src="/rytho-admin/api.js?v=3"></script>
+  <script src="/rytho-admin/ikonlar.js?v=3"></script>
+  <script src="/rytho-admin/bilesenler.js?v=3"></script>
+  <script src="/rytho-admin/charts.js?v=3"></script>
+  <script src="/rytho-admin/gorunumler/genel.js?v=3"></script>
+  <script src="/rytho-admin/gorunumler/kullanicilar.js?v=3"></script>
+  <script src="/rytho-admin/gorunumler/gelir.js?v=3"></script>
+  <script src="/rytho-admin/gorunumler/kullanim.js?v=3"></script>
+  <script src="/rytho-admin/gorunumler/bildirimler.js?v=3"></script>
+  <script src="/rytho-admin/gorunumler/ortaklar.js?v=3"></script>
+  <script src="/rytho-admin/gorunumler/sistem.js?v=3"></script>
+  <script src="/rytho-admin/app.js?v=3"></script>
 </body>
 </html>

@@ -90,6 +90,12 @@ def record_consent(req: ConsentRequest,
     except Exception as exc:
         logger.warning("Deneme jetonu yazilamadi (%s): %s", user.uid, exc)
 
+    # AD4: sihirbaz bitiminde profil (ad/e-posta/kullanıcı adı) artık
+    # yazılmış — arama aynası ilk kez burada dolar. Best-effort, hiç
+    # fırlatmaz; kimlik yolundaki günlük kanca (core/auth) yedeğidir.
+    from services import search_mirror
+    search_mirror.ensure(user.uid)
+
     return {"status": "success",
             "version": consent_service.TERMS_CONSENT_VERSION}
 

@@ -444,11 +444,16 @@ def test_rules_appbuild_listede_ve_degismez():
     assert "'appBuild'" in kurallar[bas:liste_son], (
         "appBuild hasOnly listesinde değil; sunucu aynayı yazınca "
         "istemcinin merge yazımları düşer.")
-    assert "appBuildDegismedi()" in kurallar, "değişmezlik yardımcısı yok."
+    # AD-turu: `appBuildDegismedi()` sunucu yazımlı alanların ortak
+    # bekçisi `sunucuAlanlariDegismedi()` içine genelleşti — değişmez aynı.
+    assert "function sunucuAlanlariDegismedi()" in kurallar, (
+        "değişmezlik yardımcısı yok.")
+    assert "sunucuAlaniDegismedi('appBuild')" in kurallar, (
+        "appBuild ortak bekçide listelenmiyor.")
     kural_son = kurallar.index("allow delete", bas)
-    assert "appBuildDegismedi()" in kurallar[bas:kural_son], (
+    assert "sunucuAlanlariDegismedi()" in kurallar[bas:kural_son], (
         "yardımcı tanımlı ama users/{uid} kuralında çağrılmıyor.")
-    assert ("request.resource.data.appBuild == resource.data.appBuild"
+    assert ("request.resource.data[alan] == resource.data[alan]"
             in kurallar), "değişmezlik eşitlik ile kurulmamış."
 
 

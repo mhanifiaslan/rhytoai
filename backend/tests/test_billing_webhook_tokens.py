@@ -31,7 +31,10 @@ def sahte(monkeypatch):
     monkeypatch.setattr(config, "REVENUECAT_WEBHOOK_SECRET", "anahtar")
 
     kayit = {"credit": [], "refund": [], "subscription_set": [],
-             "audit": [], "mevcut_urun": None}
+             "audit": [], "mevcut_urun": None,
+             # AD5: merge yazımları (private/revenueTotals) ayrı kovada —
+             # abonelik kaydı her zaman düz `set(record)` ile yazılır.
+             "merge": []}
 
     monkeypatch.setattr(
         "api.billing.wallet.credit_pack",
@@ -73,6 +76,8 @@ def sahte(monkeypatch):
                 kayit["audit"].append(data)
             elif self.ad == "revenueEvents":
                 kayit.setdefault("revenue", []).append(data)
+            elif merge:
+                kayit["merge"].append(data)
             else:
                 kayit["subscription_set"].append(data)
 

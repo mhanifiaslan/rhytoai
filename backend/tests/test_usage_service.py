@@ -172,3 +172,50 @@ def test_istisnali_cagri_kayit_uretmez(monkeypatch):
 
     assert gemini_service.generate("selam", feature="natal") is None
     assert cagrilar == []
+
+
+# ---------------------------------------------------------------------------
+# Kullanıcı toplamları (AD6): private/usageTotals Increment ile birikir
+# ---------------------------------------------------------------------------
+
+def test_totals_increment_ile_birikir(monkeypatch):
+    from _sahte_firestore import SahteFirestore
+    depo = SahteFirestore()
+    monkeypatch.setattr(usage_service.firestore_client, "get_client",
+                        lambda: depo)
+
+    usage_service.record("natal", "m", SahteYanit(), 10, uid="u1")
+    usage_service.record("chat", "m", SahteYanit(), 10, uid="u1")
+
+    t = depo.docs["users/u1/private/usageTotals"]
+    beklenen = (4000 * 0.30 + 1000 * 2.50) / 1_000_000
+    assert t["calls"] == 2
+    assert t["estCostUsd"] == pytest.approx(2 * beklenen, rel=1e-6)
+    assert t["promptTokens"] == 8000 and t["outputTokens"] == 1600
+    assert t["thinkingTokens"] == 400
+    assert t["byFeature"]["natal"]["calls"] == 1
+    assert t["byFeature"]["chat"]["estCostUsd"] == pytest.approx(beklenen, rel=1e-6)
+    assert t["lastAt"]
+    # Olay kaydı da yazıldı (2 usageEvents).
+    assert len([k for k in depo.docs if k.startswith("usageEvents/")]) == 2
+
+
+def test_totals_uid_yoksa_yazilmaz(monkeypatch):
+    from _sahte_firestore import SahteFirestore
+    depo = SahteFirestore()
+    monkeypatch.setattr(usage_service.firestore_client, "get_client",
+                        lambda: depo)
+    usage_service.record("horoscope", "m", SahteYanit(), 10)
+    assert not any("usageTotals" in k for k in depo.docs)
+
+
+def test_totals_hatasi_olayi_dusurmez(monkeypatch):
+    """Toplam yazımı patlasa da olay kaydı durur, istisna yok."""
+    from _sahte_firestore import SahteFirestore
+    depo = SahteFirestore()
+    monkeypatch.setattr(usage_service.firestore_client, "get_client",
+                        lambda: depo)
+    monkeypatch.setattr(usage_service, "_bump_totals",
+                        lambda *a, **k: (_ for _ in ()).throw(RuntimeError("bum")))
+    usage_service.record("chat", "m", SahteYanit(), 10, uid="u1")
+    assert len([k for k in depo.docs if k.startswith("usageEvents/")]) == 1

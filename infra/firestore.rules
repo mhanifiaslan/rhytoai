@@ -69,11 +69,30 @@ service cloud.firestore {
     // az bir kullanıcı görülmüş olmalı") ve panelin "eşiğin altında N"
     // sayımı istemcinin insafına kalırdı; sahte 999 tek başına 999'luk
     // bir eşiğin yazılmasına kapı açardı.
-    function appBuildDegismedi() {
-      return !('appBuild' in request.resource.data)
+    //
+    // AD-turu genellemesi: sunucu yazımlı alanlar çoğaldı (arama aynası
+    // `emailLower/usernameLower/nameLower`, plan aynası `plan/planAt/
+    // planProduct`, kimlik bayrağı `authDisabled`). Hepsi aynı modelde:
+    // LİSTEDE (merge yazımlar düşmesin) ama DEĞİŞMEZ (istemci kendi
+    // planını "plus" yapamaz, arama aynasını bozamaz, kendini "devre
+    // dışı değil" yazamaz). Tek fonksiyon, tek liste — yeni sunucu alanı
+    // bu listeye ve hasOnly'ye birlikte girer (KT1 dersi).
+    function sunucuAlaniDegismedi(alan) {
+      return !(alan in request.resource.data)
         || (resource != null
-            && 'appBuild' in resource.data
-            && request.resource.data.appBuild == resource.data.appBuild);
+            && alan in resource.data
+            && request.resource.data[alan] == resource.data[alan]);
+    }
+
+    function sunucuAlanlariDegismedi() {
+      return sunucuAlaniDegismedi('appBuild')
+        && sunucuAlaniDegismedi('emailLower')
+        && sunucuAlaniDegismedi('usernameLower')
+        && sunucuAlaniDegismedi('nameLower')
+        && sunucuAlaniDegismedi('plan')
+        && sunucuAlaniDegismedi('planAt')
+        && sunucuAlaniDegismedi('planProduct')
+        && sunucuAlaniDegismedi('authDisabled');
     }
 
     // ---------- Kullanıcı profili (HASSAS — yalnızca sahibi) ----------
@@ -123,6 +142,12 @@ service cloud.firestore {
           // Sürüm aynası (PBZ): SUNUCU yazar (X-App-Build → appBuild),
           // platform gibi listede, faceConsent gibi DEĞİŞMEZ (yukarıya bak).
           'appBuild',
+          // Arama aynası (AD4, services/search_mirror.py) + plan aynası
+          // (AD5, api/billing._mirror_plan) + kimlik bayrağı (AD4, disable
+          // ucu/backfill): SUNUCU yazar, listede, DEĞİŞMEZ —
+          // sunucuAlanlariDegismedi().
+          'emailLower', 'usernameLower', 'nameLower',
+          'plan', 'planAt', 'planProduct', 'authDisabled',
           // Biyometrik işleme rızası — LİSTEDE ama DEĞİŞMEZ (aşağıya bak).
           'faceConsent',
           // Şartlar/gizlilik kabulü (O3) — LİSTEDE ama DEĞİŞMEZ.
@@ -130,7 +155,7 @@ service cloud.firestore {
         ])
         && faceConsentDegismedi()
         && termsConsentDegismedi()
-        && appBuildDegismedi();
+        && sunucuAlanlariDegismedi();
       allow delete: if isOwner(uid);
 
       // ---------- Sohbet arşivi (Revize R4) ----------

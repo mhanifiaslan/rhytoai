@@ -16,7 +16,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from core import config
-from services import admin_service
+from services import admin_service, search_mirror
 
 try:
     from main import app
@@ -31,116 +31,7 @@ uygulama_gerekir = pytest.mark.skipif(
 )
 
 
-# ---------------------------------------------------------------------------
-# Genel bellek içi sahte Firestore: yol -> veri; alt koleksiyon + sorgu
-# ---------------------------------------------------------------------------
-
-class _Anlik:
-    def __init__(self, doc_id, veri):
-        self.id = doc_id
-        self._veri = veri
-        self.exists = veri is not None
-
-    def to_dict(self):
-        return dict(self._veri) if self._veri else None
-
-
-class _Dokuman:
-    def __init__(self, depo, yol):
-        self._depo = depo
-        self._yol = yol
-
-    def get(self, transaction=None):
-        return _Anlik(self._yol.rsplit("/", 1)[-1],
-                      self._depo.docs.get(self._yol))
-
-    def set(self, veri, merge=False):
-        mevcut = dict(self._depo.docs.get(self._yol) or {}) if merge else {}
-        mevcut.update(veri)
-        self._depo.docs[self._yol] = mevcut
-
-    def collection(self, ad):
-        return _Koleksiyon(self._depo, f"{self._yol}/{ad}")
-
-
-class _Koleksiyon:
-    _oto = 0
-
-    def __init__(self, depo, yol, satirlar=None, ters=False, n=None):
-        self._depo = depo
-        self._yol = yol
-        self._satirlar = satirlar
-        self._ters = ters
-        self._n = n
-
-    def document(self, ad=None):
-        if ad is None:
-            _Koleksiyon._oto += 1
-            ad = f"oto-{_Koleksiyon._oto}"
-        return _Dokuman(self._depo, f"{self._yol}/{ad}")
-
-    def _cek(self):
-        if self._satirlar is not None:
-            return self._satirlar
-        onek = self._yol + "/"
-        return [(k[len(onek):], v) for k, v in self._depo.docs.items()
-                if k.startswith(onek) and "/" not in k[len(onek):]]
-
-    def where(self, filter=None):
-        alan, islem, deger = (filter.field_path, filter.op_string,
-                              filter.value)
-
-        def uyar(v):
-            x = v[1].get(alan)
-            if islem == "==":
-                return x == deger
-            if x is None:
-                return False
-            if islem == ">=":
-                return x >= deger
-            if islem == "<":
-                return x < deger
-            raise NotImplementedError(islem)
-        return _Koleksiyon(self._depo, self._yol,
-                           [v for v in self._cek() if uyar(v)],
-                           self._ters, self._n)
-
-    def order_by(self, alan, direction="ASCENDING"):
-        satirlar = sorted(
-            self._cek(),
-            key=(lambda v: v[0]) if alan == "__name__" else
-                (lambda v: getattr(v[1].get(alan), "timestamp", lambda: 0)()),
-            reverse=(direction == "DESCENDING"))
-        return _Koleksiyon(self._depo, self._yol, satirlar, n=self._n)
-
-    def limit(self, n):
-        return _Koleksiyon(self._depo, self._yol, self._cek()[:n])
-
-    def start_after(self, imlec):
-        son = imlec["__name__"]
-        return _Koleksiyon(self._depo, self._yol,
-                           [v for v in self._cek() if v[0] > son])
-
-    def stream(self):
-        return [_Anlik(d, v) for d, v in self._cek()]
-
-    def count(self):
-        adet = len(self._cek())
-
-        class _Sonuc:
-            def get(self):
-                class _Deger:
-                    value = adet
-                return [[_Deger()]]
-        return _Sonuc()
-
-
-class SahteFirestore:
-    def __init__(self):
-        self.docs: dict[str, dict] = {}
-
-    def collection(self, ad):
-        return _Koleksiyon(self, ad)
+from _sahte_firestore import SahteFirestore  # noqa: E402
 
 
 _SIMDI = dt.datetime.now(dt.timezone.utc)
@@ -152,13 +43,18 @@ def depo(monkeypatch):
     sahte.docs.update({
         "users/u1": {"displayName": "Ayşe", "email": "ayse@ornek.com",
                      "username": "ayse", "sunSign": "leo",
+                     **search_mirror.compute({"displayName": "Ayşe",
+                                              "email": "ayse@ornek.com",
+                                              "username": "ayse"}),
                      "createdAt": _SIMDI, "lastSeenDaily": "2026-08-29",
                      "streakCount": 4, "language": "tr",
                      "timezone": "Europe/Istanbul", "platform": "android",
                      "onboardingCompleted": True, "fcmToken": "GIZLI-TOKEN",
                      "birthDate": "1990-01-01"},
         "users/u2": {"displayName": "Erkan", "email": "erkan@ornek.com",
-                     "createdAt": _SIMDI - dt.timedelta(days=3)},
+                     "createdAt": _SIMDI - dt.timedelta(days=3),
+                     **search_mirror.compute({"displayName": "Erkan",
+                                              "email": "erkan@ornek.com"})},
         "users/u1/private/subscription": {"active": True,
                                           "productId": "rytho_plus_monthly"},
         "users/u1/private/notifications": {"dailyLastSent": "2026-08-29",
@@ -184,7 +80,9 @@ def depo(monkeypatch):
 
 
 def test_liste_sekli_ve_token_sizmaz(depo):
-    satirlar = admin_service.list_users()
+    sonuc = admin_service.list_users()
+    assert sonuc["mode"] == "filter" and sonuc["nextCursor"] is None
+    satirlar = sonuc["users"]
     assert len(satirlar) == 2
     ayse = next(s for s in satirlar if s["uid"] == "u1")
     assert ayse["hasPush"] is True
@@ -195,8 +93,11 @@ def test_liste_sekli_ve_token_sizmaz(depo):
 
 
 def test_liste_onek_aramasi(depo):
-    assert [s["uid"] for s in admin_service.list_users(query="erk")] == ["u2"]
-    assert admin_service.list_users(query="yok") == []
+    """Arama modu: ayna alanında önek (AD4) — tam tarama yok."""
+    sonuc = admin_service.list_users(q="Erk", alan="ad")
+    assert sonuc["mode"] == "search"
+    assert [s["uid"] for s in sonuc["users"]] == ["u2"]
+    assert admin_service.list_users(q="yok")["users"] == []
 
 
 def test_360_sekli_mahremiyet_cizgisi(depo):
@@ -370,24 +271,34 @@ def test_silme_emniyetleri_ve_akisi(monkeypatch, depo):
     assert izler[0]["params"]["email"] == "ayse@ornek.com"
 
 
-def test_economics_marj_matematigi(depo):
+def test_economics_marj_matematigi(depo, monkeypatch):
     """Kâr = gelir × 0,85 − AI maliyeti; iade negatif; paylaşımlı üretim
-    kullanıcıya yazılmaz ama toplamda görünür."""
-    depo.docs["usageEvents/x1"] = {"uid": "u1", "estCostUsd": 0.05,
-                                   "at": _SIMDI}
-    depo.docs["usageEvents/x2"] = {"uid": None, "estCostUsd": 0.01,
-                                   "at": _SIMDI}
-    depo.docs["revenueEvents/e2"] = {"uid": "u1", "eventType": "REFUND",
-                                     "price": 1.0, "at": _SIMDI}
+    kullanıcıya yazılmaz ama toplamda görünür — kaynak adminEconomics
+    rollup'ı (AD7), canlı tarama YOK (usageEvents/revenueEvents boş olsa
+    da sonuç aynı)."""
+    monkeypatch.setattr(admin_service.cache, "get", lambda k: None)
+    monkeypatch.setattr(admin_service.cache, "set", lambda *a, **k: None)
+    depo.docs["adminEconomics/2026-09-11"] = {
+        "date": "2026-09-11",
+        "users": {"u1": {"r": 4.99, "rs": 0, "c": 0.05, "n": 1, "t": 3}},
+        "others": {"r": 0, "rs": 0, "c": 0, "n": 0, "t": 0},
+        "shared": {"c": 0.01, "n": 1}, "count": 1}
+    depo.docs["adminEconomics/2026-09-12"] = {
+        "date": "2026-09-12",
+        "users": {"u1": {"r": -1.0, "rs": 2.5, "c": 0, "n": 0, "t": 0}},
+        "others": {"r": 0, "rs": 0, "c": 0, "n": 0, "t": 0},
+        "shared": {"c": 0, "n": 0}, "count": 1}
 
-    sonuc = admin_service.economics(days=30)
+    sonuc = admin_service.economics(days=30, env="PRODUCTION")
 
     u1 = next(s for s in sonuc["users"] if s["uid"] == "u1")
+    assert u1["displayName"] == "Ayşe"          # get_all ile ad
     assert u1["revenueUsd"] == pytest.approx(3.99)   # 4.99 − 1.00 iade
+    assert u1["sandboxUsd"] == pytest.approx(2.5)
     assert u1["aiCostUsd"] == pytest.approx(0.05)
     assert u1["marginUsd"] == pytest.approx(3.99 * 0.85 - 0.05)
     assert sonuc["totals"]["sharedAiCostUsd"] == pytest.approx(0.01)
     assert sonuc["totals"]["aiCostUsd"] == pytest.approx(0.06)
-    # Hareketsiz kullanıcı da satır alır (tam liste).
-    assert any(s["uid"] == "u2" and s["revenueUsd"] == 0
-               for s in sonuc["users"])
+    assert sonuc["coverage"] == {"daysFound": 2, "oldest": "2026-09-11"}
+    # Hareketsiz kullanıcı rollup'ta yok → satır da yok (top-N tablosu).
+    assert all(s["uid"] != "u2" for s in sonuc["users"])

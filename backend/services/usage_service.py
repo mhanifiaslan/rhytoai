@@ -86,3 +86,39 @@ def record(feature: str, model: str, response, latency_ms: int,
         })
     except Exception as exc:
         logger.info("Kullanım kaydı yazılamadı (%s): %s", feature, exc)
+        return
+
+    # AD6: kullanıcı başına BİRİKİMLİ toplamlar — Kullanıcı 360 artık
+    # usageEvents'i sınırsız taramaz, bu dokümanı okur. Olay yazımından
+    # AYRI try: toplam düşse de olay kaydı durur (ve tersi). Paylaşımlı
+    # üretim (uid yok) kullanıcıya yazılmaz.
+    if not uid:
+        return
+    try:
+        _bump_totals(client, uid, feature or "unknown", round(est_cost, 8),
+                     prompt_t, output_t, thinking_t, now)
+    except Exception as exc:
+        logger.info("Kullanım toplamı yazılamadı (%s): %s", uid, exc)
+
+
+def _bump_totals(client, uid: str, feature: str, est_cost: float,
+                 prompt_t: int, output_t: int, thinking_t: int,
+                 now: dt.datetime) -> None:
+    """`users/{uid}/private/usageTotals` — Increment ile birikir.
+
+    Aynı dokümana eşzamanlı iki çağrı Increment sayesinde kaybolmaz;
+    set(merge) doküman yoksa kurar. Backfill betiği (scripts/
+    backfill_usage_totals.py) MUTLAK değerle yeniden yazar.
+    """
+    from google.cloud import firestore as gcf
+    (client.collection("users").document(uid)
+     .collection("private").document("usageTotals")).set({
+         "calls": gcf.Increment(1),
+         "estCostUsd": gcf.Increment(est_cost),
+         "promptTokens": gcf.Increment(prompt_t),
+         "outputTokens": gcf.Increment(output_t),
+         "thinkingTokens": gcf.Increment(thinking_t),
+         "byFeature": {feature: {"calls": gcf.Increment(1),
+                                 "estCostUsd": gcf.Increment(est_cost)}},
+         "lastAt": now,
+     }, merge=True)

@@ -1,0 +1,439 @@
+"""Toplu bildirim koşusu (AD8) — `api/notify.run` gövdesi servis oldu.
+
+Neden taşındı: panel iki yeni araç istiyor — "prova" (kime gidecekti,
+gönderme) ve "kendime test gönder" (yalnız çağıranın uid'i, iz bırakmadan).
+İkisi de zamanlayıcı koşusunun AYNI mantığıdır; uç gövdesinde kalsaydı ya
+kopyalanır ya da HTTP katmanı servisten çağrılırdı. Uç ince sarmalayıcı
+oldu (zamanlayıcı sırrı + aynı yanıt), mantık burada.
+
+Sözleşme (`run_batch`):
+
+- ``dry_run``: hesaplanır, GÖNDERİLMEZ, hiçbir kayıt yazılmaz.
+- ``force``: yalnız hedef saat kontrolünü atlar.
+- ``ignore_dedupe``: yalnız tekrar korumasını atlar (force ile).
+- ``only_uid``: tek profil (taramasız — `users/{uid}` doğrudan okunur);
+  onboarding süzgeci uygulanmaz, jeton-sahibi kıyası tek profilde anlamsız.
+- ``mark``: False ise gönderim kaydı (mark_sent), koşu kaydı (notifyRuns)
+  ve sohbet tohumu YAZILMAZ — test gönderimi panel sayılarını şişirmez.
+
+**Sessiz saat ve kullanıcı tercihi hiçbir bayrakla atlanmaz.**
+"""
+from __future__ import annotations
+
+import datetime as dt
+import logging
+from typing import Any
+
+from pydantic import BaseModel, Field
+
+from core import firestore as firestore_client
+from core import i18n
+from services import (
+    chat_history,
+    notification_service,
+    profile_service,
+    prompts,
+    push_service,
+)
+from services.sky_service import get_sky_now
+
+logger = logging.getLogger(__name__)
+
+#: Kullanıcı taramasında tek seferde okunacak doküman sayısı. Tüm koleksiyonu
+#: belleğe almak, kullanıcı sayısı büyüdüğünde instance'ı düşürürdü.
+PAGE_SIZE = 500
+
+#: Toplu koşunun türleri — api/notify.run Literal'i ve panel ile aynı küme.
+RUN_TYPES = ("daily", "midday", "checkin", "streak")
+
+#: Jetonsuz hesaba test isteği — uç 400'e çevirir.
+NO_TOKEN_MESSAGE = "Bu hesabın push jetonu yok — mobilde bu hesapla giriş yap."
+
+
+def _iter_profiles():
+    """Kullanıcı profillerini sayfalayarak dolaşır."""
+    client = firestore_client.get_client()
+    if client is None:
+        return
+
+    from google.cloud.firestore_v1.base_query import FieldFilter
+
+    son = None
+    while True:
+        sorgu = (client.collection("users")
+                 .where(filter=FieldFilter("onboardingCompleted", "==", True))
+                 .order_by("__name__")
+                 .limit(PAGE_SIZE))
+        if son is not None:
+            sorgu = sorgu.start_after({"__name__": son})
+
+        sayfa = list(sorgu.stream())
+        if not sayfa:
+            return
+        for anlik in sayfa:
+            veri = anlik.to_dict() or {}
+            veri["uid"] = anlik.id
+            yield veri
+        son = sayfa[-1].id
+        if len(sayfa) < PAGE_SIZE:
+            return
+
+
+def _jeton_zamani(profil: dict[str, Any]) -> tuple[str, str]:
+    """Jetonun bu profile en son ne zaman yazıldığı — sıralanabilir anahtar.
+
+    Birincil `fcmTokenAt` (38+ istemci, sunucu zaman damgası); yoksa
+    `lastSeenDaily` (her istemci, gün çözünürlüğü). Damgası olan profil
+    olmayanı yener: damga yazan istemci jetonu EN SON almış olandır.
+    """
+    damga = profil.get("fcmTokenAt")
+    if damga is None:
+        damga_iso = ""
+    elif hasattr(damga, "isoformat"):
+        damga_iso = damga.isoformat()
+    else:
+        damga_iso = str(damga)
+    return (damga_iso, str(profil.get("lastSeenDaily") or ""))
+
+
+def _jeton_sahipleri(profiller: list[dict[str, Any]]) -> dict[str, str]:
+    """Her cihaz jetonu için EN SON sahiplenen uid (JT-turu).
+
+    Aynı telefonda hesap değiştirilince eski hesabın profilindeki
+    `fcmToken` duruyordu (çıkış silmiyordu) — o cihaza İKİ hesabın push'u
+    gidiyordu, biri Türkçe biri İngilizce (cihazda ölçüldü: sahip + test
+    hesabı aynı jeton). Jeton bir cihaza aittir ve cihazda o an bir hesap
+    açıktır: en son yazan kazanır, diğerleri bu koşuda atlanır ve bayat
+    jetonları silinir.
+    """
+    sahipler: dict[str, tuple[tuple[str, str], str]] = {}
+    for p in profiller:
+        jeton = p.get("fcmToken")
+        uid = p.get("uid")
+        if not jeton or not uid:
+            continue
+        anahtar = _jeton_zamani(p)
+        mevcut = sahipler.get(jeton)
+        if mevcut is None or anahtar > mevcut[0]:
+            sahipler[jeton] = (anahtar, uid)
+    return {jeton: uid for jeton, (_, uid) in sahipler.items()}
+
+
+def _bayat_jetonu_sil(uid: str) -> None:
+    """Başka hesabın cihazına ait jetonu bu profilden söker (best-effort).
+
+    Silinmese bir sonraki koşuda yine atlanır; silinince bu koşu bir daha
+    karşılaşmaz ve `_iter_profiles` maliyeti düşer.
+    """
+    try:
+        client = firestore_client.get_client()
+        if client is None:
+            return
+        from google.cloud import firestore as gfs
+        client.collection("users").document(uid).update(
+            {"fcmToken": gfs.DELETE_FIELD, "fcmTokenAt": gfs.DELETE_FIELD})
+    except Exception as exc:
+        logger.warning("Bayat jeton silinemedi (%s): %s", uid, exc)
+
+
+class RunResult(BaseModel):
+    status: str
+    type: str
+    scanned: int
+    queued: int
+    sent: int
+    failed: int
+    pruned: int
+    #: Neden gönderilmediğinin dökümü — sessiz düşen bildirimler görünür olmalı.
+    skipped: dict[str, int]
+    #: Kuyruğa giren mesajların dil dökümü (DM-turu): "hem İngilizce hem
+    #: Türkçe" bulgusundan sonra hangi dilde kaç push gittiği görünür olmalı.
+    languages: dict[str, int] = Field(default_factory=dict)
+
+
+def _kosu_kaydet(type_: str, gun: str, sonuc: RunResult,
+                 now_utc: dt.datetime) -> None:
+    """Koşu sonucunu kalıcılaştırır (AP-turu) — panel "bildirim sağlığı".
+
+    Eskiden RunResult yalnız HTTP yanıtı olarak Cloud Scheduler'a dönüp
+    kayboluyordu. Doküman kimliği deterministik ``{gün}-{tür}``; zamanlayıcı
+    SAATTE BİR koştuğu için sayılar Increment ile BİRİKİR (set ezseydi gün
+    toplamı son saatin sayısına inerdi). Best-effort: yazım düşerse koşu
+    düşmez. dry_run buraya hiç uğramaz (prova iz bırakmaz).
+    """
+    try:
+        client = firestore_client.get_client()
+        if client is None:
+            return
+        from google.cloud import firestore as gcf
+        client.collection("notifyRuns").document(f"{gun}-{type_}").set({
+            "date": gun,
+            "type": type_,
+            "runs": gcf.Increment(1),
+            "scanned": gcf.Increment(sonuc.scanned),
+            "queued": gcf.Increment(sonuc.queued),
+            "sent": gcf.Increment(sonuc.sent),
+            "failed": gcf.Increment(sonuc.failed),
+            "pruned": gcf.Increment(sonuc.pruned),
+            "skipped": {k: gcf.Increment(v) for k, v in sonuc.skipped.items()},
+            # AD7: dil dökümü de birikir — rollup `notify.{tür}.languages`.
+            "languages": {k: gcf.Increment(v)
+                          for k, v in sonuc.languages.items()},
+            "lastStatus": sonuc.status,
+            "lastRunAt": now_utc,
+        }, merge=True)
+    except Exception as exc:
+        logger.warning("Bildirim koşusu kaydedilemedi (%s/%s): %s",
+                       gun, type_, exc)
+
+
+def _profiller(only_uid: str | None) -> list[dict[str, Any]]:
+    if only_uid:
+        profil = profile_service.get_profile(only_uid)
+        return [{**profil, "uid": only_uid}] if profil else []
+    return list(_iter_profiles())
+
+
+def _run(type: str, *, dry_run: bool, force: bool, ignore_dedupe: bool,
+         only_uid: str | None, mark: bool
+         ) -> tuple[RunResult, list[push_service.Message]]:
+    """Koşunun gövdesi; kuyruğa giren mesajları da döner (test-send
+    başlık/gövdeyi buradan gösterir)."""
+    now_utc = dt.datetime.now(dt.timezone.utc)
+    # Gökyüzü bir kez okunur ve tüm kullanıcılar için paylaşılır.
+    try:
+        ham_sky = get_sky_now()
+    except Exception as exc:
+        logger.warning("Bildirim icin gokyuzu alinamadi: %s", exc)
+        ham_sky = {}
+
+    mesajlar: list[push_service.Message] = []
+    isaretlenecek: list[tuple[str, str]] = []  # (uid, yerel gün)
+    # OT1.1: daily gönderiminin hafıza alanları (gövde + odak sinyal) —
+    # başarılı gönderimden sonra mark_sent'e `extra` olarak geçer.
+    ekstralar: dict[str, dict[str, Any]] = {}
+    taranan = 0
+    atlanan: dict[str, int] = {}
+    # DM-turu: kuyruğa giren mesajların dil sayımı (özet loga ve yanıta).
+    diller: dict[str, int] = {}
+    # Dil başına yerelleştirilmiş gökyüzü; her kullanıcı için yeniden
+    # hesaplamaya gerek yok.
+    sky_by_lang: dict[str, dict[str, Any]] = {}
+
+    # JT-turu: profiller bir kez okunur (≤ birkaç yüz); aynı jetonu taşıyan
+    # hesaplardan yalnız en son sahiplenen alır — cihaza iki hesabın push'u
+    # gitmez.
+    profiller = _profiller(only_uid)
+    jeton_sahibi = _jeton_sahipleri(profiller)
+
+    for profil in profiller:
+        taranan += 1
+        jeton = profil.get("fcmToken")
+        if jeton and jeton_sahibi.get(jeton) != profil.get("uid"):
+            logger.warning(
+                "Jeton başka hesapta daha yeni: uid=%s sahip=%s tur=%s — "
+                "atlandı, bayat jeton siliniyor",
+                profil.get("uid"), jeton_sahibi.get(jeton), type)
+            atlanan["jeton-baska-hesapta"] = (
+                atlanan.get("jeton-baska-hesapta", 0) + 1)
+            if not dry_run:
+                _bayat_jetonu_sil(profil["uid"])
+            continue
+        gonder, gerekce = notification_service.should_send(
+            profil, type, now_utc, ignore_target_hour=force,
+            ignore_dedupe=ignore_dedupe)
+        if not gonder:
+            atlanan[gerekce] = atlanan.get(gerekce, 0) + 1
+            continue
+
+        lang = notification_service.profile_language(profil)
+        yerel = notification_service.local_now(profil, now_utc)
+        gun = yerel.date().isoformat()
+        # SS-turu: gövde SORU biçimliyse üretici bunu beyan eder; sohbet
+        # tohumu dil kapısından SONRA atılır (aşağıda).
+        soru = False
+
+        if type == "daily":
+            sign = profile_service.sun_sign_key(profil)
+            if sign is None:
+                atlanan["burc-bilinmiyor"] = atlanan.get("burc-bilinmiyor", 0) + 1
+                continue
+            if lang not in sky_by_lang:
+                sky_by_lang[lang] = prompts.localize_sky(lang, ham_sky)
+            # R2-S4 → KA-turu: sabah bildirimi kullanıcının 1 numaralı
+            # sinyalinin O GÜNE ÖZGÜ AI cümlesi (uç ile paylaşılan
+            # paket — günde toplam bir üretim). Üretilemezse paylaşımlı
+            # burç satırına geri düşülür; bildirim asla atlanmaz.
+            # `route`/`fp`/`idx`/`d`: dokununca ilgili sinyal kartının
+            # dayanak sayfası açılsın diye (KA5) — eski istemci bu
+            # alanları yok sayar, davranışı değişmez.
+            # OT1.3: dünkü gönderimin hafızası tema çarkını döndürür ve
+            # "dünle aynı metin" korumasını besler; gönderilen gövde
+            # `ekstra` ile geri yazılır (öğle kopya koruması ona bakar).
+            onceki = notification_service.last_daily_sent(profil["uid"])
+            sinyal_push = notification_service.signal_push(
+                profil, lang, today=yerel.date(), onceki=onceki)
+            if sinyal_push is not None:
+                baslik, govde, iz, idx, ekstra = sinyal_push
+                veri = {"type": "daily", "sign": sign, "route": "signal",
+                        "fp": iz, "idx": str(idx), "d": gun}
+                ekstralar[profil["uid"]] = ekstra
+            else:
+                baslik = prompts.get(lang).PUSH_DAILY_TITLE
+                govde = notification_service.daily_push_body(
+                    sign, sky_by_lang[lang], lang, gun)
+                # BY-turu: yedek yol da hedefli — dokununca günlük okuma
+                # (hikâye) açılır; eskiden yalnız sekme atanıyordu.
+                veri = {"type": "daily", "sign": sign,
+                        "route": "story", "d": gun}
+        elif type == "midday":
+            # OB3 → OT1.2: öğle ölçülü slotu — yalnız BUGÜN gerçekten
+            # olay varsa gider ve SABAH GÖVDESİNİN KOPYASI ASLA gitmez
+            # ("sabahla-ayni" gerekçesiyle görünür atlanır). LLM yakmaz.
+            ogle, gerekce = notification_service.midday_push(
+                profil, lang, today=yerel.date())
+            if ogle is None:
+                atlanan[gerekce] = atlanan.get(gerekce, 0) + 1
+                continue
+            baslik, govde, veri = ogle
+        elif type == "checkin":
+            # KA4: günün önemli sinyaline bağlı kişisel soru — yalnız
+            # sabah paketinde soru YAZILMIŞSA gider; LLM çağrılmaz.
+            # Soru FCM yükünde taşınır: içeriği yalnız transit
+            # satırlarından üretildiği için kişisel veri sızdırmaz.
+            checkin = notification_service.checkin_push(
+                profil, lang, today=yerel.date())
+            if checkin is None:
+                atlanan["soru-yok"] = atlanan.get("soru-yok", 0) + 1
+                continue
+            baslik, govde = checkin.baslik, checkin.govde
+            veri = {"type": "checkin", "route": "chat",
+                    "q": govde, "q_date": gun}
+            soru = checkin.soru
+        else:
+            baslik, govde = notification_service.streak_push(profil, lang)
+            # BY-turu: "okumanı açmadın" dokununca okumayı AÇAR (hikâye) —
+            # yalnız {type} taşıyan eski yükün hedefi yoktu.
+            veri = {"type": "streak", "route": "story", "d": gun}
+
+        # DM-turu son emniyet ağı: hangi dalda üretilmiş olursa olsun,
+        # başlık ya da gövde profil dilinin DIŞINDA görünüyorsa push
+        # GİTMEZ ve görünür atlanır. Üreticiler kendi muhafızını taşır
+        # (`_bundle_body`, `checkin_push`); burası kaçağı yakalayan ağ.
+        # Sohbet tohumu bu kapıdan SONRA: yanlış dilde soru sohbete girmez.
+        if (i18n.language_conflicts(govde, lang)
+                or i18n.language_conflicts(baslik, lang)):
+            logger.warning(
+                "Bildirim dil uyuşmazlığı, gönderilmedi: uid=%s tur=%s "
+                "lang=%s baslik=%r govde=%r",
+                profil["uid"], type, lang, baslik, govde)
+            atlanan["dil-uyusmaz"] = atlanan.get("dil-uyusmaz", 0) + 1
+            continue
+
+        # SS-turu: gövde bir SORUysa Rytho sohbette ÖNCE yazar. Karar tür
+        # adından değil üreticinin beyanından (`soru`) geliyor. `dry_run`
+        # tohumlamaz: prova iz bırakmaz; `mark=False` (test gönderimi) de
+        # tohumlamaz. `cid` yüke `push_service.send`'den ÖNCE girmek
+        # zorunda, bu yüzden tohum döngünün içinde kalıyor.
+        if soru and not dry_run and mark:
+            cid = chat_history.seed_assistant_message(
+                profil["uid"], govde, lang, gun)
+            if cid:
+                veri["route"] = "chat_answer"
+                veri["cid"] = cid
+
+        diller[lang] = diller.get(lang, 0) + 1
+        mesajlar.append(push_service.Message(
+            uid=profil["uid"], token=profil["fcmToken"],
+            title=baslik, body=govde, data=veri,
+        ))
+        isaretlenecek.append((profil["uid"], gun))
+
+    if dry_run:
+        logger.info("Bildirim PROVA turu=%s taranan=%d kuyruk=%d diller=%s "
+                    "atlanan=%s",
+                    type, taranan, len(mesajlar), diller, atlanan)
+        return RunResult(
+            status="dry-run", type=type, scanned=taranan,
+            queued=len(mesajlar), sent=0, failed=0, pruned=0, skipped=atlanan,
+            languages=diller,
+        ), mesajlar
+
+    sonuc = push_service.send(mesajlar)
+
+    # Gönderim kaydı SONRA yazılır: önce yazsaydık ve gönderim düşseydi,
+    # kullanıcı o gün bildirimi hiç almazdı. OT1.5: GEÇİCİ hatalar da
+    # işaretlenmez (eskiden yalnız ölü token'lar atlanıyordu ve FCM'in
+    # anlık hatası kullanıcının o gününü sessizce yakıyordu) — zamanlayıcı
+    # aynı hedef saat penceresi içinde yeniden dener. Süreç gönderim ile
+    # işaretleme arasında ölürse dar bir çift-gönderim penceresi kalır;
+    # kabul edilmiş sınır (işlemsel FCM+Firestore yok).
+    if mark:
+        basarisiz_uidler = set(sonuc.failed_uids)
+        for uid, gun in isaretlenecek:
+            if uid not in basarisiz_uidler:
+                notification_service.mark_sent(uid, type, gun,
+                                               extra=ekstralar.get(uid))
+
+    logger.info("Bildirim turu=%s taranan=%d kuyruk=%d gonderilen=%d "
+                "basarisiz=%d temizlenen=%d diller=%s atlanan=%s",
+                type, taranan, len(mesajlar), sonuc.sent, sonuc.failed,
+                len(sonuc.pruned), diller, atlanan)
+
+    yanit = RunResult(
+        status="ok", type=type, scanned=taranan, queued=len(mesajlar),
+        sent=sonuc.sent, failed=sonuc.failed, pruned=len(sonuc.pruned),
+        skipped=atlanan, languages=diller,
+    )
+    if mark:
+        _kosu_kaydet(type, now_utc.date().isoformat(), yanit, now_utc)
+    return yanit, mesajlar
+
+
+def run_batch(type: str, *, dry_run: bool = False, force: bool = False,
+              ignore_dedupe: bool = False, only_uid: str | None = None,
+              mark: bool = True) -> RunResult:
+    """Toplu koşu — modül başındaki sözleşme."""
+    if type not in RUN_TYPES:
+        raise ValueError(f"Bilinmeyen bildirim türü: {type}")
+    if ignore_dedupe and not force:
+        raise ValueError("ignore_dedupe yalnizca force ile birlikte kullanilir.")
+    sonuc, _ = _run(type, dry_run=dry_run, force=force,
+                    ignore_dedupe=ignore_dedupe, only_uid=only_uid, mark=mark)
+    return sonuc
+
+
+def test_send(uid: str, type: str = "daily") -> dict[str, Any]:
+    """Panel "kendime test gönder" (AD8): YALNIZ verilen uid, iz yok.
+
+    Koşu bu hesaba bir şey kuyrukladıysa o gider (gerçek üretim yolu
+    sınanmış olur); atlandıysa (deneme dışı, soru yok…) sabit
+    `PUSH_TEST_TITLE/BODY` gider — jeton/kanal/dil zinciri yine görülür.
+    Profil ya da jeton yoksa ValueError (uç 400): sessiz "0 gönderildi"
+    operatörü yanıltırdı.
+    """
+    if type not in RUN_TYPES:
+        raise ValueError(f"Bilinmeyen bildirim türü: {type}")
+    profil = profile_service.get_profile(uid)
+    if not profil or not profil.get("fcmToken"):
+        raise ValueError(NO_TOKEN_MESSAGE)
+    profil = {**profil, "uid": uid}
+    lang = notification_service.profile_language(profil)
+
+    sonuc, mesajlar = _run(type, dry_run=False, force=True,
+                           ignore_dedupe=True, only_uid=uid, mark=False)
+    if mesajlar:
+        m = mesajlar[0]
+        return {"sent": sonuc.sent, "failed": sonuc.failed, "lang": lang,
+                "title": m.title, "body": m.body, "skippedReason": None,
+                "type": type}
+
+    p = prompts.get(lang)
+    gonderim = push_service.send([push_service.Message(
+        uid=uid, token=profil["fcmToken"],
+        title=p.PUSH_TEST_TITLE, body=p.PUSH_TEST_BODY,
+        data={"type": "test"})])
+    return {"sent": gonderim.sent, "failed": gonderim.failed, "lang": lang,
+            "title": p.PUSH_TEST_TITLE, "body": p.PUSH_TEST_BODY,
+            "skippedReason": next(iter(sonuc.skipped), None),
+            "type": type}

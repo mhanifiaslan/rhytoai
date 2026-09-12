@@ -1,49 +1,70 @@
-/* Panel API katmanı (W6 + AP sertleştirmesi): her veri backend'den,
-   Firestore'a doğrudan erişim YOK (kurallar kapalı kalır). Kimlik:
-   Firebase ID token. */
+/* Panel API katmanı v3 (AD18): her veri backend'den, Firestore'a doğrudan
+   erişim YOK (kurallar kapalı kalır). Kimlik: Firebase ID token.
+
+   v2'den farklar: AbortController (sinyal), 429 → toast + err.retryAfter,
+   RY.sorgu (boş parametreleri atlayan sorgu dizesi), RY.indir (yetkili
+   blob indirme), 503 denetim izi mesajı olduğu gibi geçer, 204 → null. */
 (function () {
   'use strict';
 
   /* AYNI ORIGIN (AP2 onarımı): istekler Hosting'in Cloud Run
-     yönlendirmesinden geçer (firebase.json /api/** ve /health**).
-     Çapraz-site istek kalmadı — CORS, reklam engelleyiciler ve run.app
-     DNS sorunları sınıf olarak devre dışı. Mobil uygulama doğrudan
-     Cloud Run URL'ini kullanmaya devam eder; bu yalnız panelin yolu. */
+     yönlendirmesinden geçer (firebase.json /api/** ve /health**). */
   var BACKEND = '';
 
-  async function apiIste(yol, secenekler) {
-    // Oturum app.js'in kurduğu SAME-ORIGIN auth örneğinde yaşar
-    // (RY.auth); varsayılan uygulamaya düşüş yalnız emniyet.
-    var kullanici = (window.RY.auth || firebase.auth()).currentUser;
+  var RY = window.RY = window.RY || {};
+
+  function iptalHatasi() {
+    var h = new Error('iptal');
+    h.iptal = true;
+    return h;
+  }
+
+  async function token() {
+    var kullanici = (RY.auth || (window.firebase && firebase.auth())).currentUser;
     if (!kullanici) throw new Error('oturum-yok');
-    var token = await kullanici.getIdToken();
+    return kullanici.getIdToken();
+  }
+
+  /* Son 429 uyarısı: aynı anda 5 istek düşünce 5 toast basılmasın. */
+  var son429 = 0;
+
+  async function apiIste(yol, secenekler) {
     secenekler = secenekler || {};
+    var sinyal = secenekler.sinyal || secenekler.signal;
+    if (sinyal && sinyal.aborted) throw iptalHatasi();
+    var jeton = await token();
     // Başlıklar AYRI birleştirilir: Object.assign(secenekler) çağıranın
     // headers'ı verdiği anda Authorization'ı eziyordu (eski kusur).
     var basliklar = Object.assign({
-      'Authorization': 'Bearer ' + token,
+      'Authorization': 'Bearer ' + jeton,
       'Content-Type': 'application/json'
     }, secenekler.headers || {});
+    var ayar = {
+      method: secenekler.method || 'GET',
+      headers: basliklar,
+      body: secenekler.body,
+      signal: sinyal
+    };
     var yanit;
     try {
-      yanit = await fetch(BACKEND + yol,
-        Object.assign({}, secenekler, { headers: basliklar }));
+      yanit = await fetch(BACKEND + yol, ayar);
     } catch (aghata) {
+      if (sinyal && sinyal.aborted) throw iptalHatasi();
       // Anlık ağ kesintisi/uyku dönüşü için TEK otomatik tekrar —
       // yalnız güvenli metotlarda (POST/PATCH çift işlem yapmasın).
-      var metot = (secenekler.method || 'GET').toUpperCase();
-      if (metot !== 'GET') throw new Error('ag-hatasi');
+      if (ayar.method.toUpperCase() !== 'GET') throw new Error('ag-hatasi');
       await new Promise(function (t) { setTimeout(t, 700); });
+      if (sinyal && sinyal.aborted) throw iptalHatasi();
       try {
-        yanit = await fetch(BACKEND + yol,
-          Object.assign({}, secenekler, { headers: basliklar }));
+        yanit = await fetch(BACKEND + yol, ayar);
       } catch (yine) {
+        if (sinyal && sinyal.aborted) throw iptalHatasi();
         throw new Error('ag-hatasi');
       }
     }
     if (yanit.status === 401 || yanit.status === 403) {
       // Yetki düştü: oturumu kapat, jenerik görünüme dön.
-      window.RY.yetkisiz();
+      if (RY.yetkisiz) RY.yetkisiz();
       throw new Error('yetkisiz');
     }
     if (!yanit.ok) {
@@ -56,42 +77,133 @@
             ? govde.detail : JSON.stringify(govde.detail);
         }
       } catch (yok) { /* gövdesiz hata */ }
+      if (yanit.status === 429) {
+        var ra = Number(yanit.headers.get('Retry-After'));
+        hata.retryAfter = isFinite(ra) && ra > 0 ? ra : 60;
+        var simdi = Date.now();
+        if (RY.b && RY.b.toast && simdi - son429 > 5000) {
+          son429 = simdi;
+          RY.b.toast(hataMetni(hata), 'uyari', { sure: 6000 });
+        }
+      }
       throw hata;
     }
-    return yanit.json();
+    if (yanit.status === 204) return null;
+    var metin = await yanit.text();
+    if (!metin) return null;
+    return JSON.parse(metin);
   }
 
-  /* Ham hata → yöneticinin okuyacağı cümle. */
+  /* Ham hata → yöneticinin okuyacağı cümle. 503 denetim izi mesajı
+     sunucudan geldiği gibi (detail) geçer — "Denetim izi yazılamadı;
+     işlem yapılmadı." kelimesi kelimesine görünür. */
   function hataMetni(hata) {
     if (!hata) return 'Bilinmeyen hata.';
+    if (hata.iptal || hata.message === 'iptal') return '';
     if (hata.message === 'ag-hatasi') {
       return 'Bağlantı kurulamadı — ağını kontrol edip tekrar dene.';
     }
     if (hata.message === 'oturum-yok') return 'Oturum bulunamadı.';
+    if (hata.message === 'yetkisiz') return 'Yetki yok.';
+    if (hata.durum === 429) {
+      return 'İstek sınırı aşıldı — ' + (hata.retryAfter || 60) +
+        ' sn sonra tekrar dene.';
+    }
     if (hata.detay) return hata.detay;
     if (hata.durum === 404) return 'Kayıt bulunamadı.';
+    if (hata.durum === 409) return 'İşlem zaten sürüyor — birazdan tekrar dene.';
     if (hata.durum >= 500) return 'Sunucu hatası — birazdan tekrar dene.';
     return 'Veri alınamadı (' + (hata.message || hata) + ').';
   }
 
-  window.RY = window.RY || {};
-  window.RY.get = function (yol) { return apiIste(yol); };
-  window.RY.post = function (yol, govde) {
-    return apiIste(yol, { method: 'POST',
-                          body: govde ? JSON.stringify(govde) : undefined });
+  /* Sorgu dizesi: undefined/null/'' atlanır, her değer encodeURIComponent.
+     Diziler tekrar eden anahtar olur (?plan=a&plan=b). */
+  function sorguDizesi(params) {
+    var parcalar = [];
+    Object.keys(params || {}).forEach(function (ad) {
+      var v = params[ad];
+      if (v === undefined || v === null || v === '') return;
+      (Array.isArray(v) ? v : [v]).forEach(function (tek) {
+        if (tek === undefined || tek === null || tek === '') return;
+        parcalar.push(encodeURIComponent(ad) + '=' + encodeURIComponent(tek));
+      });
+    });
+    return parcalar.length ? '?' + parcalar.join('&') : '';
+  }
+
+  RY.apiIste = apiIste;
+  RY.get = function (yol, sec) { return apiIste(yol, sec); };
+  RY.post = function (yol, govde, sec) {
+    return apiIste(yol, Object.assign({}, sec, { method: 'POST',
+      body: govde !== undefined ? JSON.stringify(govde) : undefined }));
   };
-  window.RY.patch = function (yol, govde) {
-    return apiIste(yol, { method: 'PATCH',
-                          body: JSON.stringify(govde || {}) });
+  RY.patch = function (yol, govde, sec) {
+    return apiIste(yol, Object.assign({}, sec, { method: 'PATCH',
+      body: JSON.stringify(govde || {}) }));
   };
-  window.RY.del = function (yol, govde) {
-    return apiIste(yol, { method: 'DELETE',
-                          body: JSON.stringify(govde || {}) });
+  RY.del = function (yol, govde, sec) {
+    return apiIste(yol, Object.assign({}, sec, { method: 'DELETE',
+      body: JSON.stringify(govde || {}) }));
   };
+  /* RY.sorgu('/api/v1/admin/users', {q:'asl', plan:'', limit:8}, {sinyal})
+     → GET /api/v1/admin/users?q=asl&limit=8 */
+  RY.sorgu = function (yol, params, sec) {
+    return apiIste(yol + sorguDizesi(params), sec);
+  };
+  RY.sorguDizesi = sorguDizesi;
+
+  /* Yetkili dosya indirme: fetch + Authorization → blob → a[download].
+     Tarayıcı indirme diyaloğu; dosya adı sunucu Content-Disposition'ından
+     değil çağırandan (aynı origin olsa da başlığa güvenmiyoruz). */
+  RY.indir = async function (yol, dosyaAdi, sec) {
+    sec = sec || {};
+    var jeton = await token();
+    var yanit;
+    try {
+      yanit = await fetch(BACKEND + yol, {
+        headers: { 'Authorization': 'Bearer ' + jeton },
+        signal: sec.sinyal
+      });
+    } catch (ag) {
+      if (sec.sinyal && sec.sinyal.aborted) throw iptalHatasi();
+      throw new Error('ag-hatasi');
+    }
+    if (yanit.status === 401 || yanit.status === 403) {
+      if (RY.yetkisiz) RY.yetkisiz();
+      throw new Error('yetkisiz');
+    }
+    if (!yanit.ok) {
+      var hata = new Error('api-' + yanit.status);
+      hata.durum = yanit.status;
+      try {
+        var govde = await yanit.json();
+        if (govde && govde.detail) {
+          hata.detay = typeof govde.detail === 'string'
+            ? govde.detail : JSON.stringify(govde.detail);
+        }
+      } catch (yok) { /* gövdesiz */ }
+      throw hata;
+    }
+    var blob = await yanit.blob();
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = dosyaAdi || 'rytho-export';
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+    return { boyut: blob.size, tur: blob.type };
+  };
+
   // Sağlık uçları herkese açık — token gerekmez.
-  window.RY.saglik = function (yol) {
-    return fetch(BACKEND + yol).then(function (y) { return y.json(); });
+  RY.saglik = function (yol) {
+    return fetch(BACKEND + yol).then(function (y) {
+      if (!y.ok) throw new Error('saglik-' + y.status);
+      return y.json();
+    });
   };
-  window.RY.hataMetni = hataMetni;
-  window.RY.BACKEND = BACKEND;
+  RY.hataMetni = hataMetni;
+  RY.BACKEND = BACKEND;
 })();

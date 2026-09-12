@@ -1,20 +1,274 @@
 {
-  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil. --- W5 ekleri: 'private' composite indeksi admin istatistiğinin aktif abone sorgusu için (collection-group, active==true && expiresAt>now; 'active' alanı private altında yalnız subscription dokümanında var, o yüzden yalnız onlar eşleşir). 'friends.status' override'ı kabul edilmiş arkadaşlık sayımı için. --- AP-turu ekleri: 'usageEvents' composite'i Kullanıcı 360'ın uid+at sorgusu için; 'ledger.at' override'ı adminStats'ın günlük jeton-akışı collection-group sorgusu için (ledger = users/*/private/wallet/ledger).",
+  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil. --- W5 ekleri: 'private' composite indeksi admin istatistiğinin aktif abone sorgusu için (collection-group, active==true && expiresAt>now; 'active' alanı private altında yalnız subscription dokümanında var, o yüzden yalnız onlar eşleşir). 'friends.status' override'ı kabul edilmiş arkadaşlık sayımı için. --- AP-turu ekleri: 'usageEvents' composite'i Kullanıcı 360'ın uid+at sorgusu için; 'ledger.at' override'ı adminStats'ın günlük jeton-akışı collection-group sorgusu için (ledger = users/*/private/wallet/ledger). --- AD-turu (panel v3) ekleri: revenueEvents (uid,at) Kullanıcı 360 zaman çizelgesi, (environment,at) ve (environment,eventType,at) gelir olayları sayfası; phoneAttempts (uid,at) 360 SMS teşhisi; adminAudit (action|adminUid|targetUid, at) denetim izi süzgeçleri; users (plan|language|platform|authDisabled × createdAt|lastSeenDaily) süzgeç modu + (plan, streakCount); private CG (isTrial, expiresAt) dikkat listesinin '3 gün içinde biten deneme' sayımı. Tek alan indeksleri (arama aynası öneki, appBuild aralığı) otomatik.",
   "indexes": [
     {
       "collectionGroup": "private",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "active", "order": "ASCENDING" },
-        { "fieldPath": "expiresAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "active",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiresAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "usageEvents",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "uid", "order": "ASCENDING" },
-        { "fieldPath": "at", "order": "DESCENDING" }
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "revenueEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "revenueEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "environment",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "revenueEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "environment",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "eventType",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "phoneAttempts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "adminAudit",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "action",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "adminAudit",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "adminUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "adminAudit",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "targetUid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "at",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "plan",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "plan",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastSeenDaily",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "language",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "language",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastSeenDaily",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "platform",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "platform",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastSeenDaily",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "authDisabled",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "authDisabled",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastSeenDaily",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "plan",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "streakCount",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "private",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "isTrial",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiresAt",
+          "order": "ASCENDING"
+        }
       ]
     }
   ],
@@ -23,21 +277,30 @@
       "collectionGroup": "conversations",
       "fieldPath": "expireAt",
       "indexes": [
-        { "queryScope": "COLLECTION_GROUP", "order": "ASCENDING" }
+        {
+          "queryScope": "COLLECTION_GROUP",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "friends",
       "fieldPath": "status",
       "indexes": [
-        { "queryScope": "COLLECTION_GROUP", "order": "ASCENDING" }
+        {
+          "queryScope": "COLLECTION_GROUP",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "ledger",
       "fieldPath": "at",
       "indexes": [
-        { "queryScope": "COLLECTION_GROUP", "order": "ASCENDING" }
+        {
+          "queryScope": "COLLECTION_GROUP",
+          "order": "ASCENDING"
+        }
       ]
     }
   ]

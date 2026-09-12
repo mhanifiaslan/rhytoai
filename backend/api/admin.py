@@ -1,54 +1,128 @@
-"""Admin uçları (W5): istatistik toplama ve okuma.
+"""Admin uçları (W5 → AD-turu): panelin tek veri kapısı.
 
 Panel (/rytho-admin) Firestore'a hiç dokunmaz — her veri buradan geçer ve
-her uç `require_admin` (custom claim) ister. Tek istisna `collect`: gecelik
-Cloud Scheduler işi claim taşıyamayacağı için scheduler sırrı da geçerli
+her uç en az `require_admin` (custom claim / rol) ister; yıkıcı, mali ve
+yapılandırma uçları `require_owner`. Tek istisna `collect`: gecelik Cloud
+Scheduler işi claim taşıyamayacağı için scheduler sırrı da geçerli
 (bkz. api/notify.py `_verify_scheduler` deseni — ÇİFT KAPI).
+
+## Denetim izi (AD3)
+
+Yazan her eylem `adminAudit`'e düşer. Yıkıcı/mali eylemler ÖN-İZLİDİR:
+önce `phase: intent` kaydı yazılır (yazılamazsa **503, eylem yapılmaz**),
+eylem biter, aynı doküman `phase: done` ile tamamlanır. Böylece "iz yok
+ama hesap silinmiş" durumu imkânsızlaşır; yarım kalan eylem de izde
+`intent` olarak görünür.
+
+## Rol haritası
+
+| Uç | Kapı |
+|---|---|
+| okumalar, kredi, cihaz kilidi, auth-link, bildirim prova/test | admin (owner+support) |
+| sil, devre dışı, eşik, ortak yazımları, dışa aktarım, yeniden hesapla, duyuru, collect | owner |
 """
 from __future__ import annotations
 
+import csv
 import datetime as dt
+import io
 import logging
 import secrets as py_secrets
-from typing import Any
+from typing import Any, Iterable, Iterator, Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
 from core import app_gate, config, device, firestore as firestore_client
 from core import wallet
-from core.auth import AuthUser, get_current_user, require_admin
+from core.auth import (AuthUser, get_current_user, require_admin,
+                       require_owner)
 from core.i18n import get_language
 from services import admin_service, partner_service, stats_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+_AUDIT_YAZILAMADI = "Denetim izi yazılamadı; işlem yapılmadı."
+_GUN_DESENI = r"^\d{4}-\d{2}-\d{2}$"
+
+
+# ---------------------------------------------------------------------------
+# Denetim izi
+# ---------------------------------------------------------------------------
 
 def _audit(user: AuthUser, action: str, target_uid: str | None = None,
-           params: dict[str, Any] | None = None) -> None:
-    """Denetim izi (AP-turu): admin'in YAZAN eylemleri kalıcı kayda düşer.
+           params: dict[str, Any] | None = None, *,
+           zorunlu: bool = False, phase: str | None = None) -> str | None:
+    """Denetim izi: admin'in YAZAN eylemleri kalıcı kayda düşer.
 
-    Salt-okur uçlar audit'lenmez (gürültü). Best-effort — iz yazılamadı
-    diye eylem geri alınmaz; tek sahipli üründe iz "kim"den çok "ne
-    zaman/ne" sorusuna cevaptır ve ileride çoklu admin gelirse hazırdır.
+    Döndürdüğü doküman kimliğiyle `_audit_tamamla` aynı kaydı günceller.
+    `zorunlu=False`: best-effort (rutin yazımlar). `zorunlu=True`: iz
+    yazılamazsa 503 — çağıran eylemi HİÇ yapmaz (fail-closed). Salt-okur
+    uçlar audit'lenmez (gürültü).
     """
     try:
         client = firestore_client.get_client()
         if client is None:
-            return
-        client.collection("adminAudit").document().set({
+            raise RuntimeError("Firestore erişilemiyor.")
+        kayit: dict[str, Any] = {
             "adminUid": user.uid,
             "adminEmail": getattr(user, "email", None),
+            "adminRole": getattr(user, "role", None),
             "action": action,
             "targetUid": target_uid,
             "params": params or {},
             "at": dt.datetime.now(dt.timezone.utc),
-        })
+        }
+        if phase:
+            kayit["phase"] = phase
+        ref = client.collection("adminAudit").document()
+        ref.set(kayit)
+        # Sahte istemcilerde `id` olmayabilir; iz yazıldı, kimlik yoksa
+        # tamamlama atlanır — yazım başarısı buna bağlanmaz.
+        return getattr(ref, "id", None)
     except Exception as exc:
         logger.warning("Denetim izi yazılamadı (%s): %s", action, exc)
+        if zorunlu:
+            raise HTTPException(status_code=503, detail=_AUDIT_YAZILAMADI)
+        return None
 
+
+def _audit_tamamla(iz_id: str | None, ek: dict[str, Any]) -> None:
+    """Ön-izi tamamlar (best-effort merge): `phase: done|failed` + ek."""
+    if not iz_id:
+        return
+    try:
+        client = firestore_client.get_client()
+        if client is None:
+            return
+        client.collection("adminAudit").document(iz_id).set(
+            {**ek, "doneAt": dt.datetime.now(dt.timezone.utc)}, merge=True)
+    except Exception as exc:
+        logger.warning("Denetim izi tamamlanamadı (%s): %s", iz_id, exc)
+
+
+def _basarisiz(iz_id: str | None, exc: BaseException) -> None:
+    """Ön-izli eylem düştü: iz `failed` kalır, hata olduğu gibi yükselir."""
+    _audit_tamamla(iz_id, {"phase": "failed", "error": str(exc)[:300]})
+
+
+# ---------------------------------------------------------------------------
+# Kimlik
+# ---------------------------------------------------------------------------
+
+@router.get("/me")
+def me(user: AuthUser = Depends(require_admin)):
+    """Panelin rol teyidi: claim'den okunan rolü sunucu söyler."""
+    return {"status": "ok", "uid": user.uid, "email": user.email,
+            "role": user.role}
+
+
+# ---------------------------------------------------------------------------
+# İstatistik toplama + okumalar
+# ---------------------------------------------------------------------------
 
 def _scheduler_gecerli(authorization: str | None) -> bool:
     """Scheduler sırrı doğru mu — yoksa/uyuşmuyorsa sessizce False.
@@ -66,16 +140,16 @@ def _scheduler_gecerli(authorization: str | None) -> bool:
 
 @router.post("/collect")
 async def collect(
-    date: str | None = Query(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$"),
+    date: str | None = Query(default=None, pattern=_GUN_DESENI),
     authorization: str | None = Header(default=None),
     lang: str = Depends(get_language),
 ):
-    """Günün istatistiklerini toplar — ÇİFT KAPI: scheduler sırrı VEYA admin.
+    """Günün istatistiklerini toplar — ÇİFT KAPI: scheduler sırrı VEYA owner.
 
     `Depends(get_current_user)` BİLEREK yok: scheduler'ın başlığı Bearer
     değil ham sır taşır ve dependency zinciri isteği kapıya gelmeden 401'lerdi
     (üretimde yaşandı). Sıra: önce sır denenir; tutmazsa başlık Bearer olarak
-    ayrıştırılıp admin claim'i aranır.
+    ayrıştırılıp admin claim'i + owner rolü aranır.
 
     İdempotent: aynı günün tekrarı dokümanı ezer, birikmez.
     """
@@ -87,8 +161,7 @@ async def collect(
                 scheme="Bearer", credentials=authorization[7:])
         kullanici = await get_current_user(credentials=kimlik_bilgisi,
                                            lang=lang)
-        if not kullanici.admin:
-            raise HTTPException(status_code=403, detail="Yetkisiz.")
+        require_owner(require_admin(kullanici))
 
     tarih = dt.date.fromisoformat(date) if date else None
     try:
@@ -142,57 +215,185 @@ def live(user: AuthUser = Depends(require_admin)):
             "serverTime": dt.datetime.now(dt.timezone.utc).isoformat()}
 
 
+_Env = Literal["PRODUCTION", "SANDBOX"]
+_ECON_DAYS = (30, 90)
+_USAGE_DAYS = (7, 30, 90)
+
+
+def _gun_secenegi(days: int, secenekler: tuple[int, ...]) -> int:
+    if days not in secenekler:
+        raise HTTPException(
+            status_code=422,
+            detail=f"days şunlardan biri olmalı: {', '.join(map(str, secenekler))}")
+    return days
+
+
 @router.get("/revenue")
-def revenue(days: int = Query(default=90, ge=1, le=365),
+def revenue(days: int = Query(default=30, ge=1, le=365),
+            env: _Env = Query(default="PRODUCTION"),
             user: AuthUser = Depends(require_admin)):
-    """Gelir olaylarının tarih aralıklı özeti (revenueEvents'ten).
+    """Gelir özeti — adminStats rollup'ından (tarama YOK, AD7)."""
+    try:
+        return {"status": "ok", **admin_service.revenue_summary(days, env)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
-    Günlük brüt (USD normalize `price`), ürün/mağaza/para birimi kırılımı
-    ve olay sayıları. `at` tek alan indeksi otomatiktir.
+
+@router.get("/revenue/events")
+def revenue_events(env: _Env = Query(default="PRODUCTION"),
+                   type: str | None = Query(default=None, max_length=40),
+                   limit: int = Query(default=50, ge=1, le=100),
+                   cursor: str | None = Query(default=None, max_length=512),
+                   user: AuthUser = Depends(require_admin)):
+    """Abonelik zaman çizelgesi: revenueEvents (env, [type], at DESC), cursor."""
+    try:
+        return {"status": "ok",
+                **admin_service.revenue_events(env, type, limit, cursor)}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/economics")
+def economics(days: int = Query(default=30),
+              env: _Env = Query(default="PRODUCTION"),
+              user: AuthUser = Depends(require_admin)):
+    """Rollup birleştirmesi (adminEconomics) — 30 | 90 gün, önbellekli."""
+    days = _gun_secenegi(days, _ECON_DAYS)
+    try:
+        return {"status": "ok", **admin_service.economics(days, env)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+class RecomputeRequest(BaseModel):
+    """Kapsayıcı gün aralığı (YYYY-MM-DD); servis ≤90 günü ve kilidi tutar."""
+    from_: str = Field(alias="from", pattern=_GUN_DESENI)
+    to: str = Field(pattern=_GUN_DESENI)
+
+    model_config = {"populate_by_name": True}
+
+
+@router.post("/economics/recompute")
+def economics_recompute(req: RecomputeRequest,
+                        user: AuthUser = Depends(require_owner)):
+    """Geçmiş günlerin rollup'ını canlı taramayla yeniden üretir (owner).
+
+    Servis kilitlidir: eşzamanlı ikinci istek RuntimeError("busy") → 409.
     """
-    client = firestore_client.get_client()
-    if client is None:
-        raise HTTPException(status_code=500, detail="Firestore erişilemiyor.")
+    try:
+        bas = dt.date.fromisoformat(req.from_)
+        son = dt.date.fromisoformat(req.to)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=f"Geçersiz tarih: {exc}")
+    if son < bas:
+        raise HTTPException(status_code=400,
+                            detail="Bitiş, başlangıçtan önce olamaz.")
+    try:
+        sonuc = stats_service.recompute(bas, son)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        if str(exc) == "busy":
+            raise HTTPException(status_code=409,
+                                detail="Yeniden hesaplama zaten sürüyor.")
+        raise HTTPException(status_code=500, detail=str(exc))
+    _audit(user, "stats.recompute",
+           params={"from": req.from_, "to": req.to})
+    return {"status": "ok", "result": sonuc}
 
-    from google.cloud.firestore_v1.base_query import FieldFilter
 
-    baslangic = (dt.datetime.now(dt.timezone.utc)
-                 - dt.timedelta(days=days))
-    gunler: dict[str, float] = {}
-    urun: dict[str, float] = {}
-    magaza: dict[str, float] = {}
-    para_birimi: dict[str, float] = {}
-    olaylar: dict[str, int] = {}
-    for anlik in (client.collection("revenueEvents")
-                  .where(filter=FieldFilter("at", ">=", baslangic))
-                  .stream()):
-        veri = anlik.to_dict() or {}
-        tip = str(veri.get("eventType") or "-")
-        olaylar[tip] = olaylar.get(tip, 0) + 1
-        fiyat = float(veri.get("price") or 0)
-        if tip == "REFUND":
-            fiyat = -abs(fiyat)
-        at = veri.get("at")
-        gun = (at.date().isoformat()
-               if hasattr(at, "date") else "-")
-        gunler[gun] = round(gunler.get(gun, 0.0) + fiyat, 2)
-        u = str(veri.get("productId") or "-")
-        urun[u] = round(urun.get(u, 0.0) + fiyat, 2)
-        m = str(veri.get("store") or "-")
-        magaza[m] = round(magaza.get(m, 0.0) + fiyat, 2)
-        pb = str(veri.get("currency") or "-")
-        para_birimi[pb] = round(
-            para_birimi.get(pb, 0.0)
-            + float(veri.get("priceInPurchasedCurrency") or 0), 2)
+@router.get("/usage")
+def usage(days: int = Query(default=30),
+          user: AuthUser = Depends(require_admin)):
+    """AI kullanım kırılımı — adminStats rollup'ından; 7 | 30 | 90 gün."""
+    days = _gun_secenegi(days, _USAGE_DAYS)
+    try:
+        return {"status": "ok", **admin_service.usage_summary(days)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
-    return {"status": "ok", "days": days,
-            "byDay": gunler, "byProduct": urun, "byStore": magaza,
-            "byCurrency": para_birimi, "events": olaylar,
-            "grossUsd": round(sum(gunler.values()), 2)}
+
+@router.get("/attention")
+def attention(user: AuthUser = Depends(require_admin)):
+    """Dikkat zili: başarısız push, fatura sorunu, biten deneme, eşik altı,
+    devre dışı, bayat rollup — sayaçlar + kısa listeler."""
+    try:
+        return {"status": "ok", **admin_service.attention()}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@router.get("/notify-runs")
+def notify_runs(days: int = Query(default=7, ge=1, le=30),
+                user: AuthUser = Depends(require_admin)):
+    try:
+        return {"status": "ok", "runs": admin_service.notify_runs(days)}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 # ---------------------------------------------------------------------------
-# Kullanıcılar + kullanım + sistem okumaları (AP-turu) — hepsi require_admin
+# Bildirim araçları (AD8) — destek de kullanır
+# ---------------------------------------------------------------------------
+
+_NotifyType = Literal["daily", "midday", "checkin", "streak"]
+
+
+class NotifyDryRunRequest(BaseModel):
+    type: _NotifyType = "daily"
+    force: bool = False
+
+
+class NotifyTestSendRequest(BaseModel):
+    type: _NotifyType = "daily"
+
+
+def _notify_runner():
+    try:
+        from services import notify_runner
+    except ImportError:
+        raise HTTPException(status_code=503,
+                            detail="Bildirim koşucusu bu sürümde yok.")
+    return notify_runner
+
+
+@router.post("/notify/dry-run")
+def notify_dry_run(req: NotifyDryRunRequest,
+                   user: AuthUser = Depends(require_admin)):
+    """Prova: kim kuyruğa girerdi, hangi dilde — GÖNDERİM YOK, iz yok."""
+    kosucu = _notify_runner()
+    try:
+        sonuc = kosucu.run_batch(req.type, dry_run=True, force=req.force)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    _audit(user, "notify.dry_run",
+           params={"type": req.type, "force": req.force})
+    return {"status": "ok",
+            "result": sonuc.model_dump() if hasattr(sonuc, "model_dump")
+            else sonuc}
+
+
+@router.post("/notify/test-send")
+def notify_test_send(req: NotifyTestSendRequest,
+                     user: AuthUser = Depends(require_admin)):
+    """Kendine test bildirimi — YALNIZ çağıranın uid'i; LastSent
+    işaretlenmez. Jeton yoksa servis ValueError → 400 açık mesaj."""
+    kosucu = _notify_runner()
+    try:
+        sonuc = kosucu.test_send(uid=user.uid, type=req.type)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    _audit(user, "notify.test_send", target_uid=user.uid,
+           params={"type": req.type})
+    return {"status": "ok", "result": sonuc}
+
+
+# ---------------------------------------------------------------------------
+# Kullanıcılar (AD4/AD6/AD9)
 # ---------------------------------------------------------------------------
 
 class CreditCreate(BaseModel):
@@ -201,17 +402,111 @@ class CreditCreate(BaseModel):
     reason: str = Field(min_length=3, max_length=300)
 
 
+_Plan = Literal["free", "trial", "plus"]
+
+
+def _csv_yaniti(sutunlar: Iterable[str], satirlar: Iterable[dict[str, Any]],
+                dosya_adi: str, iz_id: str | None) -> StreamingResponse:
+    """UTF-8 BOM'lu CSV akışı (Excel Türkçe karakterleri BOM'suz bozar).
+
+    Satırlar tembel üretilir; akış bittiğinde ön-iz `done` ve satır
+    sayısıyla tamamlanır.
+    """
+    sutunlar = list(sutunlar)
+
+    def _akis() -> Iterator[str]:
+        tampon = io.StringIO()
+        yazici = csv.DictWriter(tampon, fieldnames=sutunlar,
+                                extrasaction="ignore", lineterminator="\r\n")
+        yield "﻿"
+        yazici.writeheader()
+        yield tampon.getvalue()
+        tampon.seek(0)
+        tampon.truncate(0)
+        adet = 0
+        try:
+            for satir in satirlar:
+                yazici.writerow(satir)
+                adet += 1
+                yield tampon.getvalue()
+                tampon.seek(0)
+                tampon.truncate(0)
+        except Exception as exc:
+            _basarisiz(iz_id, exc)
+            raise
+        _audit_tamamla(iz_id, {"phase": "done", "rows": adet})
+
+    return StreamingResponse(
+        _akis(), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{dosya_adi}"'})
+
+
+@router.get("/users/export.csv")
+def users_export(plan: _Plan | None = Query(default=None),
+                 language: str | None = Query(default=None, max_length=8),
+                 platform: str | None = Query(default=None, max_length=16),
+                 disabled: bool | None = Query(default=None),
+                 activeSince: str | None = Query(default=None,
+                                                 pattern=_GUN_DESENI),
+                 user: AuthUser = Depends(require_owner)):
+    """Kullanıcı CSV'si (owner, ön-izli). fcmToken / doğum verisi ASLA."""
+    if firestore_client.get_client() is None:
+        raise HTTPException(status_code=500, detail="Firestore erişilemiyor.")
+    suzgec = {"plan": plan, "language": language, "platform": platform,
+              "disabled": disabled, "activeSince": activeSince}
+    iz = _audit(user, "export.users", params={"filters": suzgec},
+                zorunlu=True, phase="intent")
+    satirlar = admin_service.users_csv_rows(
+        plan=plan, language=language, platform=platform, disabled=disabled,
+        active_since=activeSince)
+    gun = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d")
+    return _csv_yaniti(admin_service.USERS_CSV_COLUMNS, satirlar,
+                       f"rytho-kullanicilar-{gun}.csv", iz)
+
+
+@router.get("/revenue/export.csv")
+def revenue_export(days: int = Query(default=30, ge=1, le=365),
+                   env: _Env = Query(default="PRODUCTION"),
+                   user: AuthUser = Depends(require_owner)):
+    """Gelir olayları CSV'si (owner, ön-izli)."""
+    if firestore_client.get_client() is None:
+        raise HTTPException(status_code=500, detail="Firestore erişilemiyor.")
+    iz = _audit(user, "export.revenue", params={"days": days, "env": env},
+                zorunlu=True, phase="intent")
+    satirlar = admin_service.revenue_csv_rows(days=days, env=env)
+    gun = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d")
+    return _csv_yaniti(admin_service.REVENUE_CSV_COLUMNS, satirlar,
+                       f"rytho-gelir-{env.lower()}-{gun}.csv", iz)
+
+
 @router.get("/users")
-def users(query: str = Query(default="", max_length=120),
-          sort: str = Query(default="createdAt"),
-          limit: int = Query(default=50, ge=1, le=200),
+def users(q: str = Query(default="", max_length=120),
+          alan: Literal["eposta", "kullanici", "ad"] = Query(default="ad"),
+          plan: _Plan | None = Query(default=None),
+          language: str | None = Query(default=None, max_length=8),
+          platform: str | None = Query(default=None, max_length=16),
+          disabled: bool | None = Query(default=None),
+          activeSince: str | None = Query(default=None, pattern=_GUN_DESENI),
+          belowBuild: int | None = Query(default=None, ge=1, le=100000),
+          sort: Literal["createdAt", "lastSeenDaily", "streakCount"] = Query(
+              default="createdAt"),
+          limit: int = Query(default=50, ge=1, le=100),
+          cursor: str | None = Query(default=None, max_length=512),
           user: AuthUser = Depends(require_admin)):
+    """Kullanıcı listesi: arama modu (önek aralığı) / süzgeç modu; cursor.
+
+    Servisin ValueError'u (yasak süzgeç birleşimi, bozuk imleç) 400.
+    """
     try:
-        satirlar = admin_service.list_users(query=query, sort=sort,
-                                            limit=limit)
+        sonuc = admin_service.list_users(
+            q=q, alan=alan, plan=plan, language=language, platform=platform,
+            disabled=disabled, active_since=activeSince,
+            below_build=belowBuild, sort=sort, limit=limit, cursor=cursor)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
-    return {"status": "ok", "users": satirlar}
+    return {"status": "ok", **sonuc}
 
 
 @router.get("/users/{uid}")
@@ -242,6 +537,39 @@ def user_credit(uid: str, req: CreditCreate,
     return {"status": "ok", "wallet": wallet.get_wallet(uid)}
 
 
+class AuthLinkRequest(BaseModel):
+    kind: Literal["verify", "reset"]
+
+
+@router.post("/users/{uid}/auth-link")
+def user_auth_link(uid: str, req: AuthLinkRequest,
+                   user: AuthUser = Depends(require_admin)):
+    """Firebase e-posta doğrulama / şifre sıfırlama bağlantısı üretir.
+
+    E-posta GÖNDERİLMEZ — destek bağlantıyı kullanıcıya kendi kanalından
+    iletir (kapsam dışı: e-posta gönderimi). Bağlantı denetim izine
+    YAZILMAZ: tek kullanımlık bir yetki belgesidir; izde yalnız türü kalır.
+    """
+    try:
+        from firebase_admin import auth as fb_auth
+        hesap = fb_auth.get_user(uid)
+        eposta = getattr(hesap, "email", None)
+        if not eposta:
+            raise HTTPException(status_code=400,
+                                detail="Kullanıcının e-postası yok.")
+        if req.kind == "verify":
+            link = fb_auth.generate_email_verification_link(eposta)
+        else:
+            link = fb_auth.generate_password_reset_link(eposta)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500,
+                            detail=f"Bağlantı üretilemedi: {exc}")
+    _audit(user, "user.auth_link", target_uid=uid, params={"kind": req.kind})
+    return {"status": "ok", "kind": req.kind, "link": link}
+
+
 class DisableRequest(BaseModel):
     disabled: bool
     reason: str = Field(min_length=3, max_length=300)
@@ -255,35 +583,48 @@ class DeleteRequest(BaseModel):
 
 @router.post("/users/{uid}/disable")
 def user_disable(uid: str, req: DisableRequest,
-                 user: AuthUser = Depends(require_admin)):
-    """Hesabı devre dışı bırakır/açar (Firebase Auth `disabled`).
+                 user: AuthUser = Depends(require_owner)):
+    """Hesabı devre dışı bırakır/açar (Firebase Auth `disabled`) — owner.
 
     Devre dışı hesap oturum AÇAMAZ; mevcut token'lar da revoke edilir
     (yenileme anında düşer). Verisi durur — silme ayrı ve daha ağır iş.
+    Ön-izli: iz yazılamazsa 503 ve kimlik DOKUNULMAZ. `authDisabled`
+    aynası (AD4) best-effort yazılır ki liste süzgeci görsün.
     """
     if uid == user.uid:
         raise HTTPException(status_code=400,
                             detail="Kendi hesabını devre dışı bırakamazsın.")
+    eylem = "user.disable" if req.disabled else "user.enable"
+    iz = _audit(user, eylem, target_uid=uid, params={"reason": req.reason},
+                zorunlu=True, phase="intent")
     try:
         from firebase_admin import auth as fb_auth
         fb_auth.update_user(uid, disabled=req.disabled)
         if req.disabled:
             fb_auth.revoke_refresh_tokens(uid)
     except Exception as exc:
+        _basarisiz(iz, exc)
         raise HTTPException(status_code=500, detail=f"Kimlik güncellenemedi: {exc}")
-    _audit(user, "user.disable" if req.disabled else "user.enable",
-           target_uid=uid, params={"reason": req.reason})
+    try:
+        client = firestore_client.get_client()
+        if client is not None:
+            client.collection("users").document(uid).set(
+                {"authDisabled": bool(req.disabled)}, merge=True)
+    except Exception as exc:
+        logger.warning("authDisabled aynası yazılamadı (%s): %s", uid, exc)
+    _audit_tamamla(iz, {"phase": "done"})
     return {"status": "ok", "disabled": req.disabled}
 
 
 @router.delete("/users/{uid}")
 def user_delete(uid: str, req: DeleteRequest,
-                user: AuthUser = Depends(require_admin)):
+                user: AuthUser = Depends(require_owner)):
     """Hesabı TAMAMEN siler — mobil 'Hesabı sil' ile aynı boru
-    (account_service.delete_account: veri önce, kimlik en son).
+    (account_service.delete_account: veri önce, kimlik en son). Owner.
 
-    İki emniyet: yazılı onay ("SIL") + kendini silme yasağı. Denetim izi
-    silinen hesabın e-postasını da saklar — iz kalmalı.
+    Üç emniyet: yazılı onay ("SIL") + kendini silme yasağı + ön-iz
+    (iz yazılamazsa 503, hesap DURUR). İz silinen hesabın e-postasını da
+    saklar — silindikten sonra başka yerde kalmaz.
     """
     if req.confirm != "SIL":
         raise HTTPException(status_code=400,
@@ -294,12 +635,18 @@ def user_delete(uid: str, req: DeleteRequest,
     from services import account_service
     try:
         detay = admin_service.user_360(uid) or {}
-        eposta = (detay.get("profile") or {}).get("email")
-        rapor = account_service.delete_account(uid)
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
-    _audit(user, "user.delete", target_uid=uid,
-           params={"reason": req.reason, "email": eposta})
+    eposta = (detay.get("profile") or {}).get("email")
+    iz = _audit(user, "user.delete", target_uid=uid,
+                params={"reason": req.reason, "email": eposta},
+                zorunlu=True, phase="intent")
+    try:
+        rapor = account_service.delete_account(uid)
+    except RuntimeError as exc:
+        _basarisiz(iz, exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+    _audit_tamamla(iz, {"phase": "done"})
     return {"status": "ok", "report": getattr(rapor, "__dict__", str(rapor))}
 
 
@@ -321,40 +668,85 @@ def user_device_release(uid: str, user: AuthUser = Depends(require_admin)):
     return {"status": "ok", "released": released}
 
 
-@router.get("/economics")
-def economics(days: int = Query(default=90, ge=1, le=365),
-              user: AuthUser = Depends(require_admin)):
-    try:
-        return {"status": "ok", **admin_service.economics(days)}
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-
-
-@router.get("/usage")
-def usage(days: int = Query(default=30, ge=1, le=90),
-          user: AuthUser = Depends(require_admin)):
-    try:
-        return {"status": "ok", **admin_service.usage_summary(days)}
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-
-
-@router.get("/notify-runs")
-def notify_runs(days: int = Query(default=7, ge=1, le=30),
-                user: AuthUser = Depends(require_admin)):
-    try:
-        return {"status": "ok", "runs": admin_service.notify_runs(days)}
-    except RuntimeError as exc:
-        raise HTTPException(status_code=500, detail=str(exc))
-
+# ---------------------------------------------------------------------------
+# Denetim izi okuma (AD3)
+# ---------------------------------------------------------------------------
 
 @router.get("/audit")
-def audit(limit: int = Query(default=50, ge=1, le=200),
+def audit(action: str | None = Query(default=None, max_length=60),
+          adminUid: str | None = Query(default=None, max_length=128),
+          targetUid: str | None = Query(default=None, max_length=128),
+          from_: str | None = Query(default=None, alias="from",
+                                    pattern=_GUN_DESENI),
+          to: str | None = Query(default=None, pattern=_GUN_DESENI),
+          limit: int = Query(default=50, ge=1, le=200),
+          cursor: str | None = Query(default=None, max_length=512),
           user: AuthUser = Depends(require_admin)):
+    """Süzgeçli, cursor'lu denetim izi. `to` KAPSAYICI gün (gün sonuna
+    kadar); bozuk imleç 400."""
+    bas = son = None
+    if from_:
+        bas = dt.datetime.combine(dt.date.fromisoformat(from_), dt.time.min,
+                                  tzinfo=dt.timezone.utc)
+    if to:
+        son = dt.datetime.combine(dt.date.fromisoformat(to) + dt.timedelta(days=1),
+                                  dt.time.min, tzinfo=dt.timezone.utc)
     try:
-        return {"status": "ok", "entries": admin_service.audit_list(limit)}
+        sonuc = admin_service.audit_list(
+            action=action, admin_uid=adminUid, target_uid=targetUid,
+            start=bas, end=son, limit=limit, cursor=cursor)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+    return {"status": "ok", **sonuc}
+
+
+# ---------------------------------------------------------------------------
+# Sistem + duyuru (AD10)
+# ---------------------------------------------------------------------------
+
+@router.get("/system")
+def system(user: AuthUser = Depends(require_admin)):
+    """Sağlık, rollup tazeliği, scheduler, indeks yoklaması, build, config."""
+    try:
+        return {"status": "ok", **admin_service.system_info()}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+class NoticeRequest(BaseModel):
+    """Panel bandı: boş metin duyuruyu kaldırır. Mobil bunu OKUMAZ."""
+    text: str = Field(default="", max_length=300)
+    level: Literal["info", "warn"] = "info"
+
+
+@router.post("/config/notice")
+def config_notice(req: NoticeRequest,
+                  user: AuthUser = Depends(require_owner)):
+    """`config/app.notice` yazar (owner). `api/config.py` dokunulmaz —
+    mobil açılış yapılandırması bu alanı taşımaz."""
+    client = firestore_client.get_client()
+    if client is None:
+        raise HTTPException(status_code=500, detail="Firestore erişilemiyor.")
+    metin = req.text.strip()
+    if metin:
+        deger: Any = {"text": metin, "level": req.level,
+                      "updatedAt": dt.datetime.now(dt.timezone.utc),
+                      "updatedBy": user.uid}
+    else:
+        from google.cloud.firestore_v1 import DELETE_FIELD
+        deger = DELETE_FIELD
+    try:
+        client.collection("config").document("app").set({"notice": deger},
+                                                        merge=True)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Duyuru yazılamadı: {exc}")
+    _audit(user, "config.notice",
+           params={"text": metin, "level": req.level,
+                   "cleared": not metin})
+    return {"status": "ok", "notice": None if not metin else
+            {"text": metin, "level": req.level}}
 
 
 # ---------------------------------------------------------------------------
@@ -395,13 +787,13 @@ def min_build_status(user: AuthUser = Depends(require_admin)):
 
 @router.post("/min-build")
 def min_build_set(req: MinBuildRequest,
-                  user: AuthUser = Depends(require_admin)):
-    """Eşiği yazar (K9 doğrulaması): `min_build > 0` ise `appBuild >=
-    min_build` olan EN AZ BİR kullanıcı canlı görülmüş olmalı.
+                  user: AuthUser = Depends(require_owner)):
+    """Eşiği yazar (K9 doğrulaması, owner): `min_build > 0` ise
+    `appBuild >= min_build` olan EN AZ BİR kullanıcı canlı görülmüş olmalı.
 
     Yazım hatasıyla (350 yerine 35) herkesi kilitlemek böyle imkânsızlaşır;
     operatörün kendi cihazında açtığı yeni sürüm şartı sağlar. Sıfır (geri
-    alma) her zaman kabul — kilidi açmanın önkoşulu olmaz.
+    alma) her zaman kabul — kilidi açmanın önkoşulu olmaz. Ön-izli.
     """
     if firestore_client.get_client() is None:
         raise HTTPException(status_code=500, detail="Firestore erişilemiyor.")
@@ -410,17 +802,20 @@ def min_build_set(req: MinBuildRequest,
             status_code=400,
             detail="Eşiğin üstünde hiç kullanıcı görülmedi — önce yeni "
                    "sürümü bir cihazda aç.")
+    iz = _audit(user, "config.min_build",
+                params={"min_build": req.min_build, "reason": req.reason},
+                zorunlu=True, phase="intent")
     try:
         app_gate.set_min_build(req.min_build, req.reason, user.uid)
     except RuntimeError as exc:
+        _basarisiz(iz, exc)
         raise HTTPException(status_code=500, detail=str(exc))
-    _audit(user, "config.min_build",
-           params={"min_build": req.min_build, "reason": req.reason})
+    _audit_tamamla(iz, {"phase": "done"})
     return {"status": "ok", **_min_build_durumu()}
 
 
 # ---------------------------------------------------------------------------
-# Ortaklar (W7) — panel CRUD'u; hepsi require_admin
+# Ortaklar (W7) — okuma admin, yazımlar owner
 # ---------------------------------------------------------------------------
 
 class PartnerCreate(BaseModel):
@@ -444,8 +839,7 @@ class CodeCreate(BaseModel):
     bonusTokens: int = Field(default=0, ge=0, le=5000)
     maxRedemptions: int | None = Field(default=None, ge=1)
     #: ISO tarih (YYYY-MM-DD) — gün sonu UTC kabul edilir.
-    expiresAt: str | None = Field(default=None,
-                                  pattern=r"^\d{4}-\d{2}-\d{2}$")
+    expiresAt: str | None = Field(default=None, pattern=_GUN_DESENI)
 
 
 class PayoutCreate(BaseModel):
@@ -465,7 +859,7 @@ def partners(user: AuthUser = Depends(require_admin)):
 
 @router.post("/partners")
 def create_partner(req: PartnerCreate,
-                   user: AuthUser = Depends(require_admin)):
+                   user: AuthUser = Depends(require_owner)):
     try:
         ortak = partner_service.create_partner(
             req.name, req.contact, req.sharePercent, req.notes)
@@ -477,7 +871,7 @@ def create_partner(req: PartnerCreate,
 
 @router.patch("/partners/{partner_id}")
 def patch_partner(partner_id: str, req: PartnerPatch,
-                  user: AuthUser = Depends(require_admin)):
+                  user: AuthUser = Depends(require_owner)):
     try:
         partner_service.update_partner(
             partner_id, req.model_dump(exclude_none=True))
@@ -500,7 +894,7 @@ def partner_detail(partner_id: str,
 
 @router.post("/partners/{partner_id}/codes")
 def create_code(partner_id: str, req: CodeCreate,
-                user: AuthUser = Depends(require_admin)):
+                user: AuthUser = Depends(require_owner)):
     son = None
     if req.expiresAt:
         son = dt.datetime.combine(dt.date.fromisoformat(req.expiresAt),
@@ -518,13 +912,17 @@ def create_code(partner_id: str, req: CodeCreate,
 
 @router.post("/partners/{partner_id}/payouts")
 def add_payout(partner_id: str, req: PayoutCreate,
-               user: AuthUser = Depends(require_admin)):
+               user: AuthUser = Depends(require_owner)):
+    """Hakediş ödemesi kaydı (owner, ön-izli — mali işlem)."""
+    iz = _audit(user, "partner.payout",
+                params={"partnerId": partner_id, "amount": req.amount,
+                        "currency": req.currency},
+                zorunlu=True, phase="intent")
     try:
         odeme = partner_service.add_payout(
             partner_id, req.amount, req.currency, req.note)
     except partner_service.RedeemError as e:
+        _basarisiz(iz, e)
         raise _servis_hatasi(e)
-    _audit(user, "partner.payout",
-           params={"partnerId": partner_id, "amount": req.amount,
-                   "currency": req.currency})
+    _audit_tamamla(iz, {"phase": "done"})
     return {"status": "ok", "payout": odeme}

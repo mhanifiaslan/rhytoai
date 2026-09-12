@@ -1,468 +1,987 @@
-/* Kullanıcılar: aramalı liste + Kullanıcı 360 (destek ekranı).
-   Rotalar: #/kullanicilar → liste, #/kullanicilar/{uid} → 360.
-   Uçlar: /admin/users, /admin/users/{uid}, /admin/users/{uid}/credit,
-   /admin/users/{uid}/device/release, /admin/stats (dağılım grafikleri).
+/* Kullanıcılar (AD19): imleçli liste (arama + alan çipleri + süzgeç
+   çipleri + segmentler + owner CSV) ve Kullanıcı 360 (destek masası).
 
-   Mahremiyet: sunucu sohbet/hafıza İÇERİĞİ ve fcmToken değeri zaten
-   döndürmez; bu ekran yalnız sayıları ve destek verisini çizer. */
+   Rotalar:
+   - #/kullanicilar?q&alan&plan&language&platform&disabled&activeSince&
+     belowBuild&sort → liste. Süzgeç durumu adres çubuğuna SESSİZ yazılır
+     (rotaYaz sessiz), yer imi/paylaşım çalışır.
+   - #/kullanicilar/{uid}[/{sekme}] → 360; sekme ∈ ozet | abonelik |
+     kullanim | bildirim | zaman | denetim (hash ile eşzamanlı).
+   - #/kullanicilar/ara/{q} → eski üst-çubuk bağlantısı; listeye düşer.
+
+   Uçlar:
+   - GET  /api/v1/admin/users?q&alan&plan&language&platform&disabled&
+     activeSince&belowBuild&sort&limit&cursor → {users:[{uid, displayName,
+     email, username, plan, language, platform, appBuild, createdAt,
+     lastSeenDaily, streakCount, authDisabled, onboardingCompleted,
+     hasPush}], nextCursor, mode:'search'|'filter'}
+   - GET  /api/v1/admin/min-build → {min_build} (eşik altı çipi)
+   - GET  /api/v1/admin/users/{uid} → {profile, subscription, wallet,
+     ledger, quota, attribution, device, notifications, revenueEvents,
+     timeline, usage:{recent, calls, estCostUsd, byFeature, totals},
+     revenueTotals, phoneAttempts, economics, counts}
+   - POST /api/v1/admin/users/{uid}/credit {amount, reason}
+   - POST /api/v1/admin/users/{uid}/device/release
+   - POST /api/v1/admin/users/{uid}/auth-link {kind:'verify'|'reset'}
+   - POST /api/v1/admin/users/{uid}/disable {disabled, reason} (owner)
+   - DELETE /api/v1/admin/users/{uid} {confirm:'SIL', reason} (owner)
+   - GET  /api/v1/admin/audit?targetUid&limit
+   - GET  /api/v1/admin/users/export.csv?plan&language&platform&disabled&
+     activeSince (owner)
+
+   Mahremiyet: sunucu sohbet/hafıza İÇERİĞİ, fcmToken, ham telefon ve doğum
+   verisi döndürmez; burada yalnız sayılar ve destek verisi çizilir.
+   Sunucu sıralaması hep DESC; arama modunda alan sırası, aktiflik/eşik
+   süzgeçlerinde ilgili alan sırası geçerlidir. */
 (function () {
   'use strict';
 
   var RY = window.RY;
   RY.gorunumler = RY.gorunumler || {};
 
-  var BURC = { aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋',
-               leo: '♌', virgo: '♍', libra: '♎', scorpio: '♏',
-               sagittarius: '♐', capricorn: '♑', aquarius: '♒',
-               pisces: '♓' };
+  var SAYFA = 50;
+  var DENETIM_SAYFA = 50;
+  var OTO_ATLAMA = 3;  // arama modunda boş sayfa gelirse en fazla bu kadar otomatik devam
 
-  function burc(kod) {
-    if (!kod) return '';
-    return BURC[String(kod).toLowerCase()] || '';
+  var BURC = { aries: '♈', taurus: '♉', gemini: '♊', cancer: '♋', leo: '♌', virgo: '♍',
+               libra: '♎', scorpio: '♏', sagittarius: '♐', capricorn: '♑', aquarius: '♒', pisces: '♓' };
+  var BURC_ADI = { aries: 'Koç', taurus: 'Boğa', gemini: 'İkizler', cancer: 'Yengeç', leo: 'Aslan',
+                   virgo: 'Başak', libra: 'Terazi', scorpio: 'Akrep', sagittarius: 'Yay',
+                   capricorn: 'Oğlak', aquarius: 'Kova', pisces: 'Balık' };
+  function burc(kod) { return kod ? (BURC[String(kod).toLowerCase()] || '') : ''; }
+  function burcAdi(kod) { return kod ? (BURC_ADI[String(kod).toLowerCase()] || String(kod)) : ''; }
+
+  var DIL_ADI = { tr: 'Türkçe', en: 'İngilizce', de: 'Almanca', fr: 'Fransızca',
+                  es: 'İspanyolca', ar: 'Arapça', ru: 'Rusça' };
+  function dilAdi(k) { return k ? (DIL_ADI[k] || String(k)) : '—'; }
+  var PLATFORM_ADI = { android: 'Android', ios: 'iOS', web: 'Web' };
+  function platformAdi(k) { return k ? (PLATFORM_ADI[k] || String(k)) : '—'; }
+
+  var OZELLIK = {
+    chat: 'Sohbet', signal: 'Sinyal paketi', natal: 'Natal rapor', iching: 'İ Ching',
+    iching_verdict: 'İ Ching hükmü', face: 'Yüz okuma', bazi: 'BaZi', dyad: 'İkili',
+    synastry: 'Sinastri', relationship: 'İlişki', birth_hexagram: 'Doğum heksagramı',
+    solar_return: 'Yıl haritası', progressions: 'Progresyon', calendar: 'Takvim', daily: 'Günlük',
+    horoscope: 'Burç yorumu', memory_extract: 'Hafıza çıkarımı', push_daily: 'Günlük push', unknown: 'Bilinmeyen'
+  };
+  function ozellikAdi(k) { return OZELLIK[k] || String(k); }
+
+  var ALANLAR = [['eposta', 'E-posta'], ['kullanici', 'Kullanıcı adı'], ['ad', 'Ad']];
+  var PLANLAR = ['free', 'trial', 'plus'];
+  var SIRALAMALAR = ['createdAt', 'lastSeenDaily', 'streakCount'];
+  var SEKMELER = ['ozet', 'abonelik', 'kullanim', 'bildirim', 'zaman', 'denetim'];
+
+  var NOTIFY_ADI = { daily: 'Günlük (sabah)', midday: 'Öğle', checkin: 'Check-in', streak: 'Seri' };
+  var ASAMA = { sent: ['gonder', 'Kod gönderildi'], auto: ['kivilcim', 'Otomatik doğrulandı'],
+                verified: ['basari', 'Doğrulandı'], failed: ['hata', 'Hata'] };
+
+  /* Denetim eylemi → okunur ad (sistem.js ile aynı). */
+  var EYLEM_ADI = {
+    'user.credit': 'Kredi', 'user.disable': 'Devre dışı bırak', 'user.enable': 'Devreye al',
+    'user.delete': 'Hesap sil', 'user.auth_link': 'Kimlik bağlantısı', 'device.release': 'Cihaz kilidi sıfırla'
+  };
+
+  var adOnbellek = {};  // uid → görünen ad (kırıntı)
+
+  function hataToast(h) {
+    var m = RY.hataMetni(h);
+    if (m) RY.b.toast(m, 'hata');
   }
 
-  /* ---- Liste ---- */
+  function alanSec(q) {
+    if (q.charAt(0) === '@') return { alan: 'kullanici', q: q.slice(1) };
+    if (q.indexOf('@') > 0) return { alan: 'eposta', q: q };
+    return null;  // otomatik karar yok: seçili alan kalır
+  }
 
-  async function liste(icerik, sorgu, siralama) {
+  function gunOnce(n) {
+    return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+  }
+  function gunFarki(tarihStr) {
+    var d = RY.b.tarihNesnesi(tarihStr);
+    return d ? Math.round((Date.now() - d.getTime()) / 86400000) : null;
+  }
+
+  function kullaniciYolu(uid, ek) {
+    return '/api/v1/admin/users/' + encodeURIComponent(uid) + (ek || '');
+  }
+
+  function kisiHucresi(b, u) {
+    var ad = u.displayName || u.email || u.uid;
+    var alt = [u.displayName ? u.email : null, u.username ? '@' + u.username : null]
+      .filter(Boolean).join(' · ') || (ad !== u.uid ? u.uid : '');
+    return '<span class="vt-kimlik"><span class="avatar" aria-hidden="true">' +
+      b.e(b.basHarfler(u.displayName, u.email)) + '</span><div>' + b.e(ad) +
+      (u.sunSign ? ' <span title="' + b.e(burcAdi(u.sunSign)) + '">' + burc(u.sunSign) + '</span>' : '') +
+      (alt ? '<span>' + b.e(alt) + '</span>' : '') + '</div></span>';
+  }
+
+  /* =====================================================================
+     LİSTE
+     ===================================================================== */
+
+  function durumOku(params) {
+    params = params || {};
+    var d = {
+      q: String(params.q || '').trim(),
+      alan: ALANLAR.some(function (a) { return a[0] === params.alan; }) ? params.alan : 'ad',
+      plan: PLANLAR.indexOf(params.plan) >= 0 ? params.plan : undefined,
+      language: params.language ? String(params.language).slice(0, 8) : undefined,
+      platform: params.platform ? String(params.platform).slice(0, 16) : undefined,
+      disabled: params.disabled === 'true' || params.disabled === '1' ? 'true' : undefined,
+      activeSince: /^\d{4}-\d{2}-\d{2}$/.test(params.activeSince || '') ? params.activeSince : undefined,
+      belowBuild: Number(params.belowBuild) > 0 ? Math.round(Number(params.belowBuild)) : undefined,
+      sort: SIRALAMALAR.indexOf(params.sort) >= 0 ? params.sort : undefined
+    };
+    if (params.q && !params.alan) {
+      var oto = alanSec(d.q);
+      if (oto) { d.alan = oto.alan; d.q = oto.q; }
+    }
+    return d;
+  }
+
+  function paramsTemizle(d) {
+    var p = {};
+    if (d.q) { p.q = d.q; p.alan = d.alan; }
+    ['plan', 'language', 'platform', 'disabled', 'activeSince', 'belowBuild', 'sort'].forEach(function (k) {
+      if (d[k] !== undefined && d[k] !== '' && d[k] !== null) p[k] = d[k];
+    });
+    return p;
+  }
+
+  function cipDegeri(d, minBuild) {
+    var fark = d.activeSince ? gunFarki(d.activeSince) : null;
+    return {
+      plan: d.plan, language: d.language, platform: d.platform, disabled: d.disabled,
+      aktif: fark == null ? undefined : (fark <= 7 ? '7' : (fark <= 30 ? '30' : undefined)),
+      esik: d.belowBuild && minBuild && d.belowBuild === minBuild ? '1' : undefined
+    };
+  }
+
+  async function liste(icerik, params) {
     var b = RY.b;
-    var yol = '/api/v1/admin/users?limit=100' +
-      (sorgu ? '&query=' + encodeURIComponent(sorgu) : '') +
-      (siralama ? '&sort=' + encodeURIComponent(siralama) : '');
-    var veri = await RY.get(yol);
-    var stats = await RY.get('/api/v1/admin/stats?days=1')
-      .catch(function () { return { days: [] }; });
-    var u = ((stats.days || [])[0] || {}).users || {};
-    var satirlar = (veri.users || []).map(function (k) {
-      var basHarf = String(k.displayName || k.email || '?')
-        .trim().charAt(0).toUpperCase();
-      return '<tr class="tikla" data-uid="' + b.e(k.uid) + '">' +
-        '<td><div class="hucre-kisi">' +
-        '<div class="avatar-hucre">' + b.e(basHarf) + '</div>' +
-        '<div><b>' + b.e(k.displayName || '—') + ' ' + burc(k.sunSign) +
-        '</b><span>' + b.e(k.email || '') + '</span></div></div></td>' +
-        '<td>' + (k.username ? '@' + b.e(k.username) : '—') + '</td>' +
-        '<td class="sayi">' + b.tarih(k.createdAt) + '</td>' +
-        '<td class="sayi">' + b.e(k.lastSeenDaily || '—') + '</td>' +
-        '<td class="sayi">' + b.sayi(k.streakCount || 0) + '</td>' +
-        '<td>' + b.e(k.language || '—') + '</td>' +
-        '<td>' + b.e(k.platform || '—') + '</td>' +
-        '<td>' + (k.hasPush ? b.rozet('push', 'aktif')
-                            : b.rozet('yok', 'notr')) + '</td>' +
-        '</tr>';
+    var sahip = RY.sahipMi();
+    var durum = durumOku(params);
+    var imlec = null, denetleyici = null, bekleyici = null, mod = null;
+
+    var mb = await RY.get('/api/v1/admin/min-build').catch(function () { return null; });
+    var minBuild = mb && Number(mb.min_build) > 0 ? Number(mb.min_build) : 0;
+
+    var eylemler = '<button type="button" class="buton ikincil" id="kul-segment-kaydet">' + b.ik('yildiz', 16) + 'Segmenti kaydet</button>' +
+      (sahip ? '<button type="button" class="buton ikincil" id="kul-csv">' + b.ik('indir', 16) + 'CSV indir</button>' : '');
+
+    var alanCipleri = ALANLAR.map(function (a) {
+      return '<button type="button" class="adm-cip" data-alan="' + a[0] + '" aria-pressed="' +
+        (a[0] === durum.alan ? 'true' : 'false') + '">' + a[1] + '</button>';
     }).join('');
 
     icerik.innerHTML =
-      '<div class="panel">' +
-      '<div class="form-satir" style="margin-top:0">' +
-      '<input class="girdi girdi-genis" id="ara" placeholder="Ara: e-posta, ' +
-      'kullanıcı adı, görünen ad (önek)" value="' + b.e(sorgu || '') +
-      '" aria-label="Kullanıcı ara">' +
-      '<select class="girdi" id="sirala" aria-label="Sıralama">' +
-      '<option value="createdAt">Kayıt tarihi</option>' +
-      '<option value="lastSeenDaily">Son görülme</option>' +
-      '<option value="streakCount">Seri</option>' +
-      '</select></div>' +
-      (satirlar
-        ? b.tablo(['Kullanıcı', 'Kullanıcı adı', 'Kayıt',
-                   'Son görülme', 'Seri', 'Dil', 'Platform', 'Push'],
-                  satirlar)
-        : b.bosDurum(sorgu
-            ? '"' + sorgu + '" ile eşleşen kullanıcı yok.'
-            : 'Henüz kullanıcı yok.')) +
+      b.sayfaBaslik({ baslik: 'Kullanıcılar', alt: 'Arama önek eşleşir, süzgeçler eşitlik · sayfa ' + SAYFA + ' · imleçli',
+        eylemlerHtml: eylemler }) +
+      '<div class="suzgec" id="kul-arama">' +
+      '<label class="ara">' + b.ik('arama', 16) + '<input id="kul-ara" type="search" autocomplete="off" spellcheck="false" ' +
+      'placeholder="Ara: e-posta, @kullanıcıadı ya da ad (önek)" aria-label="Kullanıcı ara" value="' +
+      b.e(durum.q ? (durum.alan === 'kullanici' ? '@' + durum.q : durum.q) : '') + '"></label>' +
+      '<span class="cip-grup" role="group" aria-label="Arama alanı" id="kul-alan"><span class="grup-ad" aria-hidden="true">Alan</span>' +
+      alanCipleri + '</span>' +
+      '<span class="dipnot" id="kul-mod" aria-live="polite"></span>' +
       '</div>' +
-      '<div class="izgara-3">' +
-      b.grafikPanel('g-dil', 'Dil dağılımı', true) +
-      b.grafikPanel('g-platform', 'Platform', true) +
-      b.grafikPanel('g-seri', 'Seri kovaları', true) +
-      '</div>';
+      '<div id="kul-filtre"></div>' +
+      '<div id="kul-segment"></div>' +
+      b.modul('Kullanıcılar', '<div id="kul-tablo"></div>', '<span class="dipnot" id="kul-sayac"></span>',
+        { alt: 'satıra tıkla → 360 · sıralama sunucuda (yeniden eskiye)' }) +
+      '<p class="dipnot">Arama modunda eşitlik süzgeçleri sayfa içinde uygulanır: sayfa boş görünse de ' +
+      '"Daha fazla" devam eder (ilk ' + OTO_ATLAMA + ' boş sayfa otomatik atlanır). Aktiflik ve eşik süzgeçleri ' +
+      'birlikte kullanılamaz (Firestore tek aralık). CSV yalnız sahibe; q ve eşik CSV\'ye girmez.</p>';
 
-    if (siralama) document.getElementById('sirala').value = siralama;
+    var modEl = icerik.querySelector('#kul-mod');
+    var sayacEl = icerik.querySelector('#kul-sayac');
 
-    RY.grafik.cubuk(document.getElementById('g-dil'), u.byLanguage || {});
-    RY.grafik.cubuk(document.getElementById('g-platform'),
-      u.byPlatform || {});
-    RY.grafik.cubuk(document.getElementById('g-seri'),
-      u.streakBuckets || {});
+    /* ---- Tablo ---- */
+    var vt = b.veriTablosu({
+      kimlik: 'kul-vt', etiket: 'Kullanıcılar', yogunluk: 'sik',
+      sutunlar: [
+        { ad: 'displayName', baslik: 'Kullanıcı', deger: function (u) { return u.displayName || u.email || u.uid; },
+          bicim: function (u) { return kisiHucresi(b, u); } },
+        { ad: 'plan', baslik: 'Plan', bicim: function (u) {
+          return b.planRozeti(u.plan, u.createdAt) +
+            (u.authDisabled ? ' ' + b.rozet('Devre dışı', 'hata') : '') +
+            (u.onboardingCompleted === false ? ' ' + b.rozet('onboarding yarım', 'uyari') : '');
+        } },
+        { ad: 'language', baslik: 'Dil', bicim: function (u) { return b.e(dilAdi(u.language)); } },
+        { ad: 'platform', baslik: 'Platform', bicim: function (u) { return b.e(platformAdi(u.platform)); } },
+        { ad: 'appBuild', baslik: 'Sürüm', hizala: 'sag', bicim: function (u) {
+          if (u.appBuild == null) return '<span class="dipnot">—</span>';
+          var altinda = minBuild && Number(u.appBuild) < minBuild;
+          return '<span class="mono">' + b.e(String(u.appBuild)) + '</span>' + (altinda ? ' ' + b.rozet('eşik altı', 'uyari') : '');
+        } },
+        { ad: 'createdAt', baslik: 'Kayıt', siralanir: true, bicim: function (u) { return b.e(b.tarih(u.createdAt)); } },
+        { ad: 'lastSeenDaily', baslik: 'Son görülme', siralanir: true, bicim: function (u) {
+          if (!u.lastSeenDaily) return '<span class="dipnot">—</span>';
+          return '<span class="mono" title="' + b.e(String(u.lastSeenDaily)) + '">' + b.e(b.goreliZaman(u.lastSeenDaily)) + '</span>';
+        } },
+        { ad: 'streakCount', baslik: 'Seri', hizala: 'sag', siralanir: true,
+          bicim: function (u) { return b.e(b.sayi(Number(u.streakCount) || 0)); } },
+        { ad: 'hasPush', baslik: 'Push', bicim: function (u) { return u.hasPush ? b.rozet('açık', 'aktif') : b.rozet('yok', 'notr'); } }
+      ],
+      anahtar: function (u) { return u.uid; },
+      satirHref: function (u) { return RY.rotaBagi('kullanicilar', [u.uid]); },
+      satirSinif: function (u) {
+        if (u.authDisabled) return 'durum-pasif';
+        if (minBuild && u.appBuild != null && Number(u.appBuild) < minBuild) return 'durum-uyari';
+        return '';
+      },
+      siralama: { ad: durum.sort || 'createdAt', yon: 'desc' },
+      onSirala: function (ad) {
+        if (SIRALAMALAR.indexOf(ad) < 0) return;
+        durum.sort = ad === 'createdAt' ? undefined : ad;
+        urlYaz(); yukle(false);
+      },
+      bosMetin: 'Eşleşen kullanıcı yok — aramayı kısalt ya da süzgeci gevşet.',
+      onTekrar: function () { yukle(false); }
+    });
+    icerik.querySelector('#kul-tablo').appendChild(vt.el);
 
-    icerik.querySelectorAll('tr[data-uid]').forEach(function (tr) {
-      tr.onclick = function () {
-        location.hash = '#/kullanicilar/' +
-          encodeURIComponent(tr.getAttribute('data-uid'));
-      };
+    function urlYaz() {
+      RY.rotaYaz('kullanicilar', [], paramsTemizle(durum), { sessiz: true });
+    }
+
+    function yukle(devam, atlama) {
+      if (!devam) { imlec = null; vt.durum('yukleniyor'); }
+      if (denetleyici) denetleyici.abort();
+      denetleyici = new AbortController();
+      var bu = denetleyici;
+      var p = Object.assign(paramsTemizle(durum), { limit: SAYFA, cursor: devam ? imlec : null });
+      return RY.sorgu('/api/v1/admin/users', p, { sinyal: bu.signal }).then(function (res) {
+        if (bu.signal.aborted) return;
+        var satirlar = Array.isArray(res && res.users) ? res.users : [];
+        imlec = (res && res.nextCursor) || null;
+        mod = (res && res.mode) || null;
+        satirlar.forEach(function (u) { adOnbellek[u.uid] = u.displayName || u.email || u.uid; });
+        var sayfa = { daha: !!imlec, onDaha: function () { return yukle(true, 0); } };
+        if (devam) vt.ekle(satirlar, sayfa); else vt.guncelle(satirlar, sayfa);
+        var n = vt.satirlar().length;
+        sayacEl.textContent = n ? b.sayi(n) + ' satır' + (imlec ? ' · devamı var' : '') : '';
+        modEl.textContent = mod === 'search' ? 'arama modu · ' + (ALANLAR.filter(function (a) { return a[0] === durum.alan; })[0] || [])[1] + ' öneki'
+          : (mod === 'filter' ? 'süzgeç modu' : '');
+        // Arama modunda süzgeç sayfa içinde uygulanır: boş sayfa + imleç → kendiliğinden devam.
+        if (!satirlar.length && imlec && (atlama || 0) < OTO_ATLAMA) return yukle(true, (atlama || 0) + 1);
+      }).catch(function (h) {
+        if (h && h.iptal) return;
+        if (devam) hataToast(h); else vt.durum('hata', RY.hataMetni(h));
+      });
+    }
+
+    /* ---- Arama ---- */
+    var ara = icerik.querySelector('#kul-ara');
+    var alanGrup = icerik.querySelector('#kul-alan');
+    function alanCiz() {
+      alanGrup.querySelectorAll('.adm-cip').forEach(function (c) {
+        c.setAttribute('aria-pressed', c.getAttribute('data-alan') === durum.alan ? 'true' : 'false');
+      });
+    }
+    function aramaUygula() {
+      var ham = ara.value.trim();
+      var oto = alanSec(ham);
+      if (oto) { durum.alan = oto.alan; durum.q = oto.q; alanCiz(); }
+      else durum.q = ham;
+      urlYaz(); yukle(false);
+    }
+    ara.addEventListener('input', function () {
+      clearTimeout(bekleyici);
+      bekleyici = setTimeout(aramaUygula, 300);
+    });
+    ara.addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); clearTimeout(bekleyici); aramaUygula(); }
+    });
+    alanGrup.addEventListener('click', function (ev) {
+      var d = ev.target.closest('.adm-cip');
+      if (!d) return;
+      durum.alan = d.getAttribute('data-alan');
+      if (durum.alan === 'kullanici' && ara.value.charAt(0) === '@') ara.value = ara.value.slice(1);
+      alanCiz();
+      if (durum.q) { urlYaz(); yukle(false); }
     });
 
-    var ara = document.getElementById('ara');
-    var bekleyici = null;
-    ara.oninput = function () {
-      clearTimeout(bekleyici);
-      bekleyici = setTimeout(function () {
-        liste(icerik, ara.value.trim(),
-              document.getElementById('sirala').value);
-      }, 300);
-    };
-    document.getElementById('sirala').onchange = function () {
-      liste(icerik, ara.value.trim(), this.value);
-    };
-    ara.focus();
+    /* ---- Süzgeç çipleri ---- */
+    var cipler = b.filtreCipleri({
+      etiket: 'Süzgeçler',
+      filtreler: [
+        { ad: 'plan', etiket: 'Plan', secenekler: [{ deger: 'plus', etiket: 'Rytho+' }, { deger: 'trial', etiket: 'Deneme' }, { deger: 'free', etiket: 'Ücretsiz' }] },
+        { ad: 'language', etiket: 'Dil', secenekler: Object.keys(DIL_ADI).map(function (k) { return { deger: k, etiket: DIL_ADI[k] }; }) },
+        { ad: 'platform', etiket: 'Platform', secenekler: [{ deger: 'android', etiket: 'Android' }, { deger: 'ios', etiket: 'iOS' }] },
+        { ad: 'disabled', etiket: 'Durum', secenekler: [{ deger: 'true', etiket: 'Devre dışı', ikon: 'kilit' }] },
+        { ad: 'aktif', etiket: 'Aktiflik', altin: true, secenekler: [{ deger: '7', etiket: 'Son 7 gün' }, { deger: '30', etiket: 'Son 30 gün' }] },
+        { ad: 'esik', etiket: 'Sürüm', secenekler: [{ deger: '1', etiket: minBuild ? 'Eşik altı (<' + minBuild + ')' : 'Eşik altı (eşik yok)' }] }
+      ],
+      deger: cipDegeri(durum, minBuild),
+      onDegis: function (d) {
+        durum.plan = d.plan; durum.language = d.language; durum.platform = d.platform;
+        durum.disabled = d.disabled === 'true' ? 'true' : undefined;
+        durum.activeSince = d.aktif ? gunOnce(Number(d.aktif)) : undefined;
+        if (d.esik && !minBuild) {
+          b.toast('Zorunlu güncelleme eşiği 0 — eşik altı süzgeci anlamsız. Sistem sayfasından eşik yaz.', 'uyari');
+          durum.belowBuild = undefined;
+          cipler.ayarla(cipDegeri(durum, minBuild));
+        } else durum.belowBuild = d.esik ? minBuild : undefined;
+        if (durum.activeSince && durum.belowBuild) {
+          b.toast('Aktiflik ve eşik süzgeçleri birlikte olmaz — sonuncusu kaldı.', 'uyari');
+          if (d.aktif && !cipler.deger().esik) durum.belowBuild = undefined; else durum.activeSince = undefined;
+          cipler.ayarla(cipDegeri(durum, minBuild));
+        }
+        urlYaz(); yukle(false);
+      }
+    });
+    icerik.querySelector('#kul-filtre').appendChild(cipler);
+
+    /* ---- Segmentler (localStorage) ---- */
+    var segKap = icerik.querySelector('#kul-segment');
+    function segmentCiz() {
+      var liste = b.segmentler.oku();
+      if (!liste.length) { segKap.innerHTML = ''; return; }
+      segKap.innerHTML = '<span class="cip-grup" role="group" aria-label="Kayıtlı segmentler">' +
+        '<span class="grup-ad" aria-hidden="true">Segmentler</span>' + liste.map(function (s) {
+          return '<button type="button" class="adm-cip" data-segment="' + b.e(s.ad) + '" title="' +
+            b.e(Object.keys(s.filtre || {}).map(function (k) { return k + '=' + s.filtre[k]; }).join(' · ') || 'süzgeçsiz') + '">' +
+            b.ik('yildiz', 14) + b.e(s.ad) + '</button>' +
+            '<button type="button" class="adm-cip" data-segment-sil="' + b.e(s.ad) + '" aria-label="Segmenti sil: ' + b.e(s.ad) + '"><span class="x" aria-hidden="true">×</span></button>';
+        }).join('') + '</span>';
+    }
+    segKap.addEventListener('click', function (ev) {
+      var sil = ev.target.closest('[data-segment-sil]');
+      if (sil) {
+        b.segmentler.sil(sil.getAttribute('data-segment-sil'));
+        segmentCiz();
+        b.toast('Segment silindi.', 'bilgi');
+        var ilk = segKap.querySelector('[data-segment]');
+        (ilk || icerik.querySelector('#kul-segment-kaydet')).focus();
+        return;
+      }
+      var d = ev.target.closest('[data-segment]');
+      if (!d) return;
+      var s = b.segmentler.oku().filter(function (x) { return x.ad === d.getAttribute('data-segment'); })[0];
+      if (!s) return;
+      durum = durumOku(s.filtre || {});
+      ara.value = durum.q ? (durum.alan === 'kullanici' ? '@' + durum.q : durum.q) : '';
+      alanCiz();
+      cipler.ayarla(cipDegeri(durum, minBuild));
+      urlYaz(); yukle(false);
+    });
+    icerik.querySelector('#kul-segment-kaydet').addEventListener('click', function () {
+      var f = b.form({
+        alanlar: [{ ad: 'ad', etiket: 'Segment adı', zorunlu: true, max: 40, otomatik: 'off',
+          yardim: 'Geçerli arama + süzgeçler bu tarayıcıda saklanır (en fazla 30).',
+          dogrula: function (v) { return v.trim().length < 2 ? 'En az 2 karakter.' : null; } }],
+        gonderMetin: 'Kaydet',
+        iptal: { metin: 'Vazgeç', onTikla: function () { m.kapat(); } },
+        onGonder: function (d) {
+          b.segmentler.kaydet(d.ad.trim(), paramsTemizle(durum));
+          segmentCiz();
+          b.toast('Segment kaydedildi: ' + d.ad.trim(), 'basari');
+          m.kapat();
+        }
+      });
+      var m = b.modal({ baslik: 'Segmenti kaydet', icerik: f.el, genislik: 440 });
+      m.ac();
+    });
+    segmentCiz();
+
+    /* ---- CSV (owner) ---- */
+    var csv = icerik.querySelector('#kul-csv');
+    if (csv) csv.addEventListener('click', function () { csvIndir(durum); });
+
+    yukle(false);
   }
 
-  /* ---- Kullanıcı 360 ---- */
-
-  function zamanCizelgesi(d) {
+  function csvIndir(durum) {
     var b = RY.b;
+    var p = { plan: durum.plan, language: durum.language, platform: durum.platform,
+              disabled: durum.disabled, activeSince: durum.activeSince };
+    var gun = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    var t = b.toast('CSV hazırlanıyor…', 'bilgi', { sure: 0 });
+    return RY.indir('/api/v1/admin/users/export.csv' + RY.sorguDizesi(p), 'rytho-kullanicilar-' + gun + '.csv')
+      .then(function (r) {
+        t.kapat();
+        b.toast('CSV indirildi' + (r && r.boyut ? ' · ' + b.sayi(Math.round(r.boyut / 1024)) + ' KB' : '') +
+          (durum.q || durum.belowBuild ? ' (arama ve eşik süzgeci CSV\'ye girmez)' : ''), 'basari', { sure: 7000 });
+      }).catch(function (h) { t.kapat(); hataToast(h); });
+  }
+  RY.palet.eylemEkle({ ad: 'kullanicilar-csv', etiket: 'Kullanıcı CSV\'si indir', aciklama: 'süzgeçsiz · tüm kullanıcılar',
+    ikon: 'indir', rol: 'owner', calistir: function () { return csvIndir({}); } });
+
+  /* =====================================================================
+     360 — eylemler
+     ===================================================================== */
+
+  function krediVerAc(uid, ad) {
+    var b = RY.b;
+    var f = b.form({
+      alanlar: [
+        { ad: 'amount', etiket: 'Jeton', tur: 'number', zorunlu: true, min: 1, max: 5000, adim: '1',
+          yardim: '1–5000 · yalnız pozitif (düşüm bilerek yok)',
+          dogrula: function (v) {
+            var n = Number(v);
+            return (!isFinite(n) || n < 1 || n > 5000 || n !== Math.round(n)) ? '1–5000 arası tam sayı.' : null;
+          } },
+        { ad: 'reason', etiket: 'Gerekçe', tur: 'textarea', zorunlu: true, max: 300, satir: 2,
+          yardim: 'Defter + denetim izine yazılır (en az 3 karakter).',
+          dogrula: function (v) { return v.trim().length < 3 ? 'En az 3 karakter.' : null; } }
+      ],
+      gonderMetin: 'Kredi ver',
+      iptal: { metin: 'Vazgeç', onTikla: function () { m.kapat(); } },
+      onGonder: function (d) {
+        var tutar = Math.round(Number(d.amount));
+        return RY.post(kullaniciYolu(uid, '/credit'), { amount: tutar, reason: d.reason.trim() }).then(function (res) {
+          var c = (res && res.wallet) || null;
+          b.toast(b.sayi(tutar) + ' jeton verildi' + (c ? ' · bakiye ' + b.sayi((Number(c.allowance) || 0) + (Number(c.purchased) || 0)) : ''), 'basari');
+          m.kapat();
+          RY.rotaYenile();
+        });
+      }
+    });
+    var m = b.modal({ baslik: 'Kredi ver — ' + ad, icerik: f.el, genislik: 480 });
+    m.ac();
+  }
+
+  function cihazSifirla(uid, cihaz) {
+    var b = RY.b;
+    return b.onayla({
+      baslik: 'Cihaz kilidini sıfırla',
+      mesaj: 'Cihaz kaydı (' + (cihaz && cihaz.deviceId ? cihaz.deviceId : 'yok') + ') silinir; bir sonraki korumalı isteği ' +
+        'yapan cihaz kilidi sessizce yeniden alır. "Hesabın başka cihazda açıldı" ekranından çıkamayan kullanıcı için.',
+      aciklama: 'Geri alınabilir: kullanıcı yeniden sahiplenir. Denetim izine yazılır; gerekçe yalnız panelde kalır.',
+      gerekce: true, onaylaMetin: 'Sıfırla'
+    }).then(function (r) {
+      if (!r) return null;
+      return RY.post(kullaniciYolu(uid, '/device/release'), {}).then(function (res) {
+        b.toast(res && res.released ? 'Cihaz kilidi sıfırlandı.' : 'Kayıtlı cihaz yoktu; kilit zaten boştu.', 'basari');
+        RY.rotaYenile();
+      });
+    }).catch(hataToast);
+  }
+
+  function baglantiAc(uid, eposta) {
+    var b = RY.b;
+    var govde = b.el('<div></div>');
+    var sonuc = b.el('<div hidden><div class="form-alan"><label for="bl-link">Bağlantı (tek kullanımlık)</label>' +
+      '<input class="girdi mono" id="bl-link" readonly spellcheck="false"></div>' +
+      '<div class="eylem-satir"><button type="button" class="buton" id="bl-kopyala">' + b.ik('kopyala', 16) + 'Kopyala</button>' +
+      '<span class="dipnot">E-posta GÖNDERİLMEZ — bağlantıyı kullanıcıya kendi kanalından ilet. İze yalnız türü düşer.</span></div></div>');
+    var f = b.form({
+      alanlar: [
+        { ad: 'kind', etiket: 'Bağlantı türü', tur: 'select', deger: 'reset',
+          secenekler: [{ deger: 'reset', etiket: 'Şifre sıfırlama' }, { deger: 'verify', etiket: 'E-posta doğrulama' }],
+          yardim: eposta ? 'Hedef: ' + eposta : 'Hesabın e-postası yok — sunucu 400 döner.' }
+      ],
+      gonderMetin: 'Bağlantı üret',
+      iptal: { metin: 'Kapat', onTikla: function () { m.kapat(); } },
+      onGonder: function (d) {
+        return RY.post(kullaniciYolu(uid, '/auth-link'), { kind: d.kind }).then(function (res) {
+          var link = (res && res.link) || '';
+          sonuc.hidden = false;
+          var girdi = sonuc.querySelector('#bl-link');
+          girdi.value = link;
+          girdi.focus(); girdi.select();
+          b.toast('Bağlantı üretildi (' + (d.kind === 'verify' ? 'doğrulama' : 'şifre sıfırlama') + ').', 'basari');
+        });
+      }
+    });
+    govde.appendChild(f.el);
+    govde.appendChild(sonuc);
+    sonuc.querySelector('#bl-kopyala').addEventListener('click', function () {
+      var girdi = sonuc.querySelector('#bl-link');
+      var yaz = navigator.clipboard && navigator.clipboard.writeText
+        ? navigator.clipboard.writeText(girdi.value) : Promise.reject(new Error('pano-yok'));
+      yaz.then(function () { b.toast('Bağlantı panoya kopyalandı.', 'basari'); })
+        .catch(function () { girdi.focus(); girdi.select(); b.toast('Pano erişimi yok — metni elle kopyala.', 'uyari'); });
+    });
+    var m = b.modal({ baslik: 'Şifre / doğrulama bağlantısı', icerik: govde, genislik: 520 });
+    m.ac();
+  }
+
+  function durumDegistir(uid, ad, kapat) {
+    var b = RY.b;
+    return b.onayla(kapat
+      ? { baslik: 'Hesabı devre dışı bırak — ' + ad, tehlike: true, onaylaMetin: 'Devre dışı bırak', gerekce: true,
+          mesaj: 'Firebase Auth hesabı kapanır, oturumları düşer; kullanıcı uygulamaya giremez. Veri silinmez.',
+          aciklama: 'Geri alınabilir: "Aktif et" ile açılır. Denetim izine yazılır.' }
+      : { baslik: 'Hesabı aktif et — ' + ad, onaylaMetin: 'Aktif et', gerekce: true,
+          mesaj: 'Hesap yeniden açılır; kullanıcı bir sonraki girişte içeri alınır.' })
+      .then(function (r) {
+        if (!r) return null;
+        return RY.post(kullaniciYolu(uid, '/disable'), { disabled: kapat, reason: r.gerekce }).then(function () {
+          b.toast(kapat ? 'Hesap devre dışı bırakıldı.' : 'Hesap aktif edildi.', 'basari');
+          if (RY.dikkat && RY.dikkat.yukle) RY.dikkat.yukle();
+          RY.rotaYenile();
+        });
+      }).catch(hataToast);
+  }
+
+  function silAc(uid, ad) {
+    var b = RY.b;
+    return b.onayla({
+      baslik: 'Hesabı KALICI olarak sil — ' + ad, tehlike: true, onaylaMetin: 'Hesabı sil',
+      mesaj: 'Bu hesap ve TÜM verisi silinir (mobildeki "Hesabı sil" ile aynı boru: veri önce, kimlik en son). Geri alınamaz.',
+      aciklama: 'İz yazılamazsa sunucu 503 döner ve hesap DURUR. E-posta yalnız denetim izinde kalır.',
+      gerekce: true, yazili: 'SIL'
+    }).then(function (r) {
+      if (!r) return null;
+      return RY.del(kullaniciYolu(uid), { confirm: 'SIL', reason: r.gerekce }).then(function () {
+        b.toast('Hesap silindi: ' + ad, 'basari', { sure: 8000 });
+        delete adOnbellek[uid];
+        if (RY.dikkat && RY.dikkat.yukle) RY.dikkat.yukle();
+        RY.rotaYaz('kullanicilar');
+      });
+    }).catch(hataToast);
+  }
+
+  /* =====================================================================
+     360 — zaman çizelgesi
+     ===================================================================== */
+
+  var PARASAL_SINIF = { INITIAL_PURCHASE: 'celadon', RENEWAL: 'celadon', TRIAL_CONVERTED: 'celadon',
+                        TRIAL_STARTED: 'altin', REFUND: 'madder', BILLING_ISSUE: 'madder',
+                        CANCELLATION: '', EXPIRATION: '' };
+  var DEFTER = {
+    debit: ['', '−', 'Harcama'], credit: ['altin', '+', 'Paket alımı'], promo: ['altin', '+', 'Promosyon kodu'],
+    admin: ['altin', '+', 'Yönetici kredisi'], refund: ['madder', '−', 'Paket iadesi'],
+    spend_refund: ['altin', '+', 'Üretim iadesi'], allowance: ['altin', '+', 'Aylık hak']
+  };
+
+  function zamanOlaylari(b, d) {
     var olaylar = [];
+    function ts(v) { var t = b.tarihNesnesi(v); return t ? t.getTime() : 0; }
+
+    (d.timeline || []).forEach(function (o) {
+      var tur = String(o.eventType || '?');
+      var parasal = o.monetary !== false && Number(o.price);
+      olaylar.push({
+        at: o.at, ts: ts(o.at), grup: 'parasal',
+        sinif: PARASAL_SINIF[tur] != null ? PARASAL_SINIF[tur] : '',
+        baslik: tur + (o.productId ? ' · ' + o.productId : ''),
+        alt: [o.store, o.periodType, o.currency && o.price ? o.currency + ' ' + b.sayi(Number(o.price)) : null,
+              o.environment].filter(Boolean).join(' · '),
+        tutar: parasal ? (tur === 'REFUND' ? '−' : '') + b.para(Math.abs(Number(o.price))) : ''
+      });
+    });
 
     (d.ledger || []).forEach(function (k) {
-      var tur = k.type;
-      if (tur === 'debit') {
-        olaylar.push({ at: k.at, sinif: '',
-          metin: '<b>−' + b.sayi(k.amount) + ' jeton</b> · ' +
-            b.e(k.feature || '?') });
-      } else if (tur === 'credit') {
-        olaylar.push({ at: k.at, sinif: 'altin',
-          metin: '<b>+' + b.sayi(k.amount) + ' jeton</b> · paket ' +
-            b.e(k.productId || '') });
-      } else if (tur === 'promo') {
-        olaylar.push({ at: k.at, sinif: 'altin',
-          metin: '<b>+' + b.sayi(k.amount) + ' jeton</b> · kod ' +
-            b.e(k.code || '') });
-      } else if (tur === 'admin') {
-        olaylar.push({ at: k.at, sinif: 'lilac',
-          metin: '<b>+' + b.sayi(k.amount) + ' jeton</b> · yönetici (' +
-            b.e(k.reason || '') + ')' });
-      } else if (tur === 'refund') {
-        olaylar.push({ at: k.at, sinif: 'madder',
-          metin: '<b>−' + b.sayi(k.amount) + ' jeton</b> · paket iadesi' });
-      } else if (tur === 'spend_refund') {
-        olaylar.push({ at: k.at, sinif: 'altin',
-          metin: '<b>+' + b.sayi(k.amount) + ' jeton</b> · üretim iadesi (' +
-            b.e(k.feature || '') + ')' });
-      }
+      var t = DEFTER[k.type] || ['', '', String(k.type || '?')];
+      var miktar = Number(k.amount) || 0;
+      var alt = k.feature ? ozellikAdi(k.feature) : (k.productId ? 'paket ' + k.productId : (k.code ? 'kod ' + k.code
+        : (k.reason ? '"' + k.reason + '"' + (k.adminUid ? ' · ' + String(k.adminUid).slice(0, 8) : '') : '')));
+      olaylar.push({ at: k.at, ts: ts(k.at), grup: 'cuzdan', sinif: t[0],
+        baslik: t[2] + ' · ' + b.sayi(miktar) + ' jeton', alt: alt,
+        tutar: t[1] ? t[1] + b.sayi(miktar) : b.sayi(miktar) });
     });
 
-    (d.revenueEvents || []).forEach(function (o) {
-      var iade = o.eventType === 'REFUND';
-      olaylar.push({ at: o.at, sinif: iade ? 'madder' : 'altin',
-        metin: '<b>' + b.e(o.eventType) + '</b> · ' +
-          b.e(o.productId || '') + ' · ' + b.para(o.price) });
+    var p = d.profile || {};
+    if (p.createdAt) {
+      olaylar.push({ at: p.createdAt, ts: ts(p.createdAt), grup: 'sistem', sinif: '',
+        baslik: 'Kayıt', alt: [platformAdi(p.platform), p.language ? dilAdi(p.language) : null].filter(Boolean).join(' · '), tutar: '' });
+    }
+    var c = d.device || {};
+    if (c.claimedAt) {
+      olaylar.push({ at: c.claimedAt, ts: ts(c.claimedAt), grup: 'sistem', sinif: '',
+        baslik: 'Cihaz devralındı', alt: [platformAdi(c.platform), c.deviceId, 'son giriş kazandı'].filter(Boolean).join(' · '), tutar: '' });
+    }
+    (d.phoneAttempts || []).forEach(function (a) {
+      var m = ASAMA[a.stage] || ['kivilcim', a.stage || 'telefon'];
+      olaylar.push({ at: a.at, ts: ts(a.at), grup: 'sistem', sinif: a.stage === 'failed' ? 'madder' : '',
+        baslik: 'Telefon · ' + m[1], alt: [a.masked, a.iso2, a.code].filter(Boolean).join(' · '), tutar: '' });
     });
 
-    var kayit = (d.profile || {}).createdAt;
-    if (kayit) {
-      olaylar.push({ at: kayit, sinif: 'lilac',
-        metin: '<b>Yıldız haritasına katıldı</b> — hesap oluşturuldu' });
-    }
-
-    function ts(v) {
-      if (!v) return 0;
-      if (typeof v === 'string') return new Date(v).getTime() || 0;
-      if (v.seconds != null) return v.seconds * 1000;
-      return new Date(v).getTime() || 0;
-    }
-    olaylar.sort(function (a, c) { return ts(c.at) - ts(a.at); });
-
-    if (!olaylar.length) return RY.b.bosDurum('Henüz hareket yok.');
-    return '<ol class="zaman-cizelgesi">' +
-      olaylar.slice(0, 60).map(function (o) {
-        return '<li><span class="nokta ' + o.sinif + '"></span>' +
-          '<span class="zaman">' + b.tarih(o.at, true) + '</span>' +
-          o.metin + '</li>';
-      }).join('') + '</ol>';
+    olaylar.sort(function (a, c2) { return c2.ts - a.ts; });
+    return olaylar;
   }
 
-  async function detay(icerik, uid) {
+  function zamanHtml(b, olaylar, grup) {
+    var liste = grup === 'tumu' ? olaylar : olaylar.filter(function (o) { return o.grup === grup; });
+    if (!liste.length) return b.bosDurum('Bu süzgeçte olay yok.', { ikon: 'zaman' });
+    return '<div class="zaman">' + liste.slice(0, 120).map(function (o) {
+      return '<div class="olay"><span class="zamanm" title="' + b.e(b.tarih(o.at, true)) + '">' + b.e(b.tarih(o.at, true)) + '</span>' +
+        '<span class="cizgi" aria-hidden="true"><i' + (o.sinif ? ' class="' + b.e(o.sinif) + '"' : '') + '></i></span>' +
+        '<span class="ne">' + b.e(o.baslik) + (o.alt ? '<span>' + b.e(o.alt) + '</span>' : '') + '</span>' +
+        '<span class="tutar">' + b.e(o.tutar) + '</span></div>';
+    }).join('') + '</div>';
+  }
+
+  /* =====================================================================
+     360 — görünüm
+     ===================================================================== */
+
+  async function detay(icerik, uid, sekme) {
     var b = RY.b;
-    var d = await RY.get('/api/v1/admin/users/' + encodeURIComponent(uid));
-    var p = d.profile || {}, sub = d.subscription || {};
-    var w = d.wallet || {}, kul = d.usage || {}, sayilar = d.counts || {};
-    var bild = d.notifications || {}, kota = d.quota || {};
+    var d = await RY.get(kullaniciYolu(uid));
+    var p = d.profile || {}, sub = d.subscription || {}, w = d.wallet || {};
+    var kul = d.usage || {}, toplamlar = kul.totals || null, sayilar = d.counts || {};
+    var bild = d.notifications || {}, kota = d.quota || {}, cihaz = d.device || {};
+    var eko = d.economics || {}, gelirT = d.revenueTotals || null;
+    var sahip = RY.sahipMi();
+    var ad = p.displayName || p.email || uid;
+    adOnbellek[uid] = ad;
+    RY.kirinti([{ metin: 'Yönetim', href: '#/genel' }, { metin: 'Kullanıcılar', href: '#/kullanicilar' }, { metin: ad }]);
+    document.title = ad + ' — Rytho Yönetim';
 
-    var basHarf = (p.displayName || p.email || '?').trim().charAt(0)
-      .toUpperCase();
+    var devreDisi = p.authDisabled === true;
+    var pasifNit = sahip ? '' : ' disabled title="Yalnız sahip" aria-disabled="true"';
 
-    var bildSatir = Object.keys(bild).filter(function (k) {
-      return k.endsWith('LastSent');
-    }).map(function (k) {
-      return '<tr><td>' + b.e(k.replace('LastSent', '')) + '</td>' +
-        '<td class="sayi">' + b.e(bild[k]) + '</td></tr>';
-    }).join('');
+    /* ---- Kimlik başlığı ---- */
+    var rozetler = b.planRozeti(p.plan, p.createdAt) +
+      (devreDisi ? ' ' + b.rozet('Devre dışı', 'hata') : (p.authDisabled == null ? ' ' + b.rozet('Auth ?', 'notr') : '')) +
+      ' ' + (p.hasPush ? b.rozet('Push açık', 'aktif') : b.rozet('Push yok', 'notr')) +
+      (p.sunSign ? ' ' + b.rozet(burcAdi(p.sunSign) + ' ' + burc(p.sunSign), 'yeni') : '') +
+      (p.onboardingCompleted === false ? ' ' + b.rozet('onboarding yarım', 'uyari') : '');
+    var meta = [
+      p.email ? '<span class="mono">' + b.e(p.email) + '</span>' : '',
+      p.username ? '<span class="mono">@' + b.e(p.username) + '</span>' : '',
+      '<span class="mono" title="uid">' + b.e(uid) + '</span>',
+      '<span>Kayıt ' + b.e(b.tarih(p.createdAt)) + '</span>',
+      '<span>Son görülme ' + b.e(p.lastSeenDaily ? b.goreliZaman(p.lastSeenDaily) : '—') + '</span>',
+      '<span>' + b.e([platformAdi(p.platform), p.appBuild != null ? 'sürüm ' + p.appBuild : null, p.language].filter(Boolean).join(' · ') || '—') + '</span>',
+      '<span>Seri ' + b.e(b.sayi(Number(p.streakCount) || 0)) + (Number(p.streakCount) > 0 ? ' 🔥' : '') + '</span>'
+    ].filter(Boolean).join('');
+    var eylemler =
+      '<button type="button" class="buton ikincil" id="k360-kredi">' + b.ik('jeton', 16) + 'Kredi ver</button>' +
+      '<button type="button" class="buton ikincil" id="k360-cihaz"' + (cihaz.deviceId ? '' : ' disabled title="Kayıtlı cihaz yok"') + '>' +
+      b.ik('cihaz', 16) + 'Cihaz kilidini sıfırla</button>' +
+      '<button type="button" class="buton ikincil" id="k360-baglanti">' + b.ik('anahtar', 16) + 'Şifre / doğrulama bağlantısı</button>' +
+      '<button type="button" class="buton ' + (devreDisi ? 'ikincil' : 'tehlike') + '" id="k360-durum"' + pasifNit + '>' +
+      b.ik(devreDisi ? 'basari' : 'kilit', 16) + (devreDisi ? 'Aktif et' : 'Devre dışı bırak') + '</button>' +
+      '<button type="button" class="buton tehlike" id="k360-sil"' + pasifNit + '>' + b.ik('cop', 16) + 'Sil</button>';
 
-    var kotaSatir = Object.keys(kota).filter(function (k) {
-      return k !== 'date' && k !== 'resetAtUtc';
-    }).map(function (k) {
-      return '<tr><td>' + b.e(k) + '</td><td class="sayi">' +
-        b.sayi(kota[k]) + '</td></tr>';
-    }).join('');
+    var kimlik = '<section class="kimlik-bas" aria-label="Kullanıcı kimliği">' +
+      '<div class="avatar buyuk" aria-hidden="true">' + b.e(b.basHarfler(p.displayName, p.email)) + '</div>' +
+      '<div><h1 class="ad" tabindex="-1">' + b.e(ad) + ' ' + rozetler + '</h1><div class="meta">' + meta + '</div></div>' +
+      '<div class="eylemler">' + eylemler + '</div></section>';
 
-    icerik.innerHTML =
-      '<a class="geri-lnk" href="#/kullanicilar">← Kullanıcı listesi</a>' +
-      '<div class="kimlik-serit">' +
-      '<div class="avatar">' + b.e(basHarf) + '</div>' +
-      '<div><div class="ad">' + b.e(p.displayName || '—') + ' ' +
-      burc(p.sunSign) + '</div>' +
-      '<div class="mono">' + b.e(p.email || '') + ' · ' + b.e(uid) +
-      '</div></div>' +
-      '<div class="rozetler">' +
-      (p.authDisabled === true ? b.rozet('DEVRE DIŞI', 'hata') : '') +
-      b.abonelikRozeti(sub, p) +
-      (p.platform ? b.rozet(p.platform, 'notr') : '') +
-      (p.hasPush ? b.rozet('push açık', 'aktif') : b.rozet('push yok', 'notr')) +
-      (p.onboardingCompleted ? '' : b.rozet('onboarding yarım', 'hata')) +
-      '</div></div>' +
+    icerik.innerHTML = kimlik +
+      (devreDisi ? b.bant('<b>Hesap devre dışı</b> — kullanıcı giriş yapamaz.' + (sahip ? ' "Aktif et" ile açılır.' : ''), 'uyari', { html: true }) : '') +
+      (eko.revenueUsd === -1 || eko.aiCostUsd === -1
+        ? b.bant('Kullanıcı rollup\'ı (revenueTotals / usageTotals) yok — ekonomi alanları "—". Backfill betikleri tamamlar.', 'bilgi') : '') +
+      '<div id="k360-sekmeler"></div>';
 
-      '<div class="izgara-3">' +
+    /* ---- Sekme içerikleri ---- */
+    var olaylar = zamanOlaylari(b, d);
+    var cuzdanToplam = (Number(w.allowance) || 0) + (Number(w.purchased) || 0);
+    var byFeatureMaliyet = toplamlar && toplamlar.byFeature ? toplamlar.byFeature : null;
 
-      '<div class="panel"><h2>Abonelik</h2>' +
-      b.tablo(['', ''],
-        '<tr><td>Ürün</td><td class="sayi">' + b.e(sub.productId || '—') +
-        '</td></tr>' +
-        '<tr><td>Mağaza</td><td class="sayi">' + b.e(sub.store || '—') +
-        '</td></tr>' +
-        '<tr><td>Bitiş</td><td class="sayi">' + b.tarih(sub.expiresAt) +
-        '</td></tr>' +
-        '<tr><td>Yenilenecek mi</td><td class="sayi">' +
-        (sub.willRenew == null ? '—' : (sub.willRenew ? 'evet' : 'hayır')) +
-        '</td></tr>' +
-        '<tr><td>Son olay</td><td class="sayi">' + b.e(sub.lastEvent || '—') +
-        '</td></tr>') + '</div>' +
+    function abonelikRozeti() {
+      if (sub.active) return sub.isTrial ? b.rozet('Deneme', 'trial') : b.rozet('Aktif', 'aktif');
+      if (sub.productId) return b.rozet('Süresi dolmuş', 'dolmus');
+      return b.rozet('Abonelik yok', 'notr');
+    }
+    function abonelikListesi(tam) {
+      var s = '<dl class="alan-liste">' +
+        '<dt>Ürün</dt><dd>' + b.e(sub.productId || '—') + '</dd>' +
+        '<dt>Mağaza</dt><dd>' + b.e(sub.store || '—') + '</dd>' +
+        '<dt>' + (sub.willRenew ? 'Yenileme' : 'Bitiş') + '</dt><dd>' + b.e(b.tarih(sub.expiresAt)) + '</dd>' +
+        '<dt>Otomatik yenileme</dt><dd>' + b.e(sub.willRenew == null ? '—' : (sub.willRenew ? 'açık' : 'kapalı')) + '</dd>' +
+        '<dt>Deneme</dt><dd>' + b.e(sub.isTrial == null ? '—' : (sub.isTrial ? 'evet' : 'hayır')) + '</dd>' +
+        '<dt>Son olay</dt><dd>' + b.e(sub.lastEvent || '—') + (sub.updatedAt ? ' · ' + b.e(b.tarih(sub.updatedAt)) : '') + '</dd>';
+      if (tam) {
+        s += '<dt>Plan aynası</dt><dd>' + b.e(p.plan || '—') + (p.planProduct ? ' · ' + b.e(p.planProduct) : '') + '</dd>' +
+          '<dt>Ortak kodu</dt><dd>' + b.e(d.attribution && d.attribution.code ? d.attribution.code : '—') + '</dd>';
+      }
+      return s + '</dl>';
+    }
+    function cihazListesi() {
+      var sonlar = Object.keys(bild).filter(function (k) { return /LastSent$/.test(k); }).sort();
+      return '<dl class="alan-liste">' +
+        '<dt>Cihaz</dt><dd>' + b.e(cihaz.deviceId || 'kayıt yok') + '</dd>' +
+        '<dt>Platform</dt><dd>' + b.e(platformAdi(cihaz.platform)) + '</dd>' +
+        '<dt>Devralma</dt><dd>' + b.e(b.tarih(cihaz.claimedAt, true)) + '</dd>' +
+        sonlar.slice(0, 3).map(function (k) {
+          var tur = k.replace(/LastSent$/, '');
+          return '<dt>Son ' + b.e(NOTIFY_ADI[tur] || tur) + '</dt><dd>' + b.e(b.goreliZaman(bild[k])) + '</dd>';
+        }).join('') +
+        (bild.dailyTheme ? '<dt>Tema</dt><dd>' + b.e(bild.dailyTheme) + '</dd>' : '') +
+        '</dl>';
+    }
 
-      // TC-turu: tek cihaz kilidi (yalnız ücretli abonede etkin). Kimlik
-      // sunucudan maskeli gelir; sıfırlama kaydı siler, bir sonraki isteği
-      // yapan cihaz yeniden sahiplenir.
-      '<div class="panel"><h2>Cihaz kilidi</h2>' +
-      (function () {
-        var c = d.device || {};
-        if (!c.deviceId) {
-          return '<p class="dipnot" style="margin-top:0">Kayıtlı cihaz yok.</p>';
-        }
-        return b.tablo(['', ''],
-          '<tr><td>Cihaz</td><td class="sayi mono">' + b.e(c.deviceId) +
-          '</td></tr>' +
-          '<tr><td>Platform</td><td class="sayi">' + b.e(c.platform || '—') +
-          '</td></tr>' +
-          // "Son görülme" satırı YOK: sunucu lastSeenAt'i yalnız devralma
-          // anında yazıyor (claimedAt ile aynı değer); ayrı satır "üç aydır
-          // görülmedi" gibi okunup gereksiz sıfırlamaya yol açardı.
-          '<tr><td>Devralma</td><td class="sayi">' +
-          b.tarih(c.claimedAt, true) + '</td></tr>') +
-          '<div class="eylem-satir">' +
-          '<button id="y-cihaz" class="buton ikincil kucuk">Cihaz kilidini ' +
-          'sıfırla</button></div>' +
-          '<p class="dipnot">"Hesabın başka cihazda açıldı" ekranından ' +
-          'çıkamayan kullanıcı için. Denetim izine yazılır.</p>';
-      })() + '</div>' +
-
-      '<div class="panel"><h2>Cüzdan</h2>' +
-      '<div class="kpi-deger">' +
-      b.sayi((w.allowance || 0) + (w.purchased || 0)) +
-      ' <span class="kpi-ad" style="display:inline">jeton</span></div>' +
-      '<p class="dipnot">Aylık hak: ' + b.sayi(w.allowance || 0) +
-      ' · Satın alınan: ' + b.sayi(w.purchased || 0) + '</p>' +
-      '<form id="kredi-form" class="form-satir">' +
-      b.girdi('amount', 'Jeton', 'number') +
-      b.girdi('reason', 'Gerekçe (zorunlu)', null, 'girdi-genis') +
-      '<button class="buton ikincil kucuk" type="submit">Kredi ver</button>' +
-      '</form>' +
-      '<p class="dipnot">Defter + denetim izine yazılır; yalnız pozitif.</p>' +
-      '</div>' +
-
-      '<div class="panel"><h2>Kullanım</h2>' +
-      '<div class="kpi-deger">' + b.sayi(kul.calls || 0) +
-      ' <span class="kpi-ad" style="display:inline">AI çağrısı</span></div>' +
-      '<p class="dipnot">Tahmini maliyet: ' + b.para(kul.estCostUsd || 0) +
-      ' · Konuşma: ' + b.sayi(sayilar.conversations) +
-      ' · Arkadaş: ' + b.sayi(sayilar.friends) + '</p>' +
-      '<div class="grafik-kap"><canvas id="g-360-ozellik" ' +
-      'class="grafik grafik-kisa" role="img" ' +
-      'aria-label="Özellik kırılımı"></canvas></div></div>' +
-
-      // SMS-turu: "kod gelmiyor" başvurusunda ilk bakılacak yer. Google
-      // teslim makbuzu yayınlamadığı için bizim tarafımızdaki tek iz bu.
-      '<div class="panel"><h2>Telefon denemeleri</h2>' +
-      (function () {
-        var liste = d.phoneAttempts || [];
-        if (!liste.length) {
-          return '<p class="dipnot" style="margin-top:0">Kayıt yok.</p>';
-        }
-        var ASAMA = {
-          sent: ['bildirim', 'Kod gönderildi'],
-          auto: ['kivilcim', 'Otomatik doğrulandı'],
-          verified: ['kayit', 'Doğrulandı'],
-          failed: ['sistem', 'Hata']
-        };
-        return '<div class="satir-liste">' + liste.map(function (a) {
-          var m = ASAMA[a.stage] || ['kivilcim', a.stage || '—'];
-          return b.satir({
-            ikon: m[0],
-            baslik: m[1],
-            alt: (a.masked || '—') + ' · ' + (a.iso2 || '—') +
-              (a.code ? ' · ' + a.code : ''),
-            sagAlt: b.tarih(a.at, true),
-            ikonSinif: a.stage === 'failed' ? 'eksi' : ''
+    var sekmeApi = b.sekmeler({
+      kimlik: 'k360', etiket: 'Kullanıcı bölümleri',
+      aktif: SEKMELER.indexOf(sekme) >= 0 ? sekme : 'ozet',
+      onDegis: function (ad2) { RY.rotaYaz('kullanicilar', [uid, ad2], {}, { sessiz: true }); },
+      sekmeler: [
+        { ad: 'ozet', etiket: 'Özet', icerik: function () {
+          var el = b.el('<div class="sutun"></div>');
+          el.innerHTML =
+            '<section class="izgara-kpi" aria-label="Özet sayılar">' +
+            b.istatistikKarti({ ad: 'Gelir (üretim)', deger: b.para(eko.revenueUsd), altin: true,
+              alt: gelirT && gelirT.PRODUCTION ? b.sayi(Number(gelirT.PRODUCTION.events) || 0) + ' olay · iade ' + b.para(Number(gelirT.PRODUCTION.refundsUsd) || 0) : 'rollup yok' }) +
+            b.istatistikKarti({ ad: 'AI maliyeti', deger: b.para(eko.aiCostUsd),
+              alt: (eko.calls >= 0 ? b.sayi(eko.calls) + ' çağrı' : '—') + ' · marj ' + b.para(eko.marginUsd) }) +
+            b.istatistikKarti({ ad: 'Cüzdan', deger: b.sayi(cuzdanToplam),
+              alt: 'hak ' + b.sayi(Number(w.allowance) || 0) + ' · satın alınan ' + b.sayi(Number(w.purchased) || 0) }) +
+            b.istatistikKarti({ ad: 'Sohbet', deger: b.sayi(sayilar.conversations),
+              alt: 'konuşma · ' + (sayilar.friends >= 0 ? b.sayi(sayilar.friends) + ' kişi Çevrem\'de' : 'çevre sayılamadı') }) +
+            '</section>' +
+            '<div class="izgara-3">' +
+            b.modul('Abonelik', abonelikListesi(false), abonelikRozeti(), { alt: (sub.store || 'RevenueCat') }) +
+            b.modul('Cihaz & bildirim', cihazListesi(), '', { alt: 'Tek cihaz kilidi · push' }) +
+            b.modul('Kullanım', '<div class="grafik-kap"><canvas id="g-360-ozellik" class="grafik grafik-kucuk" aria-label="Özellik başına maliyet"></canvas></div>',
+              '', { alt: byFeatureMaliyet ? 'Ömür boyu · özellik başına maliyet' : 'Son 30 olay · özellik başına çağrı' }) +
+            '</div>' +
+            b.modul('Zaman çizelgesi', zamanHtml(b, olaylar.slice(0, 8), 'tumu'),
+              '<button type="button" class="buton sade" id="k360-zaman-tum">Tümü</button>', { alt: 'Son 8 olay' });
+          el.querySelector('#k360-zaman-tum').addEventListener('click', function () { sekmeApi.sec('zaman'); });
+          requestAnimationFrame(function () {
+            var kaynak = byFeatureMaliyet || kul.byFeature || {};
+            var anahtarlar = Object.keys(kaynak).sort(function (x, y) {
+              return deger(y) - deger(x);
+            });
+            function deger(k) { var v = kaynak[k]; return typeof v === 'object' ? (Number(v.estCostUsd) || 0) : (Number(v) || 0); }
+            RY.grafik.cubuk(el.querySelector('#g-360-ozellik'), {
+              etiketler: anahtarlar.map(ozellikAdi), degerler: anahtarlar.map(deger), yatay: true,
+              bicim: byFeatureMaliyet ? 'para' : 'sayi', enCok: 6, etiket: 'Özellik kırılımı',
+              bosMetin: 'Kullanım olayı yok'
+            });
           });
-        }).join('') + '</div>' +
-        '<p class="dipnot">Numara maskeli tutulur; ham numara hiçbir ' +
-        'yere yazılmaz.</p>';
-      })() + '</div>' +
+          return el;
+        } },
+        { ad: 'abonelik', etiket: 'Abonelik & Cüzdan', icerik: function () {
+          var el = b.el('<div class="sutun"></div>');
+          var envler = gelirT ? Object.keys(gelirT).filter(function (k) { return gelirT[k] && typeof gelirT[k] === 'object'; }) : [];
+          var gelirHtml = envler.length ? '<dl class="alan-liste">' + envler.map(function (env) {
+            var k = gelirT[env] || {};
+            var brut = Number(k.grossUsd) || 0, iade = Number(k.refundsUsd) || 0;
+            return '<dt>' + b.e(env) + ' brüt</dt><dd>' + b.e(b.para(brut)) + '</dd>' +
+              '<dt>' + b.e(env) + ' iade</dt><dd>−' + b.e(b.para(iade)) + '</dd>' +
+              '<dt>' + b.e(env) + ' net</dt><dd>' + b.e(b.para(brut - iade)) + ' · ' + b.e(b.sayi(Number(k.events) || 0)) + ' olay</dd>';
+          }).join('') + '</dl>' : b.bosDurum('revenueTotals yok — parasal olay gelince oluşur.', { ikon: 'gelir' });
+          el.innerHTML =
+            '<div class="izgara-2">' +
+            b.modul('Abonelik', abonelikListesi(true), abonelikRozeti(), { alt: 'users/{uid}/private/subscription' }) +
+            b.modul('Gelir toplamları', gelirHtml + '<p class="dipnot">Marj = üretim geliri × (1 − mağaza %' +
+              Math.round((Number(eko.storeCutRate) || 0.15) * 100) + ') − AI maliyeti = ' + b.e(b.para(eko.marginUsd)) + '</p>',
+              '', { alt: 'ortam başına · ömür boyu' }) +
+            '</div>' +
+            '<div class="izgara-2">' +
+            b.modul('Cüzdan', '<dl class="alan-liste">' +
+              '<dt>Toplam</dt><dd>' + b.e(b.sayi(cuzdanToplam)) + ' jeton</dd>' +
+              '<dt>Aylık hak</dt><dd>' + b.e(b.sayi(Number(w.allowance) || 0)) + ' / ' + b.e(b.sayi(Number(w.monthly_allowance) || 0)) + '</dd>' +
+              '<dt>Satın alınan</dt><dd>' + b.e(b.sayi(Number(w.purchased) || 0)) + '</dd>' +
+              '<dt>Hak sıfırlanır</dt><dd>' + b.e(b.tarih(w.allowance_resets_at)) + '</dd></dl>' +
+              '<div class="eylem-satir"><button type="button" class="buton ikincil kucuk" id="k360-kredi2">' + b.ik('jeton', 14) + 'Kredi ver</button></div>',
+              '', { alt: 'yalnız pozitif kredi · düşüm yok' }) +
+            b.modul('Günlük kota', Object.keys(kota).filter(function (k) { return k !== 'date' && k !== 'resetAtUtc'; }).length
+              ? '<dl class="alan-liste">' + Object.keys(kota).filter(function (k) { return k !== 'date' && k !== 'resetAtUtc'; }).map(function (k) {
+                  return '<dt>' + b.e(k) + '</dt><dd>' + b.e(b.sayi(kota[k])) + '</dd>';
+                }).join('') + '</dl>'
+              : b.bosDurum('Bugün sayaç yok.'), '', { alt: kota.date ? 'gün ' + kota.date : 'bugün' }) +
+            '</div>' +
+            b.modul('Cüzdan defteri', '<div id="k360-defter"></div>', b.etiket('ledger'), { alt: 'son 50 hareket' });
+          el.querySelector('#k360-kredi2').addEventListener('click', function () { krediVerAc(uid, ad); });
+          var vt = b.veriTablosu({
+            kimlik: 'k360-defter-vt', etiket: 'Cüzdan defteri', yogunluk: 'sik',
+            sutunlar: [
+              { ad: 'at', baslik: 'Zaman', siralanir: true, deger: function (k) { var t = b.tarihNesnesi(k.at); return t ? t.getTime() : 0; },
+                bicim: function (k) { return '<span class="mono">' + b.e(b.tarih(k.at, true)) + '</span>'; } },
+              { ad: 'type', baslik: 'Tür', siralanir: true, bicim: function (k) {
+                var t = DEFTER[k.type] || ['', '', String(k.type || '?')];
+                return b.rozet(t[2], t[0] === 'madder' ? 'hata' : (t[0] === 'altin' ? 'altin' : 'notr'));
+              } },
+              { ad: 'amount', baslik: 'Jeton', hizala: 'sag', siralanir: true, bicim: function (k) {
+                var t = DEFTER[k.type] || ['', '', ''];
+                return '<span class="mono">' + b.e((t[1] || '') + b.sayi(Number(k.amount) || 0)) + '</span>';
+              } },
+              { ad: 'ayrinti', baslik: 'Ayrıntı', deger: function (k) { return k.feature || k.productId || k.code || k.reason || ''; },
+                bicim: function (k) {
+                  return b.e(k.feature ? ozellikAdi(k.feature) : (k.productId || k.code || k.reason || '—')) +
+                    (k.adminUid ? ' <span class="mono dipnot">' + b.e(String(k.adminUid).slice(0, 8)) + '</span>' : '');
+                } }
+            ],
+            anahtar: function (k) { return k.id || (k.type + '-' + k.at); },
+            siralama: { ad: 'at', yon: 'desc' },
+            bosMetin: 'Henüz cüzdan hareketi yok.'
+          });
+          el.querySelector('#k360-defter').appendChild(vt.el);
+          vt.guncelle(d.ledger || []);
+          return el;
+        } },
+        { ad: 'kullanim', etiket: 'Kullanım & Maliyet', icerik: function () {
+          var el = b.el('<div class="sutun"></div>');
+          var t = toplamlar || {};
+          el.innerHTML =
+            '<section class="izgara-kpi" aria-label="Kullanım toplamları">' +
+            b.istatistikKarti({ ad: 'Çağrı (ömür boyu)', deger: toplamlar ? b.sayi(Number(t.calls) || 0) : '—',
+              alt: t.lastAt ? 'son ' + b.goreliZaman(t.lastAt) : 'usageTotals yok' }) +
+            b.istatistikKarti({ ad: 'Tahmini maliyet', deger: toplamlar ? b.para(Number(t.estCostUsd) || 0) : '—', altin: true, alt: 'token × birim fiyat' }) +
+            b.istatistikKarti({ ad: 'Girdi token', deger: toplamlar ? b.sayi(Number(t.promptTokens) || 0) : '—' }) +
+            b.istatistikKarti({ ad: 'Çıktı token', deger: toplamlar ? b.sayi(Number(t.outputTokens) || 0) : '—',
+              alt: t.thinkingTokens ? 'düşünme ' + b.sayi(Number(t.thinkingTokens)) : 'düşünme dahil' }) +
+            '</section>' +
+            '<div class="izgara-2">' +
+            b.modul('Özellik başına maliyet', '<div class="halka-kap"><div class="grafik-kap"><canvas id="g-360-halka" class="grafik" aria-label="Özellik başına maliyet payı"></canvas></div></div>',
+              '', { alt: byFeatureMaliyet ? 'ömür boyu · tahmini $' : 'son 30 olay · çağrı' }) +
+            b.modul('Son 30 olay özeti', '<dl class="alan-liste"><dt>Çağrı</dt><dd>' + b.e(b.sayi(Number(kul.calls) || 0)) + '</dd>' +
+              '<dt>Maliyet</dt><dd>' + b.e(b.para(Number(kul.estCostUsd) || 0)) + '</dd></dl>' +
+              '<p class="dipnot">Composite indeks (uid + at) yoksa liste boş kalır; 360 düşmez.</p>', '', { alt: 'usageEvents · tek sorgu' }) +
+            '</div>' +
+            b.modul('Son olaylar', '<div id="k360-kullanim-tablo"></div>', b.etiket('usageEvents'), { alt: 'son 30 · yeniden eskiye' });
+          var vt = b.veriTablosu({
+            kimlik: 'k360-kullanim-vt', etiket: 'Son kullanım olayları', yogunluk: 'sik',
+            sutunlar: [
+              { ad: 'at', baslik: 'Zaman', bicim: function (k) { return '<span class="mono">' + b.e(b.tarih(k.at, true)) + '</span>'; } },
+              { ad: 'feature', baslik: 'Özellik', bicim: function (k) { return b.e(ozellikAdi(k.feature || 'unknown')); } },
+              { ad: 'model', baslik: 'Model', bicim: function (k) { return '<span class="mono">' + b.e(k.model || '—') + '</span>'; } },
+              { ad: 'promptTokens', baslik: 'Girdi', hizala: 'sag', bicim: function (k) { return b.e(b.sayi(Number(k.promptTokens) || 0)); } },
+              { ad: 'outputTokens', baslik: 'Çıktı', hizala: 'sag', bicim: function (k) { return b.e(b.sayi(Number(k.outputTokens) || 0)); } },
+              { ad: 'estCostUsd', baslik: 'Maliyet', hizala: 'sag', bicim: function (k) { return b.e(b.para(Number(k.estCostUsd) || 0)); } },
+              { ad: 'latencyMs', baslik: 'Süre', hizala: 'sag', bicim: function (k) { return k.latencyMs != null ? b.e(b.sayi(Number(k.latencyMs))) + ' ms' : '—'; } }
+            ],
+            anahtar: function (k) { return String(k.at) + '-' + (k.feature || '') + '-' + (k.latencyMs || '') + '-' + (k.estCostUsd || ''); },
+            onSirala: function () { /* sunucu sıralı */ },
+            bosMetin: 'Kullanım olayı yok.'
+          });
+          el.querySelector('#k360-kullanim-tablo').appendChild(vt.el);
+          vt.guncelle(kul.recent || []);
+          requestAnimationFrame(function () {
+            var kaynak = byFeatureMaliyet || kul.byFeature || {};
+            RY.grafik.halka(el.querySelector('#g-360-halka'), {
+              dilimler: Object.keys(kaynak).map(function (k) {
+                var v = kaynak[k];
+                return { ad: ozellikAdi(k), deger: typeof v === 'object' ? (Number(v.estCostUsd) || 0) : (Number(v) || 0) };
+              }),
+              bicim: byFeatureMaliyet ? 'para' : 'sayi', merkezAlt: byFeatureMaliyet ? 'maliyet' : 'çağrı',
+              etiket: 'Özellik başına maliyet', bosMetin: 'Kullanım kaydı yok'
+            });
+          });
+          return el;
+        } },
+        { ad: 'bildirim', etiket: 'Bildirim & Cihaz', icerik: function () {
+          var el = b.el('<div class="sutun"></div>');
+          var sonlar = Object.keys(bild).filter(function (k) { return /LastSent$/.test(k); }).sort();
+          var bildHtml = (sonlar.length || bild.dailyTheme)
+            ? '<dl class="alan-liste">' + (bild.dailyTheme ? '<dt>Bugünkü tema</dt><dd>' + b.e(bild.dailyTheme) + '</dd>' : '') +
+              sonlar.map(function (k) {
+                var tur = k.replace(/LastSent$/, '');
+                return '<dt>' + b.e(NOTIFY_ADI[tur] || tur) + '</dt><dd>' + b.e(b.tarih(bild[k], true)) + ' · ' + b.e(b.goreliZaman(bild[k])) + '</dd>';
+              }).join('') + '</dl>'
+            : b.bosDurum('Gönderim kaydı yok.', { ikon: 'zil' });
+          var tel = d.phoneAttempts || [];
+          var telHtml = tel.length ? '<div class="liste">' + tel.map(function (a) {
+            var m = ASAMA[a.stage] || ['kivilcim', a.stage || '—'];
+            return '<div class="satir"><span class="satir-ikon' + (a.stage === 'failed' ? ' kirmizi' : (a.stage === 'verified' || a.stage === 'auto' ? ' yesil' : '')) + '">' +
+              b.ik(m[0], 18) + '</span><span class="metin">' + b.e(m[1]) + '<span>' +
+              b.e([a.masked, a.iso2, a.code].filter(Boolean).join(' · ') || '—') + '</span></span>' +
+              '<span class="sayi">' + b.e(b.tarih(a.at, true)) + '</span></div>';
+          }).join('') + '</div>' : b.bosDurum('Telefon denemesi yok.');
+          el.innerHTML =
+            '<div class="izgara-2">' +
+            b.modul('Bildirim', bildHtml, p.hasPush ? b.rozet('Push açık', 'aktif') : b.rozet('Push yok', 'notr'),
+              { alt: 'meta yalnız · gövde metinleri dönmez' }) +
+            b.modul('Cihaz kilidi', cihazListesi() +
+              '<div class="eylem-satir"><button type="button" class="buton ikincil kucuk" id="k360-cihaz2"' + (cihaz.deviceId ? '' : ' disabled title="Kayıtlı cihaz yok"') + '>' +
+              b.ik('cihaz', 14) + 'Cihaz kilidini sıfırla</button></div>' +
+              '<p class="dipnot">Kimlik maskeli (son 6). "Son görülme" yok: sunucu lastSeenAt\'i yalnız devralma anında yazar.</p>',
+              '', { alt: 'yalnız ücretli abonede etkin' }) +
+            '</div>' +
+            b.modul('Telefon doğrulama denemeleri', telHtml + '<p class="dipnot">"Kod gelmiyor" başvurusunda ilk bakılacak yer; numara maskeli tutulur.</p>',
+              '', { alt: 'son 20' });
+          el.querySelector('#k360-cihaz2').addEventListener('click', function () { cihazSifirla(uid, cihaz); });
+          return el;
+        } },
+        { ad: 'zaman', etiket: 'Zaman çizelgesi', sayac: olaylar.length || null, icerik: function () {
+          var el = b.el('<div class="sutun"></div>');
+          var GRUPLAR = [['tumu', 'Tümü'], ['parasal', 'Parasal'], ['cuzdan', 'Cüzdan'], ['sistem', 'Sistem']];
+          el.innerHTML = b.modul('Zaman çizelgesi', '<div id="k360-zaman"></div>',
+            '<span class="cip-grup" role="group" aria-label="Olay türü" id="k360-zaman-cip">' + GRUPLAR.map(function (g) {
+              return '<button type="button" class="adm-cip" data-grup="' + g[0] + '" aria-pressed="' + (g[0] === 'tumu' ? 'true' : 'false') + '">' + g[1] + '</button>';
+            }).join('') + '</span>', { alt: 'Abonelik olayları + cüzdan defteri + sistem · son 50\'şer' });
+          var kap = el.querySelector('#k360-zaman');
+          kap.innerHTML = zamanHtml(b, olaylar, 'tumu');
+          el.querySelector('#k360-zaman-cip').addEventListener('click', function (ev) {
+            var d2 = ev.target.closest('.adm-cip');
+            if (!d2) return;
+            this.querySelectorAll('.adm-cip').forEach(function (c) { c.setAttribute('aria-pressed', c === d2 ? 'true' : 'false'); });
+            kap.innerHTML = zamanHtml(b, olaylar, d2.getAttribute('data-grup'));
+          });
+          return el;
+        } },
+        { ad: 'denetim', etiket: 'Denetim', icerik: function () {
+          var el = b.el('<div class="sutun"></div>');
+          el.innerHTML = b.modul('Bu kullanıcıya yapılan yönetici işlemleri', '<div id="k360-denetim"></div>', b.etiket('adminAudit'),
+            { alt: 'targetUid = ' + uid + ' · at DESC · imleçli' });
+          var imlec = null;
+          var vt = b.veriTablosu({
+            kimlik: 'k360-denetim-vt', etiket: 'Denetim izi', yogunluk: 'sik',
+            sutunlar: [
+              { ad: 'at', baslik: 'Zaman', bicim: function (k) { return '<span class="mono">' + b.e(b.tarih(k.at, true)) + '</span>'; } },
+              { ad: 'adminEmail', baslik: 'Yönetici', bicim: function (k) {
+                return b.e(k.adminEmail || k.adminUid || '—') + (k.adminRole ? ' ' + b.rolRozeti(k.adminRole) : '');
+              } },
+              { ad: 'action', baslik: 'Eylem', bicim: function (k) {
+                var a = String(k.action || '?');
+                var tur = /delete|disable/.test(a) ? 'hata' : (/credit|enable/.test(a) ? 'altin' : 'notr');
+                return b.rozet(EYLEM_ADI[a] || a, tur);
+              } },
+              { ad: 'phase', baslik: 'Faz', bicim: function (k) {
+                if (!k.phase) return '<span class="dipnot">—</span>';
+                return b.rozet(k.phase === 'done' ? 'tamam' : (k.phase === 'failed' ? 'düştü' : 'niyet'),
+                  k.phase === 'done' ? 'aktif' : (k.phase === 'failed' ? 'hata' : 'uyari'));
+              } },
+              { ad: 'params', baslik: 'Ayrıntı', bicim: function (k) {
+                var pr = k.params && typeof k.params === 'object' ? k.params : {};
+                var parcalar = Object.keys(pr).filter(function (a) { return pr[a] != null && pr[a] !== '' && typeof pr[a] !== 'object'; })
+                  .map(function (a) { return a + '=' + String(pr[a]).slice(0, 60); });
+                if (k.error) parcalar.push('hata=' + String(k.error).slice(0, 60));
+                return parcalar.length ? '<span class="mono dipnot">' + b.e(parcalar.join(' · ')) + '</span>' : '—';
+              } }
+            ],
+            anahtar: function (k) { return k.id; },
+            satirSinif: function (k) { return k.phase === 'failed' ? 'durum-hata' : (k.phase === 'intent' ? 'durum-uyari' : ''); },
+            onSirala: function () { /* sunucu sıralı */ },
+            bosMetin: 'Bu kullanıcıya henüz yönetici işlemi yapılmamış.',
+            onTekrar: function () { yukle(false); }
+          });
+          el.querySelector('#k360-denetim').appendChild(vt.el);
+          function yukle(devam) {
+            if (!devam) { vt.durum('yukleniyor'); imlec = null; }
+            return RY.sorgu('/api/v1/admin/audit', { targetUid: uid, limit: DENETIM_SAYFA, cursor: devam ? imlec : null })
+              .then(function (res) {
+                var kayitlar = Array.isArray(res && res.entries) ? res.entries : [];
+                imlec = (res && res.nextCursor) || null;
+                var sayfa = { daha: !!imlec, onDaha: function () { return yukle(true); } };
+                if (devam) vt.ekle(kayitlar, sayfa); else vt.guncelle(kayitlar, sayfa);
+              }).catch(function (h) {
+                if (h && h.iptal) return;
+                if (devam) hataToast(h); else vt.durum('hata', RY.hataMetni(h));
+              });
+          }
+          yukle(false);
+          return el;
+        } }
+      ]
+    });
+    icerik.querySelector('#k360-sekmeler').appendChild(sekmeApi.el);
 
-      '</div>' +
-
-      '<div class="izgara-2">' +
-      '<div class="panel"><h2>Bu kullanıcının ekonomisi</h2>' +
-      (function () {
-        var ek = d.economics || {};
-        return '<div class="marj-formul" style="margin-top:4px">' +
-          '<div class="kalem"><b>' + b.para(ek.revenueUsd) +
-          '</b><span>Toplam gelir</span></div>' +
-          '<div class="kalem"><b>−' + b.para(ek.aiCostUsd) +
-          '</b><span>AI maliyeti (' + b.sayi(ek.calls) +
-          ' çağrı)</span></div>' +
-          '<div class="kalem"><b class="' +
-          ((ek.marginUsd || 0) < 0 ? 'eksi' : 'arti') + '">' +
-          b.para(ek.marginUsd) + '</b><span>Tahmini marj</span></div>' +
-          '</div>' +
-          '<p class="dipnot">Marj = gelir × (1 − mağaza ~%' +
-          Math.round((ek.storeCutRate || 0.15) * 100) +
-          ') − AI maliyeti; tüm zamanlar.</p>';
-      })() + '</div>' +
-      '<div class="panel"><h2>Yönetim</h2>' +
-      '<p class="dipnot" style="margin-top:0">Her eylem gerekçe ister ve ' +
-      'denetim izine yazılır.</p>' +
-      '<div class="eylem-satir">' +
-      '<button id="y-sifre" class="buton ikincil kucuk">Şifre sıfırlama ' +
-      'e-postası gönder</button>' +
-      '<button id="y-durum" class="buton ikincil kucuk">' +
-      (p.authDisabled === true ? 'Hesabı aktifleştir'
-                               : 'Hesabı devre dışı bırak') + '</button>' +
-      '<button id="y-sil" class="buton tehlike kucuk">Hesabı sil</button>' +
-      '</div><p id="y-mesaj" class="dipnot"></p></div>' +
-      '</div>' +
-      '<div class="izgara-2">' +
-      '<div class="panel"><h2>Bildirimler</h2>' +
-      (bild.dailyTheme
-        ? '<p class="dipnot" style="margin-top:0">Bugünkü tema: <b>' +
-          b.e(bild.dailyTheme) + '</b></p>' : '') +
-      (bildSatir ? b.tablo(['Tür', 'Son gönderim'], bildSatir)
-                 : b.bosDurum('Gönderim kaydı yok.')) + '</div>' +
-      '<div class="panel"><h2>Günlük kota</h2>' +
-      (kotaSatir ? b.tablo(['Sayaç', 'Bugün'], kotaSatir)
-                 : b.bosDurum('Bugün sayaç yok.')) +
-      (d.attribution && d.attribution.code
-        ? '<p class="dipnot">Ortak kodu: <b>' + b.e(d.attribution.code) +
-          '</b></p>' : '') +
-      '</div></div>' +
-
-      '<div class="panel"><h2>Zaman çizelgesi</h2>' +
-      zamanCizelgesi(d) + '</div>';
-
-    RY.grafik.cubuk(document.getElementById('g-360-ozellik'),
-      (kul.byFeature || {}));
-    b.canlandir(icerik);
-
-    /* ---- Yönetim eylemleri (AP2) ---- */
-    function yMesaj(metin) {
-      document.getElementById('y-mesaj').textContent = metin || '';
-    }
-
-    document.getElementById('y-sifre').onclick = function () {
-      if (!p.email) { yMesaj('Hesabın e-postası yok.'); return; }
-      if (!confirm(p.email + ' adresine şifre sıfırlama e-postası ' +
-                   'gönderilsin mi?')) return;
-      // İstemci SDK'sı yeter: sıfırlama isteği herkese açık bir akıştır,
-      // sunucuya uç eklemek gerekmez.
-      RY.auth.sendPasswordResetEmail(p.email)
-        .then(function () { yMesaj('Sıfırlama e-postası gönderildi.'); })
-        .catch(function () { yMesaj('Gönderilemedi — sonra tekrar dene.'); });
-    };
-
-    document.getElementById('y-durum').onclick = async function () {
-      var kapat = p.authDisabled !== true;
-      var gerekce = prompt(kapat
-        ? 'Hesap DEVRE DIŞI kalacak, oturumları düşecek. Gerekçe (zorunlu):'
-        : 'Hesap yeniden AKTİF olacak. Gerekçe (zorunlu):');
-      if (gerekce == null) return;
-      if (gerekce.trim().length < 3) { yMesaj('Gerekçe en az 3 karakter.'); return; }
-      this.disabled = true;
-      try {
-        await RY.post('/api/v1/admin/users/' + encodeURIComponent(uid) +
-          '/disable', { disabled: kapat, reason: gerekce.trim() });
-        detay(icerik, uid);
-      } catch (h) {
-        this.disabled = false;
-        yMesaj(RY.hataMetni(h));
-      }
-    };
-
-    document.getElementById('y-sil').onclick = async function () {
-      var onay = prompt('Bu hesap ve TÜM verisi kalıcı olarak silinecek ' +
-        '(mobildeki "Hesabı sil" ile aynı boru). Onaylamak için SIL yaz:');
-      if (onay == null) return;
-      if (onay.trim() !== 'SIL') { yMesaj('Silme onaylanmadı.'); return; }
-      var gerekce = prompt('Silme gerekçesi (zorunlu, denetim izine yazılır):');
-      if (gerekce == null || gerekce.trim().length < 3) {
-        yMesaj('Gerekçe en az 3 karakter.');
-        return;
-      }
-      this.disabled = true;
-      try {
-        await RY.del('/api/v1/admin/users/' + encodeURIComponent(uid),
-          { confirm: 'SIL', reason: gerekce.trim() });
-        location.hash = '#/kullanicilar';
-      } catch (h) {
-        this.disabled = false;
-        yMesaj(RY.hataMetni(h));
-      }
-    };
-
-    var yCihaz = document.getElementById('y-cihaz');
-    if (yCihaz) {
-      yCihaz.onclick = async function () {
-        if (!confirm('Cihaz kaydı silinecek; bir sonraki isteği yapan cihaz ' +
-                     'kilidi yeniden alır. Onaylıyor musun?')) return;
-        this.disabled = true;
-        try {
-          await RY.post('/api/v1/admin/users/' + encodeURIComponent(uid) +
-            '/device/release', {});
-          detay(icerik, uid);
-        } catch (h) {
-          this.disabled = false;
-          alert(RY.hataMetni(h));
-        }
-      };
-    }
-
-    document.getElementById('kredi-form').onsubmit = async function (ev) {
-      ev.preventDefault();
-      var f = ev.target;
-      var tutar = parseInt(f.amount.value, 10);
-      var gerekce = (f.reason.value || '').trim();
-      if (!tutar || tutar <= 0 || gerekce.length < 3) {
-        alert('Pozitif jeton tutarı ve en az 3 karakterlik gerekçe zorunlu.');
-        return;
-      }
-      if (!confirm(tutar + ' jeton verilecek: "' + gerekce + '" — onaylıyor musun?')) {
-        return;
-      }
-      var dugme = f.querySelector('button');
-      dugme.disabled = true;
-      try {
-        await RY.post('/api/v1/admin/users/' + encodeURIComponent(uid) +
-          '/credit', { amount: tutar, reason: gerekce });
-        detay(icerik, uid);
-      } catch (h) {
-        dugme.disabled = false;
-        alert(RY.hataMetni(h));
-      }
-    };
+    /* ---- Eylem çubuğu ---- */
+    icerik.querySelector('#k360-kredi').addEventListener('click', function () { krediVerAc(uid, ad); });
+    icerik.querySelector('#k360-cihaz').addEventListener('click', function () { cihazSifirla(uid, cihaz); });
+    icerik.querySelector('#k360-baglanti').addEventListener('click', function () { baglantiAc(uid, p.email); });
+    var durumDugme = icerik.querySelector('#k360-durum');
+    if (sahip) durumDugme.addEventListener('click', function () { durumDegistir(uid, ad, !devreDisi); });
+    var silDugme = icerik.querySelector('#k360-sil');
+    if (sahip) silDugme.addEventListener('click', function () { silAc(uid, ad); });
   }
 
-  RY.gorunumler.kullanicilar = async function (icerik, args) {
-    // Rota sözleşmesi: /kullanicilar → liste; /kullanicilar/ara/<q> →
-    // sorgulu liste (üst çubuktaki global arama); /kullanicilar/<uid> → 360.
-    if (args && args[0] === 'ara') {
-      return liste(icerik, args[1] || '', 'createdAt');
-    }
-    if (args && args[0]) return detay(icerik, args[0]);
-    return liste(icerik, '', 'createdAt');
+  /* =====================================================================
+     Rota
+     ===================================================================== */
+
+  RY.gorunumler.kullanicilar = async function (icerik, args, params) {
+    args = args || [];
+    if (!args.length) return liste(icerik, params);
+    if (args[0] === 'ara') return liste(icerik, { q: args[1] || '' });
+    return detay(icerik, args[0], args[1]);
+  };
+
+  RY.kirintiSaglayici.kullanicilar = function (args) {
+    args = args || [];
+    if (!args.length || args[0] === 'ara') return [{ metin: 'Yönetim', href: '#/genel' }, { metin: 'Kullanıcılar' }];
+    return [{ metin: 'Yönetim', href: '#/genel' }, { metin: 'Kullanıcılar', href: '#/kullanicilar' },
+            { metin: adOnbellek[args[0]] || 'Kullanıcı' }];
   };
 })();
