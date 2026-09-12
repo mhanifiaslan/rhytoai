@@ -377,16 +377,31 @@ def daily_push_body(sign: str, sky: dict[str, Any], lang: str,
 
 
 def _bundle_body(paket: dict[str, Any] | None, idx: int,
-                 yerel: list[dict[str, Any]], lang: str) -> str:
-    """idx'inci sinyalin gövdesi: paket cümlesi, yoksa/taşarsa teknik satır.
+                 yerel: list[dict[str, Any]], lang: str,
+                 uid: str = "") -> str:
+    """idx'inci sinyalin gövdesi: paket cümlesi; yoksa, taşarsa ya da DİLİ
+    UYMAZSA teknik satır.
 
     Boş dize dönerse o sinyalden gövde çıkmadı demektir (teknik satır da
     taşmış) — çağıran başka sinyale bakar ya da None döner.
+
+    DM-turu (cihaz bulgusu "hem İngilizce hem Türkçe push"): paket cümlesi
+    LLM'den gelir ve LLM'in dili SÖZ değildir. Muhafız deterministik ve
+    BURADA: sabah (`signal_push`, yeniden üretim yolu dahil) ve öğle
+    (`midday_push`) paket cümlesini yalnız bu fonksiyondan okur; tek nokta
+    ikisini de kapatır. Teknik satır şablondur, dili kesindir — ona düşmek
+    güvenli. ``uid`` yalnız log içindir.
     """
     govde = ""
     if paket and len(paket.get("insights") or []) > idx:
         govde = paket["insights"][idx]
         if not 0 < len(govde) <= prompts.get(lang).SIGNAL_INSIGHT_MAX:
+            govde = ""
+        elif i18n.language_conflicts(govde, lang):
+            logger.warning(
+                "Bildirim gövdesi dili uyuşmuyor: uid=%s lang=%s tahmin=%s "
+                "— teknik satıra düşüldü",
+                uid, lang, i18n.guess_language(govde))
             govde = ""
     if not govde:
         govde = yerel[idx]["technical"]
@@ -442,9 +457,14 @@ def signal_push(profile: dict[str, Any], lang: str,
             prev_theme=(dun or {}).get("theme") or None,
             prev_fp=(dun or {}).get("focusFp") or None)
 
+        uid = profile.get("uid") or ""
         paket = signal_service.cached_insight_bundle(ham, lang)
         yerel = prompts.localize_signals(lang, ham)["signals"]
-        govde = _bundle_body(paket, idx, yerel, lang)
+        # DM-turu: dil muhafızı `_bundle_body` içinde — aşağıdaki her
+        # gövde adayı (ilk seçim, farklı sinyal, yeniden üretim) oradan
+        # geçer; teknik satırın kendisi şablon olduğu için burada ayrıca
+        # kontrol yoktur.
+        govde = _bundle_body(paket, idx, yerel, lang, uid=uid)
 
         # Dünle aynılık koruması (OT1.3) — sınırlı: 1 ek LLM çağrısı.
         # Başka dildeki dünkü gövdeyle kıyas yok: ortak metin yok.
@@ -453,7 +473,7 @@ def signal_push(profile: dict[str, Any], lang: str,
             for aday in range(len(yerel)):
                 if aday == idx:
                     continue
-                aday_govde = _bundle_body(paket, aday, yerel, lang)
+                aday_govde = _bundle_body(paket, aday, yerel, lang, uid=uid)
                 if aday_govde and _body_hash(aday_govde) != dun["bodyHash"]:
                     idx, govde = aday, aday_govde
                     break
@@ -467,7 +487,7 @@ def signal_push(profile: dict[str, Any], lang: str,
                         signal_service.bundle_key(
                             signal_service.signals_fingerprint(ham), lang),
                         yeni, ttl_seconds=signal_service.BUNDLE_TTL_OK)
-                    aday_govde = _bundle_body(yeni, idx, yerel, lang)
+                    aday_govde = _bundle_body(yeni, idx, yerel, lang, uid=uid)
                     if aday_govde and _body_hash(aday_govde) != dun["bodyHash"]:
                         govde = aday_govde
                 if _body_hash(govde) == dun["bodyHash"]:
@@ -566,6 +586,16 @@ def checkin_push(profile: dict[str, Any], lang: str,
         soru = (paket or {}).get("checkin_question")
         if not soru:
             return None
+        # DM-turu: soru da LLM çıktısı, dili söz değil. Yanlış dildeyse
+        # akşam sorusu ATLANIR — bu bildirim isteğe bağlı, :10'daki seri
+        # hatırlatması devreye girer; sohbete yanlış dilde tohum da
+        # atılmamış olur. Yedek metin yok: soru biçimli şablon uydurmayız.
+        if i18n.language_conflicts(soru, lang):
+            logger.warning(
+                "Check-in sorusu dili uyuşmuyor: uid=%s lang=%s tahmin=%s "
+                "— akşam sorusu atlandı",
+                profile.get("uid"), lang, i18n.guess_language(soru))
+            return None
         return PushIcerik(prompts.get(lang).PUSH_CHECKIN_TITLE, soru,
                           soru=True)
     except Exception as exc:
@@ -605,7 +635,8 @@ def midday_push(profile: dict[str, Any], lang: str,
         # PBZ-turu: sabah gövdesi BAŞKA dilde gittiyse (dil öğlene kadar
         # değişti) karşılaştırılacak ortak metin yok; etiketsiz eski kayıt
         # yine kıyaslanır (`_hash_kiyaslanir`).
-        dun = last_daily_sent(profile.get("uid") or "")
+        uid = profile.get("uid") or ""
+        dun = last_daily_sent(uid)
         sabah_hash = (dun or {}).get("bodyHash") \
             if ((dun or {}).get("day") == gun
                 and _hash_kiyaslanir(dun or {}, lang)) else None
@@ -625,7 +656,8 @@ def midday_push(profile: dict[str, Any], lang: str,
             # sinyaller de denenir (paket zaten elimizde, sıfır maliyet).
             for idx in bugunku + [i for i in range(len(sinyaller))
                                   if i not in bugunku]:
-                govde = _bundle_body(paket, idx, yereller, lang)
+                # DM-turu: dil muhafızı `_bundle_body` içinde (sabahla ortak).
+                govde = _bundle_body(paket, idx, yereller, lang, uid=uid)
                 if not govde:
                     continue
                 if sabah_hash and _body_hash(govde) == sabah_hash:
@@ -646,7 +678,6 @@ def midday_push(profile: dict[str, Any], lang: str,
         # Aday = (karşı taraf, hedef kimliği). Kimlik yükte taşınır (BY):
         # dokununca O ilişkinin ekranı açılır — kimliksiz yük istemciyi
         # yalnız Çevrem sekmesine bırakıyordu ("sadece uygulama açılıyor").
-        uid = profile.get("uid") or ""
         adaylar: list[tuple[Any, dict[str, str]]] = []
         for friend_uid in circle_context.list_accepted_friend_uids(uid):
             cp = synastry_service.friend_counterpart(uid, friend_uid)

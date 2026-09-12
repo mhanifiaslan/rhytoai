@@ -3,14 +3,14 @@ import 'package:flutter/scheduler.dart' show SchedulerBinding, SchedulerPhase;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rytho/features/oracle/iching_tab.dart';
 import 'package:rytho/l10n/app_localizations.dart';
-import 'package:rytho/widgets/frame_sequence.dart';
+import 'package:rytho/widgets/coin_toss.dart';
 import 'package:rytho/widgets/nebula_widgets.dart' show Pressable;
 
 /// PBZ 1.2: atış sahnesi — varyant eşlemesi ve durum makinesi.
 ///
-/// Sahne gerçek varlıkları (`assets/anim/coins_*.webp`, rootBundle) açar ama
-/// durum makinesi çözmeye BAĞLI DEĞİL: reduce-motion'da her iniş post-frame
-/// biter, normalde döngü sınırı ya da 2,5 s emniyet zamanlayıcısı indirir.
+/// Paralar kodla sürülür (`CoinToss`); doku (rootBundle) yüklenmese de
+/// sahne çalışır: reduce-motion'da her iniş post-frame biter, normalde
+/// her atış 820 ms sürer ve temas anında foley çalar.
 /// Bu yüzden `runAsync` YOK — gerçek olay döngüsü açılsaydı google_fonts'un
 /// asenkron font hatası teste sızardı (chart_wheel_test.dart notu).
 /// Ticker içeren ağaçta pumpAndSettle YOK — süreli pump adımları.
@@ -97,30 +97,37 @@ void main() {
       expect(inis, 1);
     });
 
-    testWidgets('iniş sırasında tepsiye dokunma done\'a atlar; onFinished bir kez',
-        (tester) async {
-      var bitti = 0;
+    testWidgets(
+        'iniş kare bitince KESİNTİSİZ başlar; foley temas anında; tepsiye '
+        'dokunma done\'a atlar; onFinished bir kez', (tester) async {
+      var bitti = 0, temas = 0;
       Widget sahne(List<int>? degerler) => _sar(CastScene(
             lineValues: degerler,
             onFinished: () => bitti++,
-            onLand: () async {},
+            onLand: () async => temas++,
           ));
 
       await tester.pumpWidget(sahne(null));
-      expect(find.byType(FrameSequence), findsOneWidget);
-
-      // Yanıt geldi: iniş ancak döngü SINIRINDA başlar (kesme yok). Sahte
-      // zamanda native çözme hiç bitmez → sınır gelmez; 2,5 s emniyet
-      // zamanlayıcısı indirir — süreli pump ile geçilir.
-      await tester.pumpWidget(sahne(const [7, 7, 7, 7, 7, 7]));
+      expect(find.byType(CoinToss), findsOneWidget);
       final st = _sahne(tester);
-      expect(st.isLanding, isFalse, reason: 'sınır beklenir');
-      await tester.pump(const Duration(seconds: 2));
-      expect(st.isLanding, isFalse, reason: 'emniyet 2,5 s — henüz değil');
-      await _ilerlet(tester, () => st.isLanding,
-          adim: const Duration(milliseconds: 100));
-      expect(bitti, 0);
+      expect(st.isLanding, isFalse);
+
+      // Yanıt geldi: eski klip düzenindeki "döngü sınırını bekle" yok —
+      // kare bitince iniş başlar, o anki açıdan.
+      await tester.pumpWidget(sahne(const [7, 7, 7, 7, 7, 7]));
+      await tester.pump();
+      expect(st.isLanding, isTrue, reason: 'kare bitince iniş');
       expect(find.text('Paralar düşüyor… 1/6'), findsOneWidget);
+      expect(temas, 0, reason: 'foley temasta, başlangıçta değil');
+
+      // 820 ms'lik atışın temas anı (%78): clink BİR kez.
+      await tester.pump(const Duration(milliseconds: 700));
+      expect(temas, 1);
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(temas, 1, reason: 'aynı atışta ikinci clink yok');
+      expect(find.text('Paralar düşüyor… 2/6'), findsOneWidget,
+          reason: 'ilk iniş bitti, ikinci atış');
+      expect(bitti, 0);
 
       await tester.tap(find.byType(Pressable));
       await tester.pump();
@@ -128,7 +135,7 @@ void main() {
       expect(st.revealed, 6);
       expect(bitti, 1);
 
-      // Kalan klip dursa da onFinished tekrar gelmez; bekleyen zamanlayıcı yok.
+      // Kalan atış dursa da onFinished tekrar gelmez.
       await tester.pump(const Duration(seconds: 3));
       await tester.pump(const Duration(seconds: 3));
       expect(bitti, 1);

@@ -1,9 +1,27 @@
 # Kehanet sahnesi varlıkları — İching paraları + BaZi luopan
 
-Uygulamadaki İ Ching para atışı (`features/oracle/iching_tab.dart`,
-`CastScene`) ve BaZi bekleme sahnesi (`bazi_tab.dart`, `StagedWaiting.visual`)
-için **alfa kanallı animasyonlu WebP** kare dizileri. Oynatıcı
-`widgets/frame_sequence.dart` (dart:ui codec + Ticker; video eklentisi yok).
+BaZi bekleme sahnesi (`bazi_tab.dart`, `StagedWaiting.visual`) için **alfa
+kanallı animasyonlu WebP** kare dizisi (oynatıcı `widgets/frame_sequence.dart`,
+dart:ui codec + Ticker; video eklentisi yok) ve İ Ching paraları için **iki
+alfa PNG doku** (`widgets/coin_toss.dart` hareketi kodla sürer).
+
+## PZ2 — paralar kare dizisinden koda (kullanıcı hükmü)
+
+Kare-dizisi paralar cihazda reddedildi: *"saçma sapan hareket ediyorlar, ne
+estetik var ne loop animasyonu, aşırı büyükler."* Üç kusur da yapısaldı —
+hareketi model üretince boyut, döngü dikişi ve iniş pozu kontrol
+edilemiyor. Yeni kurgu: **doku still + kod hareketi.**
+
+- `stills/coin_face_raw.png` / `coin_back_raw.png`: `nano_banana_pro`
+  (nano_banana_2'ye düşüyor), 1:1, "EXACT TOP-DOWN ORTHOGRAPHIC VIEW …
+  PURE BLACK background", referans `black-rest3.png` + logo (2 kredi/adet).
+- `coin_face.py`: siyah→alfa (build.py doktrini), sınır kutusu, kare tuval,
+  256² LANCZOS → `apps/mobile/assets/anim/coin_face.png` (~106 KB) ve
+  `coin_back.png` (~94 KB). Eski beş WebP (≈3 MB) silindi.
+- Hareket `coin_toss.dart`'ta: dikişsiz hava döngüsü (2,6 s, frekanslar tam
+  kat), 820 ms atış (kalkış → yerçekimi düşüşü → temasta foley → tek sönen
+  sekme), hedef yüz kesin (0 / π), 40 lp para. Kanıt kareleri:
+  `RYTHO_KANIT_DIR=<klasör> flutter test test/coin_toss_kanit_test.dart`.
 
 ## Kurgu (revize — kullanıcı kararı)
 
@@ -24,14 +42,17 @@ Yeni kurgu:
 
 ## Varlıklar (`apps/mobile/assets/anim/`)
 
-| Dosya | İçerik | Kaynak klip |
+| Dosya | İçerik | Kaynak |
 |---|---|---|
-| `coins_air.webp` | 3 para havada takla (döngü, 1,5 s @20 fps) | `raw/bair.mp4` |
-| `coins_land_k.webp` (k=0..3) | paralar düşer, k tanesi logo yüzü yukarı durulur (0,9 s @24 fps) | `raw/cland{k}.mp4` |
-| `bazi_wait.webp` | bronz luopan halkaları döner, ibre titrer (döngü, 2,5 s @16 fps) | `raw/bluopan.mp4` |
+| `coin_face.png` | logo yüzü, üstten, alfa, 256² | `stills/coin_face_raw.png` → `coin_face.py` |
+| `coin_back.png` | düz arka yüz (iç halka), alfa, 256² | `stills/coin_back_raw.png` → `coin_face.py` |
+| `bazi_wait.webp` | bronz luopan halkaları döner, ibre titrer (döngü, 2,5 s @16 fps) | `raw/bluopan.mp4` → `build.py` |
 
-k = satır değeri − 6 (`landingVariants`); logo yüzü = "yazı" (3).
-Bütçe: klip ≤1 MB, toplam ≤5 MB (`test/anim_assets_test.dart` zorlar).
+k = satır değeri − 6 (`landingVariants`); logo yüzü = "yazı" (3) — hangi
+paraların logo göstereceği `coinsLogoUp(toss, k)` ile atıştan atışa döner.
+Bütçe: doku ≤150 KB, klip ≤1 MB, toplam ≤2 MB (`test/anim_assets_test.dart`).
+Eski `coins_air` / `coins_land_k` klipleri ve `raw/*air*`, `raw/*land*`
+kaynakları yalnız tarih: PZ2'den sonra kullanılmıyor.
 
 ## Üretim adımları (Higgsfield MCP, `mode: std` — starter planda pro kapalı)
 

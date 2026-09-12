@@ -23,7 +23,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
 
-from core import config
+from core import config, i18n
 from core import firestore as firestore_client
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
@@ -148,6 +148,9 @@ class RunResult(BaseModel):
     pruned: int
     #: Neden gönderilmediğinin dökümü — sessiz düşen bildirimler görünür olmalı.
     skipped: dict[str, int]
+    #: Kuyruğa giren mesajların dil dökümü (DM-turu): "hem İngilizce hem
+    #: Türkçe" bulgusundan sonra hangi dilde kaç push gittiği görünür olmalı.
+    languages: dict[str, int] = Field(default_factory=dict)
 
 
 def _kosu_kaydet(type_: str, gun: str, sonuc: RunResult,
@@ -229,6 +232,8 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
     ekstralar: dict[str, dict[str, Any]] = {}
     taranan = 0
     atlanan: dict[str, int] = {}
+    # DM-turu: kuyruğa giren mesajların dil sayımı (özet loga ve yanıta).
+    diller: dict[str, int] = {}
     # Dil başına yerelleştirilmiş gökyüzü; her kullanıcı için yeniden
     # hesaplamaya gerek yok.
     sky_by_lang: dict[str, dict[str, Any]] = {}
@@ -245,6 +250,9 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
         lang = notification_service.profile_language(profil)
         yerel = notification_service.local_now(profil, now_utc)
         gun = yerel.date().isoformat()
+        # SS-turu: gövde SORU biçimliyse üretici bunu beyan eder; sohbet
+        # tohumu dil kapısından SONRA atılır (aşağıda).
+        soru = False
 
         if type == "daily":
             sign = profile_service.sun_sign_key(profil)
@@ -302,23 +310,39 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
             baslik, govde = checkin.baslik, checkin.govde
             veri = {"type": "checkin", "route": "chat",
                     "q": govde, "q_date": gun}
-            # SS-turu: gövde bir SORUysa Rytho sohbette ÖNCE yazar.
-            # Karar tür adından değil üreticinin beyanından (`soru`)
-            # geliyor. `dry_run` tohumlamaz: prova iz bırakmaz.
-            # `cid` yüke `push_service.send`'den ÖNCE girmek zorunda,
-            # bu yüzden tohum döngünün içinde kalıyor.
-            if checkin.soru and not dry_run:
-                cid = chat_history.seed_assistant_message(
-                    profil["uid"], govde, lang, gun)
-                if cid:
-                    veri["route"] = "chat_answer"
-                    veri["cid"] = cid
+            soru = checkin.soru
         else:
             baslik, govde = notification_service.streak_push(profil, lang)
             # BY-turu: "okumanı açmadın" dokununca okumayı AÇAR (hikâye) —
             # yalnız {type} taşıyan eski yükün hedefi yoktu.
             veri = {"type": "streak", "route": "story", "d": gun}
 
+        # DM-turu son emniyet ağı: hangi dalda üretilmiş olursa olsun,
+        # başlık ya da gövde profil dilinin DIŞINDA görünüyorsa push
+        # GİTMEZ ve görünür atlanır. Üreticiler kendi muhafızını taşır
+        # (`_bundle_body`, `checkin_push`); burası kaçağı yakalayan ağ.
+        # Sohbet tohumu bu kapıdan SONRA: yanlış dilde soru sohbete girmez.
+        if (i18n.language_conflicts(govde, lang)
+                or i18n.language_conflicts(baslik, lang)):
+            logger.warning(
+                "Bildirim dil uyuşmazlığı, gönderilmedi: uid=%s tur=%s "
+                "lang=%s baslik=%r govde=%r",
+                profil["uid"], type, lang, baslik, govde)
+            atlanan["dil-uyusmaz"] = atlanan.get("dil-uyusmaz", 0) + 1
+            continue
+
+        # SS-turu: gövde bir SORUysa Rytho sohbette ÖNCE yazar. Karar tür
+        # adından değil üreticinin beyanından (`soru`) geliyor. `dry_run`
+        # tohumlamaz: prova iz bırakmaz. `cid` yüke `push_service.send`'den
+        # ÖNCE girmek zorunda, bu yüzden tohum döngünün içinde kalıyor.
+        if soru and not dry_run:
+            cid = chat_history.seed_assistant_message(
+                profil["uid"], govde, lang, gun)
+            if cid:
+                veri["route"] = "chat_answer"
+                veri["cid"] = cid
+
+        diller[lang] = diller.get(lang, 0) + 1
         mesajlar.append(push_service.Message(
             uid=profil["uid"], token=profil["fcmToken"],
             title=baslik, body=govde, data=veri,
@@ -326,11 +350,13 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
         isaretlenecek.append((profil["uid"], gun))
 
     if dry_run:
-        logger.info("Bildirim PROVA turu=%s taranan=%d kuyruk=%d atlanan=%s",
-                    type, taranan, len(mesajlar), atlanan)
+        logger.info("Bildirim PROVA turu=%s taranan=%d kuyruk=%d diller=%s "
+                    "atlanan=%s",
+                    type, taranan, len(mesajlar), diller, atlanan)
         return RunResult(
             status="dry-run", type=type, scanned=taranan,
             queued=len(mesajlar), sent=0, failed=0, pruned=0, skipped=atlanan,
+            languages=diller,
         )
 
     sonuc = push_service.send(mesajlar)
@@ -349,14 +375,14 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
                                            extra=ekstralar.get(uid))
 
     logger.info("Bildirim turu=%s taranan=%d kuyruk=%d gonderilen=%d "
-                "basarisiz=%d temizlenen=%d atlanan=%s",
+                "basarisiz=%d temizlenen=%d diller=%s atlanan=%s",
                 type, taranan, len(mesajlar), sonuc.sent, sonuc.failed,
-                len(sonuc.pruned), atlanan)
+                len(sonuc.pruned), diller, atlanan)
 
     yanit = RunResult(
         status="ok", type=type, scanned=taranan, queued=len(mesajlar),
         sent=sonuc.sent, failed=sonuc.failed, pruned=len(sonuc.pruned),
-        skipped=atlanan,
+        skipped=atlanan, languages=diller,
     )
     _kosu_kaydet(type, now_utc.date().isoformat(), yanit, now_utc)
     return yanit

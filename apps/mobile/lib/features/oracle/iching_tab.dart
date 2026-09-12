@@ -1,4 +1,3 @@
-import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -16,7 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
-import '../../widgets/frame_sequence.dart';
+import '../../widgets/coin_toss.dart';
 import '../../widgets/motion.dart';
 import '../../widgets/nebula_widgets.dart';
 
@@ -28,17 +27,6 @@ final ichingStatusProvider =
   final yanit = await dio.get('/api/v1/reports/iching/status');
   return Map<String, dynamic>.from(yanit.data['data'] as Map);
 });
-
-/// Para klipleri (PBZ): havada döngü + dört iniş varyantı. İndeks 0 hava,
-/// 1..4 iniş k=0..3 (k = logo yüzü yukarı para sayısı). Sekme açılınca
-/// önbelleğe alınır ki ilk çekimde diskten okuma gecikmesi olmasın.
-const kCoinAssets = [
-  'assets/anim/coins_air.webp',
-  'assets/anim/coins_land_0.webp',
-  'assets/anim/coins_land_1.webp',
-  'assets/anim/coins_land_2.webp',
-  'assets/anim/coins_land_3.webp',
-];
 
 /// Sunucunun satır değerlerini (ALTTAN ÜSTE 6/7/8/9, `iching_service.py`
 /// `line_values`) iniş klibi varyantına çevirir: k = değer − 6 = logo yüzü
@@ -77,8 +65,8 @@ class _IChingTabState extends ConsumerState<IChingTab> {
   @override
   void initState() {
     super.initState();
-    // Para klipleri baytları önbelleğe: ilk çekimde disk gecikmesi yok.
-    FrameSequence.precache(kCoinAssets);
+    // Para dokuları önbelleğe: ilk çekimde disk gecikmesi yok.
+    CoinTextures.precache();
   }
 
   @override
@@ -312,24 +300,23 @@ bool _meaningfulQuestion(String question) {
 
 enum _CastPhase { airborne, landing, done }
 
-/// Çekim sahnesi durum makinesi (PBZ 1.2):
+/// Çekim sahnesi durum makinesi (PBZ 1.2 → PZ2):
 ///
 /// | Faz | Sahne | Geçiş |
 /// |---|---|---|
-/// | airborne | `coins_air` döngü + "paralar havada" | [lineValues] gelince varyantlar hesaplanır, bir sonraki döngü SINIRI beklenir |
-/// | landing(i) | `coins_land_{k_i}` + sağda canlı glif (6 yuva, `revealed` kadar dolu) + "düşüyor i+1/6" | klip BAŞINDA [onLand]; `onDone` → `revealed = i+1` → sonraki |
-/// | done | son iniş karesi tutulur | i=5 bitince [onFinished] BİR kez |
+/// | airborne | [CoinToss] havada döngü + "paralar havada" | [lineValues] gelince varyantlar hesaplanır, kare bitince iniş başlar |
+/// | landing(i) | [CoinToss] `logoUp = k_i`, `toss = i` + sağda canlı glif (6 yuva, `revealed` kadar dolu) + "düşüyor i+1/6" | temas anında [onLand]; `onLanded` → `revealed = i+1` → sonraki |
+/// | done | son poz tutulur | i=5 bitince [onFinished] BİR kez |
 ///
-/// - Yanıt döngü sınırından ÖNCE gelirse en fazla bir döngü (1,5 s) beklenir;
-///   iniş klipleri havadaki ilk kareyle aynı görüntüden başladığı için
-///   kesme yalnız sınırda ve sıçrama yok. Klip hiç sınır vermezse (varlık
-///   bozuk/eksik) 2,5 s'de yine de inilir — üst `_busy` askıda kalmasın.
+/// - Paralar kodla sürülür (bkz. widgets/coin_toss.dart): iniş o anki açıdan
+///   KESİNTİSİZ başlar — eski klip düzenindeki "döngü sınırını bekle" ve
+///   2,5 s emniyet zamanlayıcısı yok.
 /// - Tepsiye dokunma iniş sırasında `done`'a atlar (ritüel atlanabilir;
 ///   görünür etiket yok).
-/// - reduce-motion: hava statik kare, sınır yok → hemen iniş; her iniş
-///   anında biter → çizgiler anında dolar (giriş animasyonu kurulmaz).
-///   Clink yalnız İLK inişte: altı iniş ~6 karede bittiğinden altı clink
-///   üst üste binip tek gürültü olurdu.
+/// - reduce-motion: hareket yok; her iniş anında son pozuna geçer → çizgiler
+///   anında dolar (giriş animasyonu kurulmaz). Clink yalnız İLK inişte:
+///   altı iniş ~6 karede bittiğinden altı clink üst üste binip tek gürültü
+///   olurdu. Hareketli sahnede clink her atışın TEMAS anında.
 /// - Üst geri çağrılar (`onFinished` / `onLand`) build fazından ÇAĞRILMAZ:
 ///   yanıt `didChangeDependencies` / `didUpdateWidget` içinde emilir, oradan
 ///   doğrudan üst `setState` framework assertion'ıdır. O yollardan çıkan
@@ -365,7 +352,6 @@ class CastSceneState extends State<CastScene> {
   List<int>? _bekleyen; // iniş varyantları (k); yanıt gelince dolar
   int _inis = 0; // şu anki iniş indeksi (alttan)
   int _acilan = 0; // çizilen çizgi sayısı (alt yuvalardan)
-  Timer? _emniyet;
   bool _hazir = false;
 
   @visibleForTesting
@@ -395,13 +381,7 @@ class CastSceneState extends State<CastScene> {
     if (degerler != null && _bekleyen == null) _emdir(degerler);
   }
 
-  @override
-  void dispose() {
-    _emniyet?.cancel();
-    super.dispose();
-  }
-
-  /// Yanıt geldi: varyantlar hesaplanır, iniş için sınır beklenir.
+  /// Yanıt geldi: varyantlar hesaplanır, iniş kare bitince başlar.
   ///
   /// `didChangeDependencies` / `didUpdateWidget` içinden — yani build
   /// fazından — çağrılır. Üst widget'a geri çağrı (`onFinished` / `onLand`)
@@ -423,40 +403,30 @@ class CastSceneState extends State<CastScene> {
       _kareSonra(_bitir);
       return;
     }
-    if (reduceMotion(context)) {
-      // Statik sahnede döngü sınırı hiç gelmez — ilk karenin ardından in.
-      _kareSonra(_inisBasla);
-      return;
-    }
-    _emniyet = Timer(const Duration(milliseconds: 2500), _inisBasla);
+    // Kesintisiz geçiş: sahne o anki açıdan iner, sınır beklenmez.
+    _kareSonra(_inisBasla);
   }
 
   /// Build fazından üst geri çağrıya giden geçişler için: kare bitince,
-  /// hâlâ monteyse. Geçişlerin kendi faz korumaları var; arada döngü sınırı
-  /// gelip inişi başlatmışsa ikinci başlatma boşa düşer.
+  /// hâlâ monteyse. Geçişlerin kendi faz korumaları var.
   void _kareSonra(VoidCallback gecis) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) gecis();
     });
   }
 
-  /// Hava klibinin döngü sınırı: yanıt eldeyse inişe geç.
-  void _sinir() {
-    if (_bekleyen != null && _faz == _CastPhase.airborne) _inisBasla();
-  }
-
   void _inisBasla() {
-    _emniyet?.cancel();
-    _emniyet = null;
     if (!mounted || _faz != _CastPhase.airborne) return;
     setState(() {
       _faz = _CastPhase.landing;
       _inis = 0;
     });
-    widget.onLand();
+    // Statik sahnede foley yalnız burada, BİR kez; hareketli sahnede
+    // CoinToss temas anında çalar (build'deki onContact).
+    if (reduceMotion(context)) widget.onLand();
   }
 
-  /// İniş klibi bitti: alttan bir çizgi daha, sonra sıradaki iniş.
+  /// İniş bitti: alttan bir çizgi daha, sonra sıradaki iniş.
   void _indi() {
     if (_faz != _CastPhase.landing) return;
     final bekleyen = _bekleyen!;
@@ -470,10 +440,6 @@ class CastSceneState extends State<CastScene> {
       _acilan = sonraki;
       _inis = sonraki;
     });
-    // reduce-motion'da her iniş bir post-frame'de biter: altı clink ~6
-    // karede üst üste binip tek gürültü olurdu. Statik sahnede foley yalnız
-    // İLK inişte (_inisBasla) çalar — sonrakiler sessiz.
-    if (!reduceMotion(context)) widget.onLand();
   }
 
   /// Tepsiye dokunma: kalan inişler atlanır, çizgiler tamamlanır.
@@ -485,8 +451,6 @@ class CastSceneState extends State<CastScene> {
 
   void _bitir() {
     if (_faz == _CastPhase.done) return;
-    _emniyet?.cancel();
-    _emniyet = null;
     setState(() => _faz = _CastPhase.done);
     widget.onFinished();
   }
@@ -506,19 +470,16 @@ class CastSceneState extends State<CastScene> {
     final bekleyen = _bekleyen;
     final inisVar = bekleyen != null && bekleyen.isNotEmpty &&
         _faz != _CastPhase.airborne;
-    final Widget klip = inisVar
-        // Her iniş kendi anahtarıyla: aynı k art arda gelse de klip baştan.
-        ? FrameSequence(
-            key: ValueKey('land-$_inis'),
-            asset: kCoinAssets[1 + bekleyen[_inis]],
-            onDone: _indi,
-          )
-        : FrameSequence(
-            key: const ValueKey('air'),
-            asset: kCoinAssets[0],
-            loop: true,
-            onLoop: _sinir,
-          );
+    final azalt = reduceMotion(context);
+    // TEK CoinToss örneği: havadan inişe ve atıştan atışa poz sürekliliği
+    // korunur; `toss` değişince yeni atış başlar (aynı k art arda gelse de).
+    final Widget sahne = CoinToss(
+      logoUp: inisVar ? bekleyen[_inis] : null,
+      toss: _inis,
+      // Foley temas anında (hareketli sahne); statik sahnede _inisBasla.
+      onContact: azalt ? null : widget.onLand,
+      onLanded: _indi,
+    );
     final etiket = _faz == _CastPhase.airborne
         ? l10n.iChingCoinsInAir
         : l10n.iChingCoinsLanding(
@@ -529,7 +490,7 @@ class CastSceneState extends State<CastScene> {
         Expanded(
           child: Pressable(
             onTap: _faz == _CastPhase.landing ? _atla : null,
-            child: AnimStage(child: klip),
+            child: SizedBox(height: 72, child: Center(child: sahne)),
           ),
         ),
         const SizedBox(width: 16),
