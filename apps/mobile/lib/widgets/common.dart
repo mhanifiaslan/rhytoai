@@ -15,6 +15,8 @@ library;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
+import '../features/profile/feedback_screen.dart';
+import '../l10n/app_localizations.dart';
 import '../theme/rytho_theme.dart';
 import '../theme/rytho_tokens.dart';
 import 'glass.dart';
@@ -49,14 +51,32 @@ class SectionHeader extends StatelessWidget {
 /// Hata metni `friendlyError()` ile üretilmiş olmalı; ham `DioException`
 /// metnini basmak kullanıcıya HTTP durum kodu göstermek demek.
 class ErrorCard extends StatelessWidget {
-  const ErrorCard({super.key, required this.message, this.onRetry});
+  const ErrorCard({
+    super.key,
+    required this.message,
+    this.onRetry,
+    this.screen,
+    this.reportable = true,
+  });
 
   final String message;
   final VoidCallback? onRetry;
 
+  /// "Bu ekranı bildir" için ekran kodu (bkz. [FeedbackScreen.screen]);
+  /// verilmezse kullanıcı ekranı formdan seçer.
+  final String? screen;
+
+  /// GB-turu: hata kartı geri bildirim kanalının EN UCUZ girişi — kullanıcı
+  /// tam da sorunu gördüğü anda "bildir" diyebilir. Kapatmak isteyen ekran
+  /// (ör. bildirimin kendisi düşmüşken) `false` verir.
+  final bool reportable;
+
   @override
   Widget build(BuildContext context) {
     final ingilizce = Localizations.localeOf(context).languageCode == 'en';
+    // Nullable arama: bu kart l10n temsilcisi olmayan ağaçlarda da
+    // çizilebiliyor (eski testler) — `AppLocalizations.of` orada fırlatır.
+    final l10n = Localizations.of<AppLocalizations>(context, AppLocalizations);
     final kart = GlassPanel(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,15 +90,32 @@ class ErrorCard extends StatelessWidget {
               Expanded(child: Text(message, style: RythoType.bodyDim)),
             ],
           ),
-          if (onRetry != null) ...[
+          if (onRetry != null || reportable) ...[
             const SizedBox(height: RythoSpace.sm),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: onRetry,
-                child: Text(ingilizce ? 'Try again' : 'Tekrar dene',
-                    style: RythoType.button),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                if (reportable)
+                  TextButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                          builder: (_) => FeedbackScreen(screen: screen)),
+                    ),
+                    child: Text(
+                        l10n?.feedbackReportThisScreen ??
+                            (ingilizce
+                                ? 'Report this screen'
+                                : 'Bu ekranı bildir'),
+                        style: RythoType.button
+                            .copyWith(color: RythoColors.parchmentDim)),
+                  ),
+                if (onRetry != null)
+                  TextButton(
+                    onPressed: onRetry,
+                    child: Text(ingilizce ? 'Try again' : 'Tekrar dene',
+                        style: RythoType.button),
+                  ),
+              ],
             ),
           ],
         ],

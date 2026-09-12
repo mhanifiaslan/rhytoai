@@ -436,6 +436,9 @@ PUSH_INVITE_ACCEPTED_BODY = "You're friends now — see the sky between you."
 PUSH_TEST_TITLE = "🛠️ Rytho test notification"
 PUSH_TEST_BODY = "This is a test — your notification channel works."
 
+#: Admin reply to in-app feedback (GB round): body is the reply text itself.
+PUSH_FEEDBACK_REPLY_TITLE = "💬 A reply from the Rytho team"
+
 PUSH_FRIEND_TITLE = "{name} nudged you"
 #: Reaction labels come from the same closed set as friend_detail_screen.
 PUSH_FRIEND_BODY = "{emoji} {label}"

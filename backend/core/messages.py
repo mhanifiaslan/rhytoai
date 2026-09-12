@@ -315,6 +315,12 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "en": "No such hexagram (it must be between 1 and 64).",
     },
 
+    # --- Geri bildirim (GB-turu) — 429, uid başına günde 10 kayıt ---
+    "feedback.limit": {
+        "tr": "Bugünlük geri bildirim sınırına ulaştın — yarın tekrar dene.",
+        "en": "You've reached today's feedback limit — try again tomorrow.",
+    },
+
     # --- Zorunlu güncelleme (HTTP 426, core/app_gate.py) ---
     # ≤34 istemciler 426'yı tanımaz ve `detail`i SnackBar'da olduğu gibi
     # basar (K6); ham "update_required" kodu ayrı `code` alanında kalır.

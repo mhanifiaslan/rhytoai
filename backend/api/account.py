@@ -13,14 +13,17 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from typing import Literal
 
+from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel, Field, field_validator
+
+from core import app_gate
 from core.auth import AuthUser, get_current_user
 from core.i18n import get_language
 from core.messages import text
-from services import (account_service, consent_service, memory_service,
-                      phone_service)
+from services import (account_service, consent_service, feedback_service,
+                      memory_service, phone_service)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -214,3 +217,53 @@ def delete_diary(entry_id: str,
     if not silindi:
         raise HTTPException(status_code=404, detail=text("internal", lang))
     return {"status": "success"}
+
+
+# ---------------------------------------------------------------------------
+# Geri bildirim (GB-turu)
+# ---------------------------------------------------------------------------
+
+class FeedbackRequest(BaseModel):
+    """Hata / öneri / diğer. Metin kırpılmış hâliyle 1..2000; boşluktan
+    ibaret metin 422 — boş kayıt panelde gürültüdür."""
+
+    type: Literal["bug", "suggestion", "other"]
+    text: str = Field(min_length=1, max_length=feedback_service.MAX_TEXT)
+    #: İstemcinin o an açık olduğu ekranın adı (rota) — teşhis için.
+    screen: str | None = Field(default=None,
+                               max_length=feedback_service.MAX_SCREEN)
+
+    @field_validator("text")
+    @classmethod
+    def _bos_olamaz(cls, deger: str) -> str:
+        deger = deger.strip()
+        if not deger:
+            raise ValueError("Metin boş olamaz.")
+        return deger
+
+
+@router.post("/feedback")
+def submit_feedback(req: FeedbackRequest,
+                    user: AuthUser = Depends(get_current_user),
+                    lang: str = Depends(get_language),
+                    x_app_build: str | None = Header(default=None),
+                    x_device_platform: str | None = Header(default=None)):
+    """Geri bildirimi `feedback/{autoId}` dokümanına yazar.
+
+    Bağlam (build, platform, dil) gövdeden değil BAŞLIKLARDAN okunur —
+    istemci beyanı değil, Dio interceptor'ının her isteğe eklediği
+    değerler. Sınır: uid başına günde 10 (429 + `feedback.limit`).
+    """
+    build = app_gate.parse_build(x_app_build) or None
+    try:
+        fid = feedback_service.submit(
+            user.uid, type_=req.type, text=req.text, screen=req.screen,
+            app_build=build, platform=x_device_platform, language=lang)
+    except feedback_service.LimitError:
+        raise HTTPException(status_code=429,
+                            detail=text("feedback.limit", lang))
+    except Exception as exc:
+        logger.exception("Geri bildirim yazılamadı (%s)", user.uid,
+                         exc_info=exc)
+        raise HTTPException(status_code=500, detail=text("internal", lang))
+    return {"status": "ok", "id": fid}

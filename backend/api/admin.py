@@ -703,6 +703,92 @@ def audit(action: str | None = Query(default=None, max_length=60),
 
 
 # ---------------------------------------------------------------------------
+# Geri bildirim (GB-turu) — destek de okur, işaretler, yanıtlar
+# ---------------------------------------------------------------------------
+
+_FeedbackStatus = Literal["new", "in_review", "closed"]
+_FeedbackType = Literal["bug", "suggestion", "other"]
+
+
+class FeedbackPatch(BaseModel):
+    """Durum ve/veya not; ikisi de boşsa 400 (boş yazım iz bırakmasın)."""
+    status: _FeedbackStatus | None = None
+    note: str | None = Field(default=None, max_length=1000)
+
+
+class FeedbackReply(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+
+
+@router.get("/feedback")
+def feedback_list(status: _FeedbackStatus | None = Query(default=None),
+                  type: _FeedbackType | None = Query(default=None),
+                  limit: int = Query(default=50, ge=1, le=100),
+                  cursor: str | None = Query(default=None, max_length=512),
+                  user: AuthUser = Depends(require_admin)):
+    """Geri bildirim listesi: eşitlik süzgeçleri, createdAt DESC, cursor."""
+    try:
+        sonuc = admin_service.feedback_list(status=status, type_=type,
+                                            limit=limit, cursor=cursor)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    return {"status": "ok", **sonuc}
+
+
+@router.get("/feedback/{fid}")
+def feedback_detail(fid: str, user: AuthUser = Depends(require_admin)):
+    try:
+        kayit = admin_service.feedback_get(fid)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    if kayit is None:
+        raise HTTPException(status_code=404, detail="Geri bildirim bulunamadı.")
+    return {"status": "ok", "item": kayit}
+
+
+@router.patch("/feedback/{fid}")
+def feedback_patch(fid: str, req: FeedbackPatch,
+                   user: AuthUser = Depends(require_admin)):
+    """Durum değişikliği ve/veya iç not; iz `feedback.update`."""
+    not_metni = (req.note or "").strip()
+    if not req.status and not not_metni:
+        raise HTTPException(status_code=400,
+                            detail="Durum ya da not gerekli.")
+    try:
+        kayit = admin_service.feedback_update(
+            fid, status=req.status, note=not_metni or None,
+            admin_uid=user.uid, admin_email=user.email)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    if kayit is None:
+        raise HTTPException(status_code=404, detail="Geri bildirim bulunamadı.")
+    _audit(user, "feedback.update", target_uid=kayit.get("uid"),
+           params={"fid": fid, "status": req.status,
+                   "hasNote": bool(not_metni)})
+    return {"status": "ok", "item": kayit}
+
+
+@router.post("/feedback/{fid}/reply")
+def feedback_reply(fid: str, req: FeedbackReply,
+                   user: AuthUser = Depends(require_admin)):
+    """Kullanıcıya yanıt: doküman `reply` + push (jeton varsa). Sessiz
+    saat uygulanmaz — doğrudan insan yanıtı. İz `feedback.reply`."""
+    try:
+        sonuc = admin_service.feedback_reply(
+            fid, text=req.text, admin_uid=user.uid, admin_email=user.email)
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+    if sonuc is None:
+        raise HTTPException(status_code=404, detail="Geri bildirim bulunamadı.")
+    _audit(user, "feedback.reply",
+           target_uid=(sonuc.get("item") or {}).get("uid"),
+           params={"fid": fid, "pushSent": sonuc["pushSent"]})
+    return {"status": "ok", **sonuc}
+
+
+# ---------------------------------------------------------------------------
 # Sistem + duyuru (AD10)
 # ---------------------------------------------------------------------------
 

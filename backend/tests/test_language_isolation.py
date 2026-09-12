@@ -446,6 +446,8 @@ PUSH_SABLONLARI = [
     "PUSH_INVITE_ACCEPTED_TITLE", "PUSH_INVITE_ACCEPTED_BODY",
     # AD-turu: panelin "kendime test gönder" sabit metni.
     "PUSH_TEST_TITLE", "PUSH_TEST_BODY",
+    # GB-turu: panelden geri bildirim yanıtı pushu.
+    "PUSH_FEEDBACK_REPLY_TITLE",
     # PBZ-turu: "dünkü cümleyi yineleme" bloğu prompt'a giriyor; tek dilde
     # kalsaydı Ingilizce prompt Turkce talimat tasirdi.
     "SIGNALS_AVOID_BLOCK",

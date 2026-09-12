@@ -2093,6 +2093,63 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSectionPrefs => 'Preferences';
 
   @override
+  String get feedbackTitle => 'Feedback';
+
+  @override
+  String get feedbackLead =>
+      'A bug, an idea or something on your mind — it reaches us directly.';
+
+  @override
+  String get feedbackTypeBug => 'Bug 🐞';
+
+  @override
+  String get feedbackTypeSuggestion => 'Idea 💡';
+
+  @override
+  String get feedbackTypeOther => 'Other ✨';
+
+  @override
+  String get feedbackScreenLabel => 'Which screen?';
+
+  @override
+  String get feedbackScreenChat => 'Chat';
+
+  @override
+  String get feedbackScreenOracle => 'Oracle';
+
+  @override
+  String get feedbackScreenOther => 'Other';
+
+  @override
+  String get feedbackHint =>
+      'What happened, what did you expect? Short is fine.';
+
+  @override
+  String get feedbackPrivacy =>
+      'Version, device and language are added automatically; no personal data is sent.';
+
+  @override
+  String get feedbackSend => 'Send';
+
+  @override
+  String get feedbackThanksTitle => 'Thank you — we\'re reading.';
+
+  @override
+  String get feedbackThanksBody => 'You\'ll get our reply as a notification.';
+
+  @override
+  String get feedbackClose => 'Close';
+
+  @override
+  String get feedbackTooShort => 'Write at least 10 characters.';
+
+  @override
+  String get profileFeedback => 'Send feedback';
+
+  @override
+  String get feedbackReportThisScreen => 'Report this screen';
+
+  @override
   String askAboutFriend(String name) {
     return 'Ask Rytho about $name';
   }

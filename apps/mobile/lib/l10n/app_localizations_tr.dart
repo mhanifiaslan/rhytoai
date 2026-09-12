@@ -2090,6 +2090,62 @@ class AppLocalizationsTr extends AppLocalizations {
   String get profileSectionPrefs => 'Tercihler';
 
   @override
+  String get feedbackTitle => 'Geri bildirim';
+
+  @override
+  String get feedbackLead =>
+      'Hata, öneri ya da aklına takılan bir şey — doğrudan bize ulaşır.';
+
+  @override
+  String get feedbackTypeBug => 'Hata 🐞';
+
+  @override
+  String get feedbackTypeSuggestion => 'Öneri 💡';
+
+  @override
+  String get feedbackTypeOther => 'Diğer ✨';
+
+  @override
+  String get feedbackScreenLabel => 'Hangi ekran?';
+
+  @override
+  String get feedbackScreenChat => 'Sohbet';
+
+  @override
+  String get feedbackScreenOracle => 'Kehanet';
+
+  @override
+  String get feedbackScreenOther => 'Diğer';
+
+  @override
+  String get feedbackHint => 'Ne oldu, ne bekliyordun? Kısa da olur.';
+
+  @override
+  String get feedbackPrivacy =>
+      'Sürüm, cihaz ve dil bilgisi otomatik eklenir; kişisel verin gönderilmez.';
+
+  @override
+  String get feedbackSend => 'Gönder';
+
+  @override
+  String get feedbackThanksTitle => 'Teşekkürler — okuyoruz.';
+
+  @override
+  String get feedbackThanksBody => 'Yanıtımızı bildirim olarak alırsın.';
+
+  @override
+  String get feedbackClose => 'Kapat';
+
+  @override
+  String get feedbackTooShort => 'En az 10 karakter yaz.';
+
+  @override
+  String get profileFeedback => 'Geri bildirim gönder';
+
+  @override
+  String get feedbackReportThisScreen => 'Bu ekranı bildir';
+
+  @override
   String askAboutFriend(String name) {
     return '$name hakkında Rytho\'ya sor';
   }

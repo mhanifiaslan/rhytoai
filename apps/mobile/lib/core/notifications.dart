@@ -378,6 +378,7 @@ int tabForNotification(Map<String, dynamic> data) {
     case 'daily':
     case 'checkin': // sohbet kabuğun üstüne açılır; zemin Gökyüzü kalır
     case 'streak':
+    case 'feedback': // GB-turu: yanıt bildirimi yalnız uygulamayı açar
     default:
       return 0; // Gökyüzü
   }
@@ -495,6 +496,12 @@ NotificationRoute resolveNotificationRoute(Map<String, String> data) {
           // src'siz yükler de buraya düşer.
           return const NotificationRoute(NotificationRouteKind.circleTab);
       }
+    case 'feedback':
+      // GB-turu: geri bildirime verilen yanıt. Hedef ekran yok — bildirim
+      // gövdesi yanıtın kendisi; dokunuş yalnız uygulamayı açar. Açıkça
+      // yazılı olması bilinçli: bilinmeyen-tür yoluna DÜŞMEZ, yarın o yol
+      // günlük kaydı/uyarı alırsa bu tür ona karışmaz.
+      return const NotificationRoute(NotificationRouteKind.homeTab);
     default:
       return const NotificationRoute(NotificationRouteKind.homeTab);
   }

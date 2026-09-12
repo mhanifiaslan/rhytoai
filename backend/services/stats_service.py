@@ -60,7 +60,7 @@ _NOTIFY_TYPES = ("daily", "midday", "checkin", "streak")
 #: Geçmiş gün merge'inde ezilen üst alanlar — kullanıcı taraması
 #: (`users`, `subs`, …) DOKUNULMAZ.
 _EVENT_SECTIONS = ("date", "eventsRecomputedAt", "revenue", "tokens", "ai",
-                   "notify")
+                   "notify", "feedback")
 
 _recompute_lock = threading.Lock()
 
@@ -524,6 +524,21 @@ def _day_events(client, tarih: dt.date,
     except Exception as exc:
         logger.warning("notifyRuns okunamadı: %s", exc)
 
+    # ---- Geri bildirim (GB-turu): o gün yazılan kayıt, türe göre ----
+    geri_bildirim: dict[str, Any] = {"new": 0, "byType": {}}
+    try:
+        for anlik in (client.collection("feedback")
+                      .where(filter=FieldFilter("createdAt", ">=", gun_bas))
+                      .where(filter=FieldFilter("createdAt", "<", gun_son))
+                      .stream()):
+            veri = anlik.to_dict() or {}
+            tur = str(veri.get("type") or "other")
+            geri_bildirim["new"] += 1
+            geri_bildirim["byType"][tur] = (
+                geri_bildirim["byType"].get(tur, 0) + 1)
+    except Exception as exc:
+        logger.warning("feedback sorgusu düştü: %s", exc)
+
     bolumler = {
         "revenue": {
             "grossToday": round(brut, 2),
@@ -553,6 +568,7 @@ def _day_events(client, tarih: dt.date,
             "byModel": model_kirilim,
         },
         "notify": bildirim,
+        "feedback": geri_bildirim,
     }
 
     # ---- adminEconomics: top-N kullanıcı + gerisi tek kovada ----

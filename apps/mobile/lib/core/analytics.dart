@@ -87,6 +87,14 @@ class Analytics {
   /// Kullanıcı hesabını sildi. Kayıp analizinde en anlamlı sinyal.
   static void accountDeleted() => _log('account_deleted');
 
+  // --- Geri bildirim (GB-turu) ---
+
+  /// Uygulama içi geri bildirim gönderildi — type: bug | suggestion | other.
+  /// Metin TAŞINMAZ: serbest metin kişisel veri içerebilir; ölçülen şey
+  /// kanalın kullanılıp kullanılmadığı ve türlerin dağılımı.
+  static void feedbackSent(String type) =>
+      _log('feedback_sent', {'feedback_type': type});
+
   // --- Zorunlu güncelleme ---
 
   /// Güncelleme ekranı açıldı (PBZ). Eşik yükseltildiğinde kaç kullanıcının

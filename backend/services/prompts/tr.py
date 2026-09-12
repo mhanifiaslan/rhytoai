@@ -419,6 +419,9 @@ PUSH_INVITE_ACCEPTED_BODY = "Artık arkadaşsınız — aranızdaki göğe bakı
 PUSH_TEST_TITLE = "🛠️ Rytho test bildirimi"
 PUSH_TEST_BODY = "Bu bir test — bildirim kanalın çalışıyor."
 
+#: Panelden geri bildirime yanıt (GB-turu): gövde yanıt metninin kendisi.
+PUSH_FEEDBACK_REPLY_TITLE = "💬 Rytho ekibinden yanıt"
+
 PUSH_FRIEND_TITLE = "{name} seni dürttü"
 #: Tepki etiketleri friend_detail_screen ile aynı kümeden gelir.
 PUSH_FRIEND_BODY = "{emoji} {label}"

@@ -781,6 +781,13 @@ def attention() -> list[dict[str, Any]]:
         logger.warning("attention/disabled: %s", exc)
 
     try:
+        n = _count(client.collection("feedback")
+                   .where(filter=FieldFilter("status", "==", "new")))
+        ekle("newFeedback", n, "#/geribildirim?status=new", "bilgi")
+    except Exception as exc:
+        logger.warning("attention/feedback: %s", exc)
+
+    try:
         son = gunler[0] if gunler else None
         if son is None:
             gunler = stats_service.read_days(1)
@@ -865,6 +872,151 @@ def audit_list(*, action: str | None = None, admin_uid: str | None = None,
         son = kayitlar[-1]
         sonraki = cursor_mod.encode([son.get("at"), son["id"]])
     return {"entries": kayitlar, "nextCursor": sonraki}
+
+
+# ---------------------------------------------------------------------------
+# Geri bildirim (GB-turu) — okuma/işaretleme admin (destek dahil)
+# ---------------------------------------------------------------------------
+
+#: Liste satırına giren alanlar; `notes` listeye girmez (`noteCount`a
+#: iner), detay tam dokümanı döner.
+_FEEDBACK_LIST_FIELDS = ("uid", "type", "text", "screen", "appBuild",
+                         "platform", "language", "createdAt", "status",
+                         "reply", "updatedAt")
+
+
+def _feedback_satir(anlik, adlar: dict[str, dict[str, Any]]) -> dict[str, Any]:
+    veri = anlik.to_dict() or {}
+    satir = {alan: veri.get(alan) for alan in _FEEDBACK_LIST_FIELDS}
+    satir["id"] = anlik.id
+    satir["noteCount"] = len(veri.get("notes") or [])
+    satir["user"] = adlar.get(str(veri.get("uid") or "")) or {
+        "displayName": None, "email": None}
+    return satir
+
+
+def feedback_list(status: str | None = None, type_: str | None = None,
+                  limit: int = 50, cursor: str | None = None) -> dict[str, Any]:
+    """Geri bildirim sayfası: `status ==` / `type ==` + `createdAt DESC,
+    __name__ DESC` + imleç `[createdAt, id]`. Bozuk imleç ValueError;
+    sorgu düşerse (indeks yok) RuntimeError — sessiz boş liste yanıltır.
+    """
+    from google.cloud.firestore_v1.base_query import FieldFilter
+
+    limit = max(1, min(int(limit or 50), LIST_LIMIT_MAX))
+    client = _client()
+    sorgu = client.collection("feedback")
+    if status:
+        sorgu = sorgu.where(filter=FieldFilter("status", "==", status))
+    if type_:
+        sorgu = sorgu.where(filter=FieldFilter("type", "==", type_))
+    sorgu = (sorgu.order_by("createdAt", direction="DESCENDING")
+             .order_by("__name__", direction="DESCENDING"))
+    if cursor:
+        degerler = cursor_codec.decode(cursor)  # ValueError yukarı
+        if len(degerler) != 2 or not isinstance(degerler[0], dt.datetime):
+            raise ValueError("Geçersiz imleç.")
+        sorgu = sorgu.start_after(degerler)
+    try:
+        anliklar, sonraki = _sayfa(
+            sorgu.limit(limit + 1), limit,
+            lambda a: [(a.to_dict() or {}).get("createdAt"), a.id])
+    except Exception as exc:
+        logger.warning("feedback okunamadı: %s", exc)
+        raise RuntimeError(f"Geri bildirim okunamadı: {exc}") from exc
+    uidler = sorted({str((a.to_dict() or {}).get("uid") or "")
+                     for a in anliklar} - {""})
+    adlar = _kullanici_adlari(client, uidler)
+    return {"items": [_feedback_satir(a, adlar) for a in anliklar],
+            "nextCursor": sonraki}
+
+
+def feedback_get(fid: str) -> dict[str, Any] | None:
+    """Tam doküman (+ `id`, `noteCount`, `user`); yoksa None."""
+    client = _client()
+    anlik = client.collection("feedback").document(fid).get()
+    if not getattr(anlik, "exists", False):
+        return None
+    veri = anlik.to_dict() or {}
+    adlar = _kullanici_adlari(client, [str(veri.get("uid") or "")])
+    satir = _feedback_satir(anlik, adlar)
+    satir["notes"] = list(veri.get("notes") or [])
+    return satir
+
+
+def feedback_update(fid: str, *, status: str | None = None,
+                    note: str | None = None, admin_uid: str,
+                    admin_email: str | None = None) -> dict[str, Any] | None:
+    """Durumu değiştirir ve/veya not ekler; yoksa None. Not `{at,
+    adminUid, adminEmail, text}` — notlar dokümanın içinde liste (panel
+    detayda okur; ayrı alt koleksiyon gereksiz)."""
+    client = _client()
+    ref = client.collection("feedback").document(fid)
+    anlik = ref.get()
+    if not getattr(anlik, "exists", False):
+        return None
+    veri = anlik.to_dict() or {}
+    simdi = dt.datetime.now(dt.timezone.utc)
+    degisim: dict[str, Any] = {"updatedAt": simdi}
+    if status:
+        degisim["status"] = status
+    metin = (note or "").strip()
+    if metin:
+        degisim["notes"] = list(veri.get("notes") or []) + [
+            {"at": simdi, "adminUid": admin_uid, "adminEmail": admin_email,
+             "text": metin}]
+    ref.set(degisim, merge=True)
+    return feedback_get(fid)
+
+
+def feedback_reply(fid: str, *, text: str, admin_uid: str,
+                   admin_email: str | None = None) -> dict[str, Any] | None:
+    """Yanıtı yazar ve kullanıcının GÜNCEL jetonuna push gönderir.
+
+    Doğrudan insan yanıtı: sessiz saat / tercih kapısı UYGULANMAZ —
+    kullanıcı bunu kendisi istedi. Jeton yoksa yanıt yine kaydedilir,
+    `pushSent` False (kullanıcı uygulamada görür). Durum `new` ise
+    `in_review`e geçer; `closed` dokunulmaz. Yoksa None.
+    """
+    from services import notification_service, prompts, push_service
+
+    client = _client()
+    ref = client.collection("feedback").document(fid)
+    anlik = ref.get()
+    if not getattr(anlik, "exists", False):
+        return None
+    veri = anlik.to_dict() or {}
+    uid = str(veri.get("uid") or "")
+    metin = text.strip()
+
+    profil_anlik = client.collection("users").document(uid).get()
+    profil = (profil_anlik.to_dict() or {}) if getattr(
+        profil_anlik, "exists", False) else {}
+    token = profil.get("fcmToken")
+    gonderildi = False
+    if token:
+        lang = notification_service.profile_language(profil)
+        govde = metin
+        if len(govde) > notification_service.MAX_PUSH_BODY:
+            govde = govde[:notification_service.MAX_PUSH_BODY - 1].rstrip() + "\u2026"
+        try:
+            sonuc = push_service.send([push_service.Message(
+                uid=uid, token=token,
+                title=prompts.get(lang).PUSH_FEEDBACK_REPLY_TITLE,
+                body=govde, data={"type": "feedback", "fid": fid})])
+            gonderildi = sonuc.sent > 0
+        except Exception as exc:
+            logger.warning("Geri bildirim pushu düştü (%s): %s", fid, exc)
+
+    simdi = dt.datetime.now(dt.timezone.utc)
+    yanit = {"text": metin, "at": simdi, "adminUid": admin_uid,
+             "adminEmail": admin_email, "pushSent": gonderildi}
+    degisim: dict[str, Any] = {"reply": yanit, "updatedAt": simdi}
+    if veri.get("status") == "new":
+        degisim["status"] = "in_review"
+    ref.set(degisim, merge=True)
+    return {"reply": yanit, "pushSent": gonderildi,
+            "item": feedback_get(fid)}
 
 
 # ---------------------------------------------------------------------------
@@ -995,6 +1147,12 @@ def _index_probes(client) -> list[dict[str, Any]]:
          lambda: _es("users", "platform", "android", "lastSeenDaily")),
         ("users(authDisabled, createdAt DESC)",
          lambda: _es("users", "authDisabled", True, "createdAt")),
+        ("feedback(status, createdAt DESC)",
+         lambda: _es("feedback", "status", "new", "createdAt")),
+        ("feedback(type, createdAt DESC)",
+         lambda: _es("feedback", "type", "bug", "createdAt")),
+        ("feedback(uid, createdAt DESC)",
+         lambda: _es("feedback", "uid", "x", "createdAt")),
     ]
     sonuc: list[dict[str, Any]] = []
     for ad, kur in adaylar:

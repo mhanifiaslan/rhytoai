@@ -3776,6 +3776,114 @@ abstract class AppLocalizations {
   /// **'Tercihler'**
   String get profileSectionPrefs;
 
+  /// No description provided for @feedbackTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri bildirim'**
+  String get feedbackTitle;
+
+  /// No description provided for @feedbackLead.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hata, öneri ya da aklına takılan bir şey — doğrudan bize ulaşır.'**
+  String get feedbackLead;
+
+  /// No description provided for @feedbackTypeBug.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hata 🐞'**
+  String get feedbackTypeBug;
+
+  /// No description provided for @feedbackTypeSuggestion.
+  ///
+  /// In tr, this message translates to:
+  /// **'Öneri 💡'**
+  String get feedbackTypeSuggestion;
+
+  /// No description provided for @feedbackTypeOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer ✨'**
+  String get feedbackTypeOther;
+
+  /// No description provided for @feedbackScreenLabel.
+  ///
+  /// In tr, this message translates to:
+  /// **'Hangi ekran?'**
+  String get feedbackScreenLabel;
+
+  /// No description provided for @feedbackScreenChat.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sohbet'**
+  String get feedbackScreenChat;
+
+  /// No description provided for @feedbackScreenOracle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kehanet'**
+  String get feedbackScreenOracle;
+
+  /// No description provided for @feedbackScreenOther.
+  ///
+  /// In tr, this message translates to:
+  /// **'Diğer'**
+  String get feedbackScreenOther;
+
+  /// No description provided for @feedbackHint.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ne oldu, ne bekliyordun? Kısa da olur.'**
+  String get feedbackHint;
+
+  /// No description provided for @feedbackPrivacy.
+  ///
+  /// In tr, this message translates to:
+  /// **'Sürüm, cihaz ve dil bilgisi otomatik eklenir; kişisel verin gönderilmez.'**
+  String get feedbackPrivacy;
+
+  /// No description provided for @feedbackSend.
+  ///
+  /// In tr, this message translates to:
+  /// **'Gönder'**
+  String get feedbackSend;
+
+  /// No description provided for @feedbackThanksTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Teşekkürler — okuyoruz.'**
+  String get feedbackThanksTitle;
+
+  /// No description provided for @feedbackThanksBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'Yanıtımızı bildirim olarak alırsın.'**
+  String get feedbackThanksBody;
+
+  /// No description provided for @feedbackClose.
+  ///
+  /// In tr, this message translates to:
+  /// **'Kapat'**
+  String get feedbackClose;
+
+  /// No description provided for @feedbackTooShort.
+  ///
+  /// In tr, this message translates to:
+  /// **'En az 10 karakter yaz.'**
+  String get feedbackTooShort;
+
+  /// No description provided for @profileFeedback.
+  ///
+  /// In tr, this message translates to:
+  /// **'Geri bildirim gönder'**
+  String get profileFeedback;
+
+  /// No description provided for @feedbackReportThisScreen.
+  ///
+  /// In tr, this message translates to:
+  /// **'Bu ekranı bildir'**
+  String get feedbackReportThisScreen;
+
   /// No description provided for @askAboutFriend.
   ///
   /// In tr, this message translates to:

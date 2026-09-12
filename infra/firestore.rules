@@ -327,5 +327,13 @@ service cloud.firestore {
     match /phoneAttempts/{attemptId} {
       allow read, write: if false;
     }
+
+    // Uygulama içi geri bildirim (GB-turu): kullanıcı POST
+    // /api/v1/account/feedback ile yazar, panel admin uçlarından okur ve
+    // yanıtlar. İstemciye tamamen kapalı — bağlam (build/platform/dil)
+    // ve günlük sınır yalnız sunucuda güvenilir.
+    match /feedback/{feedbackId} {
+      allow read, write: if false;
+    }
   }
 }

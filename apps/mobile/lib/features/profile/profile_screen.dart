@@ -8,6 +8,7 @@ import '../../widgets/common.dart';
 import '../../widgets/glass.dart' show SkeletonPanel;
 import 'account_screen.dart';
 import 'birth_record_screen.dart';
+import 'feedback_screen.dart';
 import 'avatar_editor.dart';
 import 'profile_sections.dart';
 import 'residence_dialog.dart';
@@ -294,6 +295,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               icon: Icons.tune_rounded,
               title: l10n.languageAndSounds,
               onTap: () => _ac(const AppearanceSettingsScreen()),
+            ),
+            const Divider(height: 1, indent: RythoSpace.lg),
+            // GB-turu: uygulama içi geri bildirim kanalı. Mağaza yorumu
+            // ve e-posta dışında, kullanıcının bize tek dokunuşla
+            // ulaşabildiği yer burası; yanıt bildirim olarak döner.
+            SettingsRow(
+              icon: Icons.forum_outlined,
+              title: l10n.profileFeedback,
+              onTap: () => _ac(const FeedbackScreen()),
             ),
           ]),
         ),

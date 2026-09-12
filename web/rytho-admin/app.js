@@ -31,6 +31,7 @@
     { ad: 'gelir', baslik: 'Gelir & Abonelik', ikon: 'gelir' },
     { ad: 'kullanim', baslik: 'Kullanım & AI', ikon: 'ai' },
     { ad: 'bildirimler', baslik: 'Bildirimler', ikon: 'bildirim' },
+    { ad: 'geribildirim', baslik: 'Geri bildirimler', ikon: 'geribildirim' },
     { ad: 'ortaklar', baslik: 'Ortaklar', ikon: 'ortaklar' },
     { ad: 'sistem', baslik: 'Sistem', ikon: 'sistem' }
   ];
@@ -592,7 +593,8 @@
     billingIssues7d: { etiket: 'Fatura sorunu (7 gün)', alt: 'BILLING_ISSUE olayları · üretim', href: '#/gelir', tur: 'uyari' },
     trialsExpiring3d: { etiket: 'Süresi dolan deneme (3 gün)', alt: 'Dönüşüm fırsatı', href: '#/kullanicilar?plan=trial', tur: 'bilgi' },
     belowMin: { etiket: 'Eşik altı istemci', alt: 'Zorunlu güncelleme eşiğinin altında', href: '#/sistem', tur: 'bilgi' },
-    disabledTotal: { etiket: 'Devre dışı hesap', alt: 'authDisabled', href: '#/kullanicilar?disabled=true', tur: 'bilgi' }
+    disabledTotal: { etiket: 'Devre dışı hesap', alt: 'authDisabled', href: '#/kullanicilar?disabled=true', tur: 'bilgi' },
+    newFeedback: { etiket: 'Yeni geri bildirim', alt: 'Uygulama içi · yanıt bekliyor', href: '#/geribildirim?status=new', tur: 'bilgi' }
   };
 
   RY.dikkat = { veri: null, maddeler: [] };

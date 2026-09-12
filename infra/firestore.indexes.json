@@ -1,5 +1,5 @@
 {
-  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil. --- W5 ekleri: 'private' composite indeksi admin istatistiğinin aktif abone sorgusu için (collection-group, active==true && expiresAt>now; 'active' alanı private altında yalnız subscription dokümanında var, o yüzden yalnız onlar eşleşir). 'friends.status' override'ı kabul edilmiş arkadaşlık sayımı için. --- AP-turu ekleri: 'usageEvents' composite'i Kullanıcı 360'ın uid+at sorgusu için; 'ledger.at' override'ı adminStats'ın günlük jeton-akışı collection-group sorgusu için (ledger = users/*/private/wallet/ledger). --- AD-turu (panel v3) ekleri: revenueEvents (uid,at) Kullanıcı 360 zaman çizelgesi, (environment,at) ve (environment,eventType,at) gelir olayları sayfası; phoneAttempts (uid,at) 360 SMS teşhisi; adminAudit (action|adminUid|targetUid, at) denetim izi süzgeçleri; users (plan|language|platform|authDisabled × createdAt|lastSeenDaily) süzgeç modu + (plan, streakCount); private CG (isTrial, expiresAt) dikkat listesinin '3 gün içinde biten deneme' sayımı. Tek alan indeksleri (arama aynası öneki, appBuild aralığı) otomatik.",
+  "_comment": "Sohbet arşivi temizliği (R4): collection-group 'conversations' üzerinde expireAt taraması — POST /api/v1/maintenance/cleanup her gün süresi geçmiş konuları bulur. Tek alanlık collection-group kapsamı fieldOverrides ile açılır; composite indeks gerekmez. posts/chats indeksleri v1'de kaldırılmıştı (bkz. firestore.rules): DM ve gönderi akışı yok — buradaki 'conversations' kullanıcı-AI sohbetidir, kullanıcılar arası değil. --- W5 ekleri: 'private' composite indeksi admin istatistiğinin aktif abone sorgusu için (collection-group, active==true && expiresAt>now; 'active' alanı private altında yalnız subscription dokümanında var, o yüzden yalnız onlar eşleşir). 'friends.status' override'ı kabul edilmiş arkadaşlık sayımı için. --- AP-turu ekleri: 'usageEvents' composite'i Kullanıcı 360'ın uid+at sorgusu için; 'ledger.at' override'ı adminStats'ın günlük jeton-akışı collection-group sorgusu için (ledger = users/*/private/wallet/ledger). --- AD-turu (panel v3) ekleri: revenueEvents (uid,at) Kullanıcı 360 zaman çizelgesi, (environment,at) ve (environment,eventType,at) gelir olayları sayfası; phoneAttempts (uid,at) 360 SMS teşhisi; adminAudit (action|adminUid|targetUid, at) denetim izi süzgeçleri; users (plan|language|platform|authDisabled × createdAt|lastSeenDaily) süzgeç modu + (plan, streakCount); private CG (isTrial, expiresAt) dikkat listesinin '3 gün içinde biten deneme' sayımı. Tek alan indeksleri (arama aynası öneki, appBuild aralığı) otomatik. --- GB-turu: feedback (status|type|uid, createdAt DESC) panel geri bildirim listesi süzgeçleri + kullanıcı başına günlük sınır sayımı.",
   "indexes": [
     {
       "collectionGroup": "private",
@@ -268,6 +268,48 @@
         {
           "fieldPath": "expiresAt",
           "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "feedback",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "feedback",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "feedback",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
         }
       ]
     }

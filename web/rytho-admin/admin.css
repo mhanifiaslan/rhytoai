@@ -690,3 +690,17 @@ table.tablo { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 /* Marj hücresi: işaret rengi (renk-* lejant noktası için, arka plan). */
 .metin-madder { color: var(--madder); }
 .metin-celadon { color: var(--celadon); }
+/* Geri bildirimler (geribildirim.js): tür tonları + ayrıntı paneli. */
+.rozet-madder { background: var(--madder-zemin); color: var(--madder); }
+.rozet-lilac { background: var(--lilac-zemin); color: var(--lilac); }
+.gb-metin { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.gb-kisa { display: inline-block; max-width: 36ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: bottom; }
+.gb-kisi { display: flex; flex-direction: column; min-width: 0; color: var(--parchment); font-weight: 600; text-decoration: none; }
+.gb-kisi:hover { color: var(--lilac); }
+.gb-kisi .mono { font-size: 12px; font-weight: 400; color: var(--parchment-mid); }
+.gb-kimlik { display: flex; align-items: center; gap: 12px; }
+.gb-kim { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.gb-kim .mono { font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; }
+.gb-yanit { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; border-radius: var(--r-md); background: var(--yuzey-2); }
+.gb-yanit-bas { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.gb-not { white-space: normal; }
