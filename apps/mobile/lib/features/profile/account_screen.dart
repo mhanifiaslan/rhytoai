@@ -190,7 +190,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         style: RythoText.body(12.5,
                             color: RythoColors.madder)),
                   ),
-                  TextButton(
+                  // Düğme esnemiyordu: soldaki uyarı `Expanded` içinde
+                  // sıfıra inse bile "Tekrar gönder" + iç dolgu dar
+                  // ekranda satırı taşırıyordu.
+                  Flexible(
+                      child: TextButton(
                     onPressed: _dogrulamaGonderildi
                         ? null
                         : () async {
@@ -207,7 +211,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                           },
                     child: Text(l10n.emailVerifyResend,
                         style: RythoType.button),
-                  ),
+                  )),
                 ]),
               ],
             ],
@@ -229,16 +233,21 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         : RythoType.bodyDim,
                   ),
                 ),
-                TextButton(
-                  onPressed: () => Navigator.of(context)
-                      .push(MaterialPageRoute(
-                          builder: (_) => const PhoneVerifyScreen()))
-                      .then((_) => setState(() {})),
-                  child: Text(
-                      numara != null
-                          ? l10n.phoneChangeAction
-                          : l10n.phoneVerifyAction,
-                      style: RythoType.button),
+                // Düğme esnemiyordu: soldaki numara `Expanded` içinde
+                // sıfıra inse bile "Numarayı değiştir" dar ekranda satırı
+                // taşırıyordu.
+                Flexible(
+                  child: TextButton(
+                    onPressed: () => Navigator.of(context)
+                        .push(MaterialPageRoute(
+                            builder: (_) => const PhoneVerifyScreen()))
+                        .then((_) => setState(() {})),
+                    child: Text(
+                        numara != null
+                            ? l10n.phoneChangeAction
+                            : l10n.phoneVerifyAction,
+                        style: RythoType.button),
+                  ),
                 ),
               ]);
             }),

@@ -483,22 +483,28 @@ class _KarsilamaAdimi extends StatelessWidget {
                       style: RythoText.body(13,
                           color: RythoColors.parchment)),
                 ),
-                Row(children: [
-                  TextButton(
-                    onPressed: () => _ac(context, l10n.termsOfUse,
-                        kTermsOfUseTr, kTermsOfUseEn),
-                    child: Text(l10n.termsOfUse,
-                        style: RythoText.body(12,
-                            color: RythoColors.lilac)),
-                  ),
-                  TextButton(
-                    onPressed: () => _ac(context, l10n.privacyPolicy,
-                        kPrivacyPolicyTr, kPrivacyPolicyEn),
-                    child: Text(l10n.privacyPolicy,
-                        style: RythoText.body(12,
-                            color: RythoColors.lilac)),
-                  ),
-                ]),
+                // İki yasal bağlantı esnemeyen bir `Row`daydı: "Kullanım
+                // Şartları" + "Gizlilik Politikası" dar ekranda tek satıra
+                // sığmıyor, ikincisi ekran dışına taşıyordu. `Wrap`
+                // sığmayanı alt satıra indirir.
+                Wrap(
+                  children: [
+                    TextButton(
+                      onPressed: () => _ac(context, l10n.termsOfUse,
+                          kTermsOfUseTr, kTermsOfUseEn),
+                      child: Text(l10n.termsOfUse,
+                          style: RythoText.body(12,
+                              color: RythoColors.lilac)),
+                    ),
+                    TextButton(
+                      onPressed: () => _ac(context, l10n.privacyPolicy,
+                          kPrivacyPolicyTr, kPrivacyPolicyEn),
+                      child: Text(l10n.privacyPolicy,
+                          style: RythoText.body(12,
+                              color: RythoColors.lilac)),
+                    ),
+                  ],
+                ),
               ],
               ),
             ),
@@ -602,12 +608,26 @@ class _SecimSatiri extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(children: [
-          Text(label,
-              style:
-                  RythoText.label(12, color: RythoColors.parchmentDim)),
-          const Spacer(),
-          Text(value,
-              style: RythoText.mono(15, color: RythoColors.parchment)),
+          // Etiket + değer `Row` + `Spacer` ile esnemiyordu: uzun etiket
+          // ("Doğum yeri") + uzun değer ("İstanbul, Türkiye") dar ekranda
+          // kalemi dışarı itiyordu. `Expanded` içindeki `Wrap` sığdığında
+          // eski görünümü verir (etiket solda, değer sağda), sığmadığında
+          // değeri alt satıra indirir; kalem satırda kalır.
+          Expanded(
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 2,
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.end,
+              children: [
+                Text(label,
+                    style:
+                        RythoText.label(12, color: RythoColors.parchmentDim)),
+                Text(value,
+                    style: RythoText.mono(15, color: RythoColors.parchment)),
+              ],
+            ),
+          ),
           const SizedBox(width: 8),
           const Icon(Icons.edit_outlined,
               size: 15, color: RythoColors.lilac),
@@ -683,8 +703,12 @@ class _TelefonAdimi extends StatelessWidget {
         const Icon(Icons.check_circle_rounded,
             size: 20, color: RythoColors.goldBright),
         const SizedBox(width: 8),
-        Text(l10n.wizardPhoneDone,
-            style: RythoText.body(14, w: FontWeight.w600)),
+        // Onay cümlesi esnemiyordu ("Telefon numaran doğrulandı"); dar
+        // ekranda satırı taşırıyordu. `Expanded` sarmasına izin verir.
+        Expanded(
+          child: Text(l10n.wizardPhoneDone,
+              style: RythoText.body(14, w: FontWeight.w600)),
+        ),
       ]);
     }
     return GoldButton(

@@ -277,8 +277,12 @@ class _AciSatiri extends StatelessWidget {
               style: RythoText.body(13.5),
             ),
           ),
-          Text('${aspect.orb.abs().toStringAsFixed(1)}°',
-              style: RythoText.mono(11, color: RythoColors.lilac)),
+          // Orb değeri esnemiyordu: soldaki açı cümlesi `Expanded` içinde
+          // sıfıra inse bile derece + chevron dar ekranda taşıyordu.
+          Flexible(
+            child: Text('${aspect.orb.abs().toStringAsFixed(1)}°',
+                style: RythoText.mono(11, color: RythoColors.lilac)),
+          ),
           const SizedBox(width: 6),
           const Icon(Icons.chevron_right_rounded,
               size: 16, color: RythoColors.parchmentDim),

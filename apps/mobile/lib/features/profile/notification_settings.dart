@@ -177,15 +177,20 @@ class _QuietHours extends StatelessWidget {
               style: RythoText.body(11.5, color: RythoColors.parchmentDim)),
         ]),
       ),
-      TextButton(
-        onPressed: () => _pick(context),
-        child: Text(
-          prefs.quietDisabled
-              ? l10n.quietHoursOff
-              : l10n.quietHoursRange(
-                  prefs.quietFrom.toString().padLeft(2, '0'),
-                  prefs.quietTo.toString().padLeft(2, '0')),
-          style: RythoText.label(12, color: RythoColors.goldBright),
+      // Düğme esnemiyordu: soldaki açıklama `Expanded` içinde sıfıra inse
+      // bile "22:00 – 08:00" / "Kapalı" + iç dolgu dar ekranda satırı
+      // taşırıyordu.
+      Flexible(
+        child: TextButton(
+          onPressed: () => _pick(context),
+          child: Text(
+            prefs.quietDisabled
+                ? l10n.quietHoursOff
+                : l10n.quietHoursRange(
+                    prefs.quietFrom.toString().padLeft(2, '0'),
+                    prefs.quietTo.toString().padLeft(2, '0')),
+            style: RythoText.label(12, color: RythoColors.goldBright),
+          ),
         ),
       ),
     ]);

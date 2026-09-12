@@ -36,11 +36,31 @@ class SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
           RythoSpace.xl, RythoSpace.lg, RythoSpace.xl, RythoSpace.sm),
-      child: Row(
-        children: [
-          Text(title, style: RythoType.sectionTitle),
-          if (trailing != null) ...[const Spacer(), trailing!],
-        ],
+      // Cihaz bulgusu: dar ekranda (360 dp) ve büyük yazı ölçeğinde uzun
+      // başlık + sağdaki ek bilgi tek satıra sığmıyor, sağ taraf ekran
+      // dışına taşıyordu ("Bugün gökyüzünde senin için ✦ En yak…").
+      // Eski hâli `Row` + `Spacer` idi: iki çocuk da esnemiyordu.
+      //
+      // `Wrap` + `spaceBetween` ikisini de verir: SIĞIYORSA başlık solda,
+      // ek bilgi sağda (tek satır, eski görünüm); SIĞMIYORSA ek bilgi alt
+      // satıra iner ve başlık kendi içinde sarar. Ölçüm kodu gerekmez,
+      // metin kısaltılmaz — kullanıcı cümlenin tamamını okur.
+      //
+      // ⚠️ `Wrap` gevşek kısıtta çocuklarının genişliğine BÜZÜLÜR; o hâlde
+      // `spaceBetween` yayacak boşluk bulamaz ve ek bilgi başlığa yapışır.
+      // `SizedBox(width: infinity)` tam genişliği verir.
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          spacing: RythoSpace.md,
+          runSpacing: RythoSpace.xs,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          children: [
+            Text(title, style: RythoType.sectionTitle),
+            ?trailing,
+          ],
+        ),
       ),
     );
   }
@@ -92,8 +112,13 @@ class ErrorCard extends StatelessWidget {
           ),
           if (onRetry != null || reportable) ...[
             const SizedBox(height: RythoSpace.sm),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            // İki düğme (bildir + tekrar dene) dar ekranda ve büyük yazı
+            // ölçeğinde tek satıra sığmıyordu — 320 dp × 1,3'te 267 px
+            // taşıyordu (bekçi: test/dar_ekran_test.dart). `Wrap` sığdığında
+            // yan yana, sığmadığında alt alta dizer.
+            Wrap(
+              alignment: WrapAlignment.end,
+              spacing: RythoSpace.xs,
               children: [
                 if (reportable)
                   TextButton(
@@ -247,7 +272,15 @@ class SettingsRow extends StatelessWidget {
             ),
             if (value != null) ...[
               const SizedBox(width: RythoSpace.sm),
-              Text(value!, style: RythoType.dataSmall),
+              // Değer (şehir, tarih, dil adı) uzun olabilir ve esnemezse
+              // satırı taşırır; başlık zaten Expanded olduğu için taşma
+              // sessizce sağ kenardan kırpılıyordu.
+              Flexible(
+                child: Text(value!,
+                    textAlign: TextAlign.end,
+                    maxLines: 2,
+                    style: RythoType.dataSmall),
+              ),
             ],
             if (trailing != null)
               trailing!
@@ -274,12 +307,23 @@ class LabelValueRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: RythoType.bodyDim),
-          Text(value, style: RythoType.data),
-        ],
+      // `Row` + `spaceBetween` ile iki esnemeyen metin, uzun etiket/değer
+      // çiftinde satırı taşırıyordu (SectionHeader ile aynı kusur sınıfı).
+      // `Wrap`: sığdığında etiket solda değer sağda — eski görünüm; aksi
+      // hâlde değer alt satıra iner. Hiçbir metin kırpılmaz.
+      // `SizedBox`: Wrap gevşek kısıtta büzülür, spaceBetween işlemez.
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          spacing: RythoSpace.md,
+          runSpacing: 2,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          children: [
+            Text(label, style: RythoType.bodyDim),
+            Text(value, style: RythoType.data),
+          ],
+        ),
       ),
     );
   }

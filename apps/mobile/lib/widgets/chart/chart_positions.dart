@@ -109,14 +109,19 @@ class ChartPositionsTable extends StatelessWidget {
                   ),
                   Expanded(
                       child: Text(p.localName, style: RythoText.body(13))),
-                  Text(
+                  // Derece dizgisi (burç adı + derece + ev + R) uzun ve
+                  // dile bağlı; esnemeyince `Expanded` gezegen adı sıfıra
+                  // inse bile satır taşıyordu. `Flexible` sarmasına izin
+                  // verir — sayı kırpılmaz.
+                  Flexible(
+                      child: Text(
                     '${signDisplayName(l10n, p.signIndex)} '
                     "${p.degreeInSign.floor()}°"
                     "${(((p.degreeInSign - p.degreeInSign.floor()) * 60).round()).toString().padLeft(2, '0')}'"
                     '${p.houseNo != null ? ' · ${p.houseNo}' : ''}'
                     '${p.retrograde ? ' · R' : ''}',
                     style: RythoText.mono(11, color: RythoColors.lilac),
-                  ),
+                  )),
                 ]),
               ),
           ],

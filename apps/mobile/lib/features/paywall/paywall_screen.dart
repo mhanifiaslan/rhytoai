@@ -344,7 +344,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             textAlign: TextAlign.center,
           ),
         ),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        // Yasal bağlantı satırı esnemeyen bir `Row`du: "Kullanım Şartları
+        // · Gizlilik Politikası" dar ekranda tek satıra sığmıyor, sağ uç
+        // kırpılıyordu. `Wrap` sığmayanı ortalı biçimde alt satıra indirir.
+        // ⚠️ `Wrap` gevşek kısıtta büzülür; ortalama için tam genişlik.
+        SizedBox(
+            width: double.infinity,
+            child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
           TextButton(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => LegalPage(
@@ -362,7 +371,7 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
                         Localizations.localeOf(context).languageCode)))),
             child: Text(l10n.privacyPolicy, style: RythoText.label(11)),
           ),
-        ]),
+        ])),
       ]),
     );
   }
@@ -473,7 +482,9 @@ class _PlanTile extends StatelessWidget {
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              Text(title, style: RythoText.display(17)),
+              // Plan adı esnemiyordu; uzun adda (veya rozet varken) satır
+              // taşıyordu. `Flexible` adın sarmasına izin verir.
+              Flexible(child: Text(title, style: RythoText.display(17))),
               if (_isAnnual) ...[
                 const SizedBox(width: 8),
                 Container(

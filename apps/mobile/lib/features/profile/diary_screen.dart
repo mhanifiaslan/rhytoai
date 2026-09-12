@@ -164,36 +164,48 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
               onSubmitted: (_) => _save(),
             ),
             const SizedBox(height: 6),
-            Row(children: [
-              for (final tema in kThemeIcons.keys) ...[
-                Pressable(
-                  onTap: () => setState(
-                      () => _theme = _theme == tema ? null : tema),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: _theme == tema
-                          ? RythoColors.lilac.withValues(alpha: 0.18)
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                          color: _theme == tema
-                              ? RythoColors.lilac
-                              : RythoColors.glassStroke),
+            // Tema çipleri + kaydet düğmesi esnemeyen bir `Row`daydı:
+            // çiplerin sayısı artınca (ve büyük yazı ölçeğinde) kaydet
+            // düğmesi ekran dışına taşıyordu. Dıştaki `Wrap` çip kümesini
+            // solda, düğmeyi sağda tutar; sığmazsa düğme alt satıra iner.
+            // `SizedBox`: Wrap gevşek kısıtta büzülür, `spaceBetween`
+            // yayacak boşluk bulamaz.
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  runSpacing: 6,
+                  children: [
+                    Wrap(spacing: 6, runSpacing: 6, children: [
+                      for (final tema in kThemeIcons.keys)
+                        Pressable(
+                          onTap: () => setState(
+                              () => _theme = _theme == tema ? null : tema),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: _theme == tema
+                                  ? RythoColors.lilac.withValues(alpha: 0.18)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                  color: _theme == tema
+                                      ? RythoColors.lilac
+                                      : RythoColors.glassStroke),
+                            ),
+                            child: Text(kThemeIcons[tema]!,
+                                style: const TextStyle(fontSize: 13)),
+                          ),
+                        ),
+                    ]),
+                    FilledButton(
+                      onPressed: _saving ? null : _save,
+                      child: Text(l10n.diarySave),
                     ),
-                    child: Text(kThemeIcons[tema]!,
-                        style: const TextStyle(fontSize: 13)),
-                  ),
-                ),
-                const SizedBox(width: 6),
-              ],
-              const Spacer(),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                child: Text(l10n.diarySave),
-              ),
-            ]),
+                  ]),
+            ),
           ]),
         ),
         Expanded(

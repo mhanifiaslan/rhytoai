@@ -350,9 +350,18 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                 onChanged: (_) => setState(() => _hata = null),
               ),
               const SizedBox(height: RythoSpace.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
+              // İki kurtarma düğmesi esnemeyen bir `Row`daydı: "Kodu
+              // tekrar gönder (42)" + "Numarayı değiştir" dar ekranda tek
+              // satıra sığmıyor, ikincisi ekran dışına taşıyordu. `Wrap`
+              // sığdığında aynı görünür, sığmadığında alt satıra iner.
+              // `SizedBox`: Wrap gevşek kısıtta büzülür, `spaceBetween`
+              // yayacak boşluk bulamaz.
+              SizedBox(
+                width: double.infinity,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
                   // TEKRAR GÖNDER: forceResendingToken ile, yani AYNI
                   // doğrulamanın tekrarı. "Numarayı değiştir" yolu sıfırdan
                   // yeni doğrulama başlatır ve Firebase'in kötüye kullanım
@@ -384,6 +393,7 @@ class _PhoneVerifyScreenState extends ConsumerState<PhoneVerifyScreen> {
                         style: RythoType.caption),
                   ),
                 ],
+              ),
               ),
               // Kod gelmediğinde kullanıcı ne yapacağını bilsin. Bugünkü
               // canlı olayda kullanıcı 8 dakika bekleyip kaydı bıraktı;

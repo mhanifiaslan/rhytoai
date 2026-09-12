@@ -167,8 +167,10 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 133 | Panel erişilebilirlik ve tasarım QA: yalnız klavye ile tam tur (tablo satırları, sıralama düğmeleri `aria-sort`, sekmeler ←/→, modal Tab döngüsü + Esc + odak dönüşü, grafik ←/→ ipucu); NVDA rota duyurusu ve toast; Windows "animasyonları göster" kapalıyken hareket yok; Lighthouse a11y ≥95; 1440/1280/768/390 yerleşim; `parchment-dim` yalnız ≥12 px; inline `style=` ve çıplak hex grep'i sıfır | ⬜ | panel |
 | 134 | Geri bildirim döngüsü (AD20): uygulamada Profil → Geri bildirim ile hata/öneri/diğer yazılır → panelde #/geribildirim listesinde "Yeni" olarak sürüm · platform · dil ve ekran adıyla görünür (dikkat zilinde `newFeedback`); panelden "Yanıtla" (onay + ≤500 karakter) → telefona push GELİR, panelde "✓ gönderildi" ve durum "İnceleniyor"; durum değişikliği + iç not `adminAudit`'e yazılır (destek hesabıyla da çalışır); aynı hesaptan günlük sınır aşılınca uygulamada açık 429 mesajı ("bugünlük bu kadar") ve panelde fazladan kayıt YOK | ⬜ | 1.15.4+39 + panel |
 
+| 135 | Dar ekran / büyük yazı (MU): telefonun sistem yazı boyutu EN BÜYÜĞE alınır → Gökyüzü'nde "Bugün gökyüzünde senin için" başlığı ve sağındaki "✦ En yakın kesinleşme" bilgisi KIRPILMADAN görünür (sığmazsa ek bilgi alt satıra iner); sinyal kartında tema adı + "… günü netleşiyor" etiketi taşmaz; Profil/Atlas/Abonelik ekranlarında etiket-değer satırları ve düğme satırları ekran dışına çıkmaz; yazı ölçeği %130'da sabitlenir (daha büyüğe çıkmaz) | ⬜ | 1.15.5+40 |
+
 **Kapalı test ÖNCESİ zorunlu koşum listesi:** 1, 6, 17-24, 28, 33, 39,
-29, 100, 101, 109, 110-112 (panel), 113-134. İade + yenileme yalnız
+29, 100, 101, 109, 110-112 (panel), 113-135. İade + yenileme yalnız
 License-testing hesabıyla ölçülebilir (114).
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 

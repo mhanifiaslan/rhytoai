@@ -275,9 +275,22 @@ class _AlanSatiri extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(label, style: RythoType.label),
-            const Spacer(),
-            Text(value, style: RythoText.mono(14)),
+            // Etiket + değer `Row` + `Spacer` ile esnemiyordu: uzun etiket
+            // ("Doğum yeri") + uzun değer ("İstanbul, Türkiye") dar ekranda
+            // kalemi dışarı itiyordu. `Expanded` içindeki `Wrap` sığdığında
+            // eski görünümü verir, sığmadığında değeri alt satıra indirir.
+            Expanded(
+              child: Wrap(
+                spacing: RythoSpace.md,
+                runSpacing: 2,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.end,
+                children: [
+                  Text(label, style: RythoType.label),
+                  Text(value, style: RythoText.mono(14)),
+                ],
+              ),
+            ),
             const SizedBox(width: RythoSpace.sm),
             const Icon(Icons.edit_outlined,
                 size: 15, color: RythoColors.lilac),

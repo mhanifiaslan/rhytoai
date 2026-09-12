@@ -730,13 +730,27 @@ class _LiuYaoTable extends StatelessWidget {
                   style: RythoText.body(11.5,
                       color: RythoColors.parchmentDim)),
             ),
-            if (c['position'] == shi)
-              _tag('shi', RythoColors.goldBright)
-            else if (c['position'] == ying)
-              _tag('ying', RythoColors.lilac),
-            if (c['void'] == true)
-              _tag(l10n.iChingVoidTag, RythoColors.parchmentDim),
-            if (c['clash'] == true) _tag(l10n.iChingClashTag, RythoColors.copper),
+            // Etiketler (shi/ying/boşluk/çatışma) esnemeyen çiplerdi ve üçü
+            // birden çıkabiliyor; soldaki `Expanded` sıfıra inse bile 22+76
+            // px sabit sütunlarla birlikte satır taşıyordu. `Flexible` +
+            // `Wrap`: dar ekranda etiketler alt satıra iner.
+            Flexible(
+              child: Wrap(
+                spacing: 4,
+                runSpacing: 2,
+                alignment: WrapAlignment.end,
+                children: [
+                  if (c['position'] == shi)
+                    _tag('shi', RythoColors.goldBright)
+                  else if (c['position'] == ying)
+                    _tag('ying', RythoColors.lilac),
+                  if (c['void'] == true)
+                    _tag(l10n.iChingVoidTag, RythoColors.parchmentDim),
+                  if (c['clash'] == true)
+                    _tag(l10n.iChingClashTag, RythoColors.copper),
+                ],
+              ),
+            ),
           ]),
         ),
     ]);

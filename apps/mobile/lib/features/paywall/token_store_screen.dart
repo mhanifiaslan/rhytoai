@@ -112,20 +112,27 @@ class _TokenStoreScreenState extends ConsumerState<TokenStoreScreen> {
                       // Satın alma sonrası yoklama bakiyeyi büyütür; büyük
                       // sayı yumuşak geçsin ki "kredi geldi" anı görülsün
                       // (madde 12 — süre RythoMotion'dan).
-                      AnimatedSwitcher(
-                        duration: RythoMotion.base,
-                        transitionBuilder: (child, anim) => FadeTransition(
-                          opacity: anim,
-                          child: ScaleTransition(scale: anim, child: child),
+                      // 34 punto sayı + birim adı esnemiyordu: büyük yazı
+                      // ölçeğinde dört haneli bakiye birimi ekran dışına
+                      // itiyordu. İkisi de `Flexible` — sayı kırpılmaz.
+                      Flexible(
+                        child: AnimatedSwitcher(
+                          duration: RythoMotion.base,
+                          transitionBuilder: (child, anim) => FadeTransition(
+                            opacity: anim,
+                            child: ScaleTransition(scale: anim, child: child),
+                          ),
+                          child: Text('${cuzdan.total}',
+                              key: ValueKey(cuzdan.total),
+                              style: RythoText.display(34)),
                         ),
-                        child: Text('${cuzdan.total}',
-                            key: ValueKey(cuzdan.total),
-                            style: RythoText.display(34)),
                       ),
                       const SizedBox(width: RythoSpace.sm),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 5),
-                        child: Text(l10n.tokenUnit, style: RythoType.bodyDim),
+                      Flexible(
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 5),
+                          child: Text(l10n.tokenUnit, style: RythoType.bodyDim),
+                        ),
                       ),
                     ],
                   ),

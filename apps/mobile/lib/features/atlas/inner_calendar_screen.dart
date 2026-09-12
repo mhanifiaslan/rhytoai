@@ -175,7 +175,12 @@ class _AcikSatir extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(children: [
         Expanded(child: Text(metin, style: RythoText.body(13, color: renk))),
-        Text(ek, style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+        // Sağdaki ek (tarih/derece) esnemiyordu: `Expanded` sıfıra inse
+        // bile uzun ek dar ekranda satırı taşırıyordu.
+        Flexible(
+          child: Text(ek,
+              style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+        ),
       ]),
     );
   }

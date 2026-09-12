@@ -149,7 +149,12 @@ class BaziTab extends ConsumerWidget {
                         width: 64,
                         child: Text(e.key, style: RythoText.body(13))),
                     Expanded(
-                      child: Row(children: [
+                      // Sekiz sabit genişlikli kutu esnemeyen bir `Row`daydı
+                      // (8×17 = 136 px); büyük yazı ölçeğinde soldaki etiket
+                      // ve sağdaki değer büyüyünce kutulara kalan yer
+                      // yetmiyor ve satır taşıyordu. `Wrap` ölçek büyüdüğünde
+                      // kutuları alt satıra indirir.
+                      child: Wrap(children: [
                         // Dağılım B2'den beri gizli kök AĞIRLIKLI (float);
                         // kutu dolgusu yuvarlanmış değeri izler, tam değer
                         // sağda tek ondalıkla durur.
@@ -167,8 +172,10 @@ class BaziTab extends ConsumerWidget {
                           ),
                       ]),
                     ),
-                    Text((e.value as num).toStringAsFixed(1),
-                        style: RythoText.mono(12)),
+                    Flexible(
+                      child: Text((e.value as num).toStringAsFixed(1),
+                          style: RythoText.mono(12)),
+                    ),
                   ]),
                 ),
               if ((chart['missing_elements'] as List).isNotEmpty) ...[
@@ -441,17 +448,24 @@ class _StrengthPlaque extends StatelessWidget {
     return Plaque(
       label: l10n.baziStrengthTitle,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-          Text(strength['verdict_name'] ?? '',
-              style: RythoText.display(22, color: RythoColors.goldBright)),
-          const SizedBox(width: 8),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 3),
-            child: Text('(${strength['season_state_name'] ?? ''})',
-                style:
-                    RythoText.body(12, color: RythoColors.parchmentDim)),
-          ),
-        ]),
+        // Hüküm adı + mevsim durumu sunucudan gelir ve ikisi de
+        // esnemiyordu; 22 punto ad + parantezli durum dar ekranda satırı
+        // taşırıyordu. `Wrap` sığmayanı alt satıra indirir.
+        Wrap(
+          spacing: 8,
+          runSpacing: 2,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          children: [
+            Text(strength['verdict_name'] ?? '',
+                style: RythoText.display(22, color: RythoColors.goldBright)),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 3),
+              child: Text('(${strength['season_state_name'] ?? ''})',
+                  style:
+                      RythoText.body(12, color: RythoColors.parchmentDim)),
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         Row(children: [
           Expanded(

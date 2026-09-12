@@ -340,10 +340,14 @@ class _PasifSatir extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis),
         ),
-        TextButton.icon(
-          onPressed: onDavet,
-          icon: const Icon(Icons.ios_share_rounded, size: 15),
-          label: Text(l10n.contactsInvite, style: RythoText.label(12)),
+        // Davet düğmesi esnemiyordu: soldaki ad `Expanded` içinde sıfıra
+        // inse bile ikon + uzun düğme etiketi dar ekranda taşıyordu.
+        Flexible(
+          child: TextButton.icon(
+            onPressed: onDavet,
+            icon: const Icon(Icons.ios_share_rounded, size: 15),
+            label: Text(l10n.contactsInvite, style: RythoText.label(12)),
+          ),
         ),
       ]),
     );

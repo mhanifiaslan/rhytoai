@@ -55,6 +55,13 @@ Duration? rythoRetry(int retryCount, Object error) {
   return Duration(milliseconds: 400 * (retryCount + 1));
 }
 
+/// Sistem yazı ölçeğinin uygulanan tavanı (bkz. [RythoApp.build] `builder`).
+///
+/// Arayüz sabit puntolar üzerine kurulu (`RythoText`); %130'un üstünde kart
+/// başlıkları ve iki sütunlu satırlar dar ekranda yerleşimi bozuyor. Tavan
+/// yalnız üst uçtadır; küçültme serbesttir.
+const double kMaxTextScale = 1.3;
+
 /// Web client id (google-services.json / client_type 3) — Google Sign-In için.
 const kServerClientId =
     '770582338651-0kimgrjfj4brfl6k5h3g6amn2rm7ue6a.apps.googleusercontent.com';
@@ -129,6 +136,20 @@ class RythoApp extends ConsumerWidget {
             locale: locale,
             supportedLocales: kSupportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
+            // Yazı ölçeği tavanı (cihaz bulgusu): sistem yazı boyutu çok
+            // büyükken uzun başlık cümleleri dar ekranda satıra sığmıyor ve
+            // sağ taraf kırpılıyordu. Yerleşimler esnetildi (Wrap/Flexible)
+            // ama tipografi sabit punto üzerine kurulu: %130 üstü ölçekte
+            // kart mimarisi dağılıyor. Tavan yalnız ÜST uçta — kullanıcı
+            // yazıyı küçültmek isterse (0,85) ona dokunulmaz.
+            builder: (context, child) {
+              final mq = MediaQuery.of(context);
+              final olcek = mq.textScaler.clamp(maxScaleFactor: kMaxTextScale);
+              return MediaQuery(
+                data: mq.copyWith(textScaler: olcek),
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
             home: const _Gate(),
           ),
         ),

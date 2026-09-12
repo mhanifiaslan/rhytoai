@@ -227,7 +227,17 @@ class _HaritaBolumu extends StatelessWidget {
         // kullanıcının kendi girdiği veriyle (gizlilik sözleşmesi aynı).
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: RythoSpace.lg),
-          child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+          // İki düğme esnemeyen bir `Row`daydı ve etiketlerden biri KİŞİ
+          // ADINI taşıyor ("Ayşe ile ikili harita"); dar ekranda ikincisi
+          // ekran dışına çıkıyordu. `Wrap` sığmayanı alt satıra indirir.
+          // ⚠️ `Wrap` gevşek kısıtta içeriğine büzülür; `end` hizasının
+          // işe yaraması için tam genişlik gerekir.
+          child: SizedBox(
+            width: double.infinity,
+            child: Wrap(
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
             TextButton.icon(
               onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute(
@@ -252,6 +262,7 @@ class _HaritaBolumu extends StatelessWidget {
                       RythoText.label(11, color: RythoColors.goldBright)),
             ),
           ]),
+          ),
         ),
       ],
     ]);
@@ -269,11 +280,23 @@ class _MuhurSatiri extends StatelessWidget {
     if (deger == null || deger!.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
-      child: Row(children: [
-        Text(etiket, style: RythoType.label),
-        const Spacer(),
-        Text(deger!, style: RythoText.body(14, w: FontWeight.w600)),
-      ]),
+      // `Row` + `Spacer` ile iki esnemeyen metin: uzun etiket + uzun değer
+      // dar ekranda satırı taşırıyordu. `Wrap` sığdığında eski görünümü
+      // korur, sığmadığında değeri alt satıra indirir; metin kırpılmaz.
+      // `SizedBox`: Wrap gevşek kısıtta büzülür, `spaceBetween` işlemez.
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          spacing: 12,
+          runSpacing: 2,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          children: [
+            Text(etiket, style: RythoType.label),
+            Text(deger!, style: RythoText.body(14, w: FontWeight.w600)),
+          ],
+        ),
+      ),
     );
   }
 }

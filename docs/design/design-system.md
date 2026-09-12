@@ -247,6 +247,31 @@ zincirinden geçer; `ChartInspectorScreen` tam ekran inceleme yüzeyidir.
   ve sohbetteki ölçülü kullanım §1'deki doktrinle serbesttir).
 - Blur yalnızca alt barda; kartlarda performans için düz dolgu.
 
+## 9b. Dar ekran doktrini (MU-turu, cihaz bulgusu)
+
+Cihazda ölçüldü: dikey modda uzun Türkçe başlık cümlesi + sağdaki ek bilgi
+tek satıra sığmıyor, sağ taraf ekran dışında kalıyordu ("Bugün gökyüzünde
+senin için ✦ En yak…"). Kök neden `Row` + `Spacer`: iki çocuk da esnemiyor.
+
+- **Hedef kutu:** 320 dp genişlik × 1,3 yazı ölçeği. Altına inen Android
+  telefon yok; üstünde ölçek `kMaxTextScale` ile kırpılır (`main.dart`
+  `MaterialApp.builder`). Tavan yalnız ÜST uçta — küçültme serbest.
+- **İki uçlu satır** (başlık solda, ek bilgi sağda): `SizedBox(width:
+  double.infinity)` + `Wrap(alignment: spaceBetween)`. Sığdığında eski
+  görünüm; sığmadığında ek bilgi ALT satıra iner. ⚠️ `SizedBox` şart —
+  `Wrap` gevşek kısıtta büzülür, `spaceBetween` yayacak boşluk bulamaz.
+- **Metin + yan öğe:** uzun metin `Expanded`/`Flexible`; yan öğe de
+  esnemeliyse `Flexible` + `textAlign.end` + `maxLines`.
+- **Düğme satırı:** `Wrap(alignment: end)` — dar ekranda alt alta.
+- **Kısaltma son çare:** kullanıcı cümleyi OKUMAK ister; `ellipsis` yalnız
+  tekrar eden veri alanlarında (şehir, tarih), başlıkta ASLA.
+- **Punto küçültmek çözüm değildir:** tipografi ölçeği sabit
+  (`RythoText`); yerleşim esner.
+- **Bekçi:** `test/dar_ekran_test.dart` + `test/dar_ekran_ekranlar_test.dart`
+  — 320 dp × 1,3'te taşma Flutter'ın fırlattığı hatayla yakalanır.
+  ⚠️ Test yazı tipi her harfi punto kadar geniş kare çizer (gerçeğin ~2
+  katı): bekçi bilerek muhafazakârdır, piksel konumu iddia edilmez.
+
 ## 10. Admin paneli dili (AD-turu, `web/rytho-admin`)
 
 Aynı kozmik zemin, **işletme masası yoğunluğunda**. Mock kapısı (G0)

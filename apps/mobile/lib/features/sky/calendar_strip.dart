@@ -247,10 +247,14 @@ class _GunSayfasi extends StatelessWidget {
                 Text(kThemeIcons[tema] ?? '✦',
                     style: const TextStyle(fontSize: 14)),
                 const SizedBox(width: 8),
-                Text(
-                    (gruplar[tema]!.first['theme_local'] as String?) ??
-                        l10n.calendarOtherEvents,
-                    style: RythoText.label(11, color: RythoColors.lilac)),
+                // Tema adı sunucudan gelir ve esnemiyordu; uzun adda
+                // (büyük yazı ölçeğiyle birlikte) satırı taşırıyordu.
+                Flexible(
+                  child: Text(
+                      (gruplar[tema]!.first['theme_local'] as String?) ??
+                          l10n.calendarOtherEvents,
+                      style: RythoText.label(11, color: RythoColors.lilac)),
+                ),
               ]),
               const SizedBox(height: RythoSpace.sm),
               for (final o in gruplar[tema]!) _OlaySatiri(olay: o),

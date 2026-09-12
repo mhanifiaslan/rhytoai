@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../l10n/app_localizations.dart';
 import '../theme/rytho_theme.dart';
+import '../theme/rytho_tokens.dart';
 import 'motion.dart';
 
 /// Basınca 0.96'ya küçülen + hafif haptic veren sarmalayıcı — v3 hareket
@@ -202,13 +203,26 @@ class GradientProgressBar extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 7),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Text(label, style: RythoText.body(13, w: FontWeight.w600)),
-          const Spacer(),
-          Text('%$percent', style: RythoText.mono(12, color: accent))
-              .animate(delay: delay)
-              .fadeIn(duration: 500.ms),
-        ]),
+        // Eski hâl `Row` + `Spacer` idi: iki metin de esnemiyordu, uzun
+        // etiket (sunucudan gelen eksen adı) + yüzde dar ekranda satırı
+        // taşırıyordu. `Wrap` sığdığında aynı görünür, sığmadığında yüzdeyi
+        // alt satıra indirir. `SizedBox`: Wrap gevşek kısıtta büzülür ve
+        // `spaceBetween` yayacak boşluk bulamaz.
+        SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            spacing: RythoSpace.md,
+            runSpacing: 2,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              Text(label, style: RythoText.body(13, w: FontWeight.w600)),
+              Text('%$percent', style: RythoText.mono(12, color: accent))
+                  .animate(delay: delay)
+                  .fadeIn(duration: 500.ms),
+            ],
+          ),
+        ),
         const SizedBox(height: 7),
         LayoutBuilder(
           builder: (_, constraints) => Stack(children: [

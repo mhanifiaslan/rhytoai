@@ -131,13 +131,20 @@ class _GoldButtonState extends State<GoldButton> {
                       widget.icon!,
                       const SizedBox(width: 10),
                     ],
-                    Text(widget.text,
-                        style: RythoText.label(14,
-                            color: enabled
-                                ? (widget.filled
-                                    ? Colors.white
-                                    : RythoColors.parchment)
-                                : RythoColors.parchmentDim)),
+                    // Düğme metni esnemiyordu: bu düğme yer yer sabit
+                    // genişlikli kutuya (ör. `SizedBox(width: 104)`)
+                    // konuyor; uzun etiket + büyük yazı ölçeğinde sağdan
+                    // taşıyordu. `Flexible` metni sarmalarına izin verir.
+                    Flexible(
+                      child: Text(widget.text,
+                          textAlign: TextAlign.center,
+                          style: RythoText.label(14,
+                              color: enabled
+                                  ? (widget.filled
+                                      ? Colors.white
+                                      : RythoColors.parchment)
+                                  : RythoColors.parchmentDim)),
+                    ),
                   ],
                 ),
         ),

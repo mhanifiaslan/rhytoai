@@ -378,10 +378,15 @@ class _TurCipi extends StatelessWidget {
               size: 15,
               color: secili ? Colors.white : RythoColors.lilac),
           const SizedBox(width: 6),
-          Text(label,
-              style: RythoText.body(13,
-                  w: FontWeight.w600,
-                  color: secili ? Colors.white : RythoColors.parchmentDim)),
+          // Çip etiketi (ilişki türü) dile bağlı ve esnemiyordu; çip
+          // `Wrap` içinde gevşek kısıt aldığından uzun etiket kendi
+          // satırından taşıyordu.
+          Flexible(
+            child: Text(label,
+                style: RythoText.body(13,
+                    w: FontWeight.w600,
+                    color: secili ? Colors.white : RythoColors.parchmentDim)),
+          ),
         ]),
       ),
     );
@@ -411,9 +416,22 @@ class _AlanSatiri extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Text(label, style: RythoType.label),
-            const Spacer(),
-            Text(value, style: RythoText.mono(14)),
+            // Etiket + değer `Row` + `Spacer` ile esnemiyordu: uzun etiket
+            // ("Doğum yeri") + uzun değer ("İstanbul, Türkiye") dar ekranda
+            // kalemi dışarı itiyordu. `Expanded` içindeki `Wrap` sığdığında
+            // eski görünümü verir, sığmadığında değeri alt satıra indirir.
+            Expanded(
+              child: Wrap(
+                spacing: RythoSpace.md,
+                runSpacing: 2,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.end,
+                children: [
+                  Text(label, style: RythoType.label),
+                  Text(value, style: RythoText.mono(14)),
+                ],
+              ),
+            ),
             const SizedBox(width: RythoSpace.sm),
             const Icon(Icons.edit_outlined, size: 15, color: RythoColors.lilac),
           ],

@@ -440,8 +440,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           duration: 1500.ms,
                           curve: Curves.easeInOut),
                   const SizedBox(width: RythoSpace.md),
-                  Text('RYTHO',
-                      style: RythoText.label(22, color: RythoColors.lilac)),
+                  // Marka yazısı esnemiyordu: 22 punto + büyük yazı ölçeği
+                  // + 56 px logo dar ekranda satırı taşırıyordu.
+                  Flexible(
+                    child: Text('RYTHO',
+                        style: RythoText.label(22, color: RythoColors.lilac)),
+                  ),
                 ],
               ).animate(delay: next()).fadeIn(duration: 500.ms),
               const SizedBox(height: RythoSpace.lg),

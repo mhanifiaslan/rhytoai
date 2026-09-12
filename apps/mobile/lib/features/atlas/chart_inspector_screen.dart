@@ -450,9 +450,13 @@ class _Lejant extends StatelessWidget {
               decoration:
                   BoxDecoration(color: renk, shape: BoxShape.circle)),
           const SizedBox(width: 6),
-          Text(metin,
-              style:
-                  RythoText.body(11.5, color: RythoColors.parchmentDim)),
+          // Rozet `Wrap` içinde duruyor; gevşek kısıtta uzun etiket
+          // esnemeyince kendi satırından taşıyordu.
+          Flexible(
+            child: Text(metin,
+                style:
+                    RythoText.body(11.5, color: RythoColors.parchmentDim)),
+          ),
         ]);
 
     return Padding(
@@ -512,11 +516,15 @@ class _SecimCubugu extends StatelessWidget {
               child: Text(metin,
                   style: RythoText.mono(11.5,
                       color: RythoColors.parchment))),
-          TextButton(
-              onPressed: onDetail,
-              child: Text(l10n.chartSelectedDetail,
-                  style: RythoText.label(11,
-                      color: RythoColors.goldBright))),
+          // Düğme esnemiyordu: soldaki `Expanded` sıfıra inse bile uzun
+          // düğme etiketi + iç dolgu dar ekranda satırı taşırıyordu.
+          Flexible(
+            child: TextButton(
+                onPressed: onDetail,
+                child: Text(l10n.chartSelectedDetail,
+                    style: RythoText.label(11,
+                        color: RythoColors.goldBright))),
+          ),
         ]),
       ),
     );
@@ -574,8 +582,12 @@ class _FiltreCubugu extends StatelessWidget {
         ),
       ]),
       Row(children: [
-        Text(l10n.chartOrbLabel(maxOrb.round()),
-            style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+        // Etiket esnemiyordu; `Slider` `Expanded` içinde sıfıra kadar
+        // küçülse bile uzun etiket + büyük ölçek satırı taşırıyordu.
+        Flexible(
+          child: Text(l10n.chartOrbLabel(maxOrb.round()),
+              style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+        ),
         Expanded(
           child: Slider(
             value: maxOrb,

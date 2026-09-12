@@ -347,7 +347,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                 style: TextStyle(fontSize: 14, color: Colors.white)),
           ),
           const SizedBox(width: 10),
-          Text(AppLocalizations.of(context).chatTitle),
+          // Başlık esnemiyordu: `AppBar` eylemleri (bakiye çipi) yer
+          // aldıktan sonra kalan darlıkta uzun çeviri + büyük ölçekte
+          // başlık sağdan kırpılıyordu.
+          Flexible(child: Text(AppLocalizations.of(context).chatTitle)),
         ]),
         actions: [
           // Bakiye çipi — "kalan hakkın" ilk kez bir yüzeye kavuşuyor.
@@ -510,9 +513,15 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
                       color: RythoColors.lilac.withValues(alpha: 0.34)),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Text(l10n.chatMentionAttached(_mentionName!),
-                      style: RythoType.dataSmall
-                          .copyWith(color: RythoColors.lilac)),
+                  // Çipin metni KULLANICI ADI içeriyor (uzunluğu bizim
+                  // denetimimizde değil) ve esnemiyordu; uzun adda kapatma
+                  // ikonu ekran dışına taşıyordu. `Flexible` sarmasına
+                  // izin verir — ad kırpılmaz.
+                  Flexible(
+                    child: Text(l10n.chatMentionAttached(_mentionName!),
+                        style: RythoType.dataSmall
+                            .copyWith(color: RythoColors.lilac)),
+                  ),
                   const SizedBox(width: 6),
                   Pressable(
                     onTap: _clearMention,

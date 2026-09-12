@@ -79,14 +79,22 @@ class ReadingCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: RythoSpace.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Text(_devami(context), style: RythoType.button),
-              const SizedBox(width: RythoSpace.xs),
-              const Icon(Icons.arrow_forward_rounded,
-                  size: 15, color: RythoColors.parchment),
-            ],
+          // "Devamını oku →" çifti esnemeyen bir `Row`du; uzun çeviri +
+          // büyük yazı ölçeğinde ok işareti sağdan taşıyordu. `Wrap` ile
+          // ok gerektiğinde alt satıra iner, metin kısaltılmaz.
+          SizedBox(
+            width: double.infinity,
+            child: Wrap(
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: RythoSpace.xs,
+              runSpacing: RythoSpace.xs,
+              children: [
+                Text(_devami(context), style: RythoType.button),
+                const Icon(Icons.arrow_forward_rounded,
+                    size: 15, color: RythoColors.parchment),
+              ],
+            ),
           ),
         ],
       ),

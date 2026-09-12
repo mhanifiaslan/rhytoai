@@ -226,12 +226,20 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                 children: [
                   Text(l10n.tokenBalanceLabel, style: RythoType.label),
                   const SizedBox(height: RythoSpace.sm),
+                  // 34 punto bakiye + birim adı esnemiyordu: büyük yazı
+                  // ölçeğinde dört haneli bakiye birimi ekran dışına
+                  // itiyordu. İkisi de `Flexible` — sayı kırpılmaz.
                   Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    Text('${cuzdan.total}', style: RythoText.display(34)),
+                    Flexible(
+                      child: Text('${cuzdan.total}',
+                          style: RythoText.display(34)),
+                    ),
                     const SizedBox(width: RythoSpace.sm),
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 5),
-                      child: Text(l10n.tokenUnit, style: RythoType.bodyDim),
+                    Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 5),
+                        child: Text(l10n.tokenUnit, style: RythoType.bodyDim),
+                      ),
                     ),
                   ]),
                   const SizedBox(height: RythoSpace.sm),

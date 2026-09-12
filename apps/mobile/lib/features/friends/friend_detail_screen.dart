@@ -365,11 +365,16 @@ class _ReactionChip extends StatelessWidget {
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(emoji, style: const TextStyle(fontSize: 15)),
           const SizedBox(width: 6),
-          Text(label,
-              style: RythoText.label(12,
-                  color: selected
-                      ? RythoColors.goldBright
-                      : RythoColors.parchment)),
+          // Çip etiketi (ilişki türü) dile bağlı ve esnemiyordu; çip
+          // `Wrap` içinde gevşek kısıt aldığı için uzun etiket kendi
+          // satırından taşıyordu. `Flexible` sarmasına izin verir.
+          Flexible(
+            child: Text(label,
+                style: RythoText.label(12,
+                    color: selected
+                        ? RythoColors.goldBright
+                        : RythoColors.parchment)),
+          ),
         ]),
       ),
     );

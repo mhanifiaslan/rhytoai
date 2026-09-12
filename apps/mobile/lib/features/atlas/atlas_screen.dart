@@ -478,14 +478,21 @@ class _BirthMissingCard extends StatelessWidget {
             const SizedBox(height: RythoSpace.md),
             Pressable(
               onTap: onTap,
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(l10n.birthMissingAction,
-                    style: RythoText.body(13, w: FontWeight.w700,
-                        color: RythoColors.lilac)),
-                const SizedBox(width: 6),
-                const Icon(Icons.arrow_forward_rounded,
-                    size: 15, color: RythoColors.lilac),
-              ]),
+              // Eylem metni + ok esnemiyordu; uzun çeviri ("Doğum
+              // bilgilerini tamamla") dar ekranda oku dışarı itiyordu.
+              // `Wrap`: sığmazsa ok alt satıra iner, metin kısaltılmaz.
+              child: Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  Text(l10n.birthMissingAction,
+                      style: RythoText.body(13,
+                          w: FontWeight.w700, color: RythoColors.lilac)),
+                  const Icon(Icons.arrow_forward_rounded,
+                      size: 15, color: RythoColors.lilac),
+                ],
+              ),
             ),
           ],
         ),

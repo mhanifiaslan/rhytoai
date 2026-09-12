@@ -32,9 +32,14 @@ Future<void> showReactionSheet(
       side: BorderSide(color: RythoColors.glassStroke),
     ),
     builder: (sheetContext) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
+      // Alt sayfanın tavanı ekranın 9/16'sı; büyük yazı ölçeğinde tepki
+      // çipleri birkaç satıra yayılınca içerik bu tavanı aşıyor ve DİKEY
+      // taşma oluyordu (bekçi: test/dar_ekran_ekranlar_test.dart).
+      // `SingleChildScrollView`: sığmayan kısım kaydırılır, kırpılmaz.
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
             width: 36,
             height: 4,
@@ -72,14 +77,20 @@ Future<void> showReactionSheet(
                       Text(entry.value,
                           style: const TextStyle(fontSize: 16)),
                       const SizedBox(width: 6),
-                      Text(reactionLabel(l10n, entry.key),
-                          style: RythoText.body(12.5)),
+                      // Tepki adı dile bağlı ve esnemiyordu; çip `Wrap`
+                      // içinde gevşek kısıt aldığından uzun adda kendi
+                      // satırından taşıyordu.
+                      Flexible(
+                        child: Text(reactionLabel(l10n, entry.key),
+                            style: RythoText.body(12.5)),
+                      ),
                     ]),
                   ),
                 ),
             ],
           ),
         ]),
+        ),
       ),
     ),
   );

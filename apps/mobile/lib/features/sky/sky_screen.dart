@@ -280,7 +280,15 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
               // artık rozet değil, gökyüzünün bugün söyledikleri.
               SectionHeader(
                 l10n.todaysInsight,
-                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                // `SectionHeader`'ın ek bilgisi kendi içinde de esnemeliydi:
+                // tarih + keşif halkası + seri rozeti esnemeyen bir `Row`du
+                // ve üçü birden dar ekranda kendi satırından taşıyordu.
+                // `Wrap` gerektiğinde rozetleri alt satıra indirir.
+                trailing: Wrap(
+                    spacing: RythoSpace.sm,
+                    runSpacing: RythoSpace.xs,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
                   Text(
                     // Tarih biçimi de dile bağlı: sabit 'tr_TR' İngilizce
                     // arayüzde Türkçe ay adı gösteriyordu.
@@ -289,9 +297,7 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
                         .format(DateTime.now()),
                     style: RythoType.dataSmall,
                   ),
-                  const SizedBox(width: RythoSpace.sm),
                   _DiscoveryRing(state: kesif, celebrate: _kesifKutlama),
-                  const SizedBox(width: RythoSpace.sm),
                   _StreakRozet(streak: streak, celebrate: _streakYeni),
                 ]),
               ).animate(delay: next()).fadeIn(duration: 360.ms),
@@ -789,9 +795,17 @@ class _SignalCard extends StatelessWidget {
                     w: FontWeight.w700, color: RythoColors.lilac)),
           ),
           if (zaman != null && zaman.isNotEmpty)
-            Text(zaman,
-                style: RythoType.dataSmall
-                    .copyWith(color: RythoColors.gold)),
+            // Zamanlama etiketi ("15 Eylül günü netleşiyor") uzun ve dile
+            // bağlı: dar ekranda tema adıyla birlikte satırı taşırıyordu.
+            // Flexible + sağa hizalı iki satır: tema adı da etiketi de
+            // okunur kalır, kart genişlemez.
+            Flexible(
+              child: Text(zaman,
+                  textAlign: TextAlign.end,
+                  maxLines: 2,
+                  style: RythoType.dataSmall
+                      .copyWith(color: RythoColors.gold)),
+            ),
         ]),
         const SizedBox(height: 7),
         Text(metin, style: RythoText.body(13.5, height: 1.45)),

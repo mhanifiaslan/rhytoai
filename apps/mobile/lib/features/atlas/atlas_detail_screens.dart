@@ -719,7 +719,13 @@ class _AspectRow extends StatelessWidget {
                             color: RythoColors.parchmentDim)),
                 ]),
           ),
-          Text(aspectKindLabel(context, aspect), style: RythoType.bodyDim),
+          // Açı türü adı ("Karşıtlık", "Üçgen") dile bağlı ve esnemiyordu;
+          // soldaki `Expanded` sıfıra inse bile bu metin + orb + chevron
+          // dar ekranda taşıyordu. `Flexible` metnin sarmasına izin verir.
+          Flexible(
+            child: Text(aspectKindLabel(context, aspect),
+                style: RythoType.bodyDim),
+          ),
           const SizedBox(width: RythoSpace.md),
           Text(orb == null ? '—' : '${orb.toStringAsFixed(1)}°',
               style: RythoType.dataSmall),

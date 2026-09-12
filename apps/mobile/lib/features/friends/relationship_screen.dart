@@ -345,7 +345,11 @@ class _AxisCardState extends State<_AxisCard> {
                     w: FontWeight.w700, color: RythoColors.lilac)),
           ),
           // Seviye + ton çipi. Sayı YOK — bilinçli.
-          Container(
+          // Çip esnemiyordu: sunucudan gelen "seviye · ton" metni uzun
+          // olabiliyor ve soldaki `Expanded` sıfıra inse bile satırı
+          // taşırıyordu. `Flexible` çipin daralıp metni sarmasına izin verir.
+          Flexible(
+              child: Container(
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -362,7 +366,7 @@ class _AxisCardState extends State<_AxisCard> {
               style: RythoText.label(10.5,
                   color: _toneColor(e['tone'] as String?)),
             ),
-          ),
+          )),
         ]),
         // Kartın ipucu cümlesi. Kaynağı değişti: eskiden eksen × ton ile
         // anahtarlı 16 cümlelik hazır tablodan geliyordu ve iki arkadaş

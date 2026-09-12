@@ -503,12 +503,18 @@ class _FriendTile extends ConsumerWidget {
                     style: RythoText.body(14.5, w: FontWeight.w600)),
                 const SizedBox(height: 1),
                 Row(children: [
+                  // Burç adı da esnemeliydi: uzun ad ("Sagittarius") +
+                  // durum metni dar ekranda satırı taşırıyordu.
                   if (friend.sunSign != null)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: Text(localizedSignName(l10n, friend.sunSign),
-                          style: RythoText.label(10.5,
-                              color: RythoColors.lilac)),
+                    Flexible(
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Text(localizedSignName(l10n, friend.sunSign),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: RythoText.label(10.5,
+                                color: RythoColors.lilac)),
+                      ),
                     ),
                   Flexible(
                     child: Text(durum,
@@ -549,28 +555,50 @@ class _RequestTile extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     return GlassPanel(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      child: Row(children: [
-        Expanded(child: Text(friend.name, style: RythoText.display(16))),
-        TextButton(
-          onPressed: () => removeFriend(friend.uid),
-          child: Text(l10n.ignore,
-              style: RythoText.label(12, color: RythoColors.parchmentDim)),
+      // Ad + iki düğme esnemeyen bir `Row`du: kullanıcı adının uzunluğu
+      // bizim denetimimizde değil, üstelik "Yoksay" + sabit 104 px "Kabul
+      // et" dar ekranda tek başına satırı dolduruyordu. `Wrap`: sığdığında
+      // ad solda düğmeler sağda (eski görünüm), sığmadığında düğmeler alt
+      // satıra iner. `SizedBox`: Wrap gevşek kısıtta büzülür.
+      child: SizedBox(
+        width: double.infinity,
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          alignment: WrapAlignment.spaceBetween,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            Text(friend.name, style: RythoText.display(16)),
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                TextButton(
+                  onPressed: () => removeFriend(friend.uid),
+                  child: Text(l10n.ignore,
+                      style:
+                          RythoText.label(12, color: RythoColors.parchmentDim)),
+                ),
+                SizedBox(
+                  width: 104,
+                  child: GoldButton(
+                    text: l10n.accept,
+                    onPressed: () {
+                      // Kabul push'u (OB2): Firestore yazımı bitince daveti
+                      // GÖNDERENE haber ver. UI beklemez; hata yutulur.
+                      final dio = ref.read(apiProvider);
+                      unawaited(acceptFriendRequest(friend.uid)
+                          .then((_) => notifyInviteAccepted(dio, friend.uid)));
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        const SizedBox(width: 4),
-        SizedBox(
-          width: 104,
-          child: GoldButton(
-            text: l10n.accept,
-            onPressed: () {
-              // Kabul push'u (OB2): Firestore yazımı bitince daveti
-              // GÖNDERENE haber ver. UI beklemez; hata yutulur.
-              final dio = ref.read(apiProvider);
-              unawaited(acceptFriendRequest(friend.uid)
-                  .then((_) => notifyInviteAccepted(dio, friend.uid)));
-            },
-          ),
-        ),
-      ]),
+      ),
     );
   }
 }
@@ -590,8 +618,12 @@ class _PendingTile extends StatelessWidget {
           child: Text(friend.name,
               style: RythoText.body(14.5, color: RythoColors.parchmentDim)),
         ),
-        Text(l10n.pending,
-            style: RythoText.label(11, color: RythoColors.parchmentDim)),
+        // "Beklemede" esnemiyordu: soldaki `Expanded` sıfıra inse bile bu
+        // metin + geri çekme ikonu dar ekranda satırı taşırıyordu.
+        Flexible(
+          child: Text(l10n.pending,
+              style: RythoText.label(11, color: RythoColors.parchmentDim)),
+        ),
         const SizedBox(width: 8),
         IconButton(
           tooltip: l10n.withdrawInvite,
@@ -776,14 +808,27 @@ class _PeopleSection extends ConsumerWidget {
       const SectionDivider(),
       Padding(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 2),
-        child: Row(children: [
-          Text(l10n.circlePeopleSection,
-              style: RythoText.mono(11, color: RythoColors.parchmentDim)),
-          const Spacer(),
-          if (kontenjan != null && kontenjan.limit > 0)
-            Text(l10n.peopleSlots(kontenjan.used, kontenjan.limit),
-                style: RythoText.mono(11, color: RythoColors.parchmentDim)),
-        ]),
+        // `Row` + `Spacer` ile iki esnemeyen metin: uzun bölüm başlığı +
+        // kontenjan sayacı dar ekranda satırı taşırıyordu (SectionHeader
+        // ile aynı kusur sınıfı). `Wrap` sığdığında aynı görünür, aksi
+        // hâlde sayaç alt satıra iner. `SizedBox`: Wrap gevşek kısıtta
+        // büzülür ve `spaceBetween` yayacak boşluk bulamaz.
+        child: SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 2,
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.end,
+            children: [
+              Text(l10n.circlePeopleSection,
+                  style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+              if (kontenjan != null && kontenjan.limit > 0)
+                Text(l10n.peopleSlots(kontenjan.used, kontenjan.limit),
+                    style: RythoText.mono(11, color: RythoColors.parchmentDim)),
+            ],
+          ),
+        ),
       ),
       for (final (i, kisi) in kisiler.indexed)
         _PersonTile(person: kisi)
