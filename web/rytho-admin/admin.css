@@ -673,6 +673,14 @@ table.tablo { width: 100%; border-collapse: collapse; font-size: 13.5px; }
   .alan-liste dd { text-align: left; margin-bottom: 8px; }
 }
 
+/* Dokunma hedefi: çip ve küçük düğmeler görsel olarak ince kalır ama
+   ::before ile 44 px dikey alan yakalar (WCAG 2.5.5 hedef boyu). */
+.adm-cip, .buton.kucuk, .vt thead th .vt-sirala { position: relative; }
+.adm-cip::before, .buton.kucuk::before, .vt thead th .vt-sirala::before {
+  content: ''; position: absolute; left: 0; right: 0;
+  top: 50%; height: var(--adm-hedef); transform: translateY(-50%);
+}
+
 /* ---- görünüm ekleri (genel/kullanicilar/gelir) ---- */
 /* Hızlı kredi sonuç listesi: düğme olarak satır (klavye/rol=option). */
 .liste button.satir { width: 100%; border: 0; background: transparent; font: inherit; text-align: left; cursor: pointer; border-radius: 10px; }

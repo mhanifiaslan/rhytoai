@@ -320,7 +320,7 @@ def attention(user: AuthUser = Depends(require_admin)):
     """Dikkat zili: başarısız push, fatura sorunu, biten deneme, eşik altı,
     devre dışı, bayat rollup — sayaçlar + kısa listeler."""
     try:
-        return {"status": "ok", **admin_service.attention()}
+        return {"status": "ok", "items": admin_service.attention()}
     except RuntimeError as exc:
         raise HTTPException(status_code=500, detail=str(exc))
 

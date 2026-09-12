@@ -232,6 +232,7 @@
         return '';
       },
       siralama: { ad: durum.sort || 'createdAt', yon: 'desc' },
+      tekYon: true, // sunucu yalnız DESC (admin_service.list_users)
       onSirala: function (ad) {
         if (SIRALAMALAR.indexOf(ad) < 0) return;
         durum.sort = ad === 'createdAt' ? undefined : ad;
@@ -324,9 +325,18 @@
           durum.belowBuild = undefined;
           cipler.ayarla(cipDegeri(durum, minBuild));
         } else durum.belowBuild = d.esik ? minBuild : undefined;
-        if (durum.activeSince && durum.belowBuild) {
-          b.toast('Aktiflik ve eşik süzgeçleri birlikte olmaz — sonuncusu kaldı.', 'uyari');
-          if (d.aktif && !cipler.deger().esik) durum.belowBuild = undefined; else durum.activeSince = undefined;
+        // Sunucu kuralı: eşik altı süzgeci (appBuild aralığı) BAŞKA hiçbir
+        // süzgeçle birleşmez (Firestore tek aralık + indeks). Eşik seçilince
+        // diğerleri düşer; başka bir süzgeç seçilince eşik düşer.
+        if (durum.belowBuild && (durum.plan || durum.language || durum.platform ||
+            durum.disabled || durum.activeSince)) {
+          b.toast('Eşik altı süzgeci tek başına çalışır — diğer süzgeçler kaldırıldı.', 'uyari');
+          if (d.esik && !cipler.deger().esik) {
+            durum.belowBuild = undefined;
+          } else {
+            durum.plan = durum.language = durum.platform = undefined;
+            durum.disabled = durum.activeSince = undefined;
+          }
           cipler.ayarla(cipDegeri(durum, minBuild));
         }
         urlYaz(); yukle(false);

@@ -222,3 +222,15 @@ def test_notice_firestore_yokken_500(depo, monkeypatch):
     with TestClient(app) as client:
         assert client.post("/api/v1/admin/config/notice",
                            json={"text": "x"}).status_code == 500
+
+
+def test_attention_liste_items_altinda(depo, monkeypatch):
+    """Denetim bulgusu: servis LİSTE döner; `{**liste}` her çağrıda 500
+    veriyordu ve zil sessizce boş kalıyordu. Yanıt `items` altında."""
+    monkeypatch.setattr(admin_service, "attention", lambda: [
+        {"tur": "failedPushesToday", "sayi": 6, "rota": "#/bildirimler",
+         "seviye": "hata"}])
+    with TestClient(app) as client:
+        yanit = client.get("/api/v1/admin/attention")
+    assert yanit.status_code == 200
+    assert yanit.json()["items"][0]["sayi"] == 6

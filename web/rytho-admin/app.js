@@ -489,7 +489,11 @@
       denetleyici = new AbortController();
       kullaniciYukleniyor = true;
       var buDenetleyici = denetleyici;
-      RY.sorgu('/api/v1/admin/users', { q: q, limit: 8 }, { sinyal: buDenetleyici.signal })
+      // Alan seçimi listeyle aynı sezgi: '@' içeriyorsa e-posta, '@' ile
+      // başlıyorsa kullanıcı adı, değilse ad (kullanicilar.js alanSec).
+      var alan = q.charAt(0) === '@' ? 'kullanici' : (q.indexOf('@') > 0 ? 'eposta' : 'ad');
+      var qTemiz = alan === 'kullanici' ? q.slice(1) : q;
+      RY.sorgu('/api/v1/admin/users', { q: qTemiz, alan: alan, limit: 8 }, { sinyal: buDenetleyici.signal })
         .then(function (res) {
           if (buDenetleyici.signal.aborted) return;
           var liste2 = Array.isArray(res) ? res : ((res && (res.users || res.items)) || []);

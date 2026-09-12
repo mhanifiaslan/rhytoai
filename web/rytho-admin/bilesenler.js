@@ -448,7 +448,7 @@
         var sirali = siralama && siralama.ad === s.ad;
         var ariaSort = sirali
           ? ' aria-sort="' + (siralama.yon === 'asc' ? 'ascending' : 'descending') + '"'
-          : '';
+          : (s.siralanir ? ' aria-sort="none"' : '');
         var stil = s.genislik ? ' style="width:' + e(s.genislik) + '"' : '';
         var ic = s.siralanir
           ? '<button type="button" class="vt-sirala" data-ad="' + e(s.ad) + '">' +
@@ -534,6 +534,9 @@
       basliklariCiz();
       if (!satirlar.length) {
         durum('bos');
+        // Arama modunda eşitlik süzgeçleri sayfa içinde uygulanır: boş
+        // sayfa ama imleç dolu olabilir — "Daha fazla" gizlenmemeli.
+        if (sayfa && sayfa.daha) { sayfaCiz(); sayfaCubuk.hidden = false; }
         return;
       }
       govdeCiz();
@@ -587,7 +590,10 @@
       var d = ev.target.closest('.vt-sirala');
       if (!d) return;
       var ad = d.getAttribute('data-ad');
-      var yon = (siralama && siralama.ad === ad && siralama.yon === 'desc')
+      // `tekYon`: sunucu yalnız DESC sıralıyorsa ikinci tık "ascending"
+      // İLAN EDİLMEZ (ekran okuyucuya yalan olurdu) — sütun değişir, yön
+      // sabit kalır.
+      var yon = (!o.tekYon && siralama && siralama.ad === ad && siralama.yon === 'desc')
         ? 'asc' : 'desc';
       siralama = { ad: ad, yon: yon };
       basliklariCiz();
@@ -839,7 +845,9 @@
       function gecerli() {
         var g = govde.querySelector('#' + gId);
         var y = govde.querySelector('#' + yId);
-        if (g && !g.value.trim()) return false;
+        // Sunucu gerekçe için min 3 karakter ister (DisableRequest,
+        // DeleteRequest); kapı burada — 422 ham gövdesi kullanıcıya gitmez.
+        if (g && g.value.trim().length < 3) return false;
         if (y && y.value.trim() !== String(o.yazili)) return false;
         return true;
       }

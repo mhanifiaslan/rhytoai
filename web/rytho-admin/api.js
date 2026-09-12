@@ -28,6 +28,19 @@
   /* Son 429 uyarısı: aynı anda 5 istek düşünce 5 toast basılmasın. */
   var son429 = 0;
 
+  /* Sunucu `detail`i: düz metin olduğu gibi; pydantic 422 listesi
+     ("[{type, loc, msg}]") alan adı + mesaj olarak — ham JSON basılmaz. */
+  function detayMetni(detail) {
+    if (typeof detail === 'string') return detail;
+    if (Array.isArray(detail)) {
+      return detail.map(function (d) {
+        var alan = Array.isArray(d.loc) ? d.loc.filter(function (x) { return x !== 'body' && x !== 'query'; }).join('.') : '';
+        return (alan ? alan + ': ' : '') + (d.msg || d.type || '');
+      }).filter(Boolean).join(' · ') || 'Geçersiz istek.';
+    }
+    try { return JSON.stringify(detail); } catch (yok) { return String(detail); }
+  }
+
   async function apiIste(yol, secenekler) {
     secenekler = secenekler || {};
     var sinyal = secenekler.sinyal || secenekler.signal;
@@ -62,8 +75,10 @@
         throw new Error('ag-hatasi');
       }
     }
-    if (yanit.status === 401 || yanit.status === 403) {
-      // Yetki düştü: oturumu kapat, jenerik görünüme dön.
+    if (yanit.status === 401) {
+      // Kimlik düştü: oturumu kapat, jenerik görünüme dön. 403 BURAYA
+      // GİRMEZ: "kimlikli ama sahip değil" (destek rolü, propagasyon
+      // bekleyen claim) normal bir hatadır — oturumu yok etmek yanlıştı.
       if (RY.yetkisiz) RY.yetkisiz();
       throw new Error('yetkisiz');
     }
@@ -72,10 +87,7 @@
       hata.durum = yanit.status;
       try {
         var govde = await yanit.json();
-        if (govde && govde.detail) {
-          hata.detay = typeof govde.detail === 'string'
-            ? govde.detail : JSON.stringify(govde.detail);
-        }
+        if (govde && govde.detail) hata.detay = detayMetni(govde.detail);
       } catch (yok) { /* gövdesiz hata */ }
       if (yanit.status === 429) {
         var ra = Number(yanit.headers.get('Retry-After'));
@@ -168,7 +180,7 @@
       if (sec.sinyal && sec.sinyal.aborted) throw iptalHatasi();
       throw new Error('ag-hatasi');
     }
-    if (yanit.status === 401 || yanit.status === 403) {
+    if (yanit.status === 401) {
       if (RY.yetkisiz) RY.yetkisiz();
       throw new Error('yetkisiz');
     }
