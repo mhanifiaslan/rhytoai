@@ -88,7 +88,7 @@ service cloud.firestore {
           'uid', 'displayName', 'photoUrl', 'email', 'username',
           'birthDate', 'birthTime', 'birthCity', 'birthNation', 'gender',
           'sunSign', 'moonSign', 'ascendant', 'wuXingElement', 'mizac',
-          'onboardingCompleted', 'createdAt', 'updatedAt', 'fcmToken', 'bio',
+          'onboardingCompleted', 'createdAt', 'updatedAt', 'fcmToken', 'fcmTokenAt', 'bio',
           // Günlük seri (motivasyon): son görülen gün + seri sayacı
           'lastSeenDaily', 'streakCount',
           // Serimi arkadaşlarım görebilsin mi (varsayılan: kapalı)

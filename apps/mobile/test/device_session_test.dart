@@ -269,20 +269,23 @@ void main() {
       return kap;
     }
 
-    testWidgets('bırak → oturum kapat → bayrağı düşür; bırakma kimlik hâlâ varken',
-        (tester) async {
+    testWidgets(
+        'bırak → jetonu unut → oturum kapat → bayrağı düşür; ilk ikisi kimlik '
+        'hâlâ varken', (tester) async {
       final sira = <String>[];
       final adapter = _SahteAdapter(
           govde: '{"released":true}', onIstek: (_) => sira.add('release'));
       final kap = await agac(tester, adapter);
 
       // Dio hattı testin sahte zamanında ilerlemez → gerçek olay döngüsü.
-      await tester.runAsync(
-          () => signOutEverywhere(signOut: () async => sira.add('signOut')));
+      await tester.runAsync(() => signOutEverywhere(
+          forgetToken: () async => sira.add('forget'),
+          signOut: () async => sira.add('signOut')));
 
-      expect(sira, ['release', 'signOut'],
-          reason: 'DELETE /device/claim Firebase kimliğiyle gider; çıkıştan '
-              'sonra çağrılsa 401 yer ve eski cihaz kilidi elinde tutar (B4)');
+      expect(sira, ['release', 'forget', 'signOut'],
+          reason: 'DELETE /device/claim ve jeton sökme Firebase kimliğiyle '
+              'gider; çıkıştan sonra çağrılsa 401/kural reddi yer — eski '
+              'cihaz kilidi elinde, eski hesabın push\'u telefonda kalırdı');
       final istek = adapter.istekler.single;
       expect(istek.method, 'DELETE');
       expect(istek.path, '/api/v1/device/claim');

@@ -138,6 +138,63 @@ def _iter_profiles():
             return
 
 
+def _jeton_zamani(profil: dict[str, Any]) -> tuple[str, str]:
+    """Jetonun bu profile en son ne zaman yazıldığı — sıralanabilir anahtar.
+
+    Birincil `fcmTokenAt` (38+ istemci, sunucu zaman damgası); yoksa
+    `lastSeenDaily` (her istemci, gün çözünürlüğü). Damgası olan profil
+    olmayanı yener: damga yazan istemci jetonu EN SON almış olandır.
+    """
+    damga = profil.get("fcmTokenAt")
+    if damga is None:
+        damga_iso = ""
+    elif hasattr(damga, "isoformat"):
+        damga_iso = damga.isoformat()
+    else:
+        damga_iso = str(damga)
+    return (damga_iso, str(profil.get("lastSeenDaily") or ""))
+
+
+def _jeton_sahipleri(profiller: list[dict[str, Any]]) -> dict[str, str]:
+    """Her cihaz jetonu için EN SON sahiplenen uid (JT-turu).
+
+    Aynı telefonda hesap değiştirilince eski hesabın profilindeki
+    `fcmToken` duruyordu (çıkış silmiyordu) — o cihaza İKİ hesabın push'u
+    gidiyordu, biri Türkçe biri İngilizce (cihazda ölçüldü: sahip + test
+    hesabı aynı jeton). Jeton bir cihaza aittir ve cihazda o an bir hesap
+    açıktır: en son yazan kazanır, diğerleri bu koşuda atlanır ve bayat
+    jetonları silinir.
+    """
+    sahipler: dict[str, tuple[tuple[str, str], str]] = {}
+    for p in profiller:
+        jeton = p.get("fcmToken")
+        uid = p.get("uid")
+        if not jeton or not uid:
+            continue
+        anahtar = _jeton_zamani(p)
+        mevcut = sahipler.get(jeton)
+        if mevcut is None or anahtar > mevcut[0]:
+            sahipler[jeton] = (anahtar, uid)
+    return {jeton: uid for jeton, (_, uid) in sahipler.items()}
+
+
+def _bayat_jetonu_sil(uid: str) -> None:
+    """Başka hesabın cihazına ait jetonu bu profilden söker (best-effort).
+
+    Silinmese bir sonraki koşuda yine atlanır; silinince bu koşu bir daha
+    karşılaşmaz ve `_iter_profiles` maliyeti düşer.
+    """
+    try:
+        client = firestore_client.get_client()
+        if client is None:
+            return
+        from google.cloud import firestore as gfs
+        client.collection("users").document(uid).update(
+            {"fcmToken": gfs.DELETE_FIELD, "fcmTokenAt": gfs.DELETE_FIELD})
+    except Exception as exc:
+        logger.warning("Bayat jeton silinemedi (%s): %s", uid, exc)
+
+
 class RunResult(BaseModel):
     status: str
     type: str
@@ -238,8 +295,25 @@ def run(type: Literal["daily", "midday", "checkin", "streak"] = "daily",
     # hesaplamaya gerek yok.
     sky_by_lang: dict[str, dict[str, Any]] = {}
 
-    for profil in _iter_profiles():
+    # JT-turu: profiller bir kez okunur (≤ birkaç yüz); aynı jetonu taşıyan
+    # hesaplardan yalnız en son sahiplenen alır — cihaza iki hesabın push'u
+    # gitmez.
+    profiller = list(_iter_profiles())
+    jeton_sahibi = _jeton_sahipleri(profiller)
+
+    for profil in profiller:
         taranan += 1
+        jeton = profil.get("fcmToken")
+        if jeton and jeton_sahibi.get(jeton) != profil.get("uid"):
+            logger.warning(
+                "Jeton başka hesapta daha yeni: uid=%s sahip=%s tur=%s — "
+                "atlandı, bayat jeton siliniyor",
+                profil.get("uid"), jeton_sahibi.get(jeton), type)
+            atlanan["jeton-baska-hesapta"] = (
+                atlanan.get("jeton-baska-hesapta", 0) + 1)
+            if not dry_run:
+                _bayat_jetonu_sil(profil["uid"])
+            continue
         gonder, gerekce = notification_service.should_send(
             profil, type, now_utc, ignore_target_hour=force,
             ignore_dedupe=ignore_dedupe)

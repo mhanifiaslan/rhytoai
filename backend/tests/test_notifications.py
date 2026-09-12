@@ -13,6 +13,7 @@ Calistirma:  .venv\\Scripts\\python.exe -m pytest tests/test_notifications.py -q
 from __future__ import annotations
 
 import datetime as dt
+import logging
 from zoneinfo import ZoneInfo
 
 import pytest
@@ -1719,3 +1720,96 @@ def test_android_kanal_kimligi_istemciyle_ayni():
             / "lib" / "core" / "notifications.dart").read_text(encoding="utf-8")
     assert f"'{push_service.ANDROID_CHANNEL_ID}'" in dart, (
         f"Istemcide {push_service.ANDROID_CHANNEL_ID} kanali tanimli degil")
+
+
+# ---------------------------------------------------------------------------
+# JT-turu: aynı cihaz jetonu iki profilde — yalnız en son sahiplenen alır
+# ---------------------------------------------------------------------------
+
+def test_jeton_sahipleri_damga_sonra_gun_sonra_bos():
+    from api import notify
+
+    profiller = [
+        {"uid": "eski", "fcmToken": "J", "lastSeenDaily": "2026-09-07"},
+        {"uid": "yeni", "fcmToken": "J", "lastSeenDaily": "2026-09-12"},
+        {"uid": "tek", "fcmToken": "K"},
+        {"uid": "jetonsuz"},
+    ]
+    assert notify._jeton_sahipleri(profiller) == {"J": "yeni", "K": "tek"}
+
+    # Damga günü yener: 38+ istemci jetonu en son almış olandır.
+    profiller = [
+        {"uid": "damgali", "fcmToken": "J", "lastSeenDaily": "2026-09-01",
+         "fcmTokenAt": dt.datetime(2026, 9, 10, tzinfo=dt.timezone.utc)},
+        {"uid": "gunlu", "fcmToken": "J", "lastSeenDaily": "2026-09-12"},
+    ]
+    assert notify._jeton_sahipleri(profiller) == {"J": "damgali"}
+
+
+@uygulama_gerekir
+def test_kosu_ayni_jeton_iki_profilde_yalniz_en_yeni_sahibe_gider(
+        monkeypatch, caplog):
+    """Cihazda ölçülen kusur: sahip (tr) + test hesabı (en) aynı vivo
+    jetonuyla — ikisine de push gidip aynı telefona düşüyordu. Yalnız en son
+    sahiplenen kuyruğa girer; diğeri `jeton-baska-hesapta` ile atlanır ve
+    bayat jetonu silinir."""
+    from api import notify
+    from services import push_service
+
+    yazilan: list = []
+    _kosu_ortami(monkeypatch, yazilan)
+    monkeypatch.setattr(notify, "_iter_profiles", lambda: iter([
+        profil(uid="eski-hesap", quietFrom=0, quietTo=0,
+               fcmToken="vivo", lastSeenDaily="2026-09-07", language="en"),
+        profil(uid="sahip", quietFrom=0, quietTo=0,
+               fcmToken="vivo", lastSeenDaily="2026-09-12", language="tr"),
+        profil(uid="baska-cihaz", quietFrom=0, quietTo=0,
+               fcmToken="pixel", lastSeenDaily="2026-09-01"),
+    ]))
+    gonderilen: list = []
+
+    def sahte_send(m):
+        gonderilen.extend(m)
+        return push_service.SendResult(sent=len(m), failed=0, pruned=[],
+                                       failed_uids=[])
+    monkeypatch.setattr(push_service, "send", sahte_send)
+    silinen: list = []
+    monkeypatch.setattr(notify, "_bayat_jetonu_sil", silinen.append)
+
+    with TestClient(app) as client, caplog.at_level(logging.WARNING, "api.notify"):
+        yanit = client.post("/api/v1/notify/run?type=daily&force=true",
+                            headers={"Authorization": "dogru"}).json()
+
+    assert sorted(m.uid for m in gonderilen) == ["baska-cihaz", "sahip"]
+    assert yanit["skipped"].get("jeton-baska-hesapta") == 1
+    assert silinen == ["eski-hesap"]
+    assert any("Jeton başka hesapta daha yeni" in r.getMessage()
+               for r in caplog.records)
+
+
+@uygulama_gerekir
+def test_kosu_prova_bayat_jetonu_silmez(monkeypatch):
+    from api import notify
+    from services import push_service
+
+    yazilan: list = []
+    _kosu_ortami(monkeypatch, yazilan)
+    monkeypatch.setattr(notify, "_iter_profiles", lambda: iter([
+        profil(uid="eski", quietFrom=0, quietTo=0, fcmToken="vivo",
+               lastSeenDaily="2026-09-07"),
+        profil(uid="yeni", quietFrom=0, quietTo=0, fcmToken="vivo",
+               lastSeenDaily="2026-09-12"),
+    ]))
+    monkeypatch.setattr(push_service, "send", lambda m: push_service.SendResult(
+        sent=len(m), failed=0, pruned=[], failed_uids=[]))
+    silinen: list = []
+    monkeypatch.setattr(notify, "_bayat_jetonu_sil", silinen.append)
+
+    with TestClient(app) as client:
+        yanit = client.post(
+            "/api/v1/notify/run?type=daily&force=true&dry_run=true",
+            headers={"Authorization": "dogru"}).json()
+
+    assert yanit["queued"] == 1
+    assert yanit["skipped"].get("jeton-baska-hesapta") == 1
+    assert silinen == [], "prova iz bırakmaz"

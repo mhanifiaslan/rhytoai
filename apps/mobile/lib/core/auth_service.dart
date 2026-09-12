@@ -12,6 +12,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../l10n/app_localizations.dart';
 import 'api.dart' show apiProvider, rythoNavigatorKey;
 import 'device_session.dart' show deviceConflictProvider, releaseThisDevice;
+import 'notifications.dart' show forgetPushToken;
 
 /// Kimlik doğrulama işlemleri.
 ///
@@ -250,20 +251,39 @@ Future<void> _oturumuKapat() async {
   await FirebaseAuth.instance.signOut();
 }
 
-/// Her yerden çıkış: önce cihaz kilidi bırakılır, sonra Google + Firebase
-/// oturumu kapanır, en son çakışma kapısı düşer.
+/// Çıkışta cihaz jetonunu bu hesaptan söker (JT-turu); kimlik yoksa ya da
+/// Firebase ayakta değilse (testler) sessizce geçer.
+Future<void> _jetonuUnut() async {
+  try {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) await forgetPushToken(uid);
+  } catch (e) {
+    debugPrint('Çıkışta jeton unutulamadı: $e');
+  }
+}
+
+/// Her yerden çıkış: önce cihaz kilidi bırakılır, sonra cihaz jetonu bu
+/// hesaptan sökülür, sonra Google + Firebase oturumu kapanır, en son
+/// çakışma kapısı düşer.
 ///
-/// SIRA ZORUNLU (TC-turu K7): `DELETE /device/claim` Firebase kimliğiyle
-/// gider — çıkıştan sonra çağrılsa 401 yer ve eski cihaz kilidi elinde
-/// tutar; "A çıkış yaptı, B hâlâ kilitli" (B4) tam buydu. Bırakma ≤3 sn ve
-/// hata yutulur ([releaseThisDevice]); çıkış hiçbir koşulda engellenmez.
-/// Kapı bayrağı ÇIKIŞTAN SONRA iner: hiç inmese bir sonraki giriş aynı
-/// çakışma ekranına düşerdi; önce inse `_Gate` bir kare kabuğu gösterirdi.
+/// SIRA ZORUNLU (TC-turu K7 → JT): `DELETE /device/claim` Firebase
+/// kimliğiyle gider — çıkıştan sonra çağrılsa 401 yer ve eski cihaz kilidi
+/// elinde tutar; "A çıkış yaptı, B hâlâ kilitli" (B4) tam buydu. Jeton
+/// sökme de kimlik ister: çıkıştan sonra profil yazımını kural reddeder ve
+/// eski hesabın push'u bu telefona gelmeye devam ederdi (cihazda ölçüldü:
+/// aynı jeton iki profilde, biri Türkçe biri İngilizce). İkisi de ≤3 sn ve
+/// hata yutulur; çıkış hiçbir koşulda engellenmez. Kapı bayrağı ÇIKIŞTAN
+/// SONRA iner: hiç inmese bir sonraki giriş aynı çakışma ekranına düşerdi;
+/// önce inse `_Gate` bir kare kabuğu gösterirdi.
 ///
-/// [signOut] test dikişi; üretimde Google + Firebase çıkışı.
-Future<void> signOutEverywhere({Future<void> Function()? signOut}) async {
+/// [signOut] ve [forgetToken] test dikişi.
+Future<void> signOutEverywhere({
+  Future<void> Function()? signOut,
+  Future<void> Function()? forgetToken,
+}) async {
   final kap = _uygulamaKabi();
   if (kap != null) await releaseThisDevice(kap.read(apiProvider));
+  await (forgetToken ?? _jetonuUnut)();
   await (signOut ?? _oturumuKapat)();
   kap?.read(deviceConflictProvider.notifier).state = null;
 }

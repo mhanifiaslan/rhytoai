@@ -112,7 +112,13 @@ Future<void> syncNotificationContext() async {
     // Token yalnızca izin verilmişse alınabilir; izin yoksa sessizce geçilir
     // ve kullanıcı izni sonradan verdiğinde bir sonraki açılışta yazılır.
     final token = await FirebaseMessaging.instance.getToken();
-    if (token != null) guncelleme['fcmToken'] = token;
+    if (token != null) {
+      guncelleme['fcmToken'] = token;
+      // JT: jetonun bu hesaba EN SON ne zaman yazıldığı — sunucu aynı
+      // jetonu taşıyan hesaplardan en yenisine gönderir (bkz.
+      // api/notify.py `_jeton_sahipleri`).
+      guncelleme['fcmTokenAt'] = FieldValue.serverTimestamp();
+    }
   } catch (e) {
     debugPrint('FCM token alınamadı: $e');
   }
@@ -199,15 +205,55 @@ void listenForTokenRefresh() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
     try {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .set({'fcmToken': token}, SetOptions(merge: true));
+      await FirebaseFirestore.instance.collection('users').doc(uid).set({
+        'fcmToken': token,
+        'fcmTokenAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Yenilenen token yazılamadı: $e');
     }
   });
 }
+
+/// Çıkışta cihaz jetonunu bu hesaptan söker (JT-turu).
+///
+/// Cihazda ölçülen kusur: aynı telefonda hesap değiştirilince eski hesabın
+/// profilindeki `fcmToken` duruyordu — o telefona İKİ hesabın push'u
+/// gidiyordu (biri Türkçe biri İngilizce). İki adım, ikisi de best-effort:
+///
+/// 1. Profildeki `fcmToken` / `fcmTokenAt` silinir (kimlik hâlâ varken —
+///    çıkıştan SONRA çağrılsa kural yazımı reddeder).
+/// 2. FCM jetonu geçersizlenir (`deleteToken`): profile yazamadığımız
+///    başka bir hesapta kalsa bile o jetona push artık ulaşmaz; sunucu
+///    bayat jetonu temizler. Bir sonraki giriş yeni jeton alır
+///    ([syncNotificationContext]).
+///
+/// Çıkışı GECİKTİRMEZ: her adım ≤[timeout], hata yutulur. İki kanca test
+/// dikişidir.
+Future<void> forgetPushToken(
+  String uid, {
+  Future<void> Function(String uid)? clearProfile,
+  Future<void> Function()? deleteDeviceToken,
+  Duration timeout = const Duration(seconds: 3),
+}) async {
+  try {
+    await (clearProfile ?? _jetonuProfildenSil)(uid).timeout(timeout);
+  } catch (e) {
+    debugPrint('Çıkışta jeton profilden silinemedi: $e');
+  }
+  try {
+    await (deleteDeviceToken ?? FirebaseMessaging.instance.deleteToken)()
+        .timeout(timeout);
+  } catch (e) {
+    debugPrint('Çıkışta FCM jetonu geçersizlenemedi: $e');
+  }
+}
+
+Future<void> _jetonuProfildenSil(String uid) =>
+    FirebaseFirestore.instance.collection('users').doc(uid).update({
+      'fcmToken': FieldValue.delete(),
+      'fcmTokenAt': FieldValue.delete(),
+    });
 
 // ---------------------------------------------------------------------------
 // Ön plan bildirimi
