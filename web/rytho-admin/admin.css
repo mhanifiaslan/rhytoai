@@ -161,7 +161,7 @@ html { scroll-behavior: auto; }
 .kimlik .kim span { display: block; color: var(--parchment-mid); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
 
 /* ================= İçerik ================= */
-.icerik { padding: 24px 24px 48px; display: flex; flex-direction: column; gap: 20px; max-width: 1360px; width: 100%; }
+.icerik { padding: 24px 24px 48px; display: flex; flex-direction: column; gap: 20px; max-width: none; width: 100%; }
 .icerik section { padding: 0; scroll-margin-top: 0; }
 .icerik section.modul, .icerik section.kimlik-bas { padding: 18px; }
 .icerik h1:focus { outline: none; }
@@ -203,6 +203,7 @@ html { scroll-behavior: auto; }
 
 /* ================= KPI ================= */
 .izgara-kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(176px, 1fr)); gap: 12px; }
+@media (min-width: 1600px) { .izgara-kpi { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 .istat-kart {
   position: relative; display: flex; flex-direction: column; gap: 6px;
   padding: 16px 18px 14px; border-radius: var(--r-md);
