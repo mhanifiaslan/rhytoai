@@ -115,13 +115,17 @@ _MESSAGES: dict[str, dict[str, str]] = {
         "en": "This number is linked to another account.",
     },
 
-    # 409 + X-Device-Conflict: 1 ile birlikte döner; istemci oturumu kapatıp
-    # cihaz çakışması ekranına düşer.
+    # 409 + X-Device-Conflict: 1 ile birlikte döner (TC-turu). İstemci
+    # oturumu KAPATMAZ; kapı ekranında "Bu cihazda kullan" / "Çıkış yap"
+    # sunar — metin o düğmeye yönlendirir. Öbür cihazın bilgisi başlıkta
+    # (X-Device-Other-Platform / X-Device-Claimed-At), detail düz metin.
     "device.conflict": {
-        "tr": "Aboneliğin başka bir cihazda kullanılıyor. Bu cihazda devam "
-              "etmek için yeniden giriş yapıp cihazı devralabilirsin.",
-        "en": "Your subscription is in use on another device. Sign in again "
-              "and take over to continue on this one.",
+        "tr": "Hesabın başka bir cihazda açıldı. Rytho+ tek cihazda "
+              "kullanılabilir — burada devam etmek için 'Bu cihazda "
+              "kullan'a dokun.",
+        "en": "Your account was opened on another device. Rytho+ works on "
+              "one device at a time — tap 'Use on this device' to continue "
+              "here.",
     },
     # 402 + X-Paywall-Reason: tokens ile birlikte döner; istemci bu metni
     # token mağazası ekranında gösterir.

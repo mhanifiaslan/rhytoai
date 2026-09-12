@@ -330,14 +330,17 @@ def require_plus(feature: str):
 
     Kullanim:  ``user: AuthUser = Depends(require_plus("natal_report"))``
 
-    Tek cihaz kilidi de BURADAN uygulanir: kilit yalnizca abonelere ait ve
-    aboneli her yol bu bagimliliktan geciyor — ayri bir dependency her uca
-    tek tek eklenmek zorunda kalirdi ve biri unutulurdu.
+    Tek cihaz kilidi de BURADAN uygulanir: aboneli her yol bu bagimliliktan
+    geciyor — ayri bir dependency her uca tek tek eklenmek zorunda kalirdi
+    ve biri unutulurdu. Kilit yalnizca UCRETLI abonede etkili (deneme muaf);
+    o ayrimi ve "son giris kazanir" hakemini (auth_time) core.device yapar.
     """
 
     def dependency(user: AuthUser = Depends(get_current_user),
                    lang: str = Depends(get_language),
-                   x_device_id: str | None = Header(default=None)) -> AuthUser:
+                   x_device_id: str | None = Header(default=None),
+                   x_device_platform: str | None = Header(default=None),
+                   ) -> AuthUser:
         if not is_subscriber(user.uid):
             raise HTTPException(
                 status_code=PAYWALL_STATUS,
@@ -347,7 +350,9 @@ def require_plus(feature: str):
         # Tembel import: core.device -> core.entitlements yonu zaten var,
         # modul duzeyinde geri bag dongusel import olurdu.
         from core import device
-        device.enforce_single_device(user.uid, x_device_id, lang=lang)
+        device.enforce_single_device(user.uid, x_device_id,
+                                     auth_time=user.auth_time,
+                                     platform=x_device_platform, lang=lang)
         return user
 
     return dependency

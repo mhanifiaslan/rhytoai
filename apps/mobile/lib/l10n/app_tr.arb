@@ -876,12 +876,21 @@
   "phoneCodeWrong": "Kod yanlış görünüyor, tekrar dene.",
   "phoneTakenError": "Bu numara başka bir hesaba bağlı.",
   "phoneTooManyTries": "Çok fazla deneme yapıldı. Biraz sonra tekrar dene.",
-  "deviceConflictTitle": "Aboneliğin başka bir cihazda",
-  "deviceConflictBody": "Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; giriş yaptıktan hemen sonra aboneliği bu cihaza taşımak isteyip istemediğin sorulacak.",
-  "deviceConflictAction": "Giriş ekranına dön",
-  "deviceTakeoverTitle": "Bu cihazda kullan?",
-  "deviceTakeoverBody": "Aboneliğin başka bir cihazda kayıtlı. Devralırsan diğer cihaz oturumdan çıkarılır; aboneliğin tek cihazda çalışır.",
-  "deviceTakeoverConfirm": "Bu cihazda kullan",
+  "deviceConflictTitle": "Hesabın başka bir cihazda açıldı",
+  "deviceConflictBody": "{platform} cihazında {time} itibarıyla giriş yapıldı. Rytho+ aynı anda tek cihazda kullanılabilir — burada devam etmek için \"Bu cihazda kullan\"a dokun.",
+  "@deviceConflictBody": {
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceConflictUseHere": "Bu cihazda kullan",
+  "deviceConflictSignOut": "Çıkış yap",
+  "deviceConflictClaimFailed": "Cihaz devralınamadı — bağlantını kontrol edip tekrar dene.",
   "forceUpdateTitle": "Yeni sürüm gerekli",
   "forceUpdateBody": "Rytho'nun bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — yıldızlar bekliyor.",
   "forceUpdateAction": "Google Play'de güncelle",

@@ -1744,24 +1744,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get phoneTooManyTries => 'Too many attempts. Please try again later.';
 
   @override
-  String get deviceConflictTitle => 'Your subscription is on another device';
+  String get deviceConflictTitle => 'Your account was opened on another device';
 
   @override
-  String get deviceConflictBody =>
-      'Rytho+ works on one device at a time, and it\'s currently registered to another one. Sign in again to continue here; right after signing in you\'ll be asked whether to move your subscription to this device.';
+  String deviceConflictBody(String platform, String time) {
+    return 'Signed in on $platform at $time. Rytho+ works on one device at a time — tap \"Use on this device\" to continue here.';
+  }
 
   @override
-  String get deviceConflictAction => 'Back to sign-in';
+  String get deviceConflictUseHere => 'Use on this device';
 
   @override
-  String get deviceTakeoverTitle => 'Use on this device?';
+  String get deviceConflictSignOut => 'Sign out';
 
   @override
-  String get deviceTakeoverBody =>
-      'Your subscription is registered to another device. If you take over, the other device will be signed out; your subscription works on one device at a time.';
-
-  @override
-  String get deviceTakeoverConfirm => 'Use here';
+  String get deviceConflictClaimFailed =>
+      'Couldn\'t take over this device — check your connection and try again.';
 
   @override
   String get forceUpdateTitle => 'Update required';

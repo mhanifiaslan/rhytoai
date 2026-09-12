@@ -61,7 +61,7 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 26 | Bildirim izni + günlük bildirim gelişi | ⬜ | |
 | 27 | Dil EN'e çevrilince ekranlar (sihirbaz + paywall + abonelik) | ⬜ | |
 | 28 | Hesap silme akışı | ⬜ | |
-| 29 | Cihaz devralma: B cihazında giriş → "bu cihazda kullan?" sorusu → Taşı → A düşer → A'da yeniden giriş → soru A'da çıkar (döngü yok) | ⬜ | 1.0.0+5 |
+| 29 | Tek cihaz (TC, yeniden): ücretli abone A'da kullanırken B'de giriş → B **soru görmeden** çalışır (son giriş kazanır); A'ya dön → ilk korumalı istekte "Hesabın başka bir cihazda açıldı" + "{platform} · {saat}" ekranı, oturum KAPANMAZ; A "Bu cihazda kullan" → A çalışır, B'de aynı ekran; A "Çıkış yap" → B etkilenmez; A yeniden giriş → A kazanır. Deneme hesabında iki cihaz serbest | ⬜ | 1.15.1+36 + sunucu |
 | 30 | İching/BaZi: abonesizde kilit kartı + Atlas karo rozetleri; abonede çekim (2/5 jeton) | ⬜ | 1.0.0+5 |
 | 31 | Rehber kartları: ayar kapalı → "aç" kartı; telefon doğrusuz → "doğrula" kartı; boş → bilgi metni; iki taraf hazırsa eşleşme listesi | ⬜ | 1.0.0+6 |
 | 32 | Dürtme: aynı ekranda art arda 2-3 dürtme (geri git-gel gerekmeden) | ⬜ | 1.0.0+6 |
@@ -156,9 +156,11 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 | 122 | Panel eşik paneli (PBZ/S3): Sistem'de eşik, env tabanı, "N kullanıcı eşiğin altında" (canlı) ve "bilinmiyor (≤34)" sayısı; eşik>0 için üstünde hiç kullanıcı görülmemişse 400 ile reddediliyor; başarılı yazım denetim izinde `config.min_build`; `deploy-backend.ps1` yeniden koşunca eşik KORUNUYOR | ⬜ | panel + sunucu |
 | 123 | Bildirim dili (PBZ/S2): Profil → Dil → İngilizce, uygulamayı kapat-aç → `users/{uid}.language == 'en'` ve DEĞİŞMİYOR (eskiden açılış başına tr/en flip); "Sistem" tercihinde telefon dili değişince de alan güncelleniyor; ertesi gün sabah/öğle/akşam bildirimlerinin ÜÇÜ de aktif dilde; dil değiştirilen günün akşam sorusu düşmüyor | ⬜ | 1.15.0+35 + sunucu |
 | 124 | 3D para sahnesi (PBZ/S1): İching'de çekim → paralar (tepsi/mekân YOK, uygulamanın kendi zemininin üstünde, eski 2D disklerin yerinde) havada döner → yanıt → altı iniş alttan üste, her inişte kaç Rytho yüzü geldiği görünüyor + o çizgi çiziliyor + clink; hareketli çizgi işaretleri (○/×) doğru satırda; tepsiye dokununca ritüel atlanıyor; reduceMotion açıkken statik kare + anında altı çizgi; BaZi yüklenirken bronz luopan döngüsü (usturlap yok); paket boyutu ≤5 MB artış | ⬜ | 1.15.0+35 |
+| 125 | Tek cihaz dayanıklılık (TC): B devraldıktan hemen sonra B'de art arda 5 korumalı istek (günlük okuma, sohbet, natal) → hiç 409 yok (instance-yerel memo uyumsuzlukta Firestore'u yeniden okuyor); A'da "Çıkış yap" sonrası `private/device` dokümanı SİLİNMİŞ; panel 360 "Cihaz kilidini sıfırla" denetim izine düşüyor | ⬜ | sunucu + panel |
+| 126 | Tek cihaz kapısı derinlikten görünür (TC denetim bulgusu): A'da sohbet (ya da yüz okuma / kehanet) AÇIKKEN B devralır → A'da mesaj gönderince 409 → basılı sohbet ekranı İNER, "Hesabın başka bir cihazda açıldı" ekranı ÖNE çıkar, "Bu cihazda kullan" ulaşılabilir (satır içi hata + ulaşılmaz düğme YOK). Ekrandaki cihaz KAZANANIN platformu ("iOS cihazında" — A Android'de kendi platformunu okumaz); eski sürüm istemci devralmışsa "—". Aynı davranış 426 (zorunlu güncelleme) için de: sohbet açıkken eşik çekilirse güncelleme ekranı öne çıkar | ⬜ | 1.15.1+36 + sunucu |
 
 **Kapalı test ÖNCESİ zorunlu koşum listesi:** 1, 6, 17-24, 28, 33, 39,
-100, 101, 109, 110-112 (panel), 113-124. İade + yenileme yalnız
+29, 100, 101, 109, 110-112 (panel), 113-126. İade + yenileme yalnız
 License-testing hesabıyla ölçülebilir (114).
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 
@@ -224,6 +226,7 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
 - Durum: düzeltildi (91577b1, 1.0.0+5) — bayrak yalnız dialog
   gösterilince yanar, çıkış yolları sıfırlar, abonelik ön-kontrolü
   kaldırıldı (sunucu `claimed:false` zaten döner). Cihaz testi bekliyor.
+- **TC-turu (1.15.1+36):** kök neden yeniden ölçüldü — soru yarışı kaybediyordu (SkyScreen'in günlük okuması 409 alıp oturumu soru açıkken kapatıyor, devralma isteği kimliksiz gidip 401 yutuluyordu) ve serbest bırakma yolu hiç yoktu. Devralma sorusu kaldırıldı: sunucu `auth_time` ile "son giriş kazanır" hakemi; 409 artık oturumu kapatmıyor, kapı ekranı "Bu cihazda kullan / Çıkış yap"; çıkış `DELETE /device/claim` ile serbest bırakıyor.
 
 ### B5 — "Abonelik alındı ama sürekli Rytho+ istiyor" (hata değil)
 - Gözlenen: 3 test hesabında da satın almadan ~30 dk sonra kilitler

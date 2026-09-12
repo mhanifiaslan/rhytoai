@@ -442,3 +442,29 @@ Env tabanı tanımlıysa o taban kalır — kontrol:
 `gcloud run services describe rytho-backend --region us-central1 --project rhytoai --format "value(spec.template.spec.containers[0].env)"`;
 kaldırmak için `--remove-env-vars RYTHO_MIN_BUILD` (deploy betiği artık
 tanımlamadığı için bir sonraki deploy da siler).
+
+## 7. Cihaz kilidi sıfırlama (TC-turu, 1.15.1+36)
+
+Kilit artık **sunucu hakemli** ("son giriş kazanır", Firebase token'daki
+`auth_time`): yeni cihazda giriş yapan abone soru görmeden çalışır; eski
+cihaz ilk korumalı istekte "Hesabın başka bir cihazda açıldı" kapısını
+görür ("Bu cihazda kullan" / "Çıkış yap"). Çıkış kaydı serbest bırakır
+(`DELETE /device/claim`, yalnız sahipse). Kilit yalnız **ücretli** abonede;
+3 günlük deneme muaf.
+
+**Konsol işi yok — kaçış kapısı panelde:** kullanıcı kapıdan çıkamıyorsa
+(eski sürüm istemci, bozuk cihaz saati vb.) Panel → Kullanıcılar → 360 →
+"Cihaz kilidi" kartı → **Cihaz kilidini sıfırla** (`confirm`). Kayıt
+silinir, bir sonraki korumalı isteği yapan cihaz sessizce sahiplenir;
+Denetim izinde `device.release`. Kart kimliği maskeli gösterir (son 6).
+
+**Doğrulama (canlı, `B` yukarıdaki gibi, `T` geçerli ID token):**
+
+    curl -si -X DELETE -H "Authorization: Bearer $T" -H "X-Device-Id: baska" $B/api/v1/device/claim
+      → 200 · {"status":"success","released":false}   (sahip değil — kayıt durur)
+    curl -si -H "Authorization: Bearer $T" -H "X-Device-Id: baska" $B/api/v1/device/status
+      → 200 · {"locked":true,"claimed":true,"this_device":false,"other":{"platform":"android","claimedAt":"…"}}
+
+Firestore kuralı DEĞİŞMEDİ (`private/**` istemciye kapalı); doküman
+`users/{uid}/private/device` — Admin SDK ile elle silmek de aynı etkiyi
+verir, ama denetim izi düşmez; paneli kullan.

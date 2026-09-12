@@ -3197,38 +3197,32 @@ abstract class AppLocalizations {
   /// No description provided for @deviceConflictTitle.
   ///
   /// In tr, this message translates to:
-  /// **'Aboneliğin başka bir cihazda'**
+  /// **'Hesabın başka bir cihazda açıldı'**
   String get deviceConflictTitle;
 
   /// No description provided for @deviceConflictBody.
   ///
   /// In tr, this message translates to:
-  /// **'Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; giriş yaptıktan hemen sonra aboneliği bu cihaza taşımak isteyip istemediğin sorulacak.'**
-  String get deviceConflictBody;
+  /// **'{platform} cihazında {time} itibarıyla giriş yapıldı. Rytho+ aynı anda tek cihazda kullanılabilir — burada devam etmek için \"Bu cihazda kullan\"a dokun.'**
+  String deviceConflictBody(String platform, String time);
 
-  /// No description provided for @deviceConflictAction.
-  ///
-  /// In tr, this message translates to:
-  /// **'Giriş ekranına dön'**
-  String get deviceConflictAction;
-
-  /// No description provided for @deviceTakeoverTitle.
-  ///
-  /// In tr, this message translates to:
-  /// **'Bu cihazda kullan?'**
-  String get deviceTakeoverTitle;
-
-  /// No description provided for @deviceTakeoverBody.
-  ///
-  /// In tr, this message translates to:
-  /// **'Aboneliğin başka bir cihazda kayıtlı. Devralırsan diğer cihaz oturumdan çıkarılır; aboneliğin tek cihazda çalışır.'**
-  String get deviceTakeoverBody;
-
-  /// No description provided for @deviceTakeoverConfirm.
+  /// No description provided for @deviceConflictUseHere.
   ///
   /// In tr, this message translates to:
   /// **'Bu cihazda kullan'**
-  String get deviceTakeoverConfirm;
+  String get deviceConflictUseHere;
+
+  /// No description provided for @deviceConflictSignOut.
+  ///
+  /// In tr, this message translates to:
+  /// **'Çıkış yap'**
+  String get deviceConflictSignOut;
+
+  /// No description provided for @deviceConflictClaimFailed.
+  ///
+  /// In tr, this message translates to:
+  /// **'Cihaz devralınamadı — bağlantını kontrol edip tekrar dene.'**
+  String get deviceConflictClaimFailed;
 
   /// No description provided for @forceUpdateTitle.
   ///

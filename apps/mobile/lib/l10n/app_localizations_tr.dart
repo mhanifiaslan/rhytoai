@@ -1742,24 +1742,22 @@ class AppLocalizationsTr extends AppLocalizations {
       'Çok fazla deneme yapıldı. Biraz sonra tekrar dene.';
 
   @override
-  String get deviceConflictTitle => 'Aboneliğin başka bir cihazda';
+  String get deviceConflictTitle => 'Hesabın başka bir cihazda açıldı';
 
   @override
-  String get deviceConflictBody =>
-      'Rytho+ aboneliğin tek cihazda kullanılabilir ve şu an başka bir cihazda kayıtlı. Bu cihazda devam etmek için yeniden giriş yap; giriş yaptıktan hemen sonra aboneliği bu cihaza taşımak isteyip istemediğin sorulacak.';
+  String deviceConflictBody(String platform, String time) {
+    return '$platform cihazında $time itibarıyla giriş yapıldı. Rytho+ aynı anda tek cihazda kullanılabilir — burada devam etmek için \"Bu cihazda kullan\"a dokun.';
+  }
 
   @override
-  String get deviceConflictAction => 'Giriş ekranına dön';
+  String get deviceConflictUseHere => 'Bu cihazda kullan';
 
   @override
-  String get deviceTakeoverTitle => 'Bu cihazda kullan?';
+  String get deviceConflictSignOut => 'Çıkış yap';
 
   @override
-  String get deviceTakeoverBody =>
-      'Aboneliğin başka bir cihazda kayıtlı. Devralırsan diğer cihaz oturumdan çıkarılır; aboneliğin tek cihazda çalışır.';
-
-  @override
-  String get deviceTakeoverConfirm => 'Bu cihazda kullan';
+  String get deviceConflictClaimFailed =>
+      'Cihaz devralınamadı — bağlantını kontrol edip tekrar dene.';
 
   @override
   String get forceUpdateTitle => 'Yeni sürüm gerekli';

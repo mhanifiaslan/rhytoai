@@ -16,7 +16,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query
 from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
-from core import app_gate, config, firestore as firestore_client
+from core import app_gate, config, device, firestore as firestore_client
 from core import wallet
 from core.auth import AuthUser, get_current_user, require_admin
 from core.i18n import get_language
@@ -301,6 +301,24 @@ def user_delete(uid: str, req: DeleteRequest,
     _audit(user, "user.delete", target_uid=uid,
            params={"reason": req.reason, "email": eposta})
     return {"status": "ok", "report": getattr(rapor, "__dict__", str(rapor))}
+
+
+@router.post("/users/{uid}/device/release")
+def user_device_release(uid: str, user: AuthUser = Depends(require_admin)):
+    """Cihaz kilidini sıfırlar (TC-turu kaçış kapısı).
+
+    "Hesabın başka cihazda açıldı" kapısından çıkamayan kullanıcı için:
+    kayıt cihazdan bağımsız silinir, bir sonraki korumalı isteği yapan
+    cihaz sessizce sahiplenir. Gerekçe istenmez — eylem geri alınabilir
+    (kullanıcı yeniden sahiplenir); denetim izi yeter.
+    """
+    try:
+        released = device.force_release(uid)
+    except Exception as exc:
+        raise HTTPException(status_code=500,
+                            detail=f"Cihaz kaydı silinemedi: {exc}")
+    _audit(user, "device.release", target_uid=uid)
+    return {"status": "ok", "released": released}
 
 
 @router.get("/economics")

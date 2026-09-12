@@ -4,11 +4,14 @@ import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'
+    show ProviderContainer, ProviderScope;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
-import 'device_claim.dart' show resetDeviceTakeoverPrompt;
 import '../l10n/app_localizations.dart';
+import 'api.dart' show apiProvider, rythoNavigatorKey;
+import 'device_session.dart' show deviceConflictProvider, releaseThisDevice;
 
 /// Kimlik doğrulama işlemleri.
 ///
@@ -221,11 +224,46 @@ Future<void> linkGoogle() async {
   await user.getIdToken(true);
 }
 
-Future<void> signOutEverywhere() async {
-  // Cihaz devralma sorusu yeni oturumda yeniden sorulabilsin (V1).
-  resetDeviceTakeoverPrompt();
+/// Çıkış yolunun uygulamaya köprüsü: sağlayıcı kabı kök navigatörün
+/// bağlamından bulunur (`rythoNavigatorKey` — paywall da aynı köprüyle
+/// açılıyor, bkz. api.dart).
+///
+/// `signOutEverywhere` üst düzey bir fonksiyon; `ref`'i, dolayısıyla
+/// uygulamanın Dio'su ve kapı bayrağı yok. Üç çağıranı (profil, hesap silme,
+/// onboarding) tear-off geçiyor; imzayı bozmak ya da `_Gate`'e kanca kurmak
+/// yerine var olan köprü kullanılır. Navigatör yoksa (testler, Firebase'siz
+/// yollar) null: çıkış kilide dokunmadan sürer.
+ProviderContainer? _uygulamaKabi() {
+  final context = rythoNavigatorKey.currentContext;
+  if (context == null || !context.mounted) return null;
+  try {
+    return ProviderScope.containerOf(context, listen: false);
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<void> _oturumuKapat() async {
   try {
     await GoogleSignIn.instance.signOut();
   } catch (_) {}
   await FirebaseAuth.instance.signOut();
+}
+
+/// Her yerden çıkış: önce cihaz kilidi bırakılır, sonra Google + Firebase
+/// oturumu kapanır, en son çakışma kapısı düşer.
+///
+/// SIRA ZORUNLU (TC-turu K7): `DELETE /device/claim` Firebase kimliğiyle
+/// gider — çıkıştan sonra çağrılsa 401 yer ve eski cihaz kilidi elinde
+/// tutar; "A çıkış yaptı, B hâlâ kilitli" (B4) tam buydu. Bırakma ≤3 sn ve
+/// hata yutulur ([releaseThisDevice]); çıkış hiçbir koşulda engellenmez.
+/// Kapı bayrağı ÇIKIŞTAN SONRA iner: hiç inmese bir sonraki giriş aynı
+/// çakışma ekranına düşerdi; önce inse `_Gate` bir kare kabuğu gösterirdi.
+///
+/// [signOut] test dikişi; üretimde Google + Firebase çıkışı.
+Future<void> signOutEverywhere({Future<void> Function()? signOut}) async {
+  final kap = _uygulamaKabi();
+  if (kap != null) await releaseThisDevice(kap.read(apiProvider));
+  await (signOut ?? _oturumuKapat)();
+  kap?.read(deviceConflictProvider.notifier).state = null;
 }

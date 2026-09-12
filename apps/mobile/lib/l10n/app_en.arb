@@ -876,12 +876,21 @@
   "phoneCodeWrong": "That code doesn't look right — try again.",
   "phoneTakenError": "This number is linked to another account.",
   "phoneTooManyTries": "Too many attempts. Please try again later.",
-  "deviceConflictTitle": "Your subscription is on another device",
-  "deviceConflictBody": "Rytho+ works on one device at a time, and it's currently registered to another one. Sign in again to continue here; right after signing in you'll be asked whether to move your subscription to this device.",
-  "deviceConflictAction": "Back to sign-in",
-  "deviceTakeoverTitle": "Use on this device?",
-  "deviceTakeoverBody": "Your subscription is registered to another device. If you take over, the other device will be signed out; your subscription works on one device at a time.",
-  "deviceTakeoverConfirm": "Use here",
+  "deviceConflictTitle": "Your account was opened on another device",
+  "deviceConflictBody": "Signed in on {platform} at {time}. Rytho+ works on one device at a time — tap \"Use on this device\" to continue here.",
+  "@deviceConflictBody": {
+    "placeholders": {
+      "platform": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "deviceConflictUseHere": "Use on this device",
+  "deviceConflictSignOut": "Sign out",
+  "deviceConflictClaimFailed": "Couldn't take over this device — check your connection and try again.",
   "forceUpdateTitle": "Update required",
   "forceUpdateBody": "This version of Rytho is no longer supported. Update the app to continue — the stars are waiting.",
   "forceUpdateAction": "Update on Google Play",

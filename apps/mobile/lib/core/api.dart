@@ -3,7 +3,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../features/auth/device_conflict_screen.dart';
 import '../features/paywall/paywall_screen.dart';
 import '../features/paywall/token_store_screen.dart';
 import '../l10n/app_localizations.dart';
@@ -13,8 +12,14 @@ import 'app_config.dart'
         appBuildProvider,
         forceUpdateProvider,
         updateRequiredInterceptor;
-import 'device_claim.dart' show resetDeviceTakeoverPrompt;
 import 'device_id.dart';
+import 'device_session.dart'
+    show
+        deviceConflictInterceptor,
+        deviceConflictProvider,
+        devicePlatform,
+        kDevicePlatformHeader,
+        noteDeviceConflict;
 import 'locale.dart';
 
 /// Paywall'ı herhangi bir ekrandan açabilmek için kök navigatör.
@@ -24,35 +29,10 @@ final GlobalKey<NavigatorState> rythoNavigatorKey = GlobalKey<NavigatorState>();
 const int kPaywallStatus = 402;
 
 /// Tek cihaz kilidinin çakışma kodu (X-Device-Conflict başlığıyla birlikte).
+/// İşleyişi core/device_session.dart'ta: kapı kapanır, oturum AÇIK kalır.
 const int kDeviceConflictStatus = 409;
 
 bool _paywallOpen = false;
-bool _deviceConflictHandling = false;
-
-/// Cihaz çakışması: oturumu kapat ve çakışma ekranına düş.
-///
-/// Oturumun kapanması yeterli değil — kullanıcı NEDEN atıldığını görmeli.
-/// Sessiz signOut, "uygulama bozuldu" hissi verir; ekran ise devralma
-/// yolunu gösterir.
-Future<void> _handleDeviceConflict() async {
-  if (_deviceConflictHandling) return;
-  _deviceConflictHandling = true;
-  try {
-    // Yeni girişte devralma sorusu YENİDEN sorulabilsin (V1 döngü onarımı).
-    resetDeviceTakeoverPrompt();
-    await FirebaseAuth.instance.signOut();
-    final navigator = rythoNavigatorKey.currentState;
-    if (navigator == null) return;
-    await navigator.push(MaterialPageRoute(
-      builder: (_) => const DeviceConflictScreen(),
-      fullscreenDialog: true,
-    ));
-  } catch (_) {
-    // signOut düşerse bile bayrak açık kalmasın; sonraki 409 yine dener.
-  } finally {
-    _deviceConflictHandling = false;
-  }
-}
 
 /// Sunucu 402 döndüğünde doğru ekranı açar.
 ///
@@ -120,6 +100,13 @@ final apiProvider = Provider<Dio>((ref) {
       .add(appBuildInterceptor(() => ref.read(appBuildProvider.future)));
   dio.interceptors.add(updateRequiredInterceptor(
       () => ref.read(forceUpdateProvider.notifier).state = true));
+  // Tek cihaz kilidi (TC): 409 + X-Device-Conflict → kapı kapanır, oturum
+  // AÇIK kalır; devralma/çıkış kararı `DeviceConflictScreen`'de (bkz.
+  // core/device_session.dart). 426 ile aynı desen: interceptor → bayrak.
+  // Eski hâli burada `signOut` yapıyordu ve devralma bu yüzden 401'e
+  // çarpıyordu. İlk 409 kazanır (`noteDeviceConflict`).
+  dio.interceptors.add(deviceConflictInterceptor((cakisma) =>
+      noteDeviceConflict(ref.read(deviceConflictProvider.notifier), cakisma)));
   dio.interceptors.add(InterceptorsWrapper(
     onRequest: (options, handler) async {
       final user = FirebaseAuth.instance.currentUser;
@@ -131,9 +118,14 @@ final apiProvider = Provider<Dio>((ref) {
       // dahil). Gönderilmezse sunucu Türkçe varsayar ve arayüz İngilizce olsa
       // bile yorumlar Türkçe gelir.
       options.headers['Accept-Language'] = acceptLanguageHeader(locale);
-      // Tek cihaz kilidi (yalnızca abonelerde etkili). Sunucu bu kimliği
-      // kayıtlı cihazla karşılaştırır; uyuşmazlıkta 409 döner (aşağıda).
+      // Tek cihaz kilidi (yalnızca ücretli abonede etkili). Sunucu bu
+      // kimliği kayıtlı cihazla karşılaştırır; uyuşmazlıkta 409 döner
+      // (yukarıdaki `deviceConflictInterceptor`).
       options.headers['X-Device-Id'] = await deviceId();
+      // Platform da gider: sunucu otomatik devralmada kayda yazar, öbür
+      // cihazın kapı ekranı "{platform} cihazında" derken doğru cihazı
+      // söyler (bkz. core/device_session.dart).
+      options.headers[kDevicePlatformHeader] = devicePlatform();
       handler.next(options);
     },
     onError: (error, handler) {
@@ -144,13 +136,6 @@ final apiProvider = Provider<Dio>((ref) {
         final sebep =
             error.response?.headers.value('x-paywall-reason');
         _showPaywall(detail, tokens: sebep == 'tokens');
-      }
-      // Tek cihaz kilidi: abonelik başka cihazda devralınmış. Oturum
-      // kapatılır ve çakışma ekranına düşülür — oradan yeniden girip
-      // "bu cihazda kullan" denebilir.
-      if (error.response?.statusCode == kDeviceConflictStatus &&
-          error.response?.headers.value('x-device-conflict') == '1') {
-        _handleDeviceConflict();
       }
       handler.next(error);
     },

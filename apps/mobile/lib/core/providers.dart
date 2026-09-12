@@ -316,6 +316,24 @@ final innerCalendarProvider =
   };
 });
 
+/// Rytho+ uçlarına (`require_plus`) POST atan sağlayıcıların HEPSİ — cihaz
+/// devralındıktan sonra tazelenir (`DeviceConflictScreen`, TC-turu).
+///
+/// Kapı kapanmadan önce ateşlenen istekler 409 ile düştü ve o hata
+/// sağlayıcıda ÖNBELLEKTE; `dailyReadingProvider` açılışta kendiliğinden
+/// ateşlendiği için ana ekran devralmadan sonra da "hata" gösterirdi.
+/// Ekran-yerel çağrılar (sohbet, yüz, iching, dyad) kullanıcı dokununca
+/// zaten yeniden dener; burada yalnız sağlayıcıda yaşayanlar. Bu dosyaya
+/// yeni bir `reports/` POST sağlayıcısı eklenirse buraya da eklenir.
+void invalidatePlusProviders(WidgetRef ref) {
+  ref.invalidate(dailyReadingProvider);
+  ref.invalidate(natalReportProvider);
+  ref.invalidate(baziReportProvider);
+  ref.invalidate(birthHexagramProvider);
+  ref.invalidate(solarReturnProvider);
+  ref.invalidate(innerCalendarProvider);
+}
+
 /// 30 günlük transit takvimi — **ücretsiz** (R5-6).
 ///
 /// Ana ekrandaki yatay şeridin kaynağı. Rytho+ kapısı YOK: uç artık

@@ -14,11 +14,14 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/api.dart';
 import 'core/app_config.dart';
 import 'core/deep_links.dart';
+import 'core/device_session.dart' show deviceConflictProvider;
+import 'core/gate_guard.dart';
 import 'core/language_sync.dart';
 import 'core/locale.dart';
 import 'core/notifications.dart';
 import 'core/providers.dart';
 import 'core/subscription.dart';
+import 'features/auth/device_conflict_screen.dart';
 import 'features/auth/force_update_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/onboarding/onboarding_wizard.dart';
@@ -111,17 +114,23 @@ class RythoApp extends ConsumerWidget {
       // Ön plana dönüşte zorunlu güncelleme eşiği yeniden okunur
       // (bkz. core/app_config.dart).
       child: UpdateGateObserver(
-        child: MaterialApp(
-          title: 'Rytho',
-          debugShowCheckedModeBanner: false,
-          theme: buildRythoTheme(),
-          // Sunucu 402 döndüğünde paywall'ı hangi ekranda olursak olalım
-          // açabilmek için (bkz. core/api.dart).
+        // Kapı kapanınca (426/409) yığın köke iner: kapı ekranı `_Gate`'in
+        // alt ağacında yaşar, basılı bir rotanın altında kalmasın (bkz.
+        // core/gate_guard.dart).
+        child: GateRootGuard(
           navigatorKey: rythoNavigatorKey,
-          locale: locale,
-          supportedLocales: kSupportedLocales,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          home: const _Gate(),
+          child: MaterialApp(
+            title: 'Rytho',
+            debugShowCheckedModeBanner: false,
+            theme: buildRythoTheme(),
+            // Sunucu 402 döndüğünde paywall'ı hangi ekranda olursak olalım
+            // açabilmek için (bkz. core/api.dart).
+            navigatorKey: rythoNavigatorKey,
+            locale: locale,
+            supportedLocales: kSupportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const _Gate(),
+          ),
         ),
       ),
     );
@@ -162,6 +171,15 @@ class _Gate extends ConsumerWidget {
       error: (e, _) => _Splash(message: '$e'),
       data: (user) {
         if (user == null) return const LoginScreen();
+        // Tek cihaz kilidi kapısı (TC-turu K6): bu oturumun bir isteği 409
+        // aldıysa onboarding/kabuk yerine çakışma ekranı — zorunlu
+        // güncelleme kapısıyla aynı desen. Oturum AÇIK kalır ki "Bu cihazda
+        // kullan" kimlikli gidebilsin; navigator yığınına basılmaz, diyalog
+        // üstüne diyalog binmez (bkz. core/device_session.dart). Üstte
+        // basılı rota varsa `GateRootGuard` yığını köke indirir.
+        if (ref.watch(deviceConflictProvider) != null) {
+          return const DeviceConflictScreen();
+        }
         final profile = ref.watch(profileProvider);
         return profile.when(
           loading: () => const _Splash(),

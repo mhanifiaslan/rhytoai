@@ -89,7 +89,7 @@ _bearer = HTTPBearer(auto_error=False)
 class AuthUser:
     def __init__(self, uid: str, email: str | None = None,
                  anonymous: bool = False, phone: str | None = None,
-                 admin: bool = False):
+                 admin: bool = False, auth_time: int = 0):
         self.uid = uid
         self.email = email
         self.anonymous = anonymous
@@ -101,6 +101,10 @@ class AuthUser:
         #: tools/set_admin.py ile basılır; istemci kendi token'ına claim
         #: yazamaz. Yönetim uçlarının tek kapısı [require_admin].
         self.admin = admin
+        #: Firebase ID token'ındaki `auth_time` (epoch sn): kullanıcının bu
+        #: oturumu AÇTIĞI an. Token yenilemede değişmez; tek cihaz kilidinin
+        #: "son giriş kazanır" hakemi (TC-turu K1). DEV_MODE'da 0.
+        self.auth_time = auth_time
 
 
 def _verify(token: str) -> dict:
@@ -145,7 +149,8 @@ async def get_current_user(
                                             uid, build)
             return AuthUser(uid=uid, email=decoded.get("email"),
                             phone=decoded.get("phone_number"),
-                            admin=decoded.get("admin") is True)
+                            admin=decoded.get("admin") is True,
+                            auth_time=int(decoded.get("auth_time") or 0))
         except Exception as exc:
             logger.info("Token doğrulanamadı: %s", exc)
             if not config.DEV_MODE:

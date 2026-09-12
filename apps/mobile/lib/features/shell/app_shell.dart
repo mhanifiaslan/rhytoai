@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/legacy.dart' show StateProvider;
 
 import '../../core/api.dart' show apiProvider;
 import '../../core/consent.dart' show ensureConsentRecorded;
-import '../../core/device_claim.dart';
 import '../../core/friends.dart' show FriendStatus, friendsProvider;
 import '../../core/notifications.dart'
     show
@@ -55,12 +54,12 @@ class _AppShellState extends ConsumerState<AppShell> {
   @override
   void initState() {
     super.initState();
-    // Tek cihaz kilidi: abonelik başka cihazda kayıtlıysa devralma onayı
-    // BURADA sorulur — kullanıcı 409 duvarına çarpmadan önce, girişin hemen
-    // ardından. Oturum başına bir kez; ücretsiz kullanıcı hiç görmez.
+    // Tek cihaz kilidi artık BURADA sorulmaz (TC-turu K8): açılıştaki
+    // devralma sorusu `SkyScreen`'in ilk `POST /reports/daily`'siyle
+    // yarışıp kaybediyordu. Hakem sunucu ("son giriş kazanır"); çakışma
+    // `_Gate` kapısında gösterilir (bkz. core/device_session.dart).
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      maybeConfirmDeviceTakeover(context, ref);
       _buyukUcluPerdesi();
       // KT2: kabul kaydı onboarding'de düşmüşse burada telafi edilir
       // (bayraklı — başarı sonrası bir daha ağa çıkmaz).

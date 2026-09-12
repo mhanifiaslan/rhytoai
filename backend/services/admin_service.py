@@ -110,6 +110,11 @@ def user_360(uid: str) -> dict[str, Any] | None:
     device_ham = _private_doc(client, uid, "device")
     device = {k: device_ham.get(k)
               for k in ("platform", "claimedAt", "lastSeenAt")}
+    # Kimlik MASKELİ (son 6): panel "kilit var mı, ne zamandan beri"
+    # sorusuna cevap verir; tam kimlik başlık olarak taklit edilebilir,
+    # dönmez. Sıfırlama: POST /admin/users/{uid}/device/release.
+    kimlik = device_ham.get("deviceId")
+    device["deviceId"] = f"…{str(kimlik)[-6:]}" if kimlik else None
 
     # Bildirim META'sı: gövde/soru metinleri (dailyBody vb.) DÖNMEZ.
     notif_ham = _private_doc(client, uid, "notifications")

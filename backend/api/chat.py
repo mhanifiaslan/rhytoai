@@ -119,7 +119,8 @@ def _sky_summary(lang: str, profile: dict | None = None) -> str:
 def chat(request: ChatRequest, background: BackgroundTasks,
          user: AuthUser = Depends(get_current_user),
          lang: str = Depends(get_language),
-         x_device_id: str | None = Header(default=None)):
+         x_device_id: str | None = Header(default=None),
+         x_device_platform: str | None = Header(default=None)):
     """Sohbet: ucretsiz katmanda gunde [FREE_CHAT_PER_DAY] mesaj; abonede
     aylik token hakkindan, hak bitince satin alinan paketten harcanir.
 
@@ -150,9 +151,11 @@ def chat(request: ChatRequest, background: BackgroundTasks,
         logger.info("Yasak alan reddedildi: %s", kategori)
         return {"status": "success", "reply": reply, "blocked": kategori}
 
-    # Tek cihaz kilidi (yalnızca abonede etkili) HARCAMADAN önce: 409 alan
-    # istek token da yakmamalı.
-    device.enforce_single_device(user.uid, x_device_id, lang=lang)
+    # Tek cihaz kilidi (yalnızca ücretli abonede etkili) HARCAMADAN önce:
+    # 409 alan istek token da yakmamalı.
+    device.enforce_single_device(user.uid, x_device_id,
+                                 auth_time=user.auth_time,
+                                 platform=x_device_platform, lang=lang)
 
     # Ücretsiz günlük hak + token cüzdanı tek kapıda (Revize R1). Abone
     # cüzdanından harcar; ücretsiz kullanıcı önce günlük hakkını yer, sonra

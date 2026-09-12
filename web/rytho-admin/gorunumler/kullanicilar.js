@@ -1,7 +1,7 @@
 /* Kullanıcılar: aramalı liste + Kullanıcı 360 (destek ekranı).
    Rotalar: #/kullanicilar → liste, #/kullanicilar/{uid} → 360.
    Uçlar: /admin/users, /admin/users/{uid}, /admin/users/{uid}/credit,
-   /admin/stats (dağılım grafikleri).
+   /admin/users/{uid}/device/release, /admin/stats (dağılım grafikleri).
 
    Mahremiyet: sunucu sohbet/hafıza İÇERİĞİ ve fcmToken değeri zaten
    döndürmez; bu ekran yalnız sayıları ve destek verisini çizer. */
@@ -226,6 +226,32 @@
         '<tr><td>Son olay</td><td class="sayi">' + b.e(sub.lastEvent || '—') +
         '</td></tr>') + '</div>' +
 
+      // TC-turu: tek cihaz kilidi (yalnız ücretli abonede etkin). Kimlik
+      // sunucudan maskeli gelir; sıfırlama kaydı siler, bir sonraki isteği
+      // yapan cihaz yeniden sahiplenir.
+      '<div class="panel"><h2>Cihaz kilidi</h2>' +
+      (function () {
+        var c = d.device || {};
+        if (!c.deviceId) {
+          return '<p class="dipnot" style="margin-top:0">Kayıtlı cihaz yok.</p>';
+        }
+        return b.tablo(['', ''],
+          '<tr><td>Cihaz</td><td class="sayi mono">' + b.e(c.deviceId) +
+          '</td></tr>' +
+          '<tr><td>Platform</td><td class="sayi">' + b.e(c.platform || '—') +
+          '</td></tr>' +
+          // "Son görülme" satırı YOK: sunucu lastSeenAt'i yalnız devralma
+          // anında yazıyor (claimedAt ile aynı değer); ayrı satır "üç aydır
+          // görülmedi" gibi okunup gereksiz sıfırlamaya yol açardı.
+          '<tr><td>Devralma</td><td class="sayi">' +
+          b.tarih(c.claimedAt, true) + '</td></tr>') +
+          '<div class="eylem-satir">' +
+          '<button id="y-cihaz" class="buton ikincil kucuk">Cihaz kilidini ' +
+          'sıfırla</button></div>' +
+          '<p class="dipnot">"Hesabın başka cihazda açıldı" ekranından ' +
+          'çıkamayan kullanıcı için. Denetim izine yazılır.</p>';
+      })() + '</div>' +
+
       '<div class="panel"><h2>Cüzdan</h2>' +
       '<div class="kpi-deger">' +
       b.sayi((w.allowance || 0) + (w.purchased || 0)) +
@@ -387,6 +413,23 @@
         yMesaj(RY.hataMetni(h));
       }
     };
+
+    var yCihaz = document.getElementById('y-cihaz');
+    if (yCihaz) {
+      yCihaz.onclick = async function () {
+        if (!confirm('Cihaz kaydı silinecek; bir sonraki isteği yapan cihaz ' +
+                     'kilidi yeniden alır. Onaylıyor musun?')) return;
+        this.disabled = true;
+        try {
+          await RY.post('/api/v1/admin/users/' + encodeURIComponent(uid) +
+            '/device/release', {});
+          detay(icerik, uid);
+        } catch (h) {
+          this.disabled = false;
+          alert(RY.hataMetni(h));
+        }
+      };
+    }
 
     document.getElementById('kredi-form').onsubmit = async function (ev) {
       ev.preventDefault();
