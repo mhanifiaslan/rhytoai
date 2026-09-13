@@ -169,8 +169,10 @@ rahatsız edici ama dolanma yolu var; **düşük** = cila.
 
 | 135 | Dar ekran / büyük yazı (MU): telefonun sistem yazı boyutu EN BÜYÜĞE alınır → Gökyüzü'nde "Bugün gökyüzünde senin için" başlığı ve sağındaki "✦ En yakın kesinleşme" bilgisi KIRPILMADAN görünür (sığmazsa ek bilgi alt satıra iner); sinyal kartında tema adı + "… günü netleşiyor" etiketi taşmaz; Profil/Atlas/Abonelik ekranlarında etiket-değer satırları ve düğme satırları ekran dışına çıkmaz; yazı ölçeği %130'da sabitlenir (daha büyüğe çıkmaz) | ⬜ | 1.15.5+40 |
 
+| 136 | Sohbet ikonu ve yeni konuşma düğmesi (PZ3): alt çubuğun ortasındaki düğmede artık üç nokta DEĞİL, üst üste binen iki konuşma balonu var — ne olduğu tek bakışta anlaşılıyor, yavaşça nefes alıyor ve sarma yerinde sıçrama YOK; "animasyonları kaldır" açıkken çizim durağan ama tam okunur. Sohbet listesinde sağ üstteki "yeni konu" ikonu KALKTI; yerine sayfanın altında degrade hap düğme var ve telefon tek elle tutulurken başparmakla rahat erişiliyor; dokununca yeni konuşma açılıyor, listenin SON satırı düğmenin altında kalmıyor; hiç konuşma yokken alt düğme GÖRÜNMÜYOR (tek CTA ortada); sistem yazı boyutu en büyükken düğme etiketi taşmıyor | ⬜ | 1.15.6+41 |
+
 **Kapalı test ÖNCESİ zorunlu koşum listesi:** 1, 6, 17-24, 28, 33, 39,
-29, 100, 101, 109, 110-112 (panel), 113-135. İade + yenileme yalnız
+29, 100, 101, 109, 110-112 (panel), 113-136. İade + yenileme yalnız
 License-testing hesabıyla ölçülebilir (114).
 | 41 | Sinyal dili (R2-S6): kart yüzeyinde gezegen/açı/orb ADI GEÇMEZ — büyük tema başlığı (💼 Kariyer) + gündelik dil cümlesi + sağ üstte zamanlama ("18 Ağustos günü netleşiyor"); teknik satır yalnız "Neye dayanıyor?" sayfasının başında; burç şeridi HER ZAMAN selamlamanın hemen altında (hiçbir bölüm onu aşağı itmez); sabah bildirimi başlığı "Bugün: İlişkiler" | ⬜ | 1.1.1+12 + sunucu |
 

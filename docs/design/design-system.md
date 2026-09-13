@@ -15,10 +15,33 @@ doktrini: **bildirim başlıkları** tema emojisi taşır (💼❤️🌙🪙 �
 emoji kullanabilir (ağır duygu anlarında hiç), **kart/rapor gövdeleri**
 sade kalır.
 
-İşaret doktrini (OT5): **merkez sohbet düğmesi** = balon biçimli kap +
-sırayla parlayan "yazıyor" noktaları (`widgets/chat_bubble_icon.dart`);
-**✦** satır içi "Rytho'ya sor" işaretidir (7+ CTA) ve merkeze geri
-dönmez — iki işaretin işi ayrıldı, ikisi de tekil kaldı.
+İşaret doktrini (OT5 → **PZ3**): **merkez sohbet düğmesi** = degrade
+balon kap + **üst üste binen iki konuşma balonu**
+(`widgets/chat_bubble_icon.dart` → `ChatBubblesIcon`); **✦** satır içi
+"Rytho'ya sor" işaretidir (7+ CTA) ve merkeze geri dönmez — iki işaretin
+işi ayrıldı, ikisi de tekil kaldı.
+
+PZ3'te merkezdeki üç nokta EMEKLİ oldu. Cihaz hükmü: *"sadece animasyonlu
+3 nokta kafa karıştırabiliyor"* — haklıydı, üç nokta tek başına
+"yükleniyor" da demektir. "Konuşma"yı söyleyen şey artık noktalar değil
+iki balonun ÜST ÜSTE BİNMESİ; tek balon bir mesajdır, iki balon
+karşılıklı konuşmadır. Üç nokta büyük balonun içinde kaldı ama **boyanmaz,
+kesilir** (`Path.combine` difference) — beyaz balona sürülen beyaz nokta
+kaybolur, delik kaybolmaz; ikonu 24 px'te okunur yapan tek şey budur.
+İkinci balonun konturu da araya boya sürülerek değil, büyük balonun
+şişirilmiş silüeti clip'ten düşürülerek ayrılır.
+
+Kap da glifin kendi işidir: `_CenterAiButton` yalnız jest, haptic,
+erişilebilirlik ve basma tepkisini taşır. Faz tek bir kosinüsten sürülür
+(`repeat()`, 3000 ms, tek yön) — t = 0 ile t = 1 aynı kareyi verir,
+sarma yerinde sıçrama olmaz. reduceMotion'da t sabitlenir: delikler
+dinlenme yarıçapında, ikinci balon orta parlaklıkta, hareket sıfır.
+
+Karar göz kararıyla verildi: dört bağımsız aday gerçek ressamlarından
+PNG'ye basılıp dock bağlamında 62 px ve 24 px'te karşılaştırıldı.
+Kazananın tek üstünlüğü, dock'un en parlak öğesi olma rolünü
+KAYBETMEDEN ilk bakışta "sohbet" demesiydi. Kanıt çizimi kalıcıdır:
+`RYTHO_KANIT_DIR=<klasör> flutter test test/sohbet_ikonu_kanit_test.dart`.
 
 ## 2. Renk paleti (`lib/theme/rytho_theme.dart` → `RythoColors`)
 
@@ -71,9 +94,9 @@ Cormorant/Spectral tamamen kalktı.
 - **`GlassPanel`** (widgets/glass.dart): koyu mor kart, 22px köşe, 1px %6 beyaz
   kontur, üst kenar ışığı. Blur varsayılan kapalı (performans).
 - **`CosmicDock`**: ince koyu saydam alt bar; 4 outline ikon
-  (Gökyüzü, Atlas, Meclis, Profil) + ORTADA yukarı taşan degrade dairesel
-  **AI butonu** (✦) — sürekli yumuşak glow pulse (scale 1.0→1.06), Rytho
-  sohbetini açar.
+  (Gökyüzü, Atlas, Meclis, Profil) + ORTADA yukarı taşan degrade
+  **AI butonu** (`ChatBubblesIcon` — çift konuşma balonu) — sürekli
+  yumuşak nefes (scale 1.0→1.05, 3000 ms), Rytho sohbetini açar.
 - **`GoldButton`** (adı tarihsel): degrade dolgulu CTA; basınca scale 0.96 +
   haptic; busy'de `AstrolabeSpinner`.
 - **`GlassSegments`**: aktif segment degrade dolgulu.
@@ -271,6 +294,28 @@ senin için ✦ En yak…"). Kök neden `Row` + `Spacer`: iki çocuk da esnemiyo
   — 320 dp × 1,3'te taşma Flutter'ın fırlattığı hatayla yakalanır.
   ⚠️ Test yazı tipi her harfi punto kadar geniş kare çizer (gerçeğin ~2
   katı): bekçi bilerek muhafazakârdır, piksel konumu iddia edilmez.
+
+## 9c. Başparmak erişimi: birincil eylem AŞAĞIDA (PZ3, cihaz bulgusu)
+
+Cihaz hükmü: sohbet listesindeki "yeni konu" düğmesi sağ üstteydi ve
+*"kullanmak için iki elle telefonu kullanmak gerekiyor."* Doğru: 6,7"
+ekranda sağ üst köşe tek elle tutan başparmağın erişemediği bölgedir.
+
+- **Kural:** bir ekranın EN SIK yapılan eylemi AppBar'da değil, alt
+  kenarda durur. AppBar geri/başlık/nadir eylem içindir.
+- **Biçim:** degrade hap (ikon + etiket), `minHeight:
+  kMinInteractiveDimension` (48 dp), `HapticFeedback.mediumImpact()`,
+  basınca `AnimatedScale` 0,96 (reduceMotion'da `Duration.zero`).
+  Material'in `FloatingActionButton`'ı KULLANILMAZ — tema kendi rengini
+  ve gölgesini dayatır, token setinin dışına çıkar.
+- **Liste bedeli:** düğme son satırı örtmesin — `ListView` alt dolgusuna
+  düğme yüksekliği + boşluk eklenir (`_fabAlani`). Bekçisi var.
+- **Boş durumda GİZLENİR:** boş ekranın zaten tek bir CTA'sı vardır; iki
+  düğme aynı işi yaparsa hangisinin "asıl" olduğu belirsizleşir.
+- **Etiket `Flexible`:** uzun çeviride hap büyür, taşmaz (§9b).
+- **Bekçi:** `test/yeni_konusma_fab_test.dart` — üstteki ikonun KALKTIĞI,
+  dokunuşun rotayı ittiği, boş durumda düğmenin olmadığı, son satırın
+  altta kalmadığı ve 320 dp × 1,3'te taşmadığı.
 
 ## 10. Admin paneli dili (AD-turu, `web/rytho-admin`)
 

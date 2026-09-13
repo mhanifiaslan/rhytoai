@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -204,8 +205,12 @@ class CosmicDock extends StatelessWidget {
   }
 }
 
-/// Degrade dolgulu, glow'lu, nefes alan merkez sohbet butonu — balon
-/// biçimli kap + "yazıyor" noktaları (OT5).
+/// Nefes alan merkez sohbet butonu: jest, haptic, erişilebilirlik ve
+/// basma tepkisi burada; ÇİZİMİN TAMAMI `ChatBubblesIcon`'da (PZ3).
+///
+/// Kap da glif de o widget'ın işi — burada yalnız ölçek nefesi var ve o
+/// da aynı kosinüsten sürülür, böylece iki hareket tek fazda kalır.
+/// reduceMotion'da faz sabitlenir (t = 0) ve denetleyici hiç kurulmaz.
 class _CenterAiButton extends StatefulWidget {
   const _CenterAiButton({required this.onTap});
   final VoidCallback onTap;
@@ -217,8 +222,11 @@ class _CenterAiButton extends StatefulWidget {
 class _CenterAiButtonState extends State<_CenterAiButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1600))
-    ..repeat(reverse: true);
+      vsync: this, duration: const Duration(milliseconds: 3000))
+    // Tek yönlü döngü: faz 0→1, sonra başa. `ChatBubblesIcon` t=0 ile
+    // t=1'de AYNI kareyi çizdiği için dikiş görünmez. Süre 1600'den
+    // 3000'e çıktı — geri sarma kalkınca tam tur yarı yarıya kısalırdı.
+    ..repeat();
   bool _pressed = false;
 
   @override
@@ -234,7 +242,7 @@ class _CenterAiButtonState extends State<_CenterAiButton>
     if (reduceMotion(context)) {
       _pulse.stop();
     } else if (!_pulse.isAnimating) {
-      _pulse.repeat(reverse: true);
+      _pulse.repeat();
     }
     final hareketsiz = reduceMotion(context);
     return Semantics(
@@ -251,49 +259,25 @@ class _CenterAiButtonState extends State<_CenterAiButton>
         child: AnimatedBuilder(
         animation: _pulse,
         builder: (_, _) {
-          final t = Curves.easeInOut.transform(_pulse.value);
-          final scale = (_pressed ? 0.94 : 1.0) * (1.0 + 0.06 * t);
-          // KONUŞMA BALONU formu (Revize R6). Eski hâli düz bir '✦' orb'du
-          // ve kullanıcı işlevi okuyamıyordu: "footer'daki mesajlaşma ikonu
-          // çok sıradan, daha mesajlaşmayı andıran bir tasarım". Balon
-          // işlevi söylüyor, içindeki ✦ markayı koruyor; degrade ve nefes
-          // animasyonu aynen kalıyor. Alt-sol köşenin sivri oluşu balonu
-          // balon yapan tek ipucu — dört köşe de yuvarlak olsaydı yine
-          // "yuvarlak düğme" okunurdu.
+          // Faz HAM verilir (easeInOut YOK) ve denetleyici `repeat()` ile
+          // tek yönlü döner: `ChatBubblesIcon` yumuşatmayı kendi içinde
+          // kosinüsle yapıyor ve t=0 ile t=1 aynı kareyi veriyor, yani
+          // sarma yerinde sıçrama olmuyor. Eski `repeat(reverse: true)`
+          // daktilo ritmini geri sarıyordu — noktalar ileri yazıp geri
+          // silmiş gibi okunuyordu.
+          final t = _pulse.value;
+          // Ölçek nefesi de aynı kosinüsten: glow ile birlikte alıp verir,
+          // döngü başında zıplamaz.
+          final nefes = 0.5 - 0.5 * math.cos(2 * math.pi * t);
+          final scale = (_pressed ? 0.94 : 1.0) * (1.0 + 0.05 * nefes);
+          // Görselin TAMAMI (balon kap + çift balon glifi + glow) artık
+          // `ChatBubblesIcon`'ın işi (PZ3); burada yalnız jest, haptic,
+          // erişilebilirlik ve basma tepkisi kalıyor. Eski hâli üç
+          // animasyonlu noktaydı ve kullanıcı "kafa karıştırıyor" dedi —
+          // üç nokta tek başına "yükleniyor" da demektir.
           return Transform.scale(
             scale: scale,
-            child: Container(
-              width: 62,
-              height: 62,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                gradient: RythoColors.primaryGradient,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(24),
-                  topRight: Radius.circular(24),
-                  bottomRight: Radius.circular(24),
-                  bottomLeft: Radius.circular(7),
-                ),
-                border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.25), width: 1.4),
-                boxShadow: [
-                  BoxShadow(
-                    color: RythoColors.magentaGlow,
-                    blurRadius: 22 + 12 * t,
-                    spreadRadius: 1 + 2 * t,
-                  ),
-                  const BoxShadow(
-                    color: RythoColors.goldGlow,
-                    blurRadius: 40,
-                    spreadRadius: -2,
-                  ),
-                ],
-              ),
-              // OT5 (kullanıcı seçimi): glif artık ✦ değil "yazıyor"
-              // noktaları — balon formu + daktilo ritmi birlikte "sohbet"
-              // diyor. reduceMotion'da noktalar durağan (t sabit).
-              child: TypingDotsGlyph(t: hareketsiz ? 0.0 : t),
-            ),
+            child: ChatBubblesIcon(t: hareketsiz ? 0.0 : t),
           );
         },
         ),

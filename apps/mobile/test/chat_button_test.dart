@@ -1,8 +1,10 @@
-// Merkez sohbet düğmesi bekçileri (OT5).
+// Merkez sohbet düğmesi bekçileri (OT5 → PZ3).
 //
-// Kullanıcı seçimi: balon biçimli kap + "yazıyor" noktaları — ✦ glifi
-// merkezi terk etti (satır içi "Rytho'ya sor" işaretlerinde yaşıyor).
-// Ayrıca düğme ilk kez erişilebilirlik etiketi kazandı.
+// PZ3'te glif değişti: üç animasyonlu nokta yerine ÇİFT KONUŞMA BALONU
+// (`ChatBubblesIcon`). Cihaz hükmü "sadece 3 nokta kafa karıştırabiliyor"
+// idi; bu dosya yeni işaretin dock'ta gerçekten çizildiğini, ✦ glifinin
+// merkeze geri dönmediğini ve reduce-motion'da hareketin durduğunu
+// sabitler.
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -38,11 +40,10 @@ Widget _dock({bool azalt = false, VoidCallback? onCenterTap}) => MaterialApp(
     );
 
 void main() {
-  testWidgets('merkez düğme yazıyor-noktaları taşır, ✦ değil',
-      (tester) async {
+  testWidgets('merkez düğme çift balon taşır, ✦ değil', (tester) async {
     await tester.pumpWidget(_dock());
     await tester.pump(const Duration(milliseconds: 100));
-    expect(find.byType(TypingDotsGlyph), findsOneWidget);
+    expect(find.byType(ChatBubblesIcon), findsOneWidget);
     expect(find.text('✦'), findsNothing);
   });
 
@@ -57,13 +58,11 @@ void main() {
     expect(acildi, 1);
   });
 
-  testWidgets('reduce-motion: noktalar durağan (t sabit), nefes durur',
-      (tester) async {
+  testWidgets('reduce-motion: faz sabit (t = 0), nefes durur', (tester) async {
     await tester.pumpWidget(_dock(azalt: true));
     await tester.pump(const Duration(milliseconds: 100));
-    expect(find.byType(TypingDotsGlyph), findsOneWidget);
-    final glif =
-        tester.widget<TypingDotsGlyph>(find.byType(TypingDotsGlyph));
+    expect(find.byType(ChatBubblesIcon), findsOneWidget);
+    final glif = tester.widget<ChatBubblesIcon>(find.byType(ChatBubblesIcon));
     expect(glif.t, 0.0);
     expect(tester.binding.transientCallbackCount, 0);
   });
