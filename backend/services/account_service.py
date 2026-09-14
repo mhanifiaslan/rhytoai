@@ -41,6 +41,35 @@ _NESTED = {
     # koleksiyonu silinirken wallet dokümanının ledger'ı ayrıca boşaltılır.
 }
 
+#: Kullanıcı dokümanının ALTINDA olmayan, ama `uid` alanıyla kullanıcıya
+#: bağlı üst düzey koleksiyonlar. Hesap silinince bunlar da gitmeli.
+#:
+#: ⚠️ Bu liste kapalı test denetiminde (2026-09-14) eklendi. Öncesinde
+#: hesap silme yalnız `users/{uid}` ağacını temizliyordu; oysa üç
+#: koleksiyon uid taşıyarak dışarıda duruyordu ve hukuk metni
+#: **"Hesabını sildiğinde tüm veriler kalıcı olarak silinir"** diyordu.
+#: Yani vaat tutulmuyordu — üstelik `feedback` kullanıcının KENDİ yazdığı
+#: serbest metni taşıyor. Yeni bir uid'li üst düzey koleksiyon eklenirse
+#: buraya da eklenmeli; bekçi test bunu zorlar.
+#:
+#: Her biri için `(uid, <zaman alanı> DESC)` composite indeksi zaten var
+#: (infra/firestore.indexes.json), sorgu ucuz.
+_UID_KOLEKSIYONLARI = (
+    ("usageEvents", "uid"),      # AI çağrı telemetrisi (maliyet)
+    ("phoneAttempts", "uid"),    # SMS teşhis kaydı (maskeli numara)
+    ("feedback", "uid"),         # kullanıcının yazdığı serbest metin
+)
+
+#: BİLEREK SAKLANANLAR — silinmez, çünkü silmek başka bir yükümlülüğü
+#: çiğner. İkisi de hukuk metninde ve silme onayında AÇIKÇA yazılı;
+#: yazılı olmayan istisna, istisna değil ihlaldir.
+#:
+#: - `revenueEvents`: satın alma ve iade kaydı. Mali kayıt saklama
+#:   yükümlülüğü (VUK 5 yıl) silmeye izin vermiyor.
+#: - `adminAudit`: yönetici eylemlerinin izi. Kimin neyi neden yaptığının
+#:   kanıtı; silinebilir olsaydı denetim izi olmazdı.
+_SAKLANAN_KOLEKSIYONLAR = ("revenueEvents", "adminAudit")
+
 #: Tek seferde silinecek doküman sayısı.
 _BATCH = 200
 
@@ -90,6 +119,35 @@ def _delete_user_subcollections(client, uid: str,
             _delete_collection(kullanici.collection(ad), sayac, ad)
         except Exception as exc:
             logger.warning("Alt koleksiyon silinemedi (%s/%s): %s", uid, ad, exc)
+
+
+def _delete_uid_documents(client, uid: str, sayac: DeletionReport) -> None:
+    """`users/{uid}` ağacının DIŞINDA kalan, uid alanlı kayıtları siler.
+
+    Her koleksiyon ayrı try içinde: biri düşerse diğerleri silinsin.
+    Sayfalama `_delete_collection` ile aynı desende — tek sorguda tavan
+    `_BATCH`, tükenene kadar tekrar.
+    """
+    from google.cloud.firestore_v1.base_query import FieldFilter
+
+    for ad, alan in _UID_KOLEKSIYONLARI:
+        try:
+            while True:
+                belgeler = list(
+                    client.collection(ad)
+                    .where(filter=FieldFilter(alan, "==", uid))
+                    .limit(_BATCH)
+                    .stream()
+                )
+                if not belgeler:
+                    break
+                for belge in belgeler:
+                    belge.reference.delete()
+                sayac[ad] = sayac.get(ad, 0) + len(belgeler)
+                if len(belgeler) < _BATCH:
+                    break
+        except Exception as exc:
+            logger.warning("uid kaydı silinemedi (%s/%s): %s", uid, ad, exc)
 
 
 def _delete_friend_edges(client, uid: str, sayac: DeletionReport) -> None:
@@ -208,6 +266,11 @@ def delete_account(uid: str) -> DeletionReport:
 
     # 2. Kendi alt koleksiyonlarım (hafıza, abonelik, bildirim kaydı, tepkiler)
     _delete_user_subcollections(client, uid, sayac)
+
+    # 2.5. `users/{uid}` ağacının DIŞINDAKİ uid'li kayıtlar: kullanım
+    # telemetrisi, telefon deneme kaydı, gönderilen geri bildirim.
+    # Hukuk metnindeki "tüm veriler silinir" vaadini ancak bu kapatıyor.
+    _delete_uid_documents(client, uid, sayac)
 
     # 3. Kişiye özel yapay zeka üretimleri
     _delete_owned_cache(client, uid, sayac)

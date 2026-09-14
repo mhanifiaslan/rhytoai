@@ -92,4 +92,51 @@ void main() {
       }
     });
   });
+
+  group('silme vaadi KODLA uyusuyor mu', () {
+    // Kapali test denetimi (2026-09-14): politika "Hesabini sildiginde tum
+    // veriler kalici olarak silinir" diyordu; oysa sunucu yalniz
+    // `users/{uid}` agacini temizliyordu. Uc koleksiyon uid tasiyarak
+    // disarida kaliyordu ve biri (`feedback`) kullanicinin KENDI yazdigi
+    // serbest metindi. Yani vaat tutulmuyordu.
+    //
+    // Simdi ikisi birden dogrulaniyor: sunucu onlari siliyor VE metin
+    // silinmeyenleri adiyla sayiyor. Biri degisip digeri ayni kalirsa
+    // burasi duser.
+
+    String backend(String yol) => _kaynak('../../backend/$yol');
+
+    test('sunucu uid alanli koleksiyonlari siliyor', () {
+      final kod = backend('services/account_service.py');
+      for (final ad in ['usageEvents', 'phoneAttempts', 'feedback']) {
+        expect(kod.contains('"$ad"'), isTrue,
+            reason: '$ad silme kapsaminda degil ama metin "silinir" diyor');
+      }
+      expect(kod.contains('_delete_uid_documents(client, uid, sayac)'), isTrue,
+          reason: 'silme fonksiyonu delete_account icinden cagrilmiyor');
+    });
+
+    test('saklanan kayitlar HER IKI dilde de adiyla yaziyor', () {
+      // Yazili olmayan istisna, istisna degil ihlaldir.
+      final tr = kPrivacyPolicyTr.map((b) => '${b.$1} ${b.$2}').join(' ');
+      final en = kPrivacyPolicyEn.map((b) => '${b.$1} ${b.$2}').join(' ');
+
+      expect(tr.contains('Satın alma ve iade'), isTrue,
+          reason: 'TR metin saklanan mali kaydi anmiyor');
+      expect(tr.contains('denetim izi'), isTrue,
+          reason: 'TR metin saklanan denetim izini anmiyor');
+      expect(en.toLowerCase().contains('purchase and refund'), isTrue,
+          reason: 'EN metin saklanan mali kaydi anmiyor');
+      expect(en.toLowerCase().contains('audit trail'), isTrue,
+          reason: 'EN metin saklanan denetim izini anmiyor');
+    });
+
+    test('metin artik KOSULSUZ "her sey silinir" demiyor', () {
+      // Kosulsuz cumle geri gelirse istisnalar yalan olur.
+      final tr = kPrivacyPolicyTr.map((b) => b.$2).join(' ');
+      final en = kPrivacyPolicyEn.map((b) => b.$2).join(' ');
+      expect(tr.contains('tüm veriler kalıcı olarak silinir'), isFalse);
+      expect(en.contains('all of it is permanently deleted'), isFalse);
+    });
+  });
 }

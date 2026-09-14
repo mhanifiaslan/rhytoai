@@ -135,6 +135,22 @@ def ornek_store():
         "aiCache/a1": {"ownerUid": "ben", "value": "natal"},
         "aiCache/a2": {"ownerUid": "ben", "value": "gunluk"},
         "aiCache/a3": {"value": "burc yorumu"},  # paylasimli, sahipsiz
+        # `users/ben` AGACININ DISINDA, ama uid ile bana bagli kayitlar.
+        # Kapali test denetiminde (2026-09-14) bunlarin silinmedigi
+        # bulundu; hukuk metni "tum veriler silinir" diyordu.
+        "usageEvents/u1": {"uid": "ben", "feature": "chat", "estCostUsd": 0.002},
+        "usageEvents/u2": {"uid": "ben", "feature": "natal", "estCostUsd": 0.003},
+        "usageEvents/u3": {"uid": "arkadas", "feature": "chat"},
+        "phoneAttempts/p1": {"uid": "ben", "stage": "sent",
+                             "masked": "+90532***4567"},
+        "phoneAttempts/p2": {"uid": "arkadas", "stage": "sent"},
+        # Kullanicinin KENDI yazdigi serbest metin.
+        "feedback/f1": {"uid": "ben", "type": "bug", "text": "sohbet donuyor"},
+        "feedback/f2": {"uid": "baskasi", "type": "idea", "text": "x"},
+        # BILEREK SAKLANANLAR — mali kayit ve denetim izi.
+        "revenueEvents/r1": {"uid": "ben", "productId": "rytho_plus_monthly",
+                             "priceUsd": 4.4},
+        "adminAudit/a9": {"targetUid": "ben", "action": "user.credit"},
         # Baska kullanicinin verisi — dokunulmamali
         "users/arkadas": {"username": "deniz"},
         "usernames/deniz": {"uid": "arkadas"},
@@ -342,3 +358,72 @@ def test_uc_hata_durumunda_ic_ayrinti_sizdirmaz(monkeypatch, gercek_kullanici):
 
     assert yanit.status_code == 500
     assert "gizli_ic_detay" not in yanit.text
+
+
+# --------------------------------------------------------------------------
+# uid'li ÜST DÜZEY koleksiyonlar (kapalı test denetimi, 2026-09-14)
+# --------------------------------------------------------------------------
+#
+# Bulgu: hesap silme yalnız `users/{uid}` ağacını temizliyordu. Üç
+# koleksiyon uid taşıyarak dışarıda duruyordu — biri (`feedback`)
+# kullanıcının kendi yazdığı serbest metni. Hukuk metni ise
+# "Hesabını sildiğinde tüm veriler kalıcı olarak silinir" diyordu.
+# Vaat ile kod arasındaki bu açık, mağaza politikası ve KVKK riski.
+
+
+def test_kullanim_telemetrisi_silinir(store):
+    account_service.delete_account("ben")
+    assert "usageEvents/u1" not in store.veriler
+    assert "usageEvents/u2" not in store.veriler
+
+
+def test_telefon_deneme_kaydi_silinir(store):
+    """Maskeli de olsa numara kişisel veridir."""
+    account_service.delete_account("ben")
+    assert "phoneAttempts/p1" not in store.veriler
+
+
+def test_gonderilen_geri_bildirim_silinir(store):
+    """Serbest metin: kullanıcının kendi cümlesi, kesinlikle kalmamalı."""
+    account_service.delete_account("ben")
+    assert "feedback/f1" not in store.veriler
+
+
+def test_baskasinin_uid_kayitlarina_dokunulmaz(store):
+    account_service.delete_account("ben")
+    assert store.veriler["usageEvents/u3"]["uid"] == "arkadas"
+    assert store.veriler["phoneAttempts/p2"]["uid"] == "arkadas"
+    assert store.veriler["feedback/f2"]["uid"] == "baskasi"
+
+
+def test_mali_kayit_ve_denetim_izi_BILEREK_kalir(store):
+    """Silinmeyenler kaza değil karar: mali kayıt saklama yükümlülüğü ve
+    denetim izinin bütünlüğü. İkisi de hukuk metninde YAZILI olmalı —
+    `test_legal_texts.py` bunu ayrıca zorluyor."""
+    account_service.delete_account("ben")
+    assert "revenueEvents/r1" in store.veriler
+    assert "adminAudit/a9" in store.veriler
+
+
+def test_silme_raporu_yeni_koleksiyonlari_sayar(store):
+    """Rapor log'a ve teste kanıt olarak giriyor; sessiz atlama olmasın."""
+    sayac = account_service.delete_account("ben")
+    assert sayac.get("usageEvents") == 2
+    assert sayac.get("phoneAttempts") == 1
+    assert sayac.get("feedback") == 1
+
+
+def test_uid_koleksiyonu_dusse_bile_silme_tamamlanir(store, monkeypatch):
+    """Telemetri silinemezse hesap yine de silinmeli — kimliğin kalması
+    veri kalmasından kötü."""
+    gercek = store.collection
+
+    def patlak(ad):
+        if ad == "usageEvents":
+            raise RuntimeError("firestore kizdi")
+        return gercek(ad)
+
+    monkeypatch.setattr(store, "collection", patlak)
+    sayac = account_service.delete_account("ben")
+    assert sayac["user"] == 1
+    assert "feedback/f1" not in store.veriler, "diğer koleksiyonlar silinmeli"

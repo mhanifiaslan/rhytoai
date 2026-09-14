@@ -76,6 +76,14 @@ Write-Host "2/2 Cloud Run'a deploy ediliyor..."
 # PowerShell zinciri orada kesip "Missing expression after unary
 # operator '--'" diye dusuyordu ve deploy hic calismiyordu. Yorumlar
 # komutun ustunde durur, bayrak zinciri kesintisiz kalir.
+#
+# RYTHO_SUB_PRICES_USD TIRNAKSIZ yaziliyor — bilincli, olculdu (2026-09-14).
+# Burada {`"rytho_plus_monthly`":4.4} yazildiginda Cloud Run'a
+# {rytho_plus_monthly:4.4} olarak iniyordu: gcloud'un arguman ayristiricisi
+# cift tirnaklari soyuyor. Sunucudaki json.loads dusuyor, fiyat sessizce
+# 0.0'a ve panel MRR'i 0'a iniyordu - hicbir hata, hicbir log. Artik
+# core/config.py `_fiyat_env` tirnaksiz bicimi de okuyor (test_fiyat_env.py);
+# burada da soyulacak tirnak birakmiyoruz ki iki taraf birbirini dogrulasin.
 Invoke-Gcloud -Adim "Cloud Run deploy" -Arguments @(
     "run", "deploy", $SERVICE,
     "--project", $PROJECT,
@@ -87,7 +95,7 @@ Invoke-Gcloud -Adim "Cloud Run deploy" -Arguments @(
     "--timeout", "300",
     "--max-instances", "3",
     "--min-instances", "1",
-    "--set-env-vars", "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_TOKENS_ENFORCE=1,RYTHO_SUB_PRICES_USD={`"rytho_plus_monthly`":4.4}",
+    "--set-env-vars", "RYTHO_DEV_MODE=0,GOOGLE_CLOUD_PROJECT=$PROJECT,RYTHO_TOKENS_ENFORCE=1,RYTHO_SUB_PRICES_USD={rytho_plus_monthly:4.4}",
     "--set-secrets", "GEMINI_API_KEY=GEMINI_API_KEY:latest,REVENUECAT_WEBHOOK_SECRET=REVENUECAT_WEBHOOK_SECRET:latest,NOTIFY_SCHEDULER_SECRET=NOTIFY_SCHEDULER_SECRET:latest")
 
 # --min-instances 1 BILINCLI VE UCRETLI bir karar.

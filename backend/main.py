@@ -6,6 +6,7 @@ Cloud Run üzerinde çalışacak şekilde tasarlanmıştır:
 - /healthz canlılık ucu
 """
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
@@ -28,9 +29,42 @@ from api.people import router as people_router
 from api.reports import router as reports_router
 from api.sky import router as sky_router
 from core.app_gate import AppGateMiddleware
+from core.i18n import resolve_language
+from core.messages import text
 from core.ratelimit import RateLimitMiddleware
 
-logging.basicConfig(level=logging.INFO)
+# Log kurulumu — Cloud Run'da SEVİYE GÖRÜNSÜN.
+#
+# Kapalı test denetiminde (2026-09-14) ölçüldü: düz `basicConfig`
+# handler'sız çağrılınca `StreamHandler(sys.stderr)` ekliyor ve Cloud Run
+# yapılandırılmamış konteyner çıktısında stderr'in TAMAMINI ERROR sayıyor.
+# Sonuç: `logger.info("sohbet ilişki bağlamı reddedildi")` ile
+# `logger.exception("işlenmeyen hata")` konsolda AYNI kırmızı seviyede
+# görünüyordu. Gerçek hata gürültünün içinde kayboluyor ve severity'ye
+# dayalı bir uyarı kurmak imkânsız hâle geliyor.
+#
+# `google-cloud-logging` istemcisi Python seviyesini gerçek Cloud Logging
+# severity'sine çeviriyor.
+#
+# ⚠️ Kapı YALNIZCA Cloud Run: `K_SERVICE` orada kesin dolu, başka yerde
+# yok. Bu makinede ADC kurulu olduğu için kapısız hâli testlerde de
+# istemciyi ayağa kaldırıyor ve YEREL test loglarını canlı Cloud
+# Logging'e göndermeye çalışıyordu ("CloudLoggingHandler shutting
+# down… Failed to send 1 pending logs"). Yerelde istenen şey basit
+# stderr; üretim gözlemlenebilirliği yerel gürültüye dönüşmemeli.
+if os.getenv("K_SERVICE"):  # pragma: no cover - yalnız Cloud Run
+    try:
+        import google.cloud.logging as _gcl
+
+        _gcl.Client().setup_logging(log_level=logging.INFO)
+    except Exception:
+        logging.basicConfig(level=logging.INFO)
+        logging.getLogger(__name__).warning(
+            "Cloud Logging kurulamadı; loglar stderr'e düşecek ve "
+            "Cloud Run hepsini ERROR sayacak.")
+else:
+    logging.basicConfig(level=logging.INFO)
+
 logger = logging.getLogger(__name__)
 
 @asynccontextmanager
@@ -102,18 +136,20 @@ async def security_headers(request: Request, call_next):
 
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(request: Request, exc: Exception):
-    """Beklenmeyen hatalarda stack trace sızdırmadan Türkçe 500 yanıtı döner;
-    ayrıntı yalnızca sunucu loguna yazılır."""
+    """Beklenmeyen hatalarda stack trace sızdırmadan 500 döner; ayrıntı
+    yalnızca sunucu loguna yazılır.
+
+    Metin KULLANICININ DİLİNDE. Eskiden Türkçe sabitti: İngilizce telefonu
+    olan bir testçi, uygulamanın her yeri İngilizceyken tek bir Türkçe
+    cümleyle karşılaşıyordu (kapalı test denetimi, 2026-09-14). Çevirisi
+    `core/messages.py` içinde zaten vardı, yalnız çağrılmıyordu. Dil
+    çözümü `ratelimit.py`'deki 429 yoluyla aynı iki satır.
+    """
     logger.exception("İşlenmeyen hata: %s %s", request.method, request.url.path)
+    lang = resolve_language(request.headers.get("accept-language"))
     return JSONResponse(
         status_code=500,
-        content={
-            "status": "error",
-            "detail": (
-                "Beklenmeyen bir kozmik parazit oluştu. Ekibimiz durumu "
-                "inceliyor; lütfen kısa bir süre sonra tekrar dene."
-            ),
-        },
+        content={"status": "error", "detail": text("internal", lang)},
     )
 
 app.include_router(astrology_router, prefix="/api/v1/astrology", tags=["Astrology"])

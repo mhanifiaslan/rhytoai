@@ -1,6 +1,42 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <!-- EKLENTILERDEN DEVRALINAN, KULLANILMAYAN IZINLER SILINIYOR.
+         Kapali test denetiminde (2026-09-14) birlesmis RELEASE manifesti
+         okundu; paket su izinleri istiyordu ve hicbirini kod kullanmiyor:
+
+           RECORD_AUDIO      camera_android_camerax'ten. Kamera yalniz yuz
+                             okumada ve `enableAudio: false` ile aciliyor
+                             (face_capture_screen.dart:256); video kaydi
+                             hic yok. Magaza listesinde "Mikrofon" yazardi
+                             ve gizlilik metnimiz "mikrofona hic erisilmez"
+                             diyor — beyan ile paket celisiyordu.
+           READ_PHONE_STATE  tflite GPU AAR'indan ortuk geliyor. Magazada
+                             "Telefon" izni olarak gorunur; bir astroloji
+                             uygulamasinda kurulum oncesi guveni kirar.
+           USE_BIOMETRIC     Depoda tek satir biyometrik kod yok
+           USE_FINGERPRINT   (grep sifir); eklenti artigi.
+           WRITE_EXTERNAL_    image_picker YALNIZ okuyor; Android 10+'ta
+           STORAGE            zaten yok sayiliyor.
+
+         READ_EXTERNAL_STORAGE BILEREK KALIYOR: image_picker eski Android
+         surumlerinde galeriye onunla eriyor (avatar + yuz okuma galeri
+         yolu). Onu da silmek eski cihazlarda iki akisi birden kirardi.
+
+         `tools:node="remove"` birlestirmede eklentinin satirini duserir;
+         kendi `uses-permission` satirimizi eklemez. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"
+                     tools:node="remove"/>
+    <uses-permission android:name="android.permission.READ_PHONE_STATE"
+                     tools:node="remove"/>
+    <uses-permission android:name="android.permission.USE_BIOMETRIC"
+                     tools:node="remove"/>
+    <uses-permission android:name="android.permission.USE_FINGERPRINT"
+                     tools:node="remove"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                     tools:node="remove"/>
 
     <!-- Yuz okuma. Kare CIHAZDA islenir; sunucuya gitmez, diske yazilmaz.
          Kamera zorunlu DEGIL: uygulamanin geri kalani kamerasiz calisiyor ve
@@ -12,6 +48,18 @@
     <uses-permission android:name="android.permission.READ_CONTACTS"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.front" android:required="false"/>
+    <!-- camera.any: camerax bunu `required` BELIRTMEDEN ekliyor ve Android
+         varsayilani `true`. Birlesmis RELEASE manifesti okundugunda
+         (kapali test denetimi, 2026-09-14) satir su hâldeydi:
+             <uses-feature android:name="android.hardware.camera.any" />
+         Yani yukaridaki iki `required="false"` kararimiz sessizce geri
+         alinmisti: Play, kamerasiz cihazlara uygulamayi HIC gostermezdi.
+         Kamera yalniz yuz okumada kullaniliyor; uygulamanin geri kalani
+         kamerasiz calisiyor. `tools:replace` niteligi bizim degerimizle
+         ezer. -->
+    <uses-feature android:name="android.hardware.camera.any"
+                  android:required="false"
+                  tools:replace="android:required"/>
     <!-- allowBackup KAPALI (KT4): Android Auto Backup SharedPreferences'ı
          cihazdan cihaza taşıyor — rythoDeviceId klonlanınca tek-cihaz
          kilidi sessizce boşa düşüyordu; izin/paywall bayrakları da yeni

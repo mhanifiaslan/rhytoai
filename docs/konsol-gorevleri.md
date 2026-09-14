@@ -12,9 +12,69 @@ politikası kuruldu. Aşağıdakiler sende.
 
 ## 0. KAPALI TEST SIRASI (KT-turu, 2026-08-30) — buradan yürü
 
-Kod tarafı hazır (KT commit'i): jeton zorlaması canlı, deneme ekonomisi
-onarıldı, hukuk sayfaları + veri-silme sayfası yayında, AAB kapıları
-sertleşti. SENİN sıran (sıra ÖNEMLİ — 1 yapılmadan AAB üretme):
+> **GÜNCELLEME (2026-09-15, kapalı test denetimi).** On boyutlu bir
+> denetim koştu; 100 doğrulanmış bulgu çıktı. Kod, hukuk metinleri, web
+> sitesi, izinler ve Firestore indeksleri düzeltildi ve dağıtıldı.
+> **Sende üç YENİ zorunlu adım var (aşağıda −1, 0a, 0b) ve bunlar
+> eskilerden ÖNCE gelir.** Ayrıntılı gerekçeler: bu turun commit'i.
+
+**Her turda kod da dağıtılır.** §0 bir konsol listesidir ama kod tarafı
+kendiliğinden canlıya çıkmaz. AAB üretmeden önce şu üçü koşulmuş olmalı,
+bu sırayla: `firebase deploy --only firestore:rules,firestore:indexes` →
+`infra/deploy-backend.ps1` → `firebase deploy --only hosting`. Doğrulama:
+panel → Sistem → indeks yoklaması yeşil, `/health` 200, `/health/rag`
+vector modda.
+
+---
+
+### −1. Panele yönetici yetkisi bas — **YAPILMADAN PANEL AÇILMAZ**
+
+Canlıda ölçüldü (2026-09-14): projedeki üç kullanıcının **hiçbirinde**
+`admin: true` claim'i yok. `require_admin` onu arıyor, dolayısıyla
+panelin her ucu 403 dönüyor. Kapalı test boyunca operatör kör kalır:
+kullanıcı listesi yok, gelir yok, geri bildirim yok, dikkat zili yok.
+
+Repo kökünden tek komut (onay ister, "evet" yaz):
+
+```
+backend/.venv/Scripts/python tools/set_admin.py --email aslan.mh@gmail.com --role owner
+```
+
+Araç MEVCUT claim'leri korur; yalnız `admin` ve `role` ekler. Claim
+çıkış/giriş sonrası ya da en geç 1 saatte geçerli olur.
+
+⚠️ Hesabında başka bir sistemin yazdığı claim'ler var
+(`role: super_admin`, `orgIds`, `orgRoles`). Bu depo onları yazmıyor ve
+artık yok sayıyor — `role` tek başına yetki VERMEZ (2026-09-14'te
+kapatılan açık).
+
+### 0a. Firebase Auth istek günlüğünü AÇ
+
+`monitoring.requestLogging` canlıda **boş**. SMS-turu planı bunu "turun
+tek en önemli maddesi" diye işaretlemişti; yapılmamış. Kapalı testte bir
+testçi "giriş yapamıyorum" ya da "SMS gelmiyor" derse yine kör kalırız —
+geçen sefer teşhis bir oturum sürmüştü.
+
+Firebase Console → Authentication → Settings → **User activity /
+request logging** → aç. Doğrulama:
+`gcloud logging read 'protoPayload.serviceName="identitytoolkit.googleapis.com"' --project=rhytoai`
+artık satır döndürmeli (bugün sıfır dönüyor).
+
+### 0b. Kurmaca test numarasını gözden geçir
+
+Firebase Auth'ta `+905542732455` → sabit kod `356625` olarak kayıtlı bir
+**kurmaca** numara var. O numaraya ASLA gerçek SMS gitmez. Senin test
+numaran değilse SİL — bir testçinin eline geçerse "kod gelmiyor" der ve
+sebebi hiçbir yerde görünmez.
+
+Ayrıca SMS bölge listesi yalnız **TR**. Testçilerden biri TR dışındaysa
+hem konsoldaki listeyi hem `phone_verify_screen.dart:73`
+`_smsBolgeleri` sabitini BİRLİKTE genişlet; yalnız birini değiştirmek
+işe yaramaz.
+
+---
+
+SENİN sıran (sıra ÖNEMLİ — 1 yapılmadan AAB üretme):
 
 > **Tıkla-tıkla sürüm (kullanıcı için):** aynı sıra, ekran adları ve
 > kopyalanabilir değerlerle birlikte artifact olarak yayınlandı

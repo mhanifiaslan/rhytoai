@@ -33,7 +33,14 @@ const LegalSections kPrivacyPolicyTr = [
     'Hesap bilgileri',
     'Google ile veya e-posta ile giriş yaptığında adın, e-posta adresin ve '
         'varsa profil fotoğrafın işlenir. Amaç: hesabını oluşturmak ve '
-        'oturumunu doğrulamak. Hukuki dayanak: sözleşmenin ifası.'
+        'oturumunu doğrulamak. Hukuki dayanak: sözleşmenin ifası.\n\n'
+        'Profil fotoğrafını DEĞİŞTİRİRSEN: seçtiğin fotoğraf galerinden '
+        'alınır, kırpılır ve bulut depolamamıza (Google Cloud Storage) '
+        'YÜKLENİR. Yani bu fotoğraf telefonunda kalmaz — sunucuda saklanır '
+        've arkadaşlarının gördüğü kartta görünür. Yüz okumadaki görüntüden '
+        'farkı budur: orada görüntü hiç yüklenmez, burada yüklenir. '
+        'Fotoğrafı istediğin an değiştirebilir, hesabını silerek '
+        'kaldırabilirsin.'
   ),
   (
     'Telefon numarası (isteğe bağlı)',
@@ -98,6 +105,44 @@ const LegalSections kPrivacyPolicyTr = [
         'TUTULMAZ.'
   ),
   (
+    'Günlüğün',
+    'Uygulama içinde tuttuğun günlük notları serbest metindir ve ne '
+        'yazacağına yalnız sen karar verirsin. Notlar hesabına bağlı olarak '
+        'sunucuda saklanır ve iki işe yarar: sana geçmişini göstermek, ve '
+        'sorduğunda yorumunu bugünkü hâline göre kurmak. Bunun için notun '
+        'yapay zeka sağlayıcımıza (Google Gemini) iletilebilir. Notları tek '
+        'tek silebilirsin; hesabını silersen hepsi gider. Sağlık durumu, '
+        'tanı ya da ilaç bilgisi yazmamanı öneririz — bunlar bizim '
+        'işleyebileceğimiz veri türleri değildir.'
+  ),
+  (
+    'Geri bildirim',
+    'Profil → Geri bildirim ile bize yazdığın metin, hesabınla birlikte '
+        'saklanır. Metnin yanında sorunun tekrar üretilebilmesi için '
+        'uygulama sürümü, platform, dil ve o sırada bulunduğun ekranın adı '
+        'da kaydedilir. Bu kayıtları yalnız uygulama yöneticisi okur; '
+        'yanıtlarsak yanıt sana bildirim olarak gelir. Hesabını sildiğinde '
+        'gönderdiğin geri bildirimler de silinir.'
+  ),
+  (
+    'Ölçüm ve çökme kayıtları',
+    'Uygulama çökerse Firebase Crashlytics\'e teknik bir kayıt gider: hata '
+        'izi, cihaz modeli, işletim sistemi ve uygulama sürümü. Bu kayıtta '
+        'adın, e-postan, doğum verin ya da yazdığın hiçbir metin bulunmaz.'
+        '\n\n'
+        'Uygulamanın hangi ekranlarının kullanıldığını görmek için Firebase '
+        'Analytics kullanılır. Olaylar dar kategorilerdir (hangi rapor '
+        'üretildi, satın alma akışı nerede kaldı, bildirim izni verildi mi); '
+        'kişisel veri taşımazlar. Analytics, Android\'in reklam kimliğini '
+        '(Advertising ID) kullanabilir — biz reklam göstermiyoruz ve bu '
+        'kimliği reklam için kullanmıyoruz; telefonunun ayarlarından '
+        'sıfırlayabilirsin.\n\n'
+        'Ayrıca yapay zeka çağrılarının maliyetini takip edebilmek için '
+        'sunucuda teknik bir kullanım kaydı tutulur: hangi özellik, hangi '
+        'model, kaç kelime birimi, ne kadar sürdü. Bu kayıtta sorunun ya da '
+        'cevabın METNİ yoktur. Hesabını sildiğinde bu kayıtlar da silinir.'
+  ),
+  (
     'Yüz okuma',
     'Yüz okuma iki yolla çalışır: canlı kamera ya da galerinden seçtiğin '
         'bir fotoğraf. İki yolda da GÖRÜNTÜ TELEFONUNDAN ÇIKMAZ: yüz '
@@ -131,8 +176,10 @@ const LegalSections kPrivacyPolicyTr = [
         'Rehberine varsayılan olarak ERİŞİLMEZ. "Rehberimden arkadaş öner" '
         'ayarını açarsan rehberindeki telefon numaraları CİHAZINDA geri '
         'döndürülemez özetlere (SHA-256) çevrilir ve yalnızca bu özetler '
-        'eşleştirme için sunucuya gönderilir; ad, soyad veya başka hiçbir '
-        'rehber alanı okunmaz ve gönderilmez. Özet listesi eşleştirme '
+        'eşleştirme için sunucuya gönderilir. Kişilerin adları CİHAZINDA '
+        'okunur — listede kimin Rytho\'da olduğunu gösterebilmek için — ama '
+        'ad, soyad ve başka hiçbir rehber alanı sunucuya GÖNDERİLMEZ. '
+        'Özet listesi eşleştirme '
         'yapıldıktan sonra atılır, sunucuda saklanmaz. Eşleşme '
         'KARŞILIKLIDIR: yalnızca ikiniz de bu ayarı açtıysanız birbirinizi '
         'görürsünüz. Ayarı kapattığın an görünmez olursun.'
@@ -177,7 +224,17 @@ const LegalSections kPrivacyPolicyTr = [
     'Saklama süresi',
     'Hesap ve doğum verilerin hesabın var olduğu sürece saklanır. Yapay '
         'zeka yanıt önbelleği en fazla 30 gün tutulur. Hesabını sildiğinde '
-        'tüm veriler kalıcı olarak silinir.'
+        'verilerin kalıcı olarak silinir: doğum kaydın, sohbetlerin ve '
+        'onlardan çıkarılan notlar, günlük girişlerin, eklediğin kişiler, '
+        'arkadaşlıkların, kullanıcı adın, sana özel üretilmiş okumalar, '
+        'yapay zeka kullanım kaydın, telefon doğrulama denemelerin ve bize '
+        'gönderdiğin geri bildirimler.\n\n'
+        'İki kayıt bilerek kalır. Satın alma ve iade kayıtların mali '
+        'belgedir; vergi mevzuatı bunları beş yıl saklamamızı zorunlu '
+        'kılar ve bu kayıtlar ürün, tutar ve tarihten ibarettir. '
+        'Yöneticinin hesabın üzerinde yaptığı işlemlerin denetim izi de '
+        'kalır; silinebilir olsaydı denetim izi olmazdı. Gönderdiğin '
+        'şikayet kayıtları da başkalarının güvenliği için saklanır.'
   ),
   (
     'Haklarının kullanımı',
@@ -273,10 +330,17 @@ const LegalSections kPrivacyPolicyEn = [
   ),
   (
     'Account information',
-    'When you sign in with Google or with an email address, we process your '
-        'name, email address and profile photo if you have one. Purpose: to '
-        'create your account and verify your session. Legal basis: '
-        'performance of a contract.'
+    'When you sign in with Google or e-mail we process your name, e-mail '
+        'address and profile photo if you have one. Purpose: to create your '
+        'account and verify your session. Legal basis: performance of a '
+        'contract.\n\n'
+        'If you CHANGE your profile photo: the photo you pick is taken from '
+        'your gallery, cropped and UPLOADED to our cloud storage (Google '
+        'Cloud Storage). That photo does not stay on your phone — it is '
+        'stored on our servers and appears on the card your friends see. '
+        'This is the difference from face reading: there the image is never '
+        'uploaded, here it is. You can change it at any time, or remove it '
+        'by deleting your account.'
   ),
   (
     'Phone number (optional)',
@@ -348,11 +412,50 @@ const LegalSections kPrivacyPolicyEn = [
         'By default we do NOT access your contacts. If you enable "Suggest '
         'friends from my contacts", the phone numbers in your address book '
         'are converted to irreversible digests (SHA-256) ON YOUR DEVICE and '
-        'only those digests are sent for matching; names and every other '
-        'contact field are never read or transmitted. The digest list is '
+        'only those digests are sent for matching. Contact names are read ON '
+        'YOUR DEVICE — so the list can show you who is on Rytho — but names '
+        'and every other contact field are never TRANSMITTED. The digest '
+        'list is '
         'discarded after matching and never stored on our servers. Matching '
         'is MUTUAL: you only see each other if you have both enabled the '
         'setting. Turning it off makes you invisible immediately.'
+  ),
+  (
+    'Your journal',
+    'The journal notes you keep in the app are free text and you alone '
+        'decide what goes in them. Notes are stored on our servers tied to '
+        'your account and serve two purposes: showing you your own history, '
+        'and grounding a reading in where you are today when you ask for '
+        'one. For that, a note may be sent to our AI provider (Google '
+        'Gemini). You can delete notes one by one; deleting your account '
+        'removes them all. We recommend not writing health conditions, '
+        'diagnoses or medication — those are not data types we can process.'
+  ),
+  (
+    'Feedback',
+    'The text you send us through Profile → Feedback is stored together '
+        'with your account. Alongside the text we record the app version, '
+        'platform, language and the name of the screen you were on, so the '
+        'problem can be reproduced. Only the app administrator reads these; '
+        'if we reply, the reply reaches you as a notification. Deleting your '
+        'account deletes the feedback you sent.'
+  ),
+  (
+    'Measurement and crash logs',
+    'If the app crashes, a technical record goes to Firebase Crashlytics: '
+        'the stack trace, device model, operating system and app version. '
+        'That record contains no name, e-mail, birth data or text you '
+        'wrote.\n\n'
+        'Firebase Analytics is used to see which screens are used. Events '
+        'are narrow categories (which report was generated, where a purchase '
+        'flow stopped, whether notification permission was granted); they '
+        'carry no personal data. Analytics may use Android\'s Advertising '
+        'ID — we show no ads and do not use that ID for advertising; you '
+        'can reset it in your phone settings.\n\n'
+        'We also keep a technical usage record on the server so we can track '
+        'the cost of AI calls: which feature, which model, how many token '
+        'units, how long it took. That record contains no TEXT of your '
+        'question or the answer. Deleting your account deletes these too.'
   ),
   (
     'Face reading',
@@ -420,7 +523,17 @@ const LegalSections kPrivacyPolicyEn = [
     'Retention',
     'Your account and birth data are kept for as long as your account exists. '
         'AI response caches are kept for at most 30 days. When you delete '
-        'your account, all of it is permanently deleted.'
+        'your account, your data is permanently deleted: your birth record, '
+        'your chats and the notes drawn from them, your journal entries, the '
+        'people you added, your friendships, your username, the readings '
+        'generated for you, your AI usage records, your phone verification '
+        'attempts and the feedback you sent us.\n\n'
+        'Two records are kept on purpose. Your purchase and refund records '
+        'are financial documents; tax law requires us to keep them for five '
+        'years, and they contain only the product, the amount and the date. '
+        'The audit trail of administrator actions on your account is also '
+        'kept; if it could be deleted it would not be an audit trail. '
+        'Reports you filed are likewise kept, for the safety of others.'
   ),
   (
     'Your rights',

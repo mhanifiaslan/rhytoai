@@ -1325,11 +1325,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'Bu işlem geri alınamaz. Silinecekler: doğum kaydın, sohbetten biriktirdiğimiz notlar, arkadaşlıkların, kullanıcı adın ve sana özel üretilmiş tüm okumalar.';
+      'Bu işlem geri alınamaz. Silinecekler: doğum kaydın, sohbetlerin ve onlardan çıkarılan notlar, günlük girişlerin, eklediğin kişiler, arkadaşlıkların, kullanıcı adın, sana özel üretilmiş tüm okumalar, yapay zeka kullanım kaydın, telefon doğrulama denemelerin ve gönderdiğin geri bildirimler.';
 
   @override
   String get deleteAccountKeeps =>
-      'Gönderdiğin şikayet kayıtları saklanır; başkalarının güvenliğiyle ilgili oldukları için silinmez.';
+      'İkisi bilerek kalır: satın alma ve iade kayıtların (mali belge, beş yıl saklanması zorunlu) ve gönderdiğin şikayet kayıtları (başkalarının güvenliğiyle ilgili).';
 
   @override
   String get deleteAccountSubscription =>
@@ -1878,6 +1878,14 @@ class AppLocalizationsTr extends AppLocalizations {
   @override
   String get tokenPacksUnavailableBody =>
       'Mağaza bağlantısı kurulamadı. Biraz sonra tekrar dene.';
+
+  @override
+  String get tokenFreeTierWarnTitle =>
+      'Ücretsiz katmanda kredi yalnızca sohbette harcanır';
+
+  @override
+  String get tokenFreeTierWarnBody =>
+      '1 kredi = 1 sohbet mesajı. I Ching, ikili dinamik, derin raporlar ve yüz okuma Rytho+ aboneliğine dahildir; kredi onları açmaz. Aldığın krediler yanmaz — sonradan abone olursan hepsini kullanabilirsin.';
 
   @override
   String get tokenCostsNote =>

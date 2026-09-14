@@ -54,7 +54,9 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
       başlıkları yayında
 - [x] Toplu bildirim ucu yalnızca paylaşılan zamanlayıcı anahtarıyla çalışıyor
 - [ ] Firebase App Check (Play Integrity) — **konsol tarafı uygulama
-      sahibinde**; adımlar `docs/store-launch.md` §3
+      sahibinde**; adımlar `docs/store-launch.md` §3.
+      Canlı durum (2026-09-14): üç serviste de `UNENFORCED`. Kapalı testi
+      engellemez; bilinçli erteleme
 - [ ] Cloud Run soğuk başlatma / maliyet dengesi gözden geçir
 
 ## 3. Hesap ve veri hakları
@@ -65,7 +67,13 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [x] Silme tüm yayılımı kapsıyor: alt koleksiyonlar, **karşı taraftaki
       arkadaşlık kayıtları**, gönderilen tepkiler, kullanıcı adı rezervasyonu,
       herkese açık kart, kişiye özel yapay zeka üretimleri, Firebase kimliği
-      (`backend/services/account_service.py`)
+      ve — 2026-09-15'te eklendi — `users/{uid}` ağacının DIŞINDAKİ uid'li
+      kayıtlar: `usageEvents`, `phoneAttempts`, `feedback`
+      (`backend/services/account_service.py`, bekçi:
+      `tests/test_account_deletion.py`)
+- [x] Silinmeyen iki kayıt YAZILI: `revenueEvents` (mali belge, 5 yıl) ve
+      `adminAudit` (denetim izi). Üç hukuk metninde de adıyla geçiyor;
+      `apps/mobile/test/legal_texts_test.dart` bunu zorluyor
 - [x] Şikayet kayıtları bilinçli olarak korunuyor (başkalarının güvenliği) —
       gizlilik metninde ve silme onayında yazılı
 
@@ -110,10 +118,13 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 
 - [x] Crashlytics bağlı (debug/web'de devre dışı)
 - [x] Backend test takımı — 300+ test
-- [ ] **Analytics olay şeması bayat**: `apps/mobile/lib/core/analytics.dart`
-      hâlâ kaldırılmış özelliklerin olaylarını taşıyor (`post_published`,
-      `user_followed`, `channel_subscribed`, `face_analyzed`). Temizlenmeli;
-      yerine bildirim ve abonelik olayları eklenmeli
+- [x] Analytics olay şeması temiz (kapalı test denetiminde doğrulandı,
+      2026-09-14): `apps/mobile/lib/core/analytics.dart` kaldırılmış
+      özelliklerin olaylarını (`post_published`, `user_followed`,
+      `channel_subscribed`, `face_analyzed`) artık taşımıyor; yerine
+      onboarding hunisi, abonelik dönüşümü ve bildirim olayları var.
+      Dosyanın kendi kuralı: "burada yalnızca var olan akışların
+      olayları durur" ve "olaylara kişisel veri girmez"
 - [ ] iOS derlemesi (macOS gerektirir) + TestFlight
 - [x] Android imzalama anahtarı üretildi (`key.properties`, 2026-08-07;
       build.gradle.kts release bloğu bağlı, build-aab.ps1 KT4'te imzayı
@@ -144,12 +155,17 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [ ] Yaş derecelendirmesi: App Store 12+, Play Teen
 - [ ] Mağaza açıklamasında sağlık iddiası veya kesin kehanet dili yok
 
-## 11. Henüz yapılmamış ürün işleri
+## 11. Ürün işleri — ÜÇÜ DE BİTTİ (2026-09-15'te doğrulandı)
 
-- [ ] Dışa paylaşım kartı (günlük yorumun görsel hâli) — Faz 5 artığı
-- [ ] Davet bağlantısı deep-link'i (Firebase Dynamic Links kapandı; yaklaşım
-      seçilmedi)
-- [ ] Rehber eşleştirme — kendi turunda, varsayılan kapalı (bkz. plan)
+Bu bölüm bir dönem "henüz yapılmamış" diye duruyordu ve kendi §12'siyle
+çelişiyordu. Kapalı test denetiminde üçünün de kodda bittiği doğrulandı:
+
+- [x] Dışa paylaşım kartı — `features/share/share_card.dart` (`_renderCard`,
+      ekran dışı PNG üretimi; R5'te rapor/yıl kartlarına genişledi)
+- [x] Davet bağlantısı deep-link'i — App Links ile, Dynamic Links'siz
+      (§12: assetlinks release imzasıyla doğrulandı, `/i/{kullanıcı}` canlı)
+- [x] Rehber eşleştirme — `core/contact_match.dart` + `api/contacts.py`,
+      varsayılan KAPALI ve karşılıklı rıza şartlı
 
 ## 12. Davet baglantisi (App Links / Universal Links)
 

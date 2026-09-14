@@ -86,21 +86,39 @@ def reset_firebase_state() -> None:
 _bearer = HTTPBearer(auto_error=False)
 
 #: Panel rolleri (AD1). Claim `{admin: true, role: 'owner'|'support'}`.
-#: `role` yoksa ama `admin: true` varsa geçiş dönemi: owner sayılır
-#: (mevcut tek admin'in claim'i role taşımıyor). Yeni rol eklemek =
-#: buraya yazmak + `tools/set_admin.py --role` seçeneğine eklemek.
+#: `admin: true` ZORUNLU; `role` yalnız onu daraltır (bkz. `_rol_coz` —
+#: rolün tek başına yetki vermesi 2026-09-14'te kapatılan bir açıktı).
+#: `role` yoksa ama `admin: true` varsa geçiş dönemi: owner sayılır.
+#: Yeni rol eklemek = buraya yazmak + `tools/set_admin.py --role`
+#: seçeneğine eklemek.
 ROLES = ("owner", "support")
 
 
 def _rol_coz(decoded: dict) -> str | None:
-    """Claim'lerden rol: bilinmeyen rol admin'de owner'a düşer, admin
-    olmayanda yok sayılır — `role:'x'` yazdırılmış sahte claim yetki
-    vermez (zaten istemci claim yazamaz; savunma derinliği)."""
+    """Claim'lerden panel rolü. **`admin: true` ZORUNLU koşuldur;** rol
+    yalnız onu daraltır.
+
+    ⚠️ Kapalı test denetiminde (2026-09-14) bulunan açık: eski sürüm
+    "bilinmeyen rol admin'de owner'a düşer" diye yazılmıştı ve BİLİNEN
+    rolü admin bayrağından bağımsız kabul ediyordu. Yani `admin` claim'i
+    OLMAYAN ama `role: "owner"` taşıyan bir token `require_admin`'i de
+    `require_owner`'ı da geçiyordu — kullanıcı silme, hesap kapatma,
+    CSV dışa aktarma, sürüm eşiği dahil her şey.
+
+    Kuramsal bir risk değildi: bu Firebase projesinin claim'leri başka
+    bir sistem tarafından da yazılıyor (canlıda ölçüldü — `orgIds`,
+    `orgRoles`, `role: "super_admin"`) ve o sistemin sözlüğünde "owner"
+    kelimesi zaten var. Tek bir `role: "owner"` yazımı Rytho yöneticisi
+    üretirdi.
+
+    Yeni kural tek cümle: **rol tek başına yetki vermez.** `admin: true`
+    yoksa rol yok sayılır; varsa ve rol tanınmıyorsa geçiş dönemi kuralı
+    sürer (rolsüz eski `admin: true` claim'i owner sayılır).
+    """
+    if decoded.get("admin") is not True:
+        return None
     rol = decoded.get("role")
-    admin = decoded.get("admin") is True
-    if rol not in ROLES:
-        rol = "owner" if admin else None
-    return rol
+    return rol if rol in ROLES else "owner"
 
 
 class AuthUser:
@@ -208,8 +226,10 @@ async def get_current_user(
 
 
 def require_admin(user: AuthUser = Depends(get_current_user)) -> AuthUser:
-    """Yönetim uçlarının kapısı (W4/AD1): `admin: true` claim'i YA DA
-    tanınan bir panel rolü (`owner`/`support`) şart.
+    """Yönetim uçlarının kapısı (W4/AD1): `admin: true` claim'i ŞART.
+
+    Rol (`owner`/`support`) yetkiyi daraltır, vermez — `user.role`
+    zaten yalnız admin'lerde dolu (`_rol_coz`).
 
     403 döner, 401 değil — kimlik geçerli ama yetki yok. Yanıt jenerik
     tutulur; ucun varlığı hakkında ipucu vermez.

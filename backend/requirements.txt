@@ -37,3 +37,11 @@ pillow==12.3.0
 # ZoneInfo veritabani. Debian slim imajinda ve Windows'ta sistem zoneinfo
 # bulunmuyor; BaZi hesabi ZoneInfo("Europe/Istanbul") ile cokuyordu.
 tzdata==2026.3
+
+# Cloud Logging — log SEVIYESI Cloud Run'da dogru gorunsun.
+# Kapali test denetiminde (2026-09-14) olculdu: duz `basicConfig` handler'siz
+# calisinca ciktinin tamami stderr'e gidiyor ve Cloud Run stderr'i ERROR
+# sayiyor; INFO satirlari da kirmizi gorunup gercek hatayi gomuyordu.
+# `setup_logging()` Python seviyesini gercek severity'ye cevirir.
+# Yerelde paket/kimlik yoksa main.py sessizce basicConfig'e duser.
+google-cloud-logging==3.13.0

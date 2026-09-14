@@ -2459,13 +2459,13 @@ abstract class AppLocalizations {
   /// No description provided for @deleteAccountBody.
   ///
   /// In tr, this message translates to:
-  /// **'Bu işlem geri alınamaz. Silinecekler: doğum kaydın, sohbetten biriktirdiğimiz notlar, arkadaşlıkların, kullanıcı adın ve sana özel üretilmiş tüm okumalar.'**
+  /// **'Bu işlem geri alınamaz. Silinecekler: doğum kaydın, sohbetlerin ve onlardan çıkarılan notlar, günlük girişlerin, eklediğin kişiler, arkadaşlıkların, kullanıcı adın, sana özel üretilmiş tüm okumalar, yapay zeka kullanım kaydın, telefon doğrulama denemelerin ve gönderdiğin geri bildirimler.'**
   String get deleteAccountBody;
 
   /// No description provided for @deleteAccountKeeps.
   ///
   /// In tr, this message translates to:
-  /// **'Gönderdiğin şikayet kayıtları saklanır; başkalarının güvenliğiyle ilgili oldukları için silinmez.'**
+  /// **'İkisi bilerek kalır: satın alma ve iade kayıtların (mali belge, beş yıl saklanması zorunlu) ve gönderdiğin şikayet kayıtları (başkalarının güvenliğiyle ilgili).'**
   String get deleteAccountKeeps;
 
   /// No description provided for @deleteAccountSubscription.
@@ -3433,6 +3433,18 @@ abstract class AppLocalizations {
   /// In tr, this message translates to:
   /// **'Mağaza bağlantısı kurulamadı. Biraz sonra tekrar dene.'**
   String get tokenPacksUnavailableBody;
+
+  /// No description provided for @tokenFreeTierWarnTitle.
+  ///
+  /// In tr, this message translates to:
+  /// **'Ücretsiz katmanda kredi yalnızca sohbette harcanır'**
+  String get tokenFreeTierWarnTitle;
+
+  /// No description provided for @tokenFreeTierWarnBody.
+  ///
+  /// In tr, this message translates to:
+  /// **'1 kredi = 1 sohbet mesajı. I Ching, ikili dinamik, derin raporlar ve yüz okuma Rytho+ aboneliğine dahildir; kredi onları açmaz. Aldığın krediler yanmaz — sonradan abone olursan hepsini kullanabilirsin.'**
+  String get tokenFreeTierWarnBody;
 
   /// No description provided for @tokenCostsNote.
   ///

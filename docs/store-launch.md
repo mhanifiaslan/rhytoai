@@ -44,7 +44,7 @@ buildTypes {
 }
 ```
 
-App Bundle üretimi: `flutter build appbundle --release`
+App Bundle üretimi: **`infra/build-aab.ps1`** — düz `flutter build appbundle --release` KULLANILMAZ. 2026-08-16'da 1.5.0+17 öyle üretildi ve satın almalar sessizce öldü: RevenueCat anahtarı `--dart-define-from-file` ile giriyor, düz komut onu geçirmiyor. Betik ayrıca imzayı, yetki kimliğini, kullanılmayan izinleri ve kameranın zorunlu olmadığını paketten doğruluyor
 
 ## 2. Play Console iç test adımları
 
@@ -104,8 +104,9 @@ Sürüm notu şablonu (kanal başına kopyala/uyarla):
 Rytho kapalı test {SÜRÜM}
 • Yeni: {1-3 madde, kullanıcı diliyle}
 • Düzeltme: {varsa}
-Bilinen sınırlar: deneme 3 gün, kart istemez; sorun görürsen
-uygulama içinden değil {iletişim kanalı} üzerinden yaz.
+Bilinen sınırlar: deneme 3 gün, kart istemez.
+Sorun görürsen uygulama içinden yaz: Profil → Geri bildirim.
+Panelden okuyup yanıtlıyoruz; yanıt telefonuna bildirim olarak gelir.
 ```
 
 ## 3. Firebase App Check (Play Integrity)

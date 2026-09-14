@@ -54,3 +54,72 @@ class TestKorpusVeBelgeler:
     def test_readme_vedik_iddia_etmez(self):
         metin = (_KOK / "README.md").read_text(encoding="utf-8")
         assert "Vedik" not in metin
+
+
+class TestPazarlamaDili:
+    """Yayına çıkan METİNLER koddaki kapılarla ve kendi kılavuzumuzla
+    uyuşmalı.
+
+    Bu sınıf kapalı test denetiminde (2026-09-14) eklendi. Aynı kusur
+    sınıfı ÜÇ kez tekrarladı: önce mağaza metni ücretsiz I Ching vadetti
+    (R9-5'te düzeltildi), sonra aynı vaat web sitesinde bulundu, üstelik
+    yanında "Sınırsız sohbet" ve projenin kendi kılavuzunun (ozellikler.md
+    §12b) açıkça yasakladığı "NASA" ibaresi vardı. Metin koddan sapıyor ve
+    bunu kimse fark etmiyor; bekçi bu yüzden var.
+    """
+
+    #: Yayına çıkan HTML'ler: Firebase Hosting `public: "web"`.
+    _SAYFALAR = ("web/index.html", "web/en/index.html",
+                 "web/legal/gizlilik.html", "web/en/legal/privacy.html",
+                 "web/legal/kullanim.html",
+                 "web/legal/hesap-silme.html",
+                 "web/en/legal/delete-account.html")
+
+    #: (aranan, neden yasak)
+    _YASAKLAR = (
+        ("nasa", "ozellikler.md §12b: 'NASA' ASLA — doğrusu 'astronomik "
+                 "efemeris verisi'"),
+        ("sınırsız sohbet", "Rytho+ aylık 300 kredidir; sınırsız değil"),
+        ("unlimited chat", "Rytho+ is 300 credits a month, not unlimited"),
+        ("iyileştirir", "sağlık iddiası — mağaza politikası"),
+        ("tedavi eder", "sağlık iddiası — mağaza politikası"),
+        ("şifa", "sağlık iddiası — mağaza politikası"),
+        (" heals ", "health claim — store policy"),
+        (" cures ", "health claim — store policy"),
+    )
+
+    def test_yayindaki_sayfalarda_yasak_ifade_yok(self):
+        for yol in self._SAYFALAR:
+            dosya = _KOK / yol
+            if not dosya.exists():
+                continue
+            metin = dosya.read_text(encoding="utf-8").lower()
+            for aranan, neden in self._YASAKLAR:
+                assert aranan not in metin, (
+                    f"{yol} içinde yasak ifade {aranan!r} — {neden}")
+
+    def test_site_ucretsiz_i_ching_vadetmiyor(self):
+        """`require_plus("iching")` kapıda; site 'ücretsiz' diyemez."""
+        for yol in ("web/index.html", "web/en/index.html"):
+            dosya = _KOK / yol
+            if not dosya.exists():
+                continue
+            metin = dosya.read_text(encoding="utf-8").lower()
+            for kalip in ("günde 1 i ching", "günde bir i ching",
+                          "1 i ching cast a day"):
+                assert kalip not in metin, (
+                    f"{yol}: I Ching ücretsiz katmanda gösteriliyor ama "
+                    f"backend/api/reports.py require_plus('iching') ile "
+                    f"kilitliyor")
+
+    def test_iching_gercekten_plus_kapisinda(self):
+        """Yukarıdaki iki testin dayanağı: kapı hâlâ orada mı?
+
+        Kapı kaldırılırsa (ürün kararı değişirse) bu test düşer ve site
+        metinlerinin de güncellenmesi gerektiği hatırlatılır.
+        """
+        kaynak = (_KOK / "backend" / "api" / "reports.py").read_text(
+            encoding="utf-8")
+        assert 'require_plus("iching")' in kaynak, (
+            "I Ching kapısı kalkmış: web sitesi ve mağaza metinleri de "
+            "gözden geçirilmeli")

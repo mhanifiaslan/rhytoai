@@ -146,12 +146,27 @@ Her madde için "Bu veriyi topluyor musunuz?" → aşağıdaki gibi işaretleyin
 | Messages | Other in-app messages (günlük notları — kullanıcı yazar, yalnız kendi bağlamında) | Evet | **Evet** (Google — Gemini, sohbet bağlamı olarak) | Hayır | Uygulama işlevi |
 | App activity | Other user-generated content? HAYIR — kullanıcılar-arası içerik yok (tepkiler kapalı küme) | — | — | — | — |
 | Device or other IDs | Device or other IDs (rastgele cihaz kimliği + AD_ID izni: firebase_analytics bağımlılığından gelir) | Evet | Hayır | Hayır | Analitik, tek cihaz kilidi |
+| Personal info | Phone number | Evet | Hayır | Hayır | Hesap doğrulama; isteğe bağlı rehber eşleşmesi (sunucuda ham numara DEĞİL, SHA-256 özeti) |
+| **Photos and videos** | **Photos** | **Evet** | Hayır | Hayır | **Profil fotoğrafı: kullanıcı galeriden seçerse Cloud Storage'a YÜKLENİR** (yüz okumadan farklı — orada görüntü hiç yüklenmez) |
+| Messages | Other in-app messages (uygulama içi geri bildirim — kullanıcının yazdığı serbest metin + ekran adı/sürüm/platform) | Evet | Hayır | Hayır | Uygulama işlevi, destek |
+| App activity | App interactions (yapay zeka kullanım kaydı: özellik, model, kelime birimi, süre — SORU/CEVAP METNİ YOK) | Evet | Hayır | Hayır | Analitik, maliyet takibi |
+| App activity | App interactions (telefon doğrulama denemeleri: aşama, ülke kodu, maskeli numara) | Evet | Hayır | Hayır | Uygulama işlevi, teşhis |
 
-> **Yüz okuma neden "Photos and videos" altında DEĞİL:** Play bu kategoriyi
-> uygulamanın fotoğraf/video *topladığı* durumlar için istiyor. Yüz okuma
-> kamerayı yalnızca canlı önizleme için kullanıyor; kare çekilmiyor,
-> saklanmıyor, gönderilmiyor. Toplanan şey görüntüden TÜRETİLMİŞ sayılar,
-> o yüzden "Personal info → Other info" doğru kategori.
+> **Yüz okuma neden "Photos and videos" altında DEĞİL — ama profil
+> fotoğrafı ALTINDA:** Play bu kategoriyi uygulamanın fotoğraf/video
+> *topladığı* durumlar için istiyor.
+>
+> *Yüz okuma:* kamerayı yalnızca canlı önizleme için kullanıyor; kare
+> çekilmiyor, saklanmıyor, gönderilmiyor. Toplanan şey görüntüden
+> TÜRETİLMİŞ sayılar, o yüzden "Personal info → Other info" doğru kategori.
+>
+> *Profil fotoğrafı AYRI BİR AKIŞTIR ve toplanır.* Kapalı test denetiminde
+> (2026-09-14) bulundu: `avatar_editor.dart` galeriden seçilen fotoğrafı
+> kırpıp `FirebaseStorage` `avatars/{uid}/avatar.png` yoluna YÜKLÜYOR ve
+> URL'yi `users/{uid}.photoUrl` + `publicProfiles`'a yazıyor. Bu, Play'in
+> "Photos and videos → Photos" tanımına birebir uyuyor. Formu doldururken
+> bu satır İŞARETLENMELİ — "yüz okuma fotoğraf toplamıyor" cümlesi bu
+> akışı kapsamaz.
 >
 > Aynı sebeple Apple tarafında "Sensitive Info → biometric data" da
 > işaretlenmiyor: gönderilen sayılar kişiyi tanımaya yaramıyor.

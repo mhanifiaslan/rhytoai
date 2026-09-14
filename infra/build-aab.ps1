@@ -135,6 +135,54 @@ if ($keytool) {
     Write-Warning "keytool bulunamadi; imza elle dogrulanmali."
 }
 
+# Izin kapisi (kapali test denetimi, 2026-09-14).
+#
+# Birlesmis RELEASE manifesti okundugunda paket RECORD_AUDIO (mikrofon),
+# READ_PHONE_STATE (telefon), USE_BIOMETRIC/USE_FINGERPRINT ve
+# WRITE_EXTERNAL_STORAGE istiyordu. Hicbirini kod kullanmiyor; hepsi
+# eklentilerden devralinmisti. Magaza listesinde "Mikrofon" ve "Telefon"
+# yazardi ve gizlilik metnimiz "mikrofona hic erisilmez" diyor - beyan ile
+# paket celisiyordu. AndroidManifest.xml'e tools:node="remove" satirlari
+# kondu; bu kapi onlarin durdugunu ARTEFAKTTAN dogrular. Yeni bir eklenti
+# ayni izni geri getirirse build burada duser, magazada degil.
+$yasakIzinler = @(
+    "android.permission.RECORD_AUDIO",
+    "android.permission.READ_PHONE_STATE",
+    "android.permission.USE_BIOMETRIC",
+    "android.permission.USE_FINGERPRINT",
+    "android.permission.WRITE_EXTERNAL_STORAGE"
+)
+$birlesmis = Get-ChildItem -Path (Join-Path $mobil "build\app\intermediates\merged_manifest\release") -Filter "AndroidManifest.xml" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($birlesmis) {
+    $mf = Get-Content $birlesmis.FullName -Raw
+    $bulunan = @($yasakIzinler | Where-Object { $mf -match [regex]::Escape($_) })
+    if ($bulunan.Count -gt 0) {
+        throw ("Pakette kullanilmayan izin(ler) var: " +
+               ($bulunan -join ", ") +
+               ". Magaza listesinde gorunur ve gizlilik beyanimizi yalanlar. " +
+               "AndroidManifest.xml'deki tools:node=`"remove`" satirlarini " +
+               "kontrol et (yeni bir eklenti izni geri getirmis olabilir).")
+    }
+    Write-Host "    OK: kullanilmayan izin yok (mikrofon/telefon/biyometrik)."
+
+    # Kamera ZORUNLU olmamali. camerax `camera.any`'yi `required`
+    # BELIRTMEDEN ekliyor ve Android varsayilani `true`; bu, bizim bilerek
+    # koydugumuz required="false" kararini sessizce geri aliyor ve Play
+    # uygulamayi kamerasiz cihazlara HIC gostermiyordu. Yorumlar disarida
+    # birakilarak gercek girdi okunur.
+    $mfTemiz = [regex]::Replace($mf, "(?s)<!--.*?-->", "")
+    $anyEtiket = [regex]::Match(
+        $mfTemiz, "(?s)<uses-feature\b[^>]*android\.hardware\.camera\.any[^>]*/>")
+    if ($anyEtiket.Success -and $anyEtiket.Value -notmatch 'android:required="false"') {
+        throw ("camera.any ZORUNLU gorunuyor; Play uygulamayi kamerasiz " +
+               "cihazlara gostermez. AndroidManifest.xml'deki " +
+               "tools:replace=`"android:required`" satirini kontrol et.")
+    }
+    Write-Host "    OK: kamera zorunlu degil (camera.any required=false)."
+} else {
+    Write-Warning "Birlesmis manifest bulunamadi; izin kapisi atlandi."
+}
+
 $boyut = [math]::Round((Get-Item $aab).Length / 1MB, 1)
 Write-Host ""
 Write-Host "Tamamlandi: $aab ($boyut MiB, surum $surum)"

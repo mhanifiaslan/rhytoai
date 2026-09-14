@@ -67,15 +67,45 @@ def test_support_rolu(monkeypatch):
     assert h.value.detail == "Yetkisiz."
 
 
-def test_rol_var_admin_yok_da_gecer(monkeypatch):
-    """Claim yalnız `role:'support'` taşıyorsa (admin:true basılmamış)
-    panel yine açılır — rol tek başına tanınır; owner kapısı kapalı."""
-    user = _kullanici(monkeypatch, {"uid": "u", "role": "support"})
+def test_rol_TEK_BASINA_yetki_VERMEZ(monkeypatch):
+    """Sözleşme TERS ÇEVRİLDİ (kapalı test denetimi, 2026-09-14).
+
+    Eski kural "rol tek başına tanınır" idi ve bu bir açıktı: `admin`
+    claim'i OLMAYAN ama `role: "owner"` taşıyan bir token hem
+    `require_admin`'i hem `require_owner`'ı geçiyordu — kullanıcı silme,
+    hesap kapatma, CSV dışa aktarma, sürüm eşiği dahil her şey.
+
+    Kuramsal değildi: bu Firebase projesinin claim'lerini BAŞKA bir
+    sistem de yazıyor (canlıda ölçüldü: `orgIds`, `orgRoles`,
+    `role: "super_admin"`) ve o sistemin sözlüğünde "owner" kelimesi
+    zaten geçiyor. Tek bir `role: "owner"` yazımı Rytho yöneticisi
+    üretirdi.
+
+    Yeni kural: `admin: true` ZORUNLU; rol yalnız onu daraltır.
+    """
+    for sahte_rol in ("owner", "support"):
+        user = _kullanici(monkeypatch, {"uid": "u", "role": sahte_rol})
+        assert user.admin is False
+        assert user.role is None, f"admin'siz {sahte_rol} rolü tanınmamalı"
+        with pytest.raises(HTTPException) as h:
+            auth.require_admin(user)
+        assert h.value.status_code == 403
+        with pytest.raises(HTTPException):
+            auth.require_owner(user)
+
+
+def test_baska_sistemin_claimleri_yetki_vermez(monkeypatch):
+    """Canlıda görülen gerçek claim kümesi: bu proje onu yok saymalı."""
+    user = _kullanici(monkeypatch, {
+        "uid": "u",
+        "role": "super_admin",
+        "orgIds": ["org_HjLA9ENO-C"],
+        "orgRoles": {"org_HjLA9ENO-C": "owner"},
+    })
     assert user.admin is False
-    assert user.role == "support"
-    assert auth.require_admin(user) is user
+    assert user.role is None
     with pytest.raises(HTTPException):
-        auth.require_owner(user)
+        auth.require_admin(user)
 
 
 def test_bilinmeyen_rol(monkeypatch):

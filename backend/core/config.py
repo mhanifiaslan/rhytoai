@@ -1,4 +1,5 @@
 """Merkezi yapılandırma — tüm ortam değişkenleri buradan okunur."""
+import logging
 import os
 from pathlib import Path
 
@@ -105,20 +106,71 @@ def _int_env(ad: str, varsayilan: int) -> int:
 MIN_APP_BUILD: int = _int_env("RYTHO_MIN_BUILD", 0)
 
 
-def _json_env(ad: str, varsayilan: dict) -> dict:
-    """Bozuk JSON'da varsayılana düşer — MRR tahmini bir gösterge, kapı
-    değil; yanlış yazılmış bir env yüzünden toplayıcı düşmemeli."""
+def _fiyat_env(ad: str, varsayilan: dict) -> dict:
+    """Fiyat haritasını okur. JSON olmayan biçimi de kabul eder.
+
+    ⚠️ Canlıda ölçülen tuzak (2026-09-14): `deploy-backend.ps1`
+    `--set-env-vars` satırına `{"rytho_plus_monthly":4.4}` yazıyor ama
+    Cloud Run'a `{rytho_plus_monthly:4.4}` olarak iniyor — gcloud'un
+    argüman ayrıştırıcısı çift tırnakları soyuyor. Sonuç GEÇERLİ JSON
+    değil; `json.loads` düşüyor, varsayılana (0.0) geri dönülüyor ve
+    **panel MRR'ı sessizce 0 gösteriyordu.** Hiçbir yerde hata yok,
+    çünkü burada bozuk değer bilerek yutuluyor.
+
+    Onarım gürültü çıkarmak değil, biçimi genişletmek: tırnakları
+    soyulmuş hâl de, düpedüz `anahtar=değer;anahtar=değer` de okunur.
+    Kabul edilen üç biçim:
+
+        {"rytho_plus_monthly": 4.4}     JSON (asıl)
+        {rytho_plus_monthly:4.4}        tırnakları soyulmuş (gcloud)
+        rytho_plus_monthly=4.4          düz çift (birden fazlası `;` ile)
+
+    Bozuk girdide yine varsayılana düşülür — MRR bir gösterge, kapı
+    değil; yanlış yazılmış bir env yüzünden toplayıcı düşmemeli. Ama
+    artık WARNING yazılır: sessiz sıfır bir daha bir turu yakmasın.
+    """
     import json
+
     ham = os.getenv(ad, "").strip()
     if not ham:
         return dict(varsayilan)
+
     try:
         veri = json.loads(ham)
-        if not isinstance(veri, dict):
-            return dict(varsayilan)
-        return {str(k): float(v) for k, v in veri.items()}
+        if isinstance(veri, dict):
+            return {str(k): float(v) for k, v in veri.items()}
     except (ValueError, TypeError):
-        return dict(varsayilan)
+        pass  # Aşağıdaki gevşek ayrıştırıcı denenir.
+
+    # Gevşek yol: süslü parantezleri at, çiftleri `,` `;` ile ayır,
+    # anahtar/değeri `:` ya da `=` ile böl, tırnakları sil.
+    govde = ham.strip().lstrip("{").rstrip("}")
+    cikti: dict[str, float] = {}
+    for parca in govde.replace(";", ",").split(","):
+        parca = parca.strip()
+        if not parca:
+            continue
+        for ayrac in (":", "="):
+            if ayrac in parca:
+                anahtar, _, deger = parca.partition(ayrac)
+                anahtar = anahtar.strip().strip("\"'")
+                try:
+                    cikti[anahtar] = float(deger.strip().strip("\"'"))
+                except ValueError:
+                    cikti = {}
+                break
+        else:
+            cikti = {}
+        if not cikti and parca:
+            break
+
+    if cikti:
+        return cikti
+
+    logging.getLogger(__name__).warning(
+        "%s çözümlenemedi (%r) — fiyatlar varsayılana düştü, panel MRR'ı "
+        "0 gösterecek.", ad, ham)
+    return dict(varsayilan)
 
 
 # Abonelik ürünlerinin USD fiyatı (AD7) — panelin MRR tahmini. Mağaza
@@ -126,6 +178,6 @@ def _json_env(ad: str, varsayilan: dict) -> dict:
 # elle girilir (docs/konsol-gorevleri.md §3c); RevenueCat raporu esastır.
 # Yıllık ürün MRR'a /12 ile girer (stats_service). Varsayılan 0: fiyat
 # girilmeden panel MRR'ı 0 gösterir — uydurma sayı yok.
-SUBSCRIPTION_PRICES_USD: dict[str, float] = _json_env(
+SUBSCRIPTION_PRICES_USD: dict[str, float] = _fiyat_env(
     "RYTHO_SUB_PRICES_USD",
     {"rytho_plus_monthly": 0.0, "rytho_plus_yearly": 0.0})

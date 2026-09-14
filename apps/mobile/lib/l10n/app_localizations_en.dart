@@ -1326,11 +1326,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteAccountBody =>
-      'This cannot be undone. We will delete your birth record, the notes we built up from your conversations, your friendships, your username and every reading generated for you.';
+      'This cannot be undone. We will delete your birth record, your chats and the notes drawn from them, your journal entries, the people you added, your friendships, your username, every reading generated for you, your AI usage records, your phone verification attempts and the feedback you sent.';
 
   @override
   String get deleteAccountKeeps =>
-      'Reports you filed are kept — they concern other people\'s safety, so we do not remove them.';
+      'Two things stay on purpose: your purchase and refund records (financial documents we must keep for five years) and any reports you filed (they concern other people\'s safety).';
 
   @override
   String get deleteAccountSubscription =>
@@ -1881,6 +1881,14 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get tokenPacksUnavailableBody =>
       'Couldn\'t reach the store. Please try again shortly.';
+
+  @override
+  String get tokenFreeTierWarnTitle =>
+      'On the free tier, credits are spent only in chat';
+
+  @override
+  String get tokenFreeTierWarnBody =>
+      '1 credit = 1 chat message. I Ching, the daily dyad, deep reports and face reading are part of a Rytho+ subscription; credits do not unlock them. Credits you buy never expire — if you subscribe later you can spend all of them.';
 
   @override
   String get tokenCostsNote =>

@@ -20,6 +20,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../core/api.dart' show friendlyError;
 import '../../core/purchase_errors.dart';
+import '../../core/subscription.dart';
 import '../../core/wallet.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
@@ -150,6 +151,19 @@ class _TokenStoreScreenState extends ConsumerState<TokenStoreScreen> {
             ),
 
             SectionHeader(l10n.tokenPacksHeader),
+            // Ücretsiz katman uyarısı — satın alma düğmelerinin ÜSTÜNDE.
+            //
+            // Kapalı test denetiminde (2026-09-14) bulundu: bu ekran
+            // aboneliği hiç izlemiyordu ve alt satırdaki bedel listesi
+            // ("I Ching 2 · ikili dinamik 3 · derin raporlar 5") abonelik
+            // şartından tek kelime etmiyordu. Oysa o uçların HEPSİ
+            // `require_plus` arkasında; ücretsiz kullanıcının krediyi
+            // gerçekten harcayabildiği tek yer sohbet (`chat.py` →
+            // `charge_metered`). Yani ₺419,99'luk 1000 kredilik paketi
+            // alan ücretsiz kullanıcı, listede yazan her şeyde 402
+            // görürdü. Kredi yanmıyor (sonradan abone olunca kullanılır)
+            // ama satış anındaki vaat yanlıştı.
+            const _UcretsizKatmanUyarisi(),
             paketler.when(
               loading: () => const Padding(
                 padding: EdgeInsets.all(RythoSpace.xl),
@@ -182,6 +196,47 @@ class _TokenStoreScreenState extends ConsumerState<TokenStoreScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Ücretsiz katmanda kredinin ne İŞE YARADIĞINI satın almadan ÖNCE söyler.
+///
+/// Abonede hiç çizilmez: onun için liste zaten doğru. Abonelik durumu
+/// henüz yüklenmemişse de çizilmez — yanlış anda "abone değilsin" demek,
+/// hiçbir şey dememekten kötü.
+class _UcretsizKatmanUyarisi extends ConsumerWidget {
+  const _UcretsizKatmanUyarisi();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final abonelik = ref.watch(subscriptionProvider).value;
+    if (abonelik == null || abonelik.active) return const SizedBox.shrink();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: RythoSpace.md),
+      padding: const EdgeInsets.all(RythoSpace.md),
+      decoration: BoxDecoration(
+        color: RythoColors.gold.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(RythoRadius.md),
+        border: Border.all(color: RythoColors.gold.withValues(alpha: 0.35)),
+      ),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Icon(Icons.info_outline, size: 18, color: RythoColors.gold),
+        const SizedBox(width: RythoSpace.sm),
+        Expanded(
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(l10n.tokenFreeTierWarnTitle, style: RythoText.body(13.5)),
+                const SizedBox(height: 2),
+                Text(l10n.tokenFreeTierWarnBody,
+                    style: RythoText.body(11.5,
+                        color: RythoColors.parchmentDim)),
+              ]),
+        ),
+      ]),
     );
   }
 }
