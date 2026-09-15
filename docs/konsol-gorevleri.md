@@ -82,8 +82,10 @@ sağlayıcı). Token ÜRETİLİYOR ama henüz ZORUNLU değil — sıra bilinçli
 önce bu sürüm yayılır, sonra zorlama açılır. Ters sırada eski paketler
 kilitlenirdi.
 
-**39 bot hesap DEVRE DIŞI bırakıldı, silinmedi** (geri alınabilir).
-Gerçek 15 hesabın hiçbirine dokunulmadı.
+**39 bot hesap SİLİNDİ** (2026-09-15, kullanıcı onayıyla). Silmeden önce
+her biri için üç şart yeniden okundu: kapalı + üretilmiş e-posta deseni +
+yalnız Google sağlayıcı. Eleme sıfır, hata sıfır. Firestore'da verileri
+zaten yoktu. Projede şimdi 15 hesap var, hepsi gerçek ve aktif.
 
 #### Senin yapacakların
 
