@@ -92,17 +92,30 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
 
-            <!-- Davet baglantisi (Android App Links).
-                 android:autoVerify sayesinde isletim sistemi
-                 https://rhytoai.web.app/.well-known/assetlinks.json dosyasini
-                 dogrular ve dogrulama gecerse baglanti TARAYICI SORMADAN
-                 dogrudan uygulamada acilir.
+            <!-- Davet baglantisi (Android App Links). IKI HOST.
+                 android:autoVerify sayesinde isletim sistemi her host'un
+                 /.well-known/assetlinks.json dosyasini dogrular; dogrulama
+                 gecerse baglanti TARAYICI SORMADAN uygulamada acilir.
 
-                 Firebase Dynamic Links Agustos 2025'te kapandi; yerine
-                 platformun kendi mekanizmasi kullaniliyor.
+                 rytho.app  : 2026-09-15'te baglandi, YENI baglantilar bunu
+                              tasiyor (core/deep_links.dart kInviteHost).
+                 rhytoai.web.app : Firebase'in varsayilan adresi, kapatilamiyor.
+                              Eski paylasilmis davetler yasamaya devam etsin
+                              diye BILEREK duruyor. Silme.
 
-                 Alan adi degisirse burasi ve core/deep_links.dart icindeki
-                 kInviteHost birlikte guncellenmeli. -->
+                 Iki host ayni assetlinks.json'u sunuyor (dogrulandi), yani
+                 ayni parmak izleriyle ikisi de dogrulanir.
+
+                 Yeni bir alan adi eklenirse: buraya bir intent-filter,
+                 deep_links.dart icindeki kInviteHosts kumesine bir satir. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https"
+                      android:host="rytho.app"
+                      android:pathPrefix="/i/"/>
+            </intent-filter>
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>

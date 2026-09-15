@@ -53,6 +53,57 @@ Araç MEVCUT claim'leri korur; yalnız `admin` ve `role` ekler. Claim
 > Yetki kapısındaki sıkılaştırma (rol tek başına yetki vermez) DURUYOR —
 > gerekçesi artık gözlemlenmiş bir olay değil, savunma derinliği.
 
+### 0-GÜVENLİK. Bot hesap akını — SENDE ÜÇ İŞ VAR (2026-09-15)
+
+**Ne oldu.** Firebase Auth'ta 54 hesap vardı; 39'u bot. Desen belli:
+`adsoyad.NNNNN@gmail.com` (üretilmiş İngilizce ad-soyad + 5 hane), hepsi
+yalnız Google sağlayıcılı, hepsi açıldığı gün bir kez giriş yapmış.
+
+**Nasıl girdiler.** Uygulamadan DEĞİL. Hiçbirinin Firestore profili yok;
+sunucumuz her kimlikli istekte `users/{uid}` dokümanına dokunuyor, yani
+API'mize bir kez bile gelselerdi kayıt düşerdi. Doğrudan Google'ın kimlik
+ucuna vurmuşlar. Mümkün, çünkü:
+
+| Ayar | Durumu (ölçüldü) |
+|---|---|
+| Android API anahtarı paket + SHA kısıtı | YOK |
+| Browser anahtarı referrer kısıtı | YOK |
+| İki anahtarda da `identitytoolkit` erişimi | AÇIK |
+| App Check zorlaması | KAPALI |
+
+⚠️ **Anahtar kısıtlaması burada tek başına yetmez:** Android kısıtı
+paket + SHA-1 ile çalışır, ama SHA-1 parmak izimiz App Links için
+`/.well-known/assetlinks.json` ile ZATEN yayında. Başlıklar taklit
+edilebilir. Gerçek çözüm App Check.
+
+**Kod tarafında yapıldı (1.15.8+43):** `firebase_app_check` eklendi,
+`main.dart` açılışta Play Integrity ile etkinleştiriyor (debug'da debug
+sağlayıcı). Token ÜRETİLİYOR ama henüz ZORUNLU değil — sıra bilinçli:
+önce bu sürüm yayılır, sonra zorlama açılır. Ters sırada eski paketler
+kilitlenirdi.
+
+**39 bot hesap DEVRE DIŞI bırakıldı, silinmedi** (geri alınabilir).
+Gerçek 15 hesabın hiçbirine dokunulmadı.
+
+#### Senin yapacakların
+
+1. **App Check'i tanıt** — Firebase Console → App Check → Apps →
+   Android uygulamasını seç → **Play Integrity** → Save.
+2. **Zorlamayı AÇ, ama 1.15.8+43 testçilere ULAŞTIKTAN SONRA** —
+   App Check → APIs → `Firebase Authentication` ve `Cloud Firestore`
+   → Enforce. Erken açarsan eski paketi olan testçiler giremez.
+3. **API anahtarlarını kısıtla** — Google Cloud Console → APIs &
+   Services → Credentials:
+   - *Android key (auto created by Firebase)* → Application
+     restrictions → Android apps → paket `ai.rytho` + **iki SHA-1
+     birden** (debug anahtarın VE Play App Signing SHA-1'i). Play
+     SHA-1'ini unutursan mağazadan inen paket giriş yapamaz.
+   - *Browser key (auto created by Firebase)* → HTTP referrers →
+     `rytho.app/*`, `rhytoai.web.app/*`, `rhytoai.firebaseapp.com/*`.
+
+Bot hesapları silmek istersen söyle; şu an yalnız kapalılar.
+Geri alma listesi Claude'da duruyor.
+
 ### 0a. Firebase Auth istek günlüğünü AÇ
 
 `monitoring.requestLogging` canlıda **boş**. SMS-turu planı bunu "turun

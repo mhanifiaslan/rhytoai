@@ -2,7 +2,7 @@
 description: "RythoAI - Kisisel Kozmik Zeka Platformu"
 publish_to: 'none'
 # Play yÃ¼klemeleri: versionCode (+N) her yÃ¼klemede artmalÄ±, benzersizdir.
-version: 1.15.7+42
+version: 1.15.8+43
 
 environment:
   sdk: ^3.12.0
@@ -23,6 +23,11 @@ dependencies:
 
   # Firebase
   firebase_core: ^4.4.0
+  # App Check (GK-turu, 2026-09-15): Firebase Auth ucu internete acik ve
+  # anahtar kisitlamasi zayif kalir cunku SHA-1 parmak izimiz assetlinks.json
+  # ile ZATEN yayinda. Bot ciftligi bunu kullanip 39 hesap acti. App Check,
+  # isteklerin GERCEK uygulamadan geldigini Play Integrity ile kanitlar.
+  firebase_app_check: ^0.4.0
   firebase_auth: ^6.4.0
   cloud_firestore: ^6.1.2
   firebase_messaging: ^16.1.0

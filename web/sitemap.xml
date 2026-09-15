@@ -2,17 +2,17 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://rhytoai.web.app/</loc>
-    <xhtml:link rel="alternate" hreflang="tr" href="https://rhytoai.web.app/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rhytoai.web.app/en/"/>
+    <loc>https://rytho.app/</loc>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://rytho.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rytho.app/en/"/>
   </url>
   <url>
-    <loc>https://rhytoai.web.app/en/</loc>
-    <xhtml:link rel="alternate" hreflang="tr" href="https://rhytoai.web.app/"/>
-    <xhtml:link rel="alternate" hreflang="en" href="https://rhytoai.web.app/en/"/>
+    <loc>https://rytho.app/en/</loc>
+    <xhtml:link rel="alternate" hreflang="tr" href="https://rytho.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://rytho.app/en/"/>
   </url>
-  <url><loc>https://rhytoai.web.app/legal/gizlilik.html</loc></url>
-  <url><loc>https://rhytoai.web.app/legal/kullanim.html</loc></url>
-  <url><loc>https://rhytoai.web.app/en/legal/privacy.html</loc></url>
-  <url><loc>https://rhytoai.web.app/en/legal/terms.html</loc></url>
+  <url><loc>https://rytho.app/legal/gizlilik.html</loc></url>
+  <url><loc>https://rytho.app/legal/kullanim.html</loc></url>
+  <url><loc>https://rytho.app/en/legal/privacy.html</loc></url>
+  <url><loc>https://rytho.app/en/legal/terms.html</loc></url>
 </urlset>

@@ -2,6 +2,7 @@ import 'dart:async' show unawaited;
 
 import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -69,6 +70,41 @@ const kServerClientId =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+
+  // App Check — İSTEĞİN GERÇEK UYGULAMADAN GELDİĞİNİ KANITLAR.
+  //
+  // Neden var (2026-09-15, canlıda ölçüldü): Firebase Auth ucu internete
+  // açıktır ve API anahtarı gizli değildir; üstelik Android anahtarını
+  // paket + SHA-1 ile kısıtlamak burada ZAYIF kalır, çünkü SHA-1
+  // parmak izimiz App Links için `/.well-known/assetlinks.json` ile
+  // zaten yayında. Bir bot çiftliği bunu kullanıp uygulamayı hiç
+  // kurmadan 39 hesap açtı (hiçbirinin profili yok: sunucumuza tek
+  // istek bile gelmemiş, doğrudan Google'ın kimlik ucuna vurulmuş).
+  //
+  // Play Integrity, isteği CİHAZIN kendisine bağlar; kopyalanabilir bir
+  // sır değildir. Kapatılması gereken açık buydu.
+  //
+  // ⚠️ Bu çağrı token ÜRETİR, zorunlu kılmaz. Zorlama konsoldan açılır
+  // (Firebase Console → App Check → API'ler). Sıra bilinçli: önce bu
+  // sürüm yayılır, sonra zorlama açılır. Ters sırada eski paketler
+  // kilitlenirdi.
+  //
+  // Debug derlemelerinde Play Integrity çalışmaz; debug sağlayıcı
+  // kullanılır ve konsola bir debug token düşer (bir kez Firebase
+  // Console → App Check → Manage debug tokens'a eklenir).
+  //
+  // Hata YUTULUR: App Check kurulamazsa uygulama açılmaya devam
+  // etmeli. Zorlama kapalıyken zaten bir etkisi yok; açıkken de
+  // kullanıcıyı kapıda bırakmak yerine sunucunun karar vermesi doğru.
+  try {
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode
+          ? const AndroidDebugProvider()
+          : const AndroidPlayIntegrityProvider(),
+    );
+  } catch (e) {
+    debugPrint('App Check etkinleştirilemedi: $e');
+  }
 
   // Crashlytics: yalnızca gerçek cihaz/release akışında etkin;
   // debug oturumları ve web rapor kirliliği yaratmasın.

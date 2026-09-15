@@ -11,9 +11,21 @@ import 'providers.dart';
 
 /// Davet bağlantılarının yakalanması.
 ///
-/// **Alan adı tek bir sabitte.** Şu an Firebase Hosting'in verdiği adres
-/// kullanılıyor; kendi alan adı alındığında değişecek tek yer burası (ve
-/// AndroidManifest'teki `android:host`).
+/// **İki alan adı: biri üretir, ikisi de çözülür.**
+///
+/// Kendi alan adı (`rytho.app`) 2026-09-15'te bağlandı. Yeni bağlantılar
+/// YALNIZ onunla üretilir, ama eski Firebase Hosting adresi
+/// (`rhytoai.web.app`) çözülmeye devam eder ve edecek:
+///
+/// * Eski adresle paylaşılmış davetler elden ele dolaşıyor olabilir;
+///   bir gün sonra ölmeleri kullanıcının hatası değil bizim olurdu.
+/// * `rhytoai.web.app` Firebase'in varsayılan adresi olarak yaşamaya
+///   devam ediyor, kapatılamıyor.
+/// * Mağazadaki eski paket hâlâ eski host'u dinliyor; yeni adres onda
+///   tarayıcıda açılır ve karşılama sayfası mağazaya yönlendirir.
+///
+/// AndroidManifest de İKİ `intent-filter` taşır; biri silinirse o host
+/// için App Links doğrulaması düşer ve bağlantı tarayıcıda açılır.
 ///
 /// Firebase Dynamic Links Ağustos 2025'te kapandı. Yerine platformların
 /// kendi mekanizmaları kullanılıyor:
@@ -22,7 +34,11 @@ import 'providers.dart';
 ///
 /// Doğrulama tamamlandığında bağlantı uygulamayı DOĞRUDAN açar; uygulama
 /// kurulu değilse tarayıcıda karşılama sayfası görünür ve mağazaya yönlendirir.
-const String kInviteHost = 'rhytoai.web.app';
+const String kInviteHost = 'rytho.app';
+
+/// Çözülen host'lar. Yeni bağlantılar [kInviteHost] ile üretilir; bu küme
+/// yalnızca GELEN bağlantıyı tanımak için.
+const Set<String> kInviteHosts = {'rytho.app', 'rhytoai.web.app'};
 
 /// Davet bağlantısı. Kopyalanıp paylaşılan metin bu.
 String inviteLinkFor(String username) =>
@@ -33,7 +49,7 @@ String inviteLinkFor(String username) =>
 /// Ayrı ve saf bir fonksiyon: bağlantı ayrıştırma en kolay bozulan yer ve
 /// platform olmadan test edilebilmeli.
 String? usernameFromInviteLink(Uri uri) {
-  if (uri.host != kInviteHost) return null;
+  if (!kInviteHosts.contains(uri.host)) return null;
 
   // `pathSegments` yüzde kodlamasını ZATEN çözer. Bir kez daha çözmek hem
   // yanlış (`%2520` boşluğa döner) hem tehlikeli: bozuk kodlama içeren bir
