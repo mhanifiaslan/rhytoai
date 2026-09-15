@@ -68,20 +68,23 @@ def test_support_rolu(monkeypatch):
 
 
 def test_rol_TEK_BASINA_yetki_VERMEZ(monkeypatch):
-    """Sözleşme TERS ÇEVRİLDİ (kapalı test denetimi, 2026-09-14).
+    """Sözleşme TERS ÇEVRİLDİ (2026-09-15).
 
-    Eski kural "rol tek başına tanınır" idi ve bu bir açıktı: `admin`
-    claim'i OLMAYAN ama `role: "owner"` taşıyan bir token hem
-    `require_admin`'i hem `require_owner`'ı geçiyordu — kullanıcı silme,
-    hesap kapatma, CSV dışa aktarma, sürüm eşiği dahil her şey.
+    Eski kural "rol tek başına tanınır" idi: `admin` claim'i OLMAYAN ama
+    `role: "owner"` taşıyan bir token hem `require_admin`'i hem
+    `require_owner`'ı geçiyordu — kullanıcı silme, hesap kapatma, CSV
+    dışa aktarma, sürüm eşiği dahil her şey.
 
-    Kuramsal değildi: bu Firebase projesinin claim'lerini BAŞKA bir
-    sistem de yazıyor (canlıda ölçüldü: `orgIds`, `orgRoles`,
-    `role: "super_admin"`) ve o sistemin sözlüğünde "owner" kelimesi
-    zaten geçiyor. Tek bir `role: "owner"` yazımı Rytho yöneticisi
-    üretirdi.
+    ⚠️ Bu değişiklik önce "canlıda başka bir sistemin yazdığı
+    `role: super_admin` claim'i görüldü" gerekçesiyle yapıldı. O ölçüm
+    YANLIŞTI — `firebase_admin` projesiz başlatılmış, ADC'nin varsayılan
+    projesine (`xanthixai`) düşülmüştü. `rhytoai`'de öyle bir claim yok.
 
-    Yeni kural: `admin: true` ZORUNLU; rol yalnız onu daraltır.
+    Sıkılaştırma yine de duruyor, gerekçesi savunma derinliği: yetki
+    kapısı "owner" gibi ortak bir kelimeye değil, yalnız
+    `tools/set_admin.py`'nin bastığı ayırt edici bayrağa dayanmalı.
+
+    Kural: `admin: true` ZORUNLU; rol yalnız onu daraltır.
     """
     for sahte_rol in ("owner", "support"):
         user = _kullanici(monkeypatch, {"uid": "u", "role": sahte_rol})
@@ -94,13 +97,18 @@ def test_rol_TEK_BASINA_yetki_VERMEZ(monkeypatch):
             auth.require_owner(user)
 
 
-def test_baska_sistemin_claimleri_yetki_vermez(monkeypatch):
-    """Canlıda görülen gerçek claim kümesi: bu proje onu yok saymalı."""
+def test_taninmayan_rol_ve_yabanci_alanlar_yetki_vermez(monkeypatch):
+    """Token'da tanımadığımız alanlar varsa kapı yine kapalı kalmalı.
+
+    Örnek küme başka bir Firebase projesinden (`xanthixai`) alındı;
+    `rhytoai`'de böyle bir claim YOK. Yine de bir gün paylaşılan bir
+    kimlik katmanı gelirse davranış burada sabitlenmiş olsun.
+    """
     user = _kullanici(monkeypatch, {
         "uid": "u",
         "role": "super_admin",
-        "orgIds": ["org_HjLA9ENO-C"],
-        "orgRoles": {"org_HjLA9ENO-C": "owner"},
+        "orgIds": ["org_ornek"],
+        "orgRoles": {"org_ornek": "owner"},
     })
     assert user.admin is False
     assert user.role is None

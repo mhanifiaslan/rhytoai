@@ -15,8 +15,8 @@ politikası kuruldu. Aşağıdakiler sende.
 > **GÜNCELLEME (2026-09-15, kapalı test denetimi).** On boyutlu bir
 > denetim koştu; 100 doğrulanmış bulgu çıktı. Kod, hukuk metinleri, web
 > sitesi, izinler ve Firestore indeksleri düzeltildi ve dağıtıldı.
-> **Sende üç YENİ zorunlu adım var (aşağıda −1, 0a, 0b) ve bunlar
-> eskilerden ÖNCE gelir.** Ayrıntılı gerekçeler: bu turun commit'i.
+> **Sende iki YENİ zorunlu adım var (aşağıda 0a, 0b); −1 doğrulandı ve
+> iş çıkarmıyor.** Ayrıntılı gerekçeler: bu turun commit'i.
 
 **Her turda kod da dağıtılır.** §0 bir konsol listesidir ama kod tarafı
 kendiliğinden canlıya çıkmaz. AAB üretmeden önce şu üçü koşulmuş olmalı,
@@ -27,14 +27,13 @@ vector modda.
 
 ---
 
-### −1. Panele yönetici yetkisi bas — **YAPILMADAN PANEL AÇILMAZ**
+### −1. Panel yetkisi — **DOĞRULANDI, İŞ YOK (2026-09-15)**
 
-Canlıda ölçüldü (2026-09-14): projedeki üç kullanıcının **hiçbirinde**
-`admin: true` claim'i yok. `require_admin` onu arıyor, dolayısıyla
-panelin her ucu 403 dönüyor. Kapalı test boyunca operatör kör kalır:
-kullanıcı listesi yok, gelir yok, geri bildirim yok, dikkat zili yok.
+`rhytoai` projesinde tek admin hesabı var ve doğru:
+`{admin: true, role: owner}`. `role` claim'i olup `admin` olmayan
+kullanıcı **sıfır**. Toplam 54 kullanıcı.
 
-Repo kökünden tek komut (onay ister, "evet" yaz):
+Gerekirse yeniden basma komutu (onay ister, "evet" yaz):
 
 ```
 backend/.venv/Scripts/python tools/set_admin.py --email aslan.mh@gmail.com --role owner
@@ -43,10 +42,16 @@ backend/.venv/Scripts/python tools/set_admin.py --email aslan.mh@gmail.com --rol
 Araç MEVCUT claim'leri korur; yalnız `admin` ve `role` ekler. Claim
 çıkış/giriş sonrası ya da en geç 1 saatte geçerli olur.
 
-⚠️ Hesabında başka bir sistemin yazdığı claim'ler var
-(`role: super_admin`, `orgIds`, `orgRoles`). Bu depo onları yazmıyor ve
-artık yok sayıyor — `role` tek başına yetki VERMEZ (2026-09-14'te
-kapatılan açık).
+> ⚠️ **Düzeltme.** 2026-09-14 denetiminde buraya "projede hiç yönetici
+> yok, panelin her ucu 403 döner" diye yazılmıştı. **O ölçüm yanlıştı.**
+> `firebase_admin` projesiz başlatılmış ve ADC'nin varsayılan projesine
+> (`xanthixai`) düşülmüştü; okunan `role: super_admin` / `orgIds` /
+> `orgRoles` claim'leri O projeye ait. Ders `arac-konumlari` notunda
+> zaten yazılıydı ve yine de atlandı: **Firebase Admin SDK her zaman
+> `options={"projectId": "rhytoai"}` ile başlatılır.**
+>
+> Yetki kapısındaki sıkılaştırma (rol tek başına yetki vermez) DURUYOR —
+> gerekçesi artık gözlemlenmiş bir olay değil, savunma derinliği.
 
 ### 0a. Firebase Auth istek günlüğünü AÇ
 

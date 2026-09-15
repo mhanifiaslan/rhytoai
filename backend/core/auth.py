@@ -87,7 +87,7 @@ _bearer = HTTPBearer(auto_error=False)
 
 #: Panel rolleri (AD1). Claim `{admin: true, role: 'owner'|'support'}`.
 #: `admin: true` ZORUNLU; `role` yalnız onu daraltır (bkz. `_rol_coz` —
-#: rolün tek başına yetki vermesi 2026-09-14'te kapatılan bir açıktı).
+#: rolün tek başına yetki vermesi 2026-09-15'te kapatıldı).
 #: `role` yoksa ama `admin: true` varsa geçiş dönemi: owner sayılır.
 #: Yeni rol eklemek = buraya yazmak + `tools/set_admin.py --role`
 #: seçeneğine eklemek.
@@ -98,20 +98,26 @@ def _rol_coz(decoded: dict) -> str | None:
     """Claim'lerden panel rolü. **`admin: true` ZORUNLU koşuldur;** rol
     yalnız onu daraltır.
 
-    ⚠️ Kapalı test denetiminde (2026-09-14) bulunan açık: eski sürüm
-    "bilinmeyen rol admin'de owner'a düşer" diye yazılmıştı ve BİLİNEN
-    rolü admin bayrağından bağımsız kabul ediyordu. Yani `admin` claim'i
-    OLMAYAN ama `role: "owner"` taşıyan bir token `require_admin`'i de
-    `require_owner`'ı da geçiyordu — kullanıcı silme, hesap kapatma,
-    CSV dışa aktarma, sürüm eşiği dahil her şey.
+    Eski sürüm BİLİNEN rolü admin bayrağından bağımsız kabul ediyordu:
+    `admin` claim'i OLMAYAN ama `role: "owner"` taşıyan bir token
+    `require_admin`'i de `require_owner`'ı da geçiyordu — kullanıcı
+    silme, hesap kapatma, CSV dışa aktarma, sürüm eşiği dahil her şey.
 
-    Kuramsal bir risk değildi: bu Firebase projesinin claim'leri başka
-    bir sistem tarafından da yazılıyor (canlıda ölçüldü — `orgIds`,
-    `orgRoles`, `role: "super_admin"`) ve o sistemin sözlüğünde "owner"
-    kelimesi zaten var. Tek bir `role: "owner"` yazımı Rytho yöneticisi
-    üretirdi.
+    ⚠️ **Düzeltme (2026-09-15).** Bu sıkılaştırma 2026-09-14'te canlıda
+    "başka bir sistemin yazdığı `role: super_admin` claim'i" görüldüğü
+    gerekçesiyle yapılmıştı. O ölçüm YANLIŞTI: `firebase_admin`
+    projesiz başlatılmış ve ADC'nin varsayılan projesine (`xanthixai`)
+    düşülmüştü. `rhytoai` projesinde öyle bir claim YOK; tek admin
+    hesabı `{admin: true, role: owner}` taşıyor ve `role` claim'i olup
+    `admin` olmayan kullanıcı sıfır.
 
-    Yeni kural tek cümle: **rol tek başına yetki vermez.** `admin: true`
+    Sıkılaştırma yine de DURUYOR, ama gerekçesi artık gözlemlenmiş bir
+    olay değil, savunma derinliği: yetki kapısı ortak bir kelimeye
+    ("owner") değil, yalnız `tools/set_admin.py`'nin bastığı ayırt edici
+    bir bayrağa dayanmalı. Bir claim'i sızdıran/paylaşan bir yol açılırsa
+    kapı kendiliğinden kapalı kalır.
+
+    Kural tek cümle: **rol tek başına yetki vermez.** `admin: true`
     yoksa rol yok sayılır; varsa ve rol tanınmıyorsa geçiş dönemi kuralı
     sürer (rolsüz eski `admin: true` claim'i owner sayılır).
     """
