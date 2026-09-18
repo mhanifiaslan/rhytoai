@@ -335,6 +335,26 @@ def test_426_govdesi_dil_ve_min_build(esik):
 # Hermetiklik pini (tests/conftest.py)
 # ---------------------------------------------------------------------------
 
+def test_pin_get_client_URETIME_ULASMAZ():
+    """conftest `firestore_hermetik`: `get_client` varsayilan olarak None.
+
+    ⚠️ Bu bekci bir VARSAYIMLA degil KANITLA kondu. 2026-09-18'de uretim
+    `rhytoai` projesinde `users/dev-user` dokumani bulundu ve icinde o gun
+    yazilmis bir `termsConsent` vardi; `dev-user` DEV_MODE'un uid'i ve
+    `RYTHO_DEV_MODE` varsayilani "1". Yani bir kosu gercek Firestore'a
+    ULASMISTI. Pin konduktan sonra tam takimin suresi 214 sn'den 83 sn'ye
+    dustu -- sizinti hem gercekti hem yayginmis.
+
+    `kapi_hermetik` yalniz ESIK OKUMASINI koruyordu; bu pin `get_client`in
+    KENDISINI kapatiyor.
+    """
+    from core import firestore as fc
+
+    assert fc.get_client() is None, (
+        "test Firestore istemcisi aliyor: ADC'li makinede bu URETIM "
+        "projesidir ve yazim gercek veriye gider")
+
+
 def test_pin_firestore_sahtelenmemisken_esik_sifir(monkeypatch):
     """conftest `kapi_hermetik`: `get_client` gerçek kurucuyken doküman
     OKUNMAZ, eşik 0. Üretimde `config/app.minBuild` = 40 yazılsa bile

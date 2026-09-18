@@ -35,6 +35,16 @@ from services import account_service
 _GERCEK_GET_CLIENT = firestore_client.get_client
 
 
+def _pin_get_client():
+    """`firestore_hermetik` pininin istemcisi: Firestore YOK.
+
+    Modul duzeyinde ve ADLI: `kapi_hermetik` "bu testte istemci
+    sahtelendi mi" sorusunu KIMLIKLE soruyor, lambda her fixture
+    kosusunda yeni bir nesne olurdu ve iki pin birbirini bozardi.
+    """
+    return None
+
+
 @pytest.fixture(autouse=True)
 def kapi_hermetik(monkeypatch):
     gercek_doc_min_build = app_gate._doc_min_build
@@ -42,7 +52,11 @@ def kapi_hermetik(monkeypatch):
     def korumali_doc_min_build() -> int:
         # Sahte istemci kurulduysa gerçek mantık; kurulmadıysa dokümanı
         # OKUMADAN 0 — ADC'ye gidilmez.
-        if firestore_client.get_client is _GERCEK_GET_CLIENT:
+        # Iki "sahtelenmemis" hali var: gercek kurucu ve
+        # `firestore_hermetik` pini. Ikisi de "bu test Firestore'u
+        # dusunmuyor" demek, yani dokuman OKUNMAZ.
+        if firestore_client.get_client in (_GERCEK_GET_CLIENT,
+                                           _pin_get_client):
             return 0
         return gercek_doc_min_build()
 
@@ -84,3 +98,30 @@ def depolama_hermetik(monkeypatch):
     kazanır.
     """
     monkeypatch.setattr(account_service, "_kova", _BosKova)
+
+
+@pytest.fixture(autouse=True)
+def firestore_hermetik(monkeypatch):
+    """Hiçbir test istemeden GERÇEK Firestore'a YAZAMASIN.
+
+    ⚠️ Bu pin bir VARSAYIMLA değil, KANITLA kondu. 2026-09-18'de üretim
+    `rhytoai` projesinde `users/dev-user` dokümanı bulundu; içinde o gün
+    yazılmış bir `termsConsent` vardı. `dev-user`, `config.DEV_MODE`
+    açıkken kimliksiz isteğe verilen uid'dir ve `RYTHO_DEV_MODE`
+    varsayılanı **"1"**, yani yerelde DEV_MODE AÇIK. Aynı koleksiyonda
+    `u1`/`u2` fikstür uid'leri de duruyordu. Yani bir koşu gerçek
+    Firestore'a ulaşmış: makinede ADC var ve `get_client` projeyi
+    `rhytoai`ye bağlıyor.
+
+    `kapi_hermetik` yalnız EŞİK OKUMASINI pinliyordu ("hiçbir test
+    istemeden gerçek ADC'ye gidemez") — ama pin `_doc_min_build`e özeldi,
+    `get_client`in kendisine değil. Boşluk buradaydı.
+
+    Varsayılan artık `None`: depo boyunca `client is None` zaten
+    desteklenen ve test edilen daldır (servisler sessizce atlar,
+    `scripts/_ortak.istemci` açık mesajla çıkar). Firestore'u BİLEREK
+    kullanan test kendi sahtesini kurar ve o yama bunun üstüne yazar —
+    test_app_gate `esik`, test_admin_min_build `depo`, test_auth_gate
+    `ayna` zaten böyle yapıyor.
+    """
+    monkeypatch.setattr(firestore_client, "get_client", _pin_get_client)
