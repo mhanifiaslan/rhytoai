@@ -27,6 +27,7 @@ import pytest
 
 from core import app_gate, config
 from core import firestore as firestore_client
+from services import account_service
 
 #: Toplama anında yakalanır: henüz hiçbir fixture koşmadı, bu gerçek
 #: istemci kurucusudur. Kıyas kimlikle (`is`) — sahte istemci kuran her
@@ -50,3 +51,36 @@ def kapi_hermetik(monkeypatch):
     monkeypatch.setattr(config, "MIN_APP_BUILD", 0)
     yield
     app_gate.reset_memo()
+
+
+class _BosKova:
+    """Hiçbir dosyası olmayan kova: `list_blobs` boş döner, silme olmaz."""
+
+    def list_blobs(self, prefix: str = ""):  # noqa: ARG002
+        return ()
+
+
+@pytest.fixture(autouse=True)
+def depolama_hermetik(monkeypatch):
+    """Hiçbir test istemeden GERÇEK Cloud Storage kovasına gitmesin.
+
+    `delete_account` 2026-09-18'den beri `avatars/{uid}/` önekini de
+    siliyor (hesabı silinmiş kullanıcının fotoğrafı kovada kalıyordu).
+    Çağrıyı `account_service._delete_storage_files` yapıyor ve uid'i
+    sahteleyen 18 mevcut silme testi kovayı sahtelemiyor.
+
+    Bugün o testler KAZARA güvenli: `firebase_admin` uygulaması testte
+    hiç başlatılmadığı için `storage.bucket()` anında fırlıyor ve
+    fonksiyonun best-effort `except`i yutuyor ("The default Firebase app
+    does not exist" uyarısı log'a düşüyor). Ama bu tek bir satıra bağlı:
+    ileride bir test ya da içe aktarma yan etkisi varsayılan uygulamayı
+    başlatırsa, makinede ADC varken aynı 18 test ÜRETİM kovasında
+    `list_blobs` + `delete` koşar. Kaza ile güvenli olan şey güvence
+    değildir; pin bunu yapısal hâle getiriyor.
+
+    `kapi_hermetik`in Firestore pini ile aynı doktrin ve aynı çıkış yolu:
+    kovayı BİLEREK sınayan test `_kova`'yı kendi sahtesiyle değiştirir
+    (test_account_deletion `kova`) ve o yama bunun ÜSTÜNE yazdığı için
+    kazanır.
+    """
+    monkeypatch.setattr(account_service, "_kova", _BosKova)

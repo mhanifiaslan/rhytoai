@@ -484,6 +484,27 @@ def test_baskasinin_avatari_kalir(store, kova):
     assert "avatars/arkadas/avatar.png" in kova.dosyalar
 
 
+def test_pin_kova_sahtelenmemisken_GERCEK_APIYE_GITMEZ(store):
+    """`conftest.depolama_hermetik` pini: kovayi sahtelemeyen bir silme
+    testi gercek `firebase_admin.storage`e ULASMAZ.
+
+    Bu dosyadaki 18 mevcut silme testi kovayi sahtelemiyor. Bugun kazara
+    guvenliler (varsayilan Firebase uygulamasi testte hic baslatilmiyor),
+    ama o kaza bir gun bozulursa makinede ADC varken URETIM kovasinda
+    list+delete kosarlardi. Bekci, pinin `_kova`yi gercekten devraldigini
+    kimlikle dogruluyor -- import edilen modul niteligi bos kova olmali.
+    """
+    from services import account_service as hedef
+
+    assert hedef._kova is not None
+    kova = hedef._kova()
+    assert tuple(kova.list_blobs(prefix="avatars/ben/")) == ()
+    # Silme yine tamamlanir: depolama best-effort, kimlik silme degil.
+    sayac = hedef.delete_account("ben")
+    assert sayac["auth"] == 1
+    assert sayac.get("storageFiles", 0) == 0
+
+
 def test_kova_erisilemezse_silme_TAMAMLANIR(store, monkeypatch):
     """Kimliğin kalması dosyanın kalmasından kötü: depolama best-effort."""
     def patlak():
