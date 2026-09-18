@@ -57,7 +57,16 @@ if __name__=="__main__":
         ("01-sky-anonim.png",    (0,100,1080,1280), "Today, from your own chart", "shot-1-sky.png"),
         ("02-atlas.png",         (0,300,1080,1440), "Your birth chart, computed", "shot-2-chart.png"),
         ("03-gokyuzu.png",       (0,240,1080,1880), "The sky right now",          "shot-3-live.png"),
-        ("04-cevrem-anonim.png", (0,240,1080,2040), "The people close to you",    "shot-4-circle.png"),
+        # Kadraj 240'tan 470'e indi (2026-09-18). Ust kenardaki kullanici adi
+        # karti seri rozetini tasiyordu ve o rozet "1 days" yaziyordu: Ingilizce
+        # ARB'de streakDays duz "{count} days"ti, tekil dali yoktu. Hata ICU
+        # plural'a gecilerek kodda duzeldi ama BU KARE ham cihaz yakalamasi,
+        # yani metin piksele gomulu -- kompoziti yeniden uretmek duzeltmiyor.
+        # Pikseli ELLE DUZENLEMEK secenek degil: magaza karesi gercek bir
+        # yakalama olmali. Cozum cerceveleme: rozet kadraj disinda kaliyor ve
+        # karenin asil konusu (arkadas listesi) one cikiyor. Duzeltilmis
+        # buildle yeni cihaz yakalamasi alindiginda 240'a donulebilir.
+        ("04-cevrem-anonim.png", (0,470,1080,2040), "The people close to you",    "shot-4-circle.png"),
         ("05-sohbet-anonim.png", (0,130,1080,1812), "It knows your chart",        "shot-5-chat.png"),
     ]:
         p=kare(ham,kirp,bas,cik)

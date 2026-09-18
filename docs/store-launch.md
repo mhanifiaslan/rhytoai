@@ -282,6 +282,26 @@ Yazı tipi Montserrat (Sora'nın geometrik karşılığı — Sora kurulu değil
 telefon ekran görüntüsü 1080×2400, yani **9:20** — olduğu gibi yüklenirse
 REDDEDİLİR. Ham kareler 1080×1920 zemine oturtulmalı.
 
+**⚠️ Ekran görüntüleri BAYAT olabilir (2026-09-18 denetimi).** `store/play/`
+altındaki beş kare 7 Eylül'de çekilmiş ham CİHAZ yakalamalarından üretiliyor
+(`store/play/raw/`), yani ekrandaki metin piksele gömülü: koddaki bir metin
+düzeltmesi kompozit yeniden üretilse bile kareye YANSIMAZ. Bugüne kadar iki
+kare yakalandıktan sonra düzeltilen bir kusuru gösteriyordu:
+
+| Kare | Gösterdiği kusur | Durum |
+|---|---|---|
+| `shot-4-circle.png` | seri rozeti "🔥 **1 days**" (İngilizce ARB'de `streakDays` düz `{count} days`ti) | Kod ICU plural'a geçti. Kare KADRAJLA düzeltildi: kırpım 240→470, rozet çerçeve dışında kaldı ve asıl konu (arkadaş listesi) öne çıktı. |
+| `shot-1-sky.png` | "In your sky today ✦ Nearest exactness: September…" sağdan KIRPILIYOR | Kod düzeltildi (`widgets/common.dart` `SectionHeader` artık `Row`+`Spacer` değil `Wrap`+`spaceBetween`). Kare hâlâ eski hâli gösteriyor; kadrajla kurtarılamaz çünkü kırpılan satır telefon çerçevesinin İÇİNDE. **Yeni cihaz yakalaması gerekiyor.** |
+
+Kural: **piksel ELLE DÜZENLENMEZ** — mağaza karesi gerçek bir yakalama
+olmalı; metni sonradan resme yazmak savunulamaz. Çare ya kadraj (kusur
+çerçeve dışına alınabiliyorsa) ya da yeniden yakalama.
+
+Sonraki AAB bir cihaza kurulduğunda: `store/play/raw/` kareleri yeniden
+çekilir (`adb shell screenrecord`/`screencap`, Git Bash'te
+`MSYS_NO_PATHCONV=1`), sonra `python infra/store-screenshots.py` koşulur ve
+`shot-4`'ün kırpımı 470'ten 240'a geri alınabilir.
+
 ### Google Play
 
 - Kategori: **Yaşam Tarzı** (KL-turu kararı — kategori standardı;
