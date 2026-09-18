@@ -384,9 +384,11 @@ Tekrar gerekirse (yalnız geçici test için):
 sonraki `deploy-backend.ps1` çalışması bunu sessizce siler (betikteki
 --set-env-vars uyarısına bak).
 
-Kapanış listesinde kalan: `RYTHO_TOKENS_ENFORCE` hâlâ 0 (jeton
-harcaması kuru çalışma) — M4 gözlemi bitince 1 yapılacak ve
-deploy-backend.ps1'e kalıcı yazılacak.
+~~Kapanış listesinde kalan: `RYTHO_TOKENS_ENFORCE` hâlâ 0~~ —
+**AÇILDI (K5, 2026-08-13).** `infra/deploy-backend.ps1:98`
+`--set-env-vars` satırında kalıcı olarak `RYTHO_TOKENS_ENFORCE=1`;
+canlı Cloud Run ortamında da doğrulandı (2026-09-14). Jeton harcaması
+gerçekten uygulanıyor: bakiye yetmezse 402 + `X-Paywall-Reason: tokens`.
 
 ## 3c. Web sitesi + gizli admin paneli (W0–W9 ile kuruldu)
 

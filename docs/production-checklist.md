@@ -53,10 +53,27 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 - [x] Ham istisna metni kullanıcıya sızmıyor (`core/messages.py`); güvenlik
       başlıkları yayında
 - [x] Toplu bildirim ucu yalnızca paylaşılan zamanlayıcı anahtarıyla çalışıyor
-- [ ] Firebase App Check (Play Integrity) — **konsol tarafı uygulama
-      sahibinde**; adımlar `docs/store-launch.md` §3.
-      Canlı durum (2026-09-14): üç serviste de `UNENFORCED`. Kapalı testi
-      engellemez; bilinçli erteleme
+- [x] Firebase App Check **kod tarafı** (1.15.8+43): `firebase_app_check`
+      eklendi, `main.dart` açılışta Play Integrity ile etkinleştiriyor
+      (debug'da debug sağlayıcı; istisna yutuluyor)
+- [ ] App Check **konsolu ve zorlaması** — uygulama sahibinde; adımlar
+      `docs/store-launch.md` §3. Sıra önemli: önce sağlayıcı tanıtılır,
+      yeni sürüm testçilere yayılır, SONRA Enforce açılır. Erken açmak
+      eski paketi olan testçileri kilitler
+- [ ] API anahtarı kısıtlaması (Android: paket + iki SHA-1; Browser:
+      referrer) — App Check'i tamamlayan ikinci kapı
+- [x] **Zorunlu güncelleme kapısı sunucuda** (PBZ, 1.15.0+35): `/api/v1/`
+      altındaki istekler `X-App-Build` taşır, eşiğin altı 426 alır
+      (`core/app_gate.py`). Eşik `config/app.minBuild`'den okunur; canlı
+      değeri şu an 0 (kimse engellenmiyor) ve ancak yeni sürüm mağazada
+      yayıldıktan sonra yükseltilir (K9 doğrulaması bunu zorlar)
+- [x] **Tek cihaz kilidi** (TC, 1.15.1+36): Rytho+ aynı anda tek cihazda;
+      hakem Firebase ID token'ındaki `auth_time` ("son giriş kazanır").
+      Çıkış cihazı serbest bırakır (`DELETE /device/claim`)
+- [x] **Rol ayrımı ve fail-closed denetim izi** (AD1/AD3): `owner` /
+      `support`; yıkıcı uçlarda ön-iz yazılamazsa işlem YAPILMAZ (503).
+      `admin: true` claim'i zorunlu koşul — rol tek başına yetki vermez
+      (2026-09-15'te sıkılaştırıldı)
 - [ ] Cloud Run soğuk başlatma / maliyet dengesi gözden geçir
 
 ## 3. Hesap ve veri hakları
@@ -117,6 +134,9 @@ konsol/hesap işlemi gerektirir ve uygulama sahibinin işidir.
 ## 8. Kalite
 
 - [x] Crashlytics bağlı (debug/web'de devre dışı)
+- [x] **Uygulama içi geri bildirim kanalı** (GB, 1.15.4+39): Profil →
+      Geri bildirim → sunucu → panel sekmesi → push ile yanıt. Kapalı
+      testin asıl geri bildirim yolu bu; harici kanal gerekmiyor
 - [x] Backend test takımı — 300+ test
 - [x] Analytics olay şeması temiz (kapalı test denetiminde doğrulandı,
       2026-09-14): `apps/mobile/lib/core/analytics.dart` kaldırılmış

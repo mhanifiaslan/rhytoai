@@ -59,7 +59,7 @@ App Bundle üretimi: **`infra/build-aab.ps1`** — düz `flutter build appbundle
      birebir gir. Konum yok, biyometrik veri yok. DİKKAT: rehber erişimi
      "yok" DEĞİL — isteğe bağlı rehber eşleşmesi VAR (yalnız numara
      özetleri, saklanmaz; labels §1'e bak). Veri silme URL'si:
-     `https://rhytoai.web.app/legal/hesap-silme.html`.
+     `https://rytho.app/legal/hesap-silme.html`.
    - İçerik derecelendirmesi anketi: Teen/13+ hedefleniyor
      (`docs/store-privacy-labels.md` §5).
 4. **Test → İç test** → yeni sürüm → `.aab` yükle → test kullanıcısı
@@ -112,22 +112,37 @@ Panelden okuyup yanıtlıyoruz; yanıt telefonuna bildirim olarak gelir.
 
 ## 3. Firebase App Check (Play Integrity)
 
-Kod tarafına SDK henüz **eklenmedi** (bilinçli); önce konsol hazırlığı:
+**Kod tarafı BİTTİ (1.15.8+43, 2026-09-15).** `firebase_app_check`
+eklendi; `main.dart` açılışta Play Integrity ile etkinleştiriyor
+(hata ayıklamada debug sağlayıcı, istisna yutuluyor — App Check
+kurulamazsa uygulama yine açılır).
 
-1. Firebase Console → rhytoai → **App Check** → "Get started".
-2. Android uygulaması (`ai.rytho`) için sağlayıcı: **Play Integrity**.
-   Play Console'da uygulamanın en az iç teste çıkmış olması gerekir.
-3. SHA-256 imza parmak izlerini Firebase proje ayarlarına ekle
-   (`keytool -list -v -keystore ...` çıktısından).
-4. Kod tarafı (konsol hazır olunca):
-   - `flutter pub add firebase_app_check`
-   - `main.dart` içinde `Firebase.initializeApp()` sonrası
-     `await FirebaseAppCheck.instance.activate(
-     androidProvider: AndroidProvider.playIntegrity)`
-5. Önce **izleme modunda** çalıştır; metrikler temizse Firestore ve backend
-   için enforcement'ı aç.
-6. Backend doğrulaması istenirse `firebase_admin.app_check.verify_token`
-   ile bir middleware eklenebilir (ayrı iş).
+**Neden aciliyet kazandı:** Firebase Auth ucu internete açık ve API
+anahtarı gizli değil; üstelik Android anahtarını paket + SHA-1 ile
+kısıtlamak burada zayıf kalır, çünkü SHA-1 parmak izimiz App Links için
+`/.well-known/assetlinks.json` ile ZATEN yayında. Bir bot çiftliği bunu
+kullanıp uygulamayı hiç kurmadan 39 hesap açtı (hiçbirinin Firestore
+profili yoktu: sunucumuza tek istek bile gelmemiş, doğrudan Google'ın
+kimlik ucuna vurulmuştu). Hesaplar silindi.
+
+Konsol tarafı — SIRA ÖNEMLİ:
+
+1. Firebase Console → rhytoai → **App Check** → Apps → Android
+   uygulaması (`ai.rytho`) → sağlayıcı **Play Integrity** → Save.
+2. ⚠️ **Zorlamayı hemen AÇMA.** Önce 1.15.8+43 (ya da üstü) testçilerin
+   telefonuna inmeli. App Check → APIs ekranında her servis için
+   "verified / unverified" istek sayısı görünür; unverified sıfıra
+   yaklaşınca aç. Erken açarsan eski paketi olan testçiler giremez.
+3. Hazır olunca **Enforce**: `Firebase Authentication` ve
+   `Cloud Firestore`.
+4. API anahtarlarını da kısıtla (ayrı ve tamamlayıcı iş): Google Cloud
+   Console → Credentials → *Android key* → paket `ai.rytho` + **iki
+   SHA-1 birden** (debug ve Play App Signing); *Browser key* → HTTP
+   referrers `rytho.app/*`, `rhytoai.web.app/*`,
+   `rhytoai.firebaseapp.com/*`. Play SHA-1'ini unutursan mağazadan inen
+   paket giriş yapamaz.
+5. Backend doğrulaması istenirse `firebase_admin.app_check.verify_token`
+   ile bir middleware eklenebilir (ayrı iş, henüz yapılmadı).
 
 ## 4. Mağaza politika notları
 
@@ -379,7 +394,11 @@ tercihi hiçbir bayrakla atlanmaz.**
   konulmamalı.
 - Hukuki metinler bir web adresinde yayınlanmalı (mağaza formları URL ister).
 - Hukuki metinler **bir hukukçuya baktırılmalı** — mühendislik taslağıdır.
-- `app/build.gradle.kts` release bloğu hâlâ **debug anahtarıyla** imzalıyor;
-  §1'deki yapılandırmaya geçilmeli.
+- ~~release bloğu debug anahtarıyla imzalıyor~~ — **ÇÖZÜLDÜ.**
+  `app/build.gradle.kts:60-68` `key.properties` varsa gerçek release
+  yapılandırmasını kullanıyor, yoksa debug'a düşüyor. `infra/build-aab.ps1`
+  bu düşüşü ARTEFAKTTAN yakalıyor: `key.properties` yoksa derleme hiç
+  başlamıyor, bittikten sonra da keytool ile imza "Android Debug" mı diye
+  ölçülüyor. 2026-09-18'de doğrulandı.
 - Cloud Run `--max-instances 3`; lansman trafiğine göre gözden geçir.
 - Tam kontrol listesi: `docs/production-checklist.md`

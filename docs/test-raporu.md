@@ -5,9 +5,16 @@
 > başvurusu" sorularına da kaynaklık edecek (ne test edildi, ne bulundu,
 > ne düzeltildi).
 >
-> Test sürümü: 1.0.0+3 (telefon adımı AÇIK — RYTHO_PHONE_STEP=true).
-> Kanal: Play iç test. Jeton harcaması 1. turda kuru çalışma
-> (RYTHO_TOKENS_ENFORCE=0); 2. turda açılacak.
+> **Güncel durum (2026-09-18).** Test sürümü **1.15.9+44**, kanal
+> **Play kapalı test (Alpha)**. Telefon adımı derleme bayrağının
+> arkasında değil, herkese açık ve "Sonra" ile atlanabilir (OT4).
+>
+> Para tarafı artık kuru çalışma DEĞİL: `RYTHO_TOKENS_ENFORCE=1` canlı
+> Cloud Run ortamında doğrulandı — bakiye yetmezse 402 +
+> `X-Paywall-Reason: tokens`. Deneme **mağazada değil sunucuda**
+> (OT6, 3 gün, kart istemez); Play aboneliğine bilerek offer/trial
+> EKLENMEDİ, çünkü 3+3 çakışması ve otomatik ücretlendirme beklentisi
+> yaratırdı.
 
 ## Bulgu formatı
 
