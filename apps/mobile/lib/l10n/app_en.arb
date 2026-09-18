@@ -320,7 +320,7 @@
   "termsOfUse": "Terms of Use",
   "signOut": "Sign out",
   "dailyStreak": "Daily Streak",
-  "streakDays": "{count} days",
+  "streakDays": "{count, plural, =1{1 day} other{{count} days}}",
   "@streakDays": {
     "placeholders": {
       "count": {
@@ -1023,7 +1023,7 @@
   "feedbackScreenOracle": "Oracle",
   "feedbackScreenOther": "Other",
   "feedbackHint": "What happened, what did you expect? Short is fine.",
-  "feedbackPrivacy": "Version, device and language are added automatically; no personal data is sent.",
+  "feedbackPrivacy": "Version, device and language are added automatically. Your message is stored with your account so we can send you our reply.",
   "feedbackSend": "Send",
   "feedbackThanksTitle": "Thank you — we're reading.",
   "feedbackThanksBody": "You'll get our reply as a notification.",

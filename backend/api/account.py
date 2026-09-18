@@ -137,6 +137,9 @@ class PhoneAttempt(BaseModel):
     `masked` MASKELİ numaradır ("+90532***4567") — ham numara buraya da,
     Firestore'a da girmez. İstemci beyanına güvenilir çünkü kayıt yalnız
     teşhis amaçlıdır: hiçbir yetki, hak ya da eşleşme bu alandan türemez.
+    Yine de istemciye GÜVENMİYORUZ: alan Firestore'a yazılırken
+    `phone_service._maske_kirp` son haneleri atıyor ("+90532***"), çünkü
+    sahadaki eski sürümler tam maskeyi göndermeye devam ediyor.
     """
 
     stage: str = Field(max_length=16)

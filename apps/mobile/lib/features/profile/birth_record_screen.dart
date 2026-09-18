@@ -143,7 +143,7 @@ class _BirthRecordScreenState extends ConsumerState<BirthRecordScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _mesgul = false);
-      mesajci.showSnackBar(SnackBar(content: Text(friendlyError(e))));
+      mesajci.showSnackBar(SnackBar(content: Text(friendlyError(e, l10n))));
     }
   }
 

@@ -103,7 +103,8 @@ void main() {
       expect(find.text('Hangi ekran?'), findsOneWidget);
       expect(find.text('Gökyüzü'), findsOneWidget);
       expect(find.text('Kehanet'), findsOneWidget);
-      expect(find.textContaining('kişisel verin gönderilmez'), findsOneWidget);
+      expect(find.textContaining('hesabınla birlikte kaydedilir'),
+          findsOneWidget);
       expect(find.widgetWithText(GoldButton, 'Gönder'), findsOneWidget);
     });
 
@@ -245,6 +246,32 @@ void main() {
       // `default` dalı yarın uyarı/kayıt alırsa bu tür ona karışmaz.
       final kaynak = File('lib/core/notifications.dart').readAsStringSync();
       expect(kaynak, contains("case 'feedback':"));
+    });
+  });
+
+  group('toplama anındaki beyan', () {
+    // Bu grubun sebebi: metin "kişisel verin gönderilmez" diyordu, kod ise
+    // kaydı uid ile yazıyor ve panel uid'i ad-soyad + e-postaya çözüyor.
+    // Kullanıcı serbest metni yazma kararını bu cümleye bakarak veriyor;
+    // cümle ile kaydın gerçeği ayrışırsa burası düşer.
+    test('cümle "kişisel veri gönderilmez" DEMİYOR (iki dilde)', () {
+      final tr = File('lib/l10n/app_tr.arb').readAsStringSync();
+      final en = File('lib/l10n/app_en.arb').readAsStringSync();
+      expect(tr.contains('kişisel verin gönderilmez'), isFalse,
+          reason: 'kayıt uid ile yazılıyor; cümle bunu yalanlıyor');
+      expect(en.contains('no personal data is sent'), isFalse);
+    });
+
+    test('cümle kaydın hesaba bağlandığını söylüyor (iki dilde)', () {
+      final tr = File('lib/l10n/app_tr.arb').readAsStringSync();
+      final en = File('lib/l10n/app_en.arb').readAsStringSync();
+      expect(tr.contains('hesabınla birlikte kaydedilir'), isTrue);
+      expect(en.contains('stored with your account'), isTrue);
+      // Ters yön de korunuyor: sunucu uid'i yazmayı bırakırsa cümle bu kez
+      // fazla şey söylüyor olur ve metin yeniden okunmalıdır.
+      final servis = File('../../backend/services/feedback_service.py')
+          .readAsStringSync();
+      expect(servis.contains('"uid": uid'), isTrue);
     });
   });
 }

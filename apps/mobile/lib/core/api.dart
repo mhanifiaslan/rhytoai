@@ -161,7 +161,13 @@ const _cerceveMetinleri = {'Not Found', 'Method Not Allowed'};
 /// döndürüyor (kota, paywall, sunucu hatası). Ham `DioException` metnini
 /// ekrana basmak kullanıcıya HTTP durum kodu ve MDN bağlantısı göstermek
 /// demek.
-String friendlyError(Object error, [AppLocalizations? l10n]) {
+///
+/// `l10n` ZORUNLU ve Türkçe geri düşüş metni YOK: parametre opsiyonelken 41
+/// çağrı yerinin 8'i onu geçmiyordu (günlük, tepki, doğum kaydı, ilişki) ve
+/// bağlantı koptuğu anda İngilizce arayüzün ortasına Türkçe bir SnackBar
+/// düşüyordu. Metni gövdeden silmek atlanan çağrıyı DERLEYİCİYE yakalattırır
+/// — gramer/dil tarayıcısı ARB'ye bakıyor, gövdeye gömülü sabiti görmüyor.
+String friendlyError(Object error, AppLocalizations l10n) {
   if (error is DioException) {
     // Sunucunun `detail` alani zaten kullanicinin dilinde uretiliyor
     // (Accept-Language ile), o yuzden oldugu gibi gosterilir — cerceveden
@@ -174,12 +180,10 @@ String friendlyError(Object error, [AppLocalizations? l10n]) {
     if (error.type == DioExceptionType.connectionTimeout ||
         error.type == DioExceptionType.receiveTimeout ||
         error.type == DioExceptionType.connectionError) {
-      return l10n?.errorConnection ??
-          'Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.';
+      return l10n.errorConnection;
     }
   }
-  return l10n?.errorGeneric ??
-      'Beklenmeyen bir sorun oluştu. Lütfen biraz sonra tekrar dene.';
+  return l10n.errorGeneric;
 }
 
 /// Kullanıcının doğum verisini backend'in beklediği gövdeye çevirir.

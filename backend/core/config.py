@@ -14,6 +14,13 @@ GEMINI_API_KEY: str | None = os.getenv("GEMINI_API_KEY")
 GOOGLE_CLOUD_PROJECT: str = os.getenv("GOOGLE_CLOUD_PROJECT", "rhytoai")
 GOOGLE_CLOUD_LOCATION: str = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
 
+# Profil fotoğraflarının durduğu Cloud Storage kovası. Ad AÇIKÇA verilmek
+# zorunda: uygulama `storageBucket` seçeneği olmadan başlatılıyor (bkz.
+# core/firestore.py) ve `storage.bucket()` o durumda kova adı isteyip
+# fırlatıyor. Hesap silme bu kovadan `avatars/{uid}/` önekini temizler.
+STORAGE_BUCKET: str = os.getenv(
+    "RYTHO_STORAGE_BUCKET", f"{GOOGLE_CLOUD_PROJECT}.firebasestorage.app")
+
 # 1 => Firebase token yoksa da isteklere izin ver (lokal gelistirme)
 DEV_MODE: bool = os.getenv("RYTHO_DEV_MODE", "1") == "1"
 

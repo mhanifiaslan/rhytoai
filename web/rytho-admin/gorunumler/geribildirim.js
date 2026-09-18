@@ -27,7 +27,14 @@
 
   var SAYFA = 50;
   var KISA = 120;        // listede metin kırpma
-  var YANIT_MAX = 500;   // sunucu sınırı (1..500)
+  /* Yanıt kullanıcıya YALNIZCA push gövdesi olarak ulaşıyor; uygulamada
+     `reply` alanını okuyan ekran yok. Sunucu 500 kabul ediyor (tam metin
+     Firestore'da saklanıyor) ama gönderimde notification_service
+     .MAX_PUSH_BODY = 110 üstü SESSİZCE kırpılıyor: admin 300 karakter
+     yazınca kullanıcıya 109'u gidiyor, gerisi kayboluyor ve panel
+     `pushSent: true` gösterdiği için kimse fark etmiyordu. Panelin sınırı
+     kanalın sınırından geniş olamaz. Uzun açıklama iç nota yazılır. */
+  var YANIT_MAX = 110;   // = backend notification_service.MAX_PUSH_BODY
   var NOT_MAX = 1000;
 
   var DURUMLAR = [
@@ -198,7 +205,7 @@
 
     function ciz() {
       govde.innerHTML = '<div id="gb-bas" class="sutun"></div>' +
-        b.modul('Yanıtla', '<div id="gb-yanit-form"></div>', '', { kimlik: 'gb-m-yanit', alt: 'kullanıcının telefonuna push gider' }) +
+        b.modul('Yanıtla', '<div id="gb-yanit-form"></div>', '', { kimlik: 'gb-m-yanit', alt: 'telefona push olarak gider · uygulamada yanıtı gösteren ekran YOK' }) +
         b.modul('Durum', '<div id="gb-durum-form"></div>', '', { kimlik: 'gb-m-durum', alt: 'denetim izine yazılır' }) +
         b.modul('İç notlar', '<div id="gb-notlar"></div><div id="gb-not-form"></div>',
           '<span id="gb-not-sayac"></span>', { kimlik: 'gb-m-not', alt: 'yalnız panelde görünür' });
@@ -210,7 +217,7 @@
       /* Yanıt */
       yanitF = b.form({
         alanlar: [{ ad: 'text', etiket: 'Yanıt metni', tur: 'textarea', zorunlu: true, max: YANIT_MAX, satir: 4,
-          yardim: 'En fazla ' + YANIT_MAX + ' karakter · kullanıcının dilinde yaz (' + dilAdi(doc.language) + ').',
+          yardim: 'En fazla ' + YANIT_MAX + ' karakter — push gövdesi sınırı, fazlası kırpılır · kullanıcının dilinde yaz (' + dilAdi(doc.language) + ').',
           dogrula: function (v) {
             var n = v.trim().length;
             return n < 1 ? 'Boş yanıt gönderilmez.' : (n > YANIT_MAX ? 'En fazla ' + YANIT_MAX + ' karakter.' : null);
@@ -221,7 +228,7 @@
           return b.onayla({
             baslik: 'Yanıtı gönder',
             mesaj: 'Kullanıcının telefonuna push bildirimi gider; metin geri alınamaz.',
-            aciklama: 'Push jetonu yoksa yanıt yine kaydedilir, bildirim gitmez. Durum "İnceleniyor" olur.',
+            aciklama: 'Push jetonu yoksa ya da kullanıcı bildirimi kaydırıp atarsa yanıt kaydedilir ama kullanıcıya HİÇ ulaşmaz: uygulamada yanıtı gösteren ekran yok. Durum "İnceleniyor" olur.',
             onaylaMetin: 'Gönder'
           }).then(function (r) {
             if (!r) return null;

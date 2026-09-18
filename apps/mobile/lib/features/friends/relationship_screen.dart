@@ -100,7 +100,10 @@ class _RelationshipScreenState extends ConsumerState<RelationshipScreen> {
             : null;
       });
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) {
+        setState(() =>
+            _error = friendlyError(e, AppLocalizations.of(context)));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }

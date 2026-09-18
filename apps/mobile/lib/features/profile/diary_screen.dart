@@ -62,7 +62,10 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
               Map<String, dynamic>.from(e as Map),
           ]);
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) {
+        setState(() =>
+            _error = friendlyError(e, AppLocalizations.of(context)));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -86,8 +89,8 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(friendlyError(e, AppLocalizations.of(context)))));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -123,7 +126,7 @@ class _DiaryScreenState extends ConsumerState<DiaryScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+            .showSnackBar(SnackBar(content: Text(friendlyError(e, l10n))));
       }
     }
   }

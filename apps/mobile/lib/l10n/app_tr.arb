@@ -320,7 +320,7 @@
   "termsOfUse": "Kullanım Şartları",
   "signOut": "Oturumu kapat",
   "dailyStreak": "Günlük Seri",
-  "streakDays": "{count} gün",
+  "streakDays": "{count, plural, =1{1 gün} other{{count} gün}}",
   "@streakDays": {
     "placeholders": {
       "count": {
@@ -1054,7 +1054,7 @@
   "feedbackScreenOracle": "Kehanet",
   "feedbackScreenOther": "Diğer",
   "feedbackHint": "Ne oldu, ne bekliyordun? Kısa da olur.",
-  "feedbackPrivacy": "Sürüm, cihaz ve dil bilgisi otomatik eklenir; kişisel verin gönderilmez.",
+  "feedbackPrivacy": "Sürüm, cihaz ve dil bilgisi otomatik eklenir. Mesajın, yanıtını sana iletebilmemiz için hesabınla birlikte kaydedilir.",
   "feedbackSend": "Gönder",
   "feedbackThanksTitle": "Teşekkürler — okuyoruz.",
   "feedbackThanksBody": "Yanıtımızı bildirim olarak alırsın.",

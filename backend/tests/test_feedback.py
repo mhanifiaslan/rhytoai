@@ -422,3 +422,55 @@ def test_attention_geri_bildirim_yokken_kalem_yok(depo, monkeypatch):
     monkeypatch.setattr(admin_service.stats_service, "read_days",
                         lambda n: [{"generatedAt": _SIMDI}])
     assert "newFeedback" not in {k["tur"] for k in admin_service.attention()}
+
+
+# ---------------------------------------------------------------------------
+# Kanal sınırı: panel ne kabul ediyorsa kullanıcıya O ulaşmalı
+# ---------------------------------------------------------------------------
+
+def test_panel_yanit_siniri_push_govdesini_gecmez():
+    """Panel 500 karakter kabul ediyordu, push gövdesi 110'da kırpılıyordu:
+    admin 300 karakter yazınca gerisi SESSİZCE kayboluyordu ve panel
+    `pushSent: true` gösterdiği için döngünün koptuğu fark edilmiyordu.
+    Uygulamada `reply` alanını okuyan ekran olmadığı sürece panelin sınırı
+    kanalın sınırını geçemez."""
+    import pathlib
+    import re
+
+    from services import notification_service
+
+    kok = pathlib.Path(__file__).resolve().parents[2]
+    panel = (kok / "web" / "rytho-admin" / "gorunumler"
+             / "geribildirim.js").read_text(encoding="utf-8")
+    eslesme = re.search(r"var YANIT_MAX = (\d+);", panel)
+    assert eslesme, "geribildirim.js içinde YANIT_MAX bulunamadı"
+    assert int(eslesme.group(1)) <= notification_service.MAX_PUSH_BODY, (
+        f"panel {eslesme.group(1)} karakter kabul ediyor ama push gövdesi "
+        f"{notification_service.MAX_PUSH_BODY} karakterde kırpılıyor")
+
+
+def test_uygulamada_gorur_iddiasi_yok():
+    """Belge/kod çelişkisi: docstring "kullanıcı uygulamada görür" diyordu,
+    mobilde `reply` alanını okuyan tek satır yok. İddia ya koda ya da
+    belgeye uymalı; bugün belge silindi."""
+    import pathlib
+
+    belge = admin_service.feedback_reply.__doc__ or ""
+    assert "uygulamada görür" not in belge
+
+    # ⚠️ Arama DARALTILDI: ham `['reply']` taramasi chat_screen.dart'i
+    # yakaliyordu — sohbet LLM cevabinin alan adi da `reply` ve geri
+    # bildirimle hicbir ilgisi yok. Alt dizi eslesmesi sessiz yanlis pozitif
+    # uretir; bekçi geri bildirim KOLEKSIYONUNU adiyla anan dosyalara
+    # bakiyor. Kosul dize literaline bagli ("'feedback'"), cunku ciplak
+    # "feedback" alt dizisi `HapticFeedback` cagrilarina da takiliyordu.
+    kok = pathlib.Path(__file__).resolve().parents[2]
+    mobil = kok / "apps" / "mobile" / "lib"
+    okuyanlar = []
+    for y in mobil.rglob("*.dart"):
+        kaynak = y.read_text(encoding="utf-8")
+        if "['reply']" in kaynak and "'feedback'" in kaynak:
+            okuyanlar.append(y.as_posix())
+    assert okuyanlar == [], (
+        "uygulama artik yaniti okuyor: panelin 110 karakter siniri ve "
+        f"yukaridaki docstring gevsetilebilir ({okuyanlar})")

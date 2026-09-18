@@ -58,44 +58,74 @@
 <body>
   <main>
     <div class="glyph">✦</div>
-    <h1>Rytho'da bir davetin var</h1>
+    <h1 id="baslik">Rytho'da bir davetin var</h1>
     <p>
       <span class="username" id="username"></span>
-      seni arkadaş olarak ekledi. Daveti kabul etmek için uygulamayı aç.
+      <span id="govde">seni arkadaş olarak ekledi. Daveti kabul etmek için
+        uygulamayı aç.</span>
     </p>
 
+    <!-- iOS kapsam disi: "App Store'dan indir" dugmesi hicbir yere
+         gitmiyordu (href="#") ve Android'de de gorunuyordu. Calismayan bir
+         dugme, cevrilmemis metinden daha kotu bir ilk izlenim. -->
     <a class="store" id="play"
        href="https://play.google.com/store/apps/details?id=ai.rytho">
       Google Play'den indir
     </a>
-    <a class="store secondary" id="appstore" href="#">
-      App Store'dan indir
-    </a>
 
-    <p class="note">
+    <p class="note" id="not">
       Uygulama zaten kuruluysa bu bağlantı doğrudan Rytho'da açılır.
     </p>
   </main>
 
   <script>
+    'use strict';
+
+    // ---- Dil. web/auth/action/index.html ile AYNI desen.
+    //
+    // Bu sayfa yalnizca uygulama KURULU DEGILKEN aciliyor, yani yeni
+    // testcinin gordugu ilk yuzey; tek dilli kalirsa Ingilizce telefondaki
+    // davetli tamamen Turkce bir karsilama goruyor.
+    //
+    // Asil sinyal `navigator.language`: davet baglantisi (`inviteLinkFor`)
+    // bilerek `?lang=` TASIMIYOR, cunku GONDERENIN dili alicinin dili
+    // degil. `?lang=` yalniz elle QA icin okunuyor.
+    var params = new URLSearchParams(window.location.search);
+    var lang = (params.get('lang') || navigator.language || 'tr')
+      .toLowerCase().slice(0, 2);
+    if (lang !== 'en') lang = 'tr';
+    document.documentElement.lang = lang;
+
+    var T = {
+      tr: {
+        pageTitle: 'Rytho — Davet',
+        baslik: 'Rytho\'da bir davetin var',
+        govde: 'seni arkadaş olarak ekledi. Daveti kabul etmek için uygulamayı aç.',
+        anonim: 'Bir arkadaşın',
+        magaza: 'Google Play\'den indir',
+        not: 'Uygulama zaten kuruluysa bu bağlantı doğrudan Rytho\'da açılır.'
+      },
+      en: {
+        pageTitle: 'Rytho — Invitation',
+        baslik: 'You have an invitation on Rytho',
+        govde: 'added you as a friend. Open the app to accept the invitation.',
+        anonim: 'A friend of yours',
+        magaza: 'Get it on Google Play',
+        not: 'If the app is already installed, this link opens straight in Rytho.'
+      }
+    }[lang];
+
+    document.title = T.pageTitle;
+    document.getElementById('baslik').textContent = T.baslik;
+    document.getElementById('govde').textContent = T.govde;
+    document.getElementById('play').textContent = T.magaza;
+    document.getElementById('not').textContent = T.not;
+
     // Kullanici adi yoldan okunur: /i/gezgin
     var parcalar = window.location.pathname.split('/').filter(Boolean);
     var kullanici = parcalar.length > 1 ? decodeURIComponent(parcalar[1]) : '';
-    if (kullanici) {
-      document.getElementById('username').textContent = '@' + kullanici;
-    } else {
-      document.getElementById('username').textContent = 'Bir arkadaşın';
-    }
-
-    // Platforma gore dogru magazayi one cikar.
-    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (ios) {
-      var play = document.getElementById('play');
-      var app = document.getElementById('appstore');
-      play.className = 'store secondary';
-      app.className = 'store';
-      app.parentNode.insertBefore(app, play);
-    }
+    document.getElementById('username').textContent =
+      kullanici ? '@' + kullanici : T.anonim;
   </script>
 </body>
 </html>

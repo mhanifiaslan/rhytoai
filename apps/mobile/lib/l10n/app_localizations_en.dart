@@ -712,7 +712,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String streakDays(int count) {
-    return '$count days';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days',
+      one: '1 day',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2134,7 +2140,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feedbackPrivacy =>
-      'Version, device and language are added automatically; no personal data is sent.';
+      'Version, device and language are added automatically. Your message is stored with your account so we can send you our reply.';
 
   @override
   String get feedbackSend => 'Send';

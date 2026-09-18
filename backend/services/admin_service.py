@@ -975,7 +975,10 @@ def feedback_reply(fid: str, *, text: str, admin_uid: str,
 
     Doğrudan insan yanıtı: sessiz saat / tercih kapısı UYGULANMAZ —
     kullanıcı bunu kendisi istedi. Jeton yoksa yanıt yine kaydedilir,
-    `pushSent` False (kullanıcı uygulamada görür). Durum `new` ise
+    `pushSent` False — ama o kullanıcı yanıtı HİÇ görmez: uygulamada
+    `reply` alanını okuyan ekran yok, tek kanal push gövdesi ve o gövde
+    `notification_service.MAX_PUSH_BODY` (110) karakterde kırpılıyor.
+    Panelin giriş sınırı bu yüzden 110. Durum `new` ise
     `in_review`e geçer; `closed` dokunulmaz. Yoksa None.
     """
     from services import notification_service, prompts, push_service

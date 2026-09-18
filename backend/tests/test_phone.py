@@ -195,3 +195,37 @@ def test_firestore_firlatirsa_sessiz(monkeypatch):
     monkeypatch.setattr(phone_service.firestore_client, "get_client",
                         lambda: _Patlayan())
     phone_service.record_attempt("u1", "sent", "TR", "+90532***4567")
+
+
+# ---------------------------------------------------------------------------
+# Maske kırpma (kapalı test denetimi, 2026-09-18)
+# ---------------------------------------------------------------------------
+#
+# Maske ilk 3 + *** + son 4 haneydi: 10 haneli bir numarada yalnızca ÜÇ hane
+# gizli, yani kayıt pratikte numaranın kendisi. Kırpma SUNUCUDA yapılıyor
+# çünkü alanı istemci gönderiyor ve sahadaki eski sürümler tam maskeyi
+# göndermeye devam ediyor.
+
+
+def test_maskenin_son_haneleri_kaydedilmez(depo):
+    phone_service.record_attempt("u1", "sent", "TR", "+90532***4567")
+    kayit = _denemeler(depo)[0]
+    assert kayit["masked"] == "+90532***"
+    assert "4567" not in kayit["masked"]
+
+
+def test_operator_onegi_TESHIS_ICIN_kalir(depo):
+    """Kaydın var olma sebebi bu önek: silersek teşhis de gider."""
+    phone_service.record_attempt("u1", "failed", "TR", "+90532***4567",
+                                 "invalid-phone-number")
+    kayit = _denemeler(depo)[0]
+    assert kayit["masked"].startswith("+90532")
+    assert kayit["code"] == "invalid-phone-number"
+
+
+def test_maskesiz_gelen_deger_HIC_yazilmaz(depo):
+    """Eski ya da kötü niyetli bir istemci ham numara yollarsa alan boş kalır."""
+    phone_service.record_attempt("u1", "sent", "TR", "+905321234567")
+    kayit = _denemeler(depo)[0]
+    assert kayit["masked"] == ""
+    assert "5321234567" not in str(kayit)

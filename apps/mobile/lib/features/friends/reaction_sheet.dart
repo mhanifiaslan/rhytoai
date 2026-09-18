@@ -105,6 +105,6 @@ Future<void> _gonder(Dio dio, ScaffoldMessengerState messenger,
     messenger.showSnackBar(
         SnackBar(content: Text(l10n.reactionSent(kReactions[key]!))));
   } catch (e) {
-    messenger.showSnackBar(SnackBar(content: Text(friendlyError(e))));
+    messenger.showSnackBar(SnackBar(content: Text(friendlyError(e, l10n))));
   }
 }

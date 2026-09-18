@@ -116,6 +116,26 @@ def release_phone(uid: str) -> None:
 ATTEMPT_STAGES = {"sent", "failed", "auto", "verified"}
 
 
+def _maske_kirp(masked: str) -> str:
+    """Maskenin SON HANELERİNİ atar: "+90532***4567" → "+90532***".
+
+    ⚠️ Kapalı test denetiminde (2026-09-18) bulundu: ilk 3 + *** + son 4
+    biçiminde 10 haneli bir numaranın yalnızca ÜÇ hanesi gizliydi, yani
+    kayıt pratikte numaranın kendisiydi. Teşhiste işe yarayan kısım son
+    haneler değil ÜLKE + OPERATÖR ÖNEKİ; onu tutup gerisini atıyoruz.
+
+    Kırpma neden sunucuda: alanı istemci gönderiyor ve sahadaki eski
+    sürümler tam maskeyi göndermeye devam ediyor. İstemciyi düzeltmek
+    onları kapsamaz, burası kapsar.
+
+    Yıldız yoksa istemci maskelemeden göndermiş demektir (ham numara
+    olabilir): o değer HİÇ yazılmaz.
+    """
+    ham = (masked or "")[:24]
+    yildiz = ham.find("*")
+    return f"{ham[:yildiz]}***" if yildiz > 0 else ""
+
+
 def record_attempt(uid: str, stage: str, iso2: str, masked: str,
                    code: str | None = None) -> None:
     """SMS doğrulama denemesini teşhis için yazar (best-effort).
@@ -126,9 +146,11 @@ def record_attempt(uid: str, stage: str, iso2: str, masked: str,
     düşürdü, yoksa numara yanlış mı derlendi" sorusunu AYIRT EDEMEDİK,
     çünkü gönderdiğimiz numarayı hiçbir yere yazmıyorduk.
 
-    Yazılan MASKELİ biçimdir ("+90532***4567"): teşhis için yeterli,
-    kimlik için değil. Ham numara Firestore'a hiç girmez — hash dizini
-    doktrini (`sync_phone`) bozulmaz.
+    Yazılan yalnızca ÜLKE KODU + OPERATÖR ÖNEKİDİR ("+90532***"): istemci
+    tam maskeyi ("+90532***4567") yollasa bile son haneler `_maske_kirp`
+    ile atılır. Sebep: son dört hane maskeyi üç hanelik bir arama uzayına
+    indiriyordu — maskeli numara da kişisel veridir. Ham numara Firestore'a
+    hiç girmez; hash dizini doktrini (`sync_phone`) bozulmaz.
 
     Asla fırlatmaz: telemetri doğrulama akışını düşüremez.
     """
@@ -142,7 +164,7 @@ def record_attempt(uid: str, stage: str, iso2: str, masked: str,
             "uid": uid,
             "stage": stage,
             "iso2": (iso2 or "")[:2].upper(),
-            "masked": (masked or "")[:24],
+            "masked": _maske_kirp(masked),
             "code": (code or "")[:64] or None,
             "at": dt.datetime.now(dt.timezone.utc),
         })

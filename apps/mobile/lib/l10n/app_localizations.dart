@@ -1361,7 +1361,7 @@ abstract class AppLocalizations {
   /// No description provided for @streakDays.
   ///
   /// In tr, this message translates to:
-  /// **'{count} gün'**
+  /// **'{count, plural, =1{1 gün} other{{count} gün}}'**
   String streakDays(int count);
 
   /// No description provided for @streakBody.
@@ -3851,7 +3851,7 @@ abstract class AppLocalizations {
   /// No description provided for @feedbackPrivacy.
   ///
   /// In tr, this message translates to:
-  /// **'Sürüm, cihaz ve dil bilgisi otomatik eklenir; kişisel verin gönderilmez.'**
+  /// **'Sürüm, cihaz ve dil bilgisi otomatik eklenir. Mesajın, yanıtını sana iletebilmemiz için hesabınla birlikte kaydedilir.'**
   String get feedbackPrivacy;
 
   /// No description provided for @feedbackSend.

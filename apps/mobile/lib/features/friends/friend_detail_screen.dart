@@ -60,7 +60,10 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
       setState(() => _reading = response.data['data']['reading'] as String?);
       Analytics.reportGenerated('dyad');
     } catch (e) {
-      if (mounted) setState(() => _error = friendlyError(e));
+      if (mounted) {
+        setState(() =>
+            _error = friendlyError(e, AppLocalizations.of(context)));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -92,8 +95,8 @@ class _FriendDetailScreenState extends ConsumerState<FriendDetailScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _sentReaction = null);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(friendlyError(e))));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(friendlyError(e, AppLocalizations.of(context)))));
       }
     }
   }

@@ -139,4 +139,36 @@ void main() {
       expect(en.contains('all of it is permanently deleted'), isFalse);
     });
   });
+
+  group('eklenen kişiler bölümü', () {
+    // @-bahsetme (chat_screen.dart _selectMention) kişinin CİHAZDAKİ
+    // etiketini mesaj gövdesine yazıyor; mesaj sunucuya gidip konu arşivine
+    // yazılıyor. Metin ise "ADI sunucuya HİÇ gönderilmez" diyordu. Mutlak
+    // cümle tek bir akışla bile yalana döner.
+    test('mutlak "adı hiç gönderilmez" iddiası YOK', () {
+      final tr = kPrivacyPolicyTr.map((b) => b.$2).join(' ');
+      final en = kPrivacyPolicyEn.map((b) => b.$2).join(' ');
+      expect(tr.contains('ADI sunucuya HİÇ gönderilmez'), isFalse);
+      expect(en.contains('never sent to our servers'), isFalse);
+    });
+
+    test('sohbet istisnası HER İKİ dilde yazılı', () {
+      final tr =
+          kPrivacyPolicyTr.firstWhere((b) => b.$1 == 'Eklediğin kişiler').$2;
+      final en =
+          kPrivacyPolicyEn.firstWhere((b) => b.$1 == 'People you add').$2;
+      expect(tr.contains('konu arşivine'), isTrue,
+          reason: 'sohbette yazılan adın nereye gittiği yazılmıyor');
+      expect(en.toLowerCase().contains('topic archive'), isTrue);
+    });
+
+    test('kod hâlâ adı gövdeye yazıyor — metin bu yüzden böyle', () {
+      // Akış bir gün kapatılırsa metin FAZLA şey söylüyor olur: o gün burası
+      // düşer ve üç beyan yeniden okunur.
+      final kod = _kaynak('lib/features/chat/chat_screen.dart');
+      expect(kod.contains(r"'${aday.display} '"), isTrue,
+          reason: 'mention artık adı gövdeye yazmıyorsa metin daraltması '
+              'gereksiz kalmış olabilir');
+    });
+  });
 }

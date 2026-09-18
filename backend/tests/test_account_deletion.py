@@ -427,3 +427,69 @@ def test_uid_koleksiyonu_dusse_bile_silme_tamamlanir(store, monkeypatch):
     sayac = account_service.delete_account("ben")
     assert sayac["user"] == 1
     assert "feedback/f1" not in store.veriler, "diğer koleksiyonlar silinmeli"
+
+
+# ---------------------------------------------------------------------------
+# Cloud Storage (kapalı test denetimi, 2026-09-18)
+# ---------------------------------------------------------------------------
+#
+# Bulgu: Firestore temizleniyordu ama `avatars/{uid}/avatar.png` kovada
+# kalıyordu ve infra/storage.rules gereği GİRİŞLİ HERKES onu okuyabiliyor —
+# hesabı silinmiş birinin yüz fotoğrafı erişilebilir kalıyordu. Hukuk metni
+# ise fotoğrafın "hesabını silerek kaldırılabileceğini" söylüyor.
+
+
+class _SahteBlob:
+    def __init__(self, ad, kova):
+        self.name = ad
+        self._kova = kova
+
+    def delete(self):
+        self._kova.dosyalar.remove(self.name)
+
+
+class _SahteKova:
+    """Gerçek API'nin KULLANILAN yüzü: list_blobs(prefix=...) + blob.delete()."""
+
+    def __init__(self, dosyalar):
+        self.dosyalar = list(dosyalar)
+
+    def list_blobs(self, prefix=""):
+        return [_SahteBlob(ad, self) for ad in list(self.dosyalar)
+                if ad.startswith(prefix)]
+
+
+@pytest.fixture
+def kova(monkeypatch):
+    k = _SahteKova(["avatars/ben/avatar.png",
+                    "avatars/arkadas/avatar.png"])
+    monkeypatch.setattr(account_service, "_kova", lambda: k)
+    return k
+
+
+def test_avatar_dosyasi_kovadan_silinir(store, kova):
+    account_service.delete_account("ben")
+    assert "avatars/ben/avatar.png" not in kova.dosyalar
+
+
+def test_silinen_dosya_raporda_sayilir(store, kova):
+    """Sessiz atlama olmasın: rapor log'a ve teste kanıt olarak giriyor."""
+    sayac = account_service.delete_account("ben")
+    assert sayac.get("storageFiles") == 1
+
+
+def test_baskasinin_avatari_kalir(store, kova):
+    """Önek filtresi şart: uid önekini kaçıran bir sorgu herkesi silerdi."""
+    account_service.delete_account("ben")
+    assert "avatars/arkadas/avatar.png" in kova.dosyalar
+
+
+def test_kova_erisilemezse_silme_TAMAMLANIR(store, monkeypatch):
+    """Kimliğin kalması dosyanın kalmasından kötü: depolama best-effort."""
+    def patlak():
+        raise RuntimeError("kova yok")
+
+    monkeypatch.setattr(account_service, "_kova", patlak)
+    sayac = account_service.delete_account("ben")
+    assert sayac["user"] == 1
+    assert sayac["auth"] == 1

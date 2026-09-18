@@ -32,7 +32,7 @@ verinin nerede toplandığı yazıyor; beyanı değiştirmeden önce o dosyaya b
 | **Telefon numarası (isteğe bağlı)** | Firebase Auth (numara); `phoneHashes/{sha256}` + `users/{uid}/private/phone` (yalnızca özet) | Numara-hesap eşleşmesi; açılırsa rehber eşleşmesi | Evet | Hayır |
 | **Rehber (isteğe bağlı, varsayılan KAPALI)** | SAKLANMAZ — numaralar cihazda SHA-256'lanır, özet listesi eşleştirme sonrası atılır; ad/soyad hiç okunmaz | Karşılıklı arkadaş önerisi | Hayır (geçici işleme) | Hayır |
 | **Eklenen kişilerin doğum verisi (isteğe bağlı)** | `users/{uid}/people/{id}` — yalnızca sunucu yazar, yalnızca sahibi okur | Kullanıcının yakınlarının haritası ve ilişki ölçümü | Evet (ekleyene bağlı) | Hayır |
-| **Eklenen kişilerin ADI** | **SAKLANMAZ** — etiket yalnızca cihazda (`SharedPreferences`); sunucuda yalnız ilişki türü (`partner`/`child`/…) durur | Arayüzde tanıma | — | Hayır |
+| **Eklenen kişilerin ADI** | **Kişi kaydında SAKLANMAZ** — etiket yalnızca cihazda (`SharedPreferences`); sunucuda yalnız ilişki türü (`partner`/`child`/…) durur. İSTİSNA: kullanıcı adı sohbet mesajına kendisi yazarsa (ya da `@` ile seçerse) ad mesajın parçası olarak konu arşivine girer | Arayüzde tanıma | Sohbette yazılırsa evet | Hayır |
 | Cihaz tanımlayıcısı (rastgele, donanım DEĞİL) | `users/{uid}/private/device` | Tek cihaz kilidi (yalnızca aboneler) | Evet | Hayır |
 | Bildirim kimliği (FCM token) | `users/{uid}.fcmToken` | Bildirim gönderimi | Evet | Hayır |
 | Saat dilimi (IANA adı) | `users/{uid}.timezone` | Bildirimin yerel sabaha denk gelmesi | Evet | Hayır |

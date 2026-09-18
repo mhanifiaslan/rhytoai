@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:rytho/core/api.dart';
+import 'package:rytho/l10n/app_localizations_tr.dart';
 
 /// Sunucu hatasinin kullaniciya nasil gorundugu.
 ///
@@ -21,10 +22,15 @@ DioException _hata({int? kod, dynamic govde, DioExceptionType? tur}) {
   );
 }
 
+/// Türkçe arayüz: aşağıdaki metin beklentileri bu dile göre yazıldı.
+/// `friendlyError` artık l10n'i ZORUNLU alıyor — opsiyonelken sekiz çağrı
+/// yeri onu geçmiyor ve İngilizce cihaza Türkçe metin düşüyordu.
+final _tr = AppLocalizationsTr();
+
 void main() {
   test('cerceveden gelen "Not Found" kullaniciya GOSTERILMEZ', () {
     final mesaj = friendlyError(
-        _hata(kod: 404, govde: {'detail': 'Not Found'}));
+        _hata(kod: 404, govde: {'detail': 'Not Found'}), _tr);
 
     expect(mesaj, isNot(contains('Not Found')),
         reason: 'cerceve sabiti kullaniciya oldugu gibi cikmamali');
@@ -33,7 +39,7 @@ void main() {
 
   test('cerceveden gelen "Method Not Allowed" da gosterilmez', () {
     final mesaj = friendlyError(
-        _hata(kod: 405, govde: {'detail': 'Method Not Allowed'}));
+        _hata(kod: 405, govde: {'detail': 'Method Not Allowed'}), _tr);
     expect(mesaj, isNot(contains('Method Not Allowed')));
   });
 
@@ -41,20 +47,23 @@ void main() {
     // Kendi 404'lerimiz de var (ornegin hexagram bulunamadi) ve onlar
     // `text()` ile yerellestiriliyor; onlari elemek dogru olmaz.
     const bizim = 'Bu hexagram bulunamadi.';
-    expect(friendlyError(_hata(kod: 404, govde: {'detail': bizim})), bizim);
+    expect(friendlyError(_hata(kod: 404, govde: {'detail': bizim}), _tr), bizim);
   });
 
   test('paywall detail\'i korunur', () {
     const paywall = 'Bu ozellik Rytho+ aboneligine dahildir.';
-    expect(friendlyError(_hata(kod: 402, govde: {'detail': paywall})), paywall);
+    expect(
+        friendlyError(_hata(kod: 402, govde: {'detail': paywall}), _tr),
+        paywall);
   });
 
   test('baglanti hatasi ayri mesaj verir', () {
-    final mesaj = friendlyError(_hata(tur: DioExceptionType.connectionError));
+    final mesaj =
+        friendlyError(_hata(tur: DioExceptionType.connectionError), _tr);
     expect(mesaj, contains('Bağlantı'));
   });
 
   test('Dio disi hatalar genel mesaja duser', () {
-    expect(friendlyError(StateError('bir sey')), contains('Beklenmeyen'));
+    expect(friendlyError(StateError('bir sey'), _tr), contains('Beklenmeyen'));
   });
 }

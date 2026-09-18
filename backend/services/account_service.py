@@ -234,6 +234,42 @@ def _delete_owned_cache(client, uid: str, sayac: DeletionReport) -> None:
         logger.warning("Kisiye ozel onbellek silinemedi (%s): %s", uid, exc)
 
 
+def _kova():
+    """Cloud Storage kovasını çözer.
+
+    Ayrı fonksiyon, çünkü test sahte bir kova geçirebilsin: gerçeğini
+    çağırmak `firebase_admin` uygulaması ve ağ demek olurdu.
+    """
+    from firebase_admin import storage as fb_storage
+
+    return fb_storage.bucket(config.STORAGE_BUCKET)
+
+
+def _delete_storage_files(uid: str, sayac: DeletionReport) -> None:
+    """Kullanıcının bulut depolamadaki dosyalarını siler.
+
+    ⚠️ Kapalı test denetiminde (2026-09-18) bulundu: Firestore temizlenirken
+    `avatars/{uid}/avatar.png` kovada KALIYORDU ve infra/storage.rules gereği
+    girişli her kullanıcı onu okuyabiliyor — yani hesabı silinmiş birinin yüz
+    fotoğrafı erişilebilir kalıyordu. Hukuk metni ise fotoğrafın "hesabını
+    silerek kaldırılabileceğini" söylüyor.
+
+    Yalnızca `avatars/` öneki siliniyor: `charts/` kuralda tanımlı ama hiçbir
+    kod o öneke yazmıyor (tek yükleme yolu avatar_editor.dart).
+
+    Best-effort: kova erişilemezse silme YİNE tamamlanır — kimliğin kalması
+    dosyanın kalmasından kötüdür.
+    """
+    try:
+        kova = _kova()
+        for dosya in kova.list_blobs(prefix=f"avatars/{uid}/"):
+            dosya.delete()
+            sayac["storageFiles"] = sayac.get("storageFiles", 0) + 1
+    except Exception as exc:
+        logger.warning("Bulut depolama dosyalari silinemedi (%s): %s",
+                       uid, exc)
+
+
 def delete_account(uid: str) -> DeletionReport:
     """Kullanıcının tüm verisini siler ve kimliğini kaldırır.
 
@@ -274,6 +310,10 @@ def delete_account(uid: str) -> DeletionReport:
 
     # 3. Kişiye özel yapay zeka üretimleri
     _delete_owned_cache(client, uid, sayac)
+
+    # 3.5. Bulut depolamadaki dosyalar (yüklenen profil fotoğrafı). Firestore
+    # kaydı gitse bile dosya kovada kalıyordu ve girişli herkes okuyabiliyor.
+    _delete_storage_files(uid, sayac)
 
     # 4. Herkese açık kart ve kullanıcı adı
     _delete_username(client, uid, profil, sayac)

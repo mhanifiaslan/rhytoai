@@ -27,7 +27,7 @@ import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/chart/chart_data.dart';
 import '../../widgets/chart/chart_wheel.dart';
-import '../../widgets/nebula_widgets.dart' show Pressable;
+import '../../widgets/nebula_widgets.dart' show Pressable, localizedSignName;
 import '../atlas/atlas_detail_screens.dart'
     show showAspectSheet, showPointSheet;
 import '../atlas/chart_inspector_screen.dart';
@@ -190,14 +190,16 @@ class _HaritaBolumu extends StatelessWidget {
           label: l10n.bigThreeTitle,
           child: Column(children: [
             _MuhurSatiri(
-                etiket: l10n.bigThreeSun, deger: chart['sun_sign'] as String?),
+                etiket: l10n.bigThreeSun,
+                deger: localizedSignName(l10n, chart['sun_sign'] as String?)),
             _MuhurSatiri(
                 etiket: l10n.bigThreeMoon,
-                deger: chart['moon_sign'] as String?),
+                deger: localizedSignName(l10n, chart['moon_sign'] as String?)),
             if ((chart['ascendant'] as String?) != null)
               _MuhurSatiri(
                   etiket: l10n.bigThreeAscendant,
-                  deger: chart['ascendant'] as String?),
+                  deger:
+                      localizedSignName(l10n, chart['ascendant'] as String?)),
           ]),
         ),
       ),
