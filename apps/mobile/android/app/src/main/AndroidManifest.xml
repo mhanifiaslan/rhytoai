@@ -38,6 +38,34 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
                      tools:node="remove"/>
 
+    <!-- REKLAM KIMLIGI IZINLERI SILINIYOR — UYGULAMADA REKLAM YOK.
+         Play Console "Reklam Kimligi" beyani (2026-09-18) kapali testi
+         durdurdu: "Manifest dosyanizda com.google.android.gms.permission.AD_ID
+         izni yer aliyor. Yani uygulamaniz reklam kimligi kullandigini beyan
+         ediyor. Bu soruyu 'Evet' olarak yanitlayin veya bu izni manifest
+         dosyanizdan kaldirin."
+
+         Uc izin de `play-services-measurement-api` uzerinden
+         firebase_analytics'ten ORTUK geliyor; kodda tek satir reklam yok.
+         Dogru cevap "Evet" demek DEGIL, izni cikarmak:
+
+           * Magaza listesinde "reklam kimligi kullaniyor" yazmaz.
+           * Veri guvenligi beyani sadelesir.
+           * Gizlilik metnimiz "reklam gostermiyoruz" diyor; izni tasimak
+             beyanla celisirdi.
+
+         Bedeli: Firebase Analytics reklam kimligine dayali ilistirme ve
+         kitle ozelliklerini kaybeder. Kullanmiyoruz — olaylar app-instance
+         kimligiyle calismaya devam eder.
+
+         Bunlar kaldirilinca Play formunda "Hayir" isaretlenir. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID"
+                     tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID"
+                     tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
+                     tools:node="remove"/>
+
     <!-- Yuz okuma. Kare CIHAZDA islenir; sunucuya gitmez, diske yazilmaz.
          Kamera zorunlu DEGIL: uygulamanin geri kalani kamerasiz calisiyor ve
          `required="false"` olmadan Play, kamerasiz cihazlara uygulamayi hic

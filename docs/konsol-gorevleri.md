@@ -178,9 +178,9 @@ SENİN sıran (sıra ÖNEMLİ — 1 yapılmadan AAB üretme):
 6. **Uygulama içeriği** (Policy and programs → App content) — 10 form,
    kapalı testte hepsi ZORUNLU. Veri güvenliği `store-privacy-labels.md`
    §3'ten satır satır; **veri silme URL'si Data safety formunun İÇİNDE**
-   (`…/legal/hesap-silme.html`); **AD_ID AYRI bir bölüm** → "Evet,
-   yalnız Analytics" (firebase_analytics izni merge ediyor; "hayır"
-   dersen AAB yüklemesi hata verir); Health apps formu herkese zorunlu
+   (`…/legal/hesap-silme.html`); **AD_ID AYRI bir bölüm** → **HAYIR**
+   (2026-09-18: izin manifest'ten kaldırıldı; "evet" demek mağaza
+   listesine "reklam kimliği kullanıyor" yazdırırdı); Health apps formu herkese zorunlu
    (→ "sağlıkla ilgili değil"); hedef kitle 13+; reklam yok.
 7. **Mağaza kaydı**: görseller (512 ikon · 1024×500 · ≥2 ekran
    görüntüsü, GERÇEK harita/gökyüzü verisiyle) + kısa/uzun açıklama

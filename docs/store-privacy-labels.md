@@ -145,12 +145,23 @@ Her madde için "Bu veriyi topluyor musunuz?" → aşağıdaki gibi işaretleyin
 | Personal info | Other info (yüz oranları — türetilmiş sayılar) | Evet | Hayır | Hayır | Uygulama işlevi |
 | Messages | Other in-app messages (günlük notları — kullanıcı yazar, yalnız kendi bağlamında) | Evet | **Evet** (Google — Gemini, sohbet bağlamı olarak) | Hayır | Uygulama işlevi |
 | App activity | Other user-generated content? HAYIR — kullanıcılar-arası içerik yok (tepkiler kapalı küme) | — | — | — | — |
-| Device or other IDs | Device or other IDs (rastgele cihaz kimliği + AD_ID izni: firebase_analytics bağımlılığından gelir) | Evet | Hayır | Hayır | Analitik, tek cihaz kilidi |
+| Device or other IDs | Device or other IDs (tek cihaz kilidi için üretilen rastgele kimlik + Analytics'in uygulama kurulumu kimliği) | Evet | Hayır | Hayır | Analitik, tek cihaz kilidi |
 | Personal info | Phone number | Evet | Hayır | Hayır | Hesap doğrulama; isteğe bağlı rehber eşleşmesi (sunucuda ham numara DEĞİL, SHA-256 özeti) |
 | **Photos and videos** | **Photos** | **Evet** | Hayır | Hayır | **Profil fotoğrafı: kullanıcı galeriden seçerse Cloud Storage'a YÜKLENİR** (yüz okumadan farklı — orada görüntü hiç yüklenmez) |
 | Messages | Other in-app messages (uygulama içi geri bildirim — kullanıcının yazdığı serbest metin + ekran adı/sürüm/platform) | Evet | Hayır | Hayır | Uygulama işlevi, destek |
 | App activity | App interactions (yapay zeka kullanım kaydı: özellik, model, kelime birimi, süre — SORU/CEVAP METNİ YOK) | Evet | Hayır | Hayır | Analitik, maliyet takibi |
 | App activity | App interactions (telefon doğrulama denemeleri: aşama, ülke kodu, maskeli numara) | Evet | Hayır | Hayır | Uygulama işlevi, teşhis |
+
+> **Reklam Kimliği (AD_ID) beyanı: HAYIR (2026-09-18).** Play Console'un
+> "Reklam Kimliği" formu kapalı testi durdurmuştu: paket
+> `com.google.android.gms.permission.AD_ID` iznini taşıyordu ve form
+> "ya Evet de ya da izni kaldır" diyordu. İzin `firebase_analytics` →
+> `play-services-measurement-api` üzerinden ÖRTÜK geliyordu; uygulamada
+> tek satır reklam yok. **İzin manifest'ten kaldırıldı** (üçü birden:
+> `AD_ID`, `ACCESS_ADSERVICES_AD_ID`, `ACCESS_ADSERVICES_ATTRIBUTION`),
+> formda **Hayır** işaretlenir ve mağaza listesinde "reklam kimliği
+> kullanıyor" yazmaz. `infra/build-aab.ps1` izin kapısı bunların geri
+> gelmesini engelliyor — geri gelirse beyan yalan olur.
 
 > **Yüz okuma neden "Photos and videos" altında DEĞİL — ama profil
 > fotoğrafı ALTINDA:** Play bu kategoriyi uygulamanın fotoğraf/video

@@ -86,8 +86,9 @@ TAMAMI zorunlu, ve üretim davranışının birebir provası. Sıra:
    yenileme/iade senaryoları böyle koşulur.
 4. **Uygulama içeriği** (hepsi zorunlu): Veri güvenliği formu
    (labels §3 + veri silme URL'si `…/legal/hesap-silme.html` +
-   **AD_ID beyanı**: firebase_analytics AD_ID iznini birleştirir —
-   "reklam için DEĞİL, analitik için" işaretle), İçerik derecelendirme
+   **AD_ID beyanı**: **HAYIR** — izin 2026-09-18'de manifest'ten
+   kaldırıldı; uygulamada reklam yok, "evet" demek mağaza listesine
+   "reklam kimliği kullanıyor" yazdırırdı), İçerik derecelendirme
    anketi, Hedef kitle 13+, "Reklam içermiyor" beyanı, Gizlilik
    politikası URL'si.
 5. **Mağaza kaydı varlıkları**: 512×512 ikon, 1024×500 feature graphic,
