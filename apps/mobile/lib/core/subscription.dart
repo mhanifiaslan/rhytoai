@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -57,6 +58,7 @@ class SubscriptionStatus {
     this.willRenew,
     this.isTrial,
     this.trialDaysLeft,
+    this.okunabildi = true,
   });
 
   final bool active;
@@ -70,7 +72,22 @@ class SubscriptionStatus {
   /// tarih hesabı yapmaz (iki kopya kaçınılmaz olarak ayrışırdı).
   final int? trialDaysLeft;
 
+  /// Durum SUNUCUDAN okunabildi mi?
+  ///
+  /// "Abone degil" ile "bilmiyorum" ayni sey degil (ilkacilis-2): soguk
+  /// acilista tek 5xx ya da tek zaman asimi `active: false` uretiyordu ve
+  /// denemesi suren testcinin yuzune tanitim paywall'i acilip hesap
+  /// omrundeki TEK gosterim bosa yaniyordu. Kilitler yine `active`e bakar
+  /// (bilinmiyorken kapali kalmak dogru taraf); yalniz KULLANICIYA BIR SEY
+  /// SOYLEYEN kararlar bu alani sorar.
+  final bool okunabildi;
+
+  /// Oturum yok — BILINEN durum.
   static const none = SubscriptionStatus(active: false);
+
+  /// Sunucuya ulasilamadi; abonelik durumu bilinmiyor.
+  static const bilinmiyor =
+      SubscriptionStatus(active: false, okunabildi: false);
 
   factory SubscriptionStatus.fromJson(Map<String, dynamic> json) {
     final raw = json['expires_at'] as String?;
@@ -153,8 +170,12 @@ final subscriptionProvider =
     FutureProvider<SubscriptionStatus>((ref) async {
   final user = ref.watch(authStateProvider).value;
   if (user == null) return SubscriptionStatus.none;
+  return abonelikDurumunuOku(ref.watch(apiProvider));
+});
 
-  final dio = ref.watch(apiProvider);
+/// `/billing/status` okumasi — saglayicidan AYRI tutuluyor, cunku bekcisi
+/// sahte bir Firebase `User`i olmadan yazilamaz (ilkacilis-2).
+Future<SubscriptionStatus> abonelikDurumunuOku(Dio dio) async {
   try {
     final response = await dio.get('/api/v1/billing/status');
     return SubscriptionStatus.fromJson(
@@ -166,9 +187,20 @@ final subscriptionProvider =
     // durumuna DÜŞMEMELİ. Riverpod hatalı bir sağlayıcıyı yeniden deniyor ve
     // `.future` o süre boyunca tamamlanmıyor; satın alma sonrası yoklama da
     // orada asılı kalıyordu.
-    return SubscriptionStatus.none;
+    //
+    // Ama "ucretsiz varsay" artik SESSIZ degil: bayrak duser, boylece
+    // kullaniciya bir sey SOYLEYEN kararlar bu acilista susar.
+    return SubscriptionStatus.bilinmiyor;
   }
-});
+}
+
+/// Tanitim paywall'i karari bu durumla VERILEBILIR mi?
+///
+/// Hesap omrunde bir kez gosterilen bir ekran icin "bilmiyorum" yeterli
+/// gerekce degil: yukleniyorsa (KT3) ya da istek dustuyse (ilkacilis-2) karar
+/// bir sonraki acilisa kalir — bayrak YANMAZ.
+bool paywallKarariVerilebilir(AsyncValue<SubscriptionStatus> durum) =>
+    !durum.isLoading && (durum.value?.okunabildi ?? false);
 
 /// Kullanıcıya sunulacak plan tipleri.
 ///

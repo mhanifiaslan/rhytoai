@@ -124,6 +124,19 @@ def test_360_bilinmeyen_kullanici_none(depo):
     assert admin_service.user_360("yok") is None
 
 
+def test_360_onboarding_rozeti_bool_doner(depo):
+    """360 rozeti de `onboardingCompleted === false` arıyor
+    (kullanicilar.js). Profil HAM dokümandan üretildiği için alanı hiç
+    yazmamış kullanıcıda anahtar bile gelmiyordu ve rozet yanmıyordu —
+    gösterilmesi gereken tam o kullanıcı. u1 alanı taşıyor, u2 (akışı yarım
+    bırakan) taşımıyor."""
+    assert "onboardingCompleted" not in depo.docs["users/u2"]
+    u1 = admin_service.user_360("u1")
+    assert u1["profile"]["onboardingCompleted"] is True
+    u2 = admin_service.user_360("u2")
+    assert u2["profile"]["onboardingCompleted"] is False
+
+
 # ---------------------------------------------------------------------------
 # Uç katmanı
 # ---------------------------------------------------------------------------

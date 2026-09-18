@@ -117,8 +117,32 @@ $isler = @(
     # Sohbet arsivi temizligi (R4): 30 gundur kullanilmayan konusmalar.
     @{ ad = "rytho-cleanup"; uri = "/api/v1/maintenance/cleanup"; cron = "20 3 * * *" }
     # Admin istatistik toplama (W5): gecelik adminStats/{tarih} dokumani.
-    # Cleanup'tan (03:20) ONCE kosar ki gunun sayilari temizlikten etkilenmesin.
-    @{ ad = "rytho-stats"; uri = "/api/v1/admin/collect"; cron = "40 2 * * *" }
+    # UTC gununun SONUNDA toplanir. Uc tarih parametresi almazsa BUGUNU
+    # toplar ve gun penceresi [00:00, +1 gun) oldugu icin 02:40'taki eski
+    # saat gunun yalniz ilk 2s40d'sini goruyordu: DAU ~0, gelir/AI/jeton
+    # serileri bos. Kusur SESSIZ kaldi cunku rollupStale uyarisi generatedAt'e
+    # bakiyor: dokuman TAZE sayilir, zil calmaz ve operator yanlis sayiyi
+    # dogru sanip fiyat/maliyet karari verir.
+    # 23:50 degil 23:40: gece yarisini GECEN bir tetik now().date()'i ertesi
+    # gune tasir ve o gun HIC yazilmaz. Kalan 20 dakika YALNIZ sevk
+    # gecikmesi ve kosu suresi payidir — yeniden deneme payi DEGIL: bu
+    # betik islere `--max-retry-attempts` vermiyor, yani Cloud Scheduler
+    # varsayilani (retryCount=0) geciyor ve dusen kosu bir sonraki gunu
+    # bekler. Pay zaten dar: `--attempt-deadline 900s` tek basina 23:55'e
+    # kadar surebilir.
+    # Bedeli gunun son 20 dakikasi: gelir/olay bolumleri panelden "Yeniden
+    # hesapla" ile geri doldurulabilir ama DAU (lastSeenDaily == gun)
+    # KAPANMAZ.
+    # Cleanup (03:20) ile SIRA DEGISTI, bunun tek gorunur etkisi soyle:
+    # `stats_service._snapshot_users` icindeki `conversations` sayimi gun
+    # penceresine bagli DEGIL, ANLIK bir toplam. Eski sirada (02:40)
+    # fotograf o sabahki purge'den ONCE cekiliyordu; simdi ~20 saat SONRA
+    # cekiliyor, yani `system.conversations` her gece silinen kadar dusuk
+    # raporlanir. Kabul edildi: sayi artik "su anki gercek"e daha yakin.
+    # Gunun OLAY bolumleri (gelir, AI, jeton) etkilenmiyor — onlarin
+    # penceresi [00:00, +1 gun) ve purge'un sildigi sey 30 gundur
+    # kullanilmayan konusmalar.
+    @{ ad = "rytho-stats"; uri = "/api/v1/admin/collect"; cron = "40 23 * * *" }
 )
 
 foreach ($is in $isler) {

@@ -167,7 +167,13 @@ class _OnboardingWizardState extends ConsumerState<OnboardingWizard> {
         'displayName': user.displayName ?? 'Gezgin',
         'photoUrl': user.photoURL,
         'email': user.email,
-        'createdAt': FieldValue.serverTimestamp(),
+        // Kayıt damgası BURADA YOK (core/language_sync.dart `kayitDamgasi` +
+        // `dogumAlanlari`): damga dokümanın DOĞDUĞU yazımda, hesabın
+        // Auth'taki gerçek oluşma anıyla konuyor. Burada konsaydı akışı
+        // yarım bırakan kullanıcı kayıt tarihsiz kalır ve panelin
+        // `order_by("createdAt")` listesinden düşerdi; ayrıca bu blok
+        // yeniden koşarsa (kurulum tekrarı) damga ileri kayıp 3 günlük
+        // denemeyi yenilerdi.
       }, SetOptions(merge: true));
 
       // Kabul kaydı — düşerse kurulum DÜŞMEZ ama kayıp da KALICI değil:

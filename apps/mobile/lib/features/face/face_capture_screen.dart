@@ -18,6 +18,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -131,6 +132,13 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
   /// Model ölçümünün cihazdaki süresi ve gördüğü sınıflar (hata ayıklama).
   String? _segOlcum;
 
+  /// Segmentasyon arizasi bu ekran oturumunda bildirildi mi?
+  ///
+  /// Maske 700 ms'de bir uretiliyor; her dususu bildirmek Crashlytics'i
+  /// kullanissiz hale getirirdi. Bir kez yeter: sebep (`lastError`) zaten
+  /// ayni.
+  bool _segArizaBildirildi = false;
+
   /// Kadraj hazırken yakalanan son ham kare — çekim anında segmentasyon için.
   CameraImage? _sonKare;
 
@@ -194,7 +202,16 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Yorumlayıcı yüklemesi pahalı; kamera açılırken bir kez yapılıyor.
-    _segmenter.load();
+    // Sonuc YUTULMAZ (gz-10): yukleme duserse `ready` false kalir ve
+    // `_segmentle()` daha ilk satirda doner — asagidaki maske==null kancasi
+    // bu arizayi HIC goremez. Sahada en olasi ariza da bu ve sebebi
+    // `lastError`'da duruyor; tek cikisi burasi.
+    unawaited(_segmenter.load().then((yuklendi) {
+      if (!yuklendi) {
+        _arizaBildir(StateError('segmenter yuklenemedi'), StackTrace.current,
+            'segmenter-yukleme');
+      }
+    }));
     _baslat();
   }
 
@@ -265,15 +282,43 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
       await kontrolcu.startImageStream(_kareGeldi);
       if (!mounted) return;
       setState(() => _asama = _Asama.onizleme);
-    } on CameraException catch (e) {
+    } on CameraException catch (e, iz) {
+      // Izin reddi ARIZA DEGIL — kullanicinin karari; yalniz gercek ariza
+      // bildirilir. Bildirim `mounted` kontrolunden ONCE: ekran sokulmusse de
+      // sebep kaybolmasin.
+      if (!e.code.contains('Permission')) {
+        _arizaBildir(e, iz, 'kamera-kurulum');
+      }
       if (!mounted) return;
       setState(() => _asama = e.code.contains('Permission')
           ? _Asama.izinYok
           : _Asama.hata);
-    } catch (_) {
+    } catch (e, iz) {
+      _arizaBildir(e, iz, 'kamera-kurulum');
       if (!mounted) return;
       setState(() => _asama = _Asama.hata);
     }
+  }
+
+  /// Ariza sebebini CIHAZDAN alir (gz-10).
+  ///
+  /// Segmenter sebebi zaten tutuyor (`lastError`, bkz. face_segmentation.dart)
+  /// ama o deger yalniz `assert` icinde okunuyordu: yayin derlemesinde hicbir
+  /// yere gitmiyordu. "Yuz okuma calismiyor" dendiginde model mi yuklenemedi,
+  /// kare bicimi mi taninmadi, cikarim mi dustu — ayiran tek sey bu
+  /// anahtarlar. Logcat secenek degil (cihaz log'u suzuluyor).
+  void _arizaBildir(Object hata, StackTrace iz, String nerede) {
+    if (kDebugMode) {
+      debugPrint('RYTHO-FACE ariza [$nerede] $hata — '
+          'seg=${_segmenter.lastError} sac=$_sonSacHatasi');
+      return;
+    }
+    final crash = FirebaseCrashlytics.instance;
+    crash.setCustomKey('face_asama', nerede);
+    crash.setCustomKey('face_seg_hata', _segmenter.lastError ?? '-');
+    crash.setCustomKey('face_seg_sure', _segmenter.lastTimings ?? '-');
+    crash.setCustomKey('face_sac_hata', _sonSacHatasi ?? '-');
+    crash.recordError(hata, iz, reason: 'face-capture', fatal: false);
   }
 
   Future<void> _kareGeldi(CameraImage kare) async {
@@ -448,6 +493,16 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
     // sürüm derlemesinde örnek hiç birikmiyordu ve teşhis okuması durumu
     // değiştiriyordu.
     _ornekAl(maske);
+
+    // Segmentasyon HIC istisna firlatmadan dusebiliyor (kare bicimi
+    // taninmadi, cikarim zaman asimi) ve o zaman kullanici yalniz
+    // "OLCULEMEDI" goruyordu; sebep `lastError`'da duruyor ama hicbir yere
+    // gitmiyordu (gz-10). Ekran oturumu basina bir kez bildirilir.
+    if (maske == null && !_segArizaBildirildi) {
+      _segArizaBildirildi = true;
+      _arizaBildir(StateError('segmentasyon uretilemedi'), StackTrace.current,
+          'segmentasyon');
+    }
 
     assert(() {
       if (maske == null) {
@@ -772,7 +827,8 @@ class _FaceCaptureScreenState extends State<FaceCaptureScreen>
 
       Navigator.of(context).pop<FaceCaptureResult>(
           FaceCaptureResult(computeRatios(lm), _hareket.metrics));
-    } catch (_) {
+    } catch (e, iz) {
+      _arizaBildir(e, iz, 'cekim');
       if (!mounted) return;
       setState(() => _asama = _Asama.hata);
     }

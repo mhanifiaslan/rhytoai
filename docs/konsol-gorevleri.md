@@ -472,8 +472,15 @@ gerçekten uygulanıyor: bakiye yetmezse 402 + `X-Paywall-Reason: tokens`.
   yazılı "SIL" onayı, mobil silme borusunun aynısı), şifre sıfırlama
   e-postası (istemci SDK). Kendi hesabında devre dışı/sil YASAK.
   Girişte e-posta+şifre formu da var (yetki yine claim'den).
-- **İstatistikler:** her gece 02:40 UTC `rytho-stats` işi `adminStats/`
+- **İstatistikler:** her gece 23:40 UTC `rytho-stats` işi `adminStats/`
   dokümanını üretir; panel Genel Bakış'tan "Topla" ile elle de tetiklenir.
+  Saat UTC gününün SONU: uç tarih almazsa BUGÜNÜ topluyor ve gün penceresi
+  `[00:00, +1 gün)` olduğu için sabaha karşı koşan iş günün yalnız ilk
+  saatlerini görürdü (DAU ~0, gelir/AI/jeton serileri boş) — üstelik
+  `rollupStale` `generatedAt`e baktığı için doküman TAZE sayılıp zil de
+  çalmıyordu. Bedeli günün son 20 dakikası: gelir/olay bölümleri Ekonomi'deki
+  "Yeniden hesapla" ile geri doldurulabilir, DAU (`lastSeenDaily == gün`)
+  KAPANMAZ.
 - **Ortak kodları:** panel > Ortaklar: ortak ekle → kod üret (bonus jeton +
   kullanım limiti). Her hesapta TEK kod. Kod girildikten SONRAKİ
   satın almalar ortağa atfedilir; hakediş = atfedilen brüt × pay yüzdesi.

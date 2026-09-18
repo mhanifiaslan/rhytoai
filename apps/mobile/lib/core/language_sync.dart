@@ -17,11 +17,17 @@
 /// 3. **`LocaleController.ready` beklenir:** tercih yüklenmeden yazım YOK.
 /// 4. **Güdüm `effectiveLocaleProvider`:** arayüzün ve `Accept-Language`ın
 ///    kullandığı dil — "Sistem" tercihinde telefon dili değişince de yazılır.
+///
+/// Bu yazım dokümanın DOĞDUĞU yer olduğu için kayıt damgasını da o koyar:
+/// `createdAt` onboarding'in son adımını beklerse akışı yarım bırakan
+/// kullanıcı panelin kullanıcı listesinde HİÇ görünmez (bkz.
+/// [dogumAlanlari], [kayitDamgasi]).
 library;
 
 import 'dart:async' show unawaited;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show Locale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,11 +37,70 @@ import 'providers.dart';
 
 typedef LanguageWriter = Future<void> Function(String uid, String lang);
 
-Future<void> _firestoreWrite(String uid, String lang) => FirebaseFirestore
-    .instance
-    .collection('users')
-    .doc(uid)
-    .set({'language': lang}, SetOptions(merge: true));
+/// Kayıt damgası — hesabın Auth'taki GERÇEK oluşma anı; yoksa sunucu damgası.
+///
+/// Damga UYDURULMAZ. Bu yazımın damgaladığı hesaplar tam da `createdAt` alanı
+/// HİÇ olmayanlar: onboarding'i aylar önce yarım bırakmış testçiler. Sunucu
+/// damgası tek başına konsaydı böyle bir hesap uygulamayı bir daha açtığında
+/// BUGÜN kaydolmuş görünürdü ve backend `core/entitlements`
+/// `_trial_remaining` ona SIFIRDAN 3 günlük Rytho+ denemesi açardı — bedava
+/// Plus. Auth damgası yoksa alanı hiç yazmamak da çözüm değil: panelin
+/// `order_by("createdAt")` listesinde görünmezlik sürerdi, o yüzden sunucu
+/// damgasına düşülür.
+Object kayitDamgasi(DateTime? authOlusma, Object sunucuDamgasi) =>
+    authOlusma ?? sunucuDamgasi;
+
+/// Doğum damgası — dokümanda `createdAt` YOKSA konacak alanlar; varsa boş.
+///
+/// `users/{uid}` dokümanı oturum açılışında [_firestoreWrite] ile DOĞUYOR,
+/// `createdAt` ise onboarding'in SON adımında yazılıyordu: akışı yarım
+/// bırakan kullanıcı kayıt tarihsiz kalıyor ve Firestore `order_by` alanı
+/// bulunmayan dokümanı sonuç kümesinden düşürdüğü için panelin kullanıcı
+/// listesinde HİÇ görünmüyordu — kapalı testte "kim takıldı" sorusu tam da o
+/// kişide cevapsız kalıyor. E-posta/ad da aynı sebeple burada konur:
+/// operatörün o testçiye ulaşabileceği tek adres o.
+///
+/// Var olan damga ASLA ezilmez: kayıt tarihi değişmez bir olgu ve 3 günlük
+/// deneme penceresi ona bağlı — her oturum açılışında yeniden damgalansa
+/// deneme sonsuza dek yenilenirdi.
+///
+/// [damga] dışarıdan geliyor ki karar Firebase'siz test edilebilsin.
+Map<String, Object?> dogumAlanlari(Map<String, Object?>? mevcut, Object damga,
+    {String? email, String? displayName}) {
+  if ((mevcut ?? const <String, Object?>{})['createdAt'] != null) {
+    return const <String, Object?>{};
+  }
+  return <String, Object?>{
+    'createdAt': damga,
+    // Null-aware `?`: anahtar HİÇ konmaz. Alanı `null` yazmak sonradan
+    // gelen gerçek adı/e-postayı ezerdi.
+    'email': ?email,
+    'displayName': ?displayName,
+  };
+}
+
+Future<void> _firestoreWrite(String uid, String lang) async {
+  final dokuman = FirebaseFirestore.instance.collection('users').doc(uid);
+  final veri = <String, Object?>{'language': lang};
+  // Okuma DÜŞERSE dil yazımı yine gider: çevrimdışı ilk açılışta `get`
+  // fırlatır ve eski davranış (kuyruğa giren `set`) korunmalı — damga bir
+  // sonraki tetikte konur.
+  try {
+    final oturum = FirebaseAuth.instance.currentUser;
+    // Oturum başka bir uid'ye geçmiş olabilir (hesap değişimi): kimlik
+    // alanları ancak damgalanan doküman O oturumunsa alınır.
+    final kimlik = oturum?.uid == uid ? oturum : null;
+    veri.addAll(dogumAlanlari(
+        (await dokuman.get()).data(),
+        kayitDamgasi(
+            kimlik?.metadata.creationTime, FieldValue.serverTimestamp()),
+        email: kimlik?.email,
+        displayName: kimlik?.displayName));
+  } catch (e) {
+    debugPrint('Kayıt damgası konamadı (dil yazımı sürer): $e');
+  }
+  await dokuman.set(veri, SetOptions(merge: true));
+}
 
 /// Tek yazıcı, son niyet kazanır.
 ///

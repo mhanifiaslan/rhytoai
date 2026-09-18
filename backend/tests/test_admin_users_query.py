@@ -8,6 +8,8 @@ Değişmezler:
 - `disabled` yalnız true süzer; alanı olmayan eski doküman "devre dışı
   değil"e düşmez ama süzgeçsiz listede görünür.
 - Satırda fcmToken ASLA; limit 100'e kırpılır.
+- `onboardingCompleted` satırda HER ZAMAN bool: alan hiç yazılmamışken ham
+  `null` gidiyordu ve panelin `=== false` rozeti sessizce düşüyordu.
 """
 from __future__ import annotations
 
@@ -151,3 +153,20 @@ def test_satirda_jeton_yok(depo):
         assert "GIZLI" not in duz
         assert all("fcmToken" not in s and "hasPush" in s
                    and "authDisabled" in s for s in sonuc["users"])
+
+
+def test_onboarding_yarim_satirda_false_doner(depo):
+    """Panel rozeti `onboardingCompleted === false` arıyor (kullanicilar.js
+    liste + 360). Alan yalnız onboarding'in SON adımında yazıldığı için akışı
+    yarım bırakan kullanıcıda HİÇ yok ve satıra ham `null` gidiyordu: rozet
+    sessizce yanmıyordu — oysa "kim takıldı" sorusunun cevabı tam o
+    kullanıcı."""
+    # Fikstür alanı hiç yazmıyor: "onboarding'i yarım bırakmış" durum bu.
+    assert "onboardingCompleted" not in depo.docs["users/u1"]
+    depo.docs["users/u2"]["onboardingCompleted"] = True
+    satirlar = {s["uid"]: s for s in admin_service.list_users()["users"]}
+    assert satirlar["u1"]["onboardingCompleted"] is False
+    assert satirlar["u2"]["onboardingCompleted"] is True
+    # Arama modu aynı satır kurucudan geçer.
+    arama = admin_service.list_users(q="kisi1", alan="kullanici")["users"]
+    assert [s["onboardingCompleted"] for s in arama] == [False]

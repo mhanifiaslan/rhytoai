@@ -7,6 +7,13 @@
   DEĞİŞİYORSA damgalanır — aksi halde her koşu yazardı.
 * `authDisabled` — Firebase Auth `list_users` (tek geçiş, uid → disabled);
   Auth listesi alınamazsa (yerel ADC yok) bu alan ATLANIR ve rapor eder.
+* `createdAt` — alanı HİÇ olmayan dokümanda Firebase Auth'un hesap oluşma
+  damgası. Panel listesi `order_by("createdAt")` ile sorguluyor ve Firestore
+  alanı bulunmayan dokümanı sonuç kümesinden DÜŞÜRÜYOR; damga eskiden yalnız
+  onboarding'in son adımında yazıldığı için akışı yarım bırakan hesap
+  görünmez kalmış. Damga UYDURULMAZ (`simdi` yazılsa kayıt tarihi bugüne
+  kayar ve core/entitlements 3 günlük denemeyi sıfırdan açardı); Auth'ta
+  damga yoksa alan ATLANIR ve özet bunu söyler.
 
 Diff-only: yalnız farklı alanlar merge edilir; ikinci koşu 0 yazım.
 
@@ -40,9 +47,36 @@ def auth_bayraklari() -> dict[str, bool] | None:
         return None
 
 
+def auth_kayit_damgalari() -> dict[str, dt.datetime]:
+    """uid → hesabın Auth'ta OLUŞMA zamanı; okunamazsa boş sözlük.
+
+    Ayrı geçiş: `auth_bayraklari`nin dönüş şekli değişmesin (çağıranlar ve
+    bekçi testi bool sözlüğü bekliyor). Betik elle ve nadir koşuyor.
+    """
+    try:
+        from firebase_admin import auth as fb_auth
+        sonuc: dict[str, dt.datetime] = {}
+        sayfa = fb_auth.list_users()
+        while sayfa:
+            for kullanici in sayfa.users:
+                ms = getattr(kullanici.user_metadata, "creation_timestamp",
+                             None)
+                if ms:
+                    sonuc[kullanici.uid] = dt.datetime.fromtimestamp(
+                        ms / 1000, dt.timezone.utc)
+            sayfa = sayfa.get_next_page()
+        return sonuc
+    except Exception as exc:
+        logger.warning("Auth kayıt damgaları alınamadı; createdAt atlanıyor: "
+                       "%s", exc)
+        return {}
+
+
 def hesapla(client, veri: dict[str, Any], uid: str,
             bayraklar: dict[str, bool] | None,
-            simdi: dt.datetime) -> dict[str, Any]:
+            simdi: dt.datetime,
+            kayit_damgalari: dict[str, dt.datetime] | None = None,
+            ) -> dict[str, Any]:
     """Tek kullanıcı için yazılacak FARK (boş sözlük = yazım yok)."""
     from api import billing
     from services import search_mirror
@@ -66,31 +100,49 @@ def hesapla(client, veri: dict[str, Any], uid: str,
     if bayraklar is not None and uid in bayraklar:
         if veri.get("authDisabled") is not bayraklar[uid]:
             fark["authDisabled"] = bayraklar[uid]
+
+    # Kayıt damgası: alan YOKSA Auth'taki gerçek oluşma anından konur. Panel
+    # listesi `order_by("createdAt")` ile sorguladığı için alanı olmayan
+    # doküman sonuç kümesinden DÜŞÜYOR — onboarding'i yarım bırakan hesap
+    # "kim takıldı" sorusunun cevabı olduğu halde görünmüyordu. Var olan damga
+    # ezilmez ve damga bulunamazsa UYDURULMAZ: `simdi` yazılsa hem kayıt
+    # tarihi bugüne kayar hem 3 günlük deneme sıfırdan başlardı.
+    if veri.get("createdAt") is None:
+        damga = (kayit_damgalari or {}).get(uid)
+        if damga is not None:
+            fark["createdAt"] = damga
     return fark
 
 
 def calistir(client, *, apply: bool = False,
-             bayraklar: dict[str, bool] | None = None) -> dict[str, Any]:
+             bayraklar: dict[str, bool] | None = None,
+             kayit_damgalari: dict[str, dt.datetime] | None = None,
+             ) -> dict[str, Any]:
     from services.stats_service import _iter_users
     simdi = dt.datetime.now(dt.timezone.utc)
     incelenen = yazilacak = 0
     for veri in _iter_users(client):
         incelenen += 1
         uid = veri.pop("uid")
-        fark = hesapla(client, veri, uid, bayraklar, simdi)
+        fark = hesapla(client, veri, uid, bayraklar, simdi, kayit_damgalari)
         if not fark:
             continue
         yazilacak += 1
         if apply:
             client.collection("users").document(uid).set(fark, merge=True)
     return ozet(BETIK, incelenen, yazilacak, apply,
-                auth=("ok" if bayraklar is not None else "atlandı"))
+                auth=("ok" if bayraklar is not None else "atlandı"),
+                # Prova çıktısı damga geçişinin ATLANDIĞINI ekranda söylemeli:
+                # betik elle ve nadir koşuyor, yalnız logger.warning'de kalsa
+                # operatör "createdAt neden dolmadı" sorusunu göremez.
+                kayit=("ok" if kayit_damgalari else "atlandı"))
 
 
 def main(argv: list[str] | None = None) -> int:
     args = arg_ayristirici(__doc__.split("\n")[0]).parse_args(argv)
     client = istemci()
-    calistir(client, apply=args.apply, bayraklar=auth_bayraklari())
+    calistir(client, apply=args.apply, bayraklar=auth_bayraklari(),
+             kayit_damgalari=auth_kayit_damgalari())
     return 0
 
 

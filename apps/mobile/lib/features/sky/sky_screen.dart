@@ -10,7 +10,11 @@ import '../../core/motivation.dart';
 import '../../core/providers.dart';
 import '../../core/sound.dart';
 import '../../core/subscription.dart'
-    show introPaywallShown, markIntroPaywallShown, subscriptionProvider;
+    show
+        introPaywallShown,
+        markIntroPaywallShown,
+        paywallKarariVerilebilir,
+        subscriptionProvider;
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
@@ -123,13 +127,16 @@ class _SkyScreenState extends ConsumerState<SkyScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
 
-      // KT3: sağlayıcı HÂLÂ YÜKLENİYORKEN `.value` null döner ve eski
-      // `?? false` bunu "abone değil" sayıyordu — abonenin/denemedekinin
-      // yüzüne paywall açılıyor ve tek-atış bayrağı boşa yanıyordu.
-      // Yükleme bitmediyse bu açılışta hiç gösterme (bayrak YAKILMAZ);
-      // bir sonraki açılış gerçek cevapla karar verir.
+      // Karar ancak GERCEK bir cevapla verilir; iki eksik hal de bekler:
+      // (KT3) saglayici HALA YUKLENIYOR — `.value` null doner ve eski
+      // `?? false` bunu "abone degil" sayiyordu; (ilkacilis-2) yukleme bitti
+      // ama istek DUSTU — genis catch `AsyncData(none)` uretiyordu, yani
+      // "abone degil" ile "bilmiyorum" ayirt edilemiyordu. Ikisinde de
+      // abonenin/denemedekinin yuzune paywall aciliyor ve hesap omrundeki
+      // TEK gosterim bosa yaniyordu. Bu acilista hic gosterme (bayrak
+      // YAKILMAZ); bir sonraki acilis gercek cevapla karar verir.
       final durum = ref.read(subscriptionProvider);
-      if (durum.isLoading) {
+      if (!paywallKarariVerilebilir(durum)) {
         await ensureNotificationPermissionAsked();
         return;
       }

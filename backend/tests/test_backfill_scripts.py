@@ -112,6 +112,42 @@ def test_search_fields_diff_only(monkeypatch):
     assert m.calistir(depo, apply=True, bayraklar=None)["yazilan"] == 0
 
 
+def test_search_fields_createdat_yalniz_auth_damgasiyla_dolar():
+    """`createdAt` alanı OLMAYAN doküman panelin `order_by("createdAt")`
+    listesinden düşüyor: onboarding'i yarım bırakan hesap "kim takıldı"
+    sorusunun cevabı olduğu halde görünmüyordu. Damga UYDURULMAZ — Auth'ta
+    karşılığı olmayan doküman alansız KALIR; `simdi` yazılsa kayıt tarihi
+    bugüne kayar ve core/entitlements 3 günlük denemeyi sıfırdan açardı. Var
+    olan damga da ezilmez."""
+    dogum = dt.datetime(2026, 9, 1, 8, 30, tzinfo=dt.timezone.utc)
+    onceki = dt.datetime(2026, 1, 2, 3, 4, tzinfo=dt.timezone.utc)
+    ayna = {"emailLower": "", "usernameLower": "", "plan": "free"}
+    depo = SahteFirestore({
+        "users/yarim": {"displayName": "Can", "nameLower": "can", **ayna},
+        "users/damgasiz": {"displayName": "Ece", "nameLower": "ece", **ayna},
+        "users/tam": {"displayName": "Ali", "nameLower": "ali",
+                      "createdAt": onceki, **ayna},
+    })
+    m = _yukle("backfill_search_fields")
+    sonuc = m.calistir(depo, apply=True, kayit_damgalari={"yarim": dogum})
+    assert sonuc["kayit"] == "ok" and sonuc["yazilan"] == 1
+    assert depo.docs["users/yarim"]["createdAt"] == dogum
+    # Auth'ta damgası olmayan hesap: alan UYDURULMAZ.
+    assert "createdAt" not in depo.docs["users/damgasiz"]
+    # Var olan damga ezilmez (3 günlük deneme penceresi ona bağlı).
+    assert depo.docs["users/tam"]["createdAt"] == onceki
+    # Diff-only: ikinci koşu hiç yazmaz.
+    n = _yazim(depo)
+    assert m.calistir(depo, apply=True,
+                      kayit_damgalari={"yarim": dogum})["yazilan"] == 0
+    assert _yazim(depo) == n
+    # Auth okunamadı yolu: alan hiç yazılmaz ve özet bunu SÖYLER (prova
+    # çıktısı "atlandı" demezse operatör sessiz atlamayı göremez).
+    bos = m.calistir(depo, apply=True)
+    assert bos["yazilan"] == 0 and bos["kayit"] == "atlandı"
+    assert "createdAt" not in depo.docs["users/damgasiz"]
+
+
 # --- backfill_usage_totals ----------------------------------------------------------
 
 def test_usage_totals_mutlak(monkeypatch):

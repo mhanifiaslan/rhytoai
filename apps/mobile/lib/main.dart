@@ -14,6 +14,7 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'core/api.dart';
 import 'core/app_config.dart';
+import 'core/auth_service.dart' show signOutEverywhere;
 import 'core/deep_links.dart';
 import 'core/device_session.dart' show deviceConflictProvider;
 import 'core/gate_guard.dart';
@@ -222,10 +223,40 @@ class _Gate extends ConsumerWidget {
       return const ForceUpdateScreen();
     }
 
+    // `AppLocalizations.of` burada GUVENLI: `_Gate`, MaterialApp'in `home`'u
+    // ve temsilci agacin ustunde kurulu (l10n.yaml: nullable-getter false).
+    // widgets/common.dart'taki nullable arama oraya ozgu — o kart l10n'siz
+    // agaclarda da ciziliyor; burada oyle bir durum yok.
+    final l10n = AppLocalizations.of(context);
+
+    // Hata dalinin ortak govdesi: cevrilmis metin + cikis yolu.
+    //
+    // Ham `'$e'` basmak depoda `friendlyError` ile kapatilmis bir kusur
+    // sinifiydi (bkz. core/api.dart) ama bu iki dal kacmisti: testci ilk
+    // acilisin tam ortasinda `[cloud_firestore/permission-denied] ...` gibi
+    // cevrilmemis bir Dart istisnasi goruyordu. Sebep hala gerekli, ama
+    // yalniz hata ayiklama derlemesinde.
+    Widget hataSahnesi(Object hata, VoidCallback tekrarDene,
+        {bool oturumAcik = false}) {
+      assert(() {
+        debugPrint('[RYTHO-GATE] hata dali: $hata');
+        return true;
+      }());
+      return SplashScene(
+        message: friendlyError(hata, l10n),
+        onRetry: tekrarDene,
+        // Hata oturumun kendisinden geliyorsa (iptal edilmis jeton, kural
+        // degisimi) tekrar denemek durumu degistirmez; kok rotada geri tusu
+        // da cikis vermiyor — tek gercek kapi budur.
+        onSignOut: oturumAcik ? () => signOutEverywhere() : null,
+      );
+    }
+
     final auth = ref.watch(authStateProvider);
     final ekran = auth.when(
-      loading: () => const _Splash(),
-      error: (e, _) => _Splash(message: '$e'),
+      loading: () => const SplashScene(),
+      // Kimlik dali: oturum sahibi BILINMIYOR, o yuzden cikis sunulmaz.
+      error: (e, _) => hataSahnesi(e, () => ref.invalidate(authStateProvider)),
       data: (user) {
         if (user == null) return const LoginScreen();
         // Tek cihaz kilidi kapısı (TC-turu K6): bu oturumun bir isteği 409
@@ -239,8 +270,11 @@ class _Gate extends ConsumerWidget {
         }
         final profile = ref.watch(profileProvider);
         return profile.when(
-          loading: () => const _Splash(),
-          error: (e, _) => _Splash(message: '$e'),
+          loading: () => const SplashScene(),
+          // Profil akisi Firestore snapshot'i: `permission-denied` burada
+          // duser ve oturum ACIK oldugu icin cikis da sunulur.
+          error: (e, _) => hataSahnesi(e, () => ref.invalidate(profileProvider),
+              oturumAcik: true),
           data: (data) {
             if (data == null || data['onboardingCompleted'] != true) {
               // Onboarding'e düşmek NADIR olmalı: yalnızca gerçekten yeni
@@ -281,13 +315,24 @@ class _Gate extends ConsumerWidget {
 /// Koreografi: logo belirir (600ms) → yazı, harf aralığı açılarak gelir
 /// (mühür açılması) → usturlap süzülür. Splash zaten oturum çözülürken
 /// görünüyor; sahne süre EKLEMEZ, var olan beklemeyi giydirir.
-class _Splash extends StatelessWidget {
-  const _Splash({this.message});
+class SplashScene extends StatelessWidget {
+  const SplashScene({super.key, this.message, this.onRetry, this.onSignOut});
+
+  /// Gosterilecek metin — HAM istisna degil, `friendlyError` suzgecinden
+  /// gecmis olan (bkz. core/api.dart).
   final String? message;
+
+  /// "Tekrar dene": hataya dusen saglayiciyi yeniden kurar. Mesajli sahne bir
+  /// KAPI oldugu icin en az bir eylem sunmak ZORUNDA (gz-8).
+  final VoidCallback? onRetry;
+
+  /// "Oturumu kapat": oturum kaynakli hatada tek cikis yolu.
+  final VoidCallback? onSignOut;
 
   @override
   Widget build(BuildContext context) {
     final sabit = reduceMotion(context);
+    final l10n = AppLocalizations.of(context);
 
     Widget logo = Image.asset('assets/brand/rytho_logo_512.png',
         width: 72, height: 72, filterQuality: FilterQuality.medium);
@@ -320,6 +365,21 @@ class _Splash extends StatelessWidget {
                    style: RythoText.body(13, color: RythoColors.parchmentDim),
                     textAlign: TextAlign.center),
               ),
+              // Donen usturlap + hata metni, altinda hicbir eylem: testci
+              // uygulamanin bozuldugunu dusunup ekran goruntusu aliyordu
+              // (gz-8). Hiyerarsi DeviceConflictScreen ile ayni: birincil
+              // GoldButton + sonuk TextButton.
+              if (onRetry != null) ...[
+                const SizedBox(height: RythoSpace.lg),
+                GoldButton(text: l10n.retry, onPressed: onRetry),
+              ],
+              if (onSignOut != null)
+                TextButton(
+                  onPressed: onSignOut,
+                  child: Text(l10n.signOut,
+                      style:
+                          RythoText.body(13, color: RythoColors.parchmentDim)),
+                ),
             ],
           ],
         ),

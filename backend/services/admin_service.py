@@ -95,6 +95,11 @@ def _satir(uid: str, veri: dict[str, Any]) -> dict[str, Any]:
     satir["uid"] = uid
     satir["hasPush"] = bool(veri.get("fcmToken"))
     satir["authDisabled"] = bool(veri.get("authDisabled"))
+    # Panel rozeti `onboardingCompleted === false` arıyor; alan onboarding'in
+    # SON adımında yazıldığı için akışı yarım bırakan kullanıcıda HİÇ yok ve
+    # ham `null` rozeti sessizce düşürüyordu — oysa operatöre gösterilmesi
+    # gereken tam o kullanıcı (yokluk = yarım).
+    satir["onboardingCompleted"] = veri.get("onboardingCompleted") is True
     return satir
 
 
@@ -257,6 +262,9 @@ def user_360(uid: str) -> dict[str, Any] | None:
     profil = anlik.to_dict() or {}
     profil["uid"] = uid
     profil["hasPush"] = bool(profil.pop("fcmToken", None))
+    # 360'taki rozet de `=== false` arıyor: alan yoksa anahtar hiç gelmez ve
+    # "onboarding yarım" yanmaz.
+    profil["onboardingCompleted"] = profil.get("onboardingCompleted") is True
 
     # Kimlik tarafı bayrağı: ayna alanı varsa (AD4, backfill/disable ucu
     # yazar) Firebase Auth'a gidilmez; yoksa canlı okunur, o da düşerse
