@@ -423,6 +423,16 @@ gerçekten uygulanıyor: bakiye yetmezse 402 + `X-Paywall-Reason: tokens`.
   (yıllık ürün 12'ye bölünmüş aylık karşılığıyla yazılır). Boşsa MRR 0
   görünür — panelde "fiyat tablosu yok" uyarısı. `infra/deploy-backend.ps1`
   env listesine eklenir; değişince yeniden deploy gerekir.
+- **`RYTHO_STORAGE_BUCKET` (2026-09-18, normalde GEREKMEZ):** hesap silme
+  artık Cloud Storage'daki `avatars/{uid}/` önekini de temizliyor — daha
+  önce profil fotoğrafı kovada kalıyordu ve `infra/storage.rules` gereği
+  girişli her kullanıcı onu okuyabiliyordu. Kova adı AÇIKÇA veriliyor
+  çünkü uygulama `storageBucket` seçeneği olmadan başlatılıyor; varsayılan
+  `{proje}.firebasestorage.app` = `rhytoai.firebasestorage.app` ve canlı
+  kovayla birebir uyuşuyor, yani **elle ayar gerekmiyor.** Kova bir gün
+  taşınır ya da yeniden adlandırılırsa bu env'i ver; verilmezse silme
+  fotoğrafı atlar (log'da "Bulut depolama dosyalari silinemedi" uyarısı
+  görünür) ama kimlik silme YİNE tamamlanır.
 - **Denetim izi fail-closed (AD3):** sil / devre dışı / eşik / hakediş
   ödemesi / dışa aktarım önce `adminAudit`'e `phase:intent` yazar;
   yazılamazsa **503 "Denetim izi yazılamadı; işlem yapılmadı."** ve eylem
