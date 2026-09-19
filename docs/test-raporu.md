@@ -298,6 +298,38 @@ users/{uid}/private/subscription, cüzdan dokümanı, Crashlytics.
   Kurallar + backend deploy edildi (rev 00050). Cihaz regresyonu: arkadaş
   ekle/kabul + kullanıcı adı arama çalışmalı (senaryo 35).
 
+### B9 — Silinen hesap "en iyi çaba" aynalarıyla DİRİLİYOR (2026-09-18, ölçüldü)
+
+- Ölçüm: üretim `rhytoai` projesinde `users` koleksiyonunda **19 doküman**
+  var ama yalnız **12'sinin Firebase Auth karşılığı var**. Yetim 7'nin
+  dördü `{appBuild: 41}` taşıyor — yani gerçek cihazlar kimlikli istek
+  atmış, sonra Auth hesapları silinmiş, geriye doküman kalmış. (Kalan üçü
+  `dev-user`/`u1`/`u2`, ayrı sebep: bkz. aşağıdaki not.)
+- Mekanizma: `delete_account` `users/{uid}`'yi siliyor, ama Firebase
+  kimlik jetonları **bir saate kadar geçerli kalıyor**. O pencerede gelen
+  tek kimlikli istek `core/auth.get_current_user` içinden iki "en iyi
+  çaba" aynasını tetikliyor ve **ikisi de `set(..., merge=True)`
+  kullanıyor** — Firestore'da bu, doküman yoksa onu YARATIR:
+    - `core/app_gate.remember_build` → `{"appBuild": N}`
+    - `services/search_mirror.ensure` → ayna alanları
+- Etkisi: (a) panelin kullanıcı sayısı şişiyor (12 yerine 19 görünüyor),
+  (b) hukuk metni "hesabını silersen her şey silinir" diyor, oysa uid'li
+  bir iskelet doküman geri geliyor. Kişisel veri taşımıyor (yalnız sürüm
+  numarası ve boş dizeler), o yüzden ağır değil — ama beyanla çelişiyor.
+- Düzeltmenin inceliği (bu yüzden ayrı tur): `set` → `update`'e çevirmek
+  tek başına yetmez, çünkü YENİ kullanıcıda `users/{uid}`'yi istemci
+  (`language_sync._firestoreWrite`) yaratıyor ve ilk kimlikli istek ondan
+  ÖNCE gelebilir; o hâlde ayna sessizce hiç yazılmaz. İki yazıcı da aynı
+  kuralı paylaşmalı ve "silinmiş uid" ile "henüz yaratılmamış uid"
+  ayırt edilmeli.
+- Durum: ⬜ açık. Kod değişikliği YOK; yalnız ölçüm ve mekanizma kayda
+  geçti.
+
+**Not — `dev-user`/`u1`/`u2`:** bu üçü diriltme değil, testlerin üretim
+Firestore'una yazmasıydı; kökü kapandı (bkz. `backend/tests/conftest.py`
+`firestore_hermetik`). Dokümanların kendisi üretimde DURUYOR ve
+silinmeleri sahibin kararı.
+
 ## 2. tur kapsamı
 
 - RYTHO_TOKENS_ENFORCE=1 → jeton tükenme/yetersiz bakiye UX'i
