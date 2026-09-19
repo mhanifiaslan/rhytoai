@@ -330,6 +330,34 @@ Firestore'una yazmasıydı; kökü kapandı (bkz. `backend/tests/conftest.py`
 `firestore_hermetik`). Dokümanların kendisi üretimde DURUYOR ve
 silinmeleri sahibin kararı.
 
+### B10 — 402 kapısı ve cüzdan tazelemesi Riverpod HALKASINA çarpıyor (ölçüldü, UYGULANMADI)
+
+- Denetim, `apiProvider`'ın interceptor'larından `walletProvider` /
+  `subscriptionProvider`'a dokunan iki düzeltmeyi (para-3, para-4) deponun
+  KENDİ Riverpod sürümüyle koşturdu ve şunu ölçtü:
+    `ref.read(b.future)`  → `CircularDependencyError` (b canlı olsun olmasın)
+    `ref.invalidate(b)`   → b CANLI ise `CircularDependencyError`
+  Sebep: `walletProvider` (`core/wallet.dart`) ve `subscriptionProvider`
+  (`core/subscription.dart`) İKİSİ DE gövdesinde `ref.watch(apiProvider)`
+  yapıyor; interceptor ise `apiProvider`'ın KENDİ `ref`'ini kullanıyor.
+- Açık tür bildirimi bunu KURTARMIYOR: o yalnız derleyicinin
+  `top_level_cycle` hatasını kapatır, çalışma zamanındaki halkayı değil.
+- Ürün sonucu: para-4'ün yetki okuması her çağrıda fırlar → kapının kendi
+  `catch`i `yetkili=false` bırakır → ödemiş kullanıcı yine kırmızı "abone
+  ol" cümlesini görür. para-3'te bakiye hapı ekrandayken (tazelemenin
+  gerektiği TEK durum) invalidate fırlar ve hap bayat kalır.
+- Neden hiçbir bekçi görmedi: on üç testin hepsi geri çağrıyı ENJEKTE
+  ediyor (`() async => true`), gerçek `ref` kapanışı hiçbir yerde koşmuyor.
+- Bugün depoda `apiProvider` interceptor'larından dokunulan sağlayıcıların
+  hiçbiri (`forceUpdateProvider`, `deviceConflictProvider`,
+  `appBuildProvider`) `apiProvider`'ı İZLEMİYOR — halka bu iki düzeltmeyle
+  İLK KEZ kurulacaktı.
+- Durum: ⬜ açık, UYGULANMADI. Mekanizma değişmeli: interceptor
+  `apiProvider`'ın ref'i yerine ayrı bir kapsam/`ProviderContainer`
+  üzerinden dokunmalı (ölçümde `kapsam.read(...)` sorunsuz çalışıyor).
+  Bulgunun kendisi (harcamadan sonra bayat bakiye; ödemiş kullanıcıya
+  paywall) GERÇEK ve açık kalıyor.
+
 ## 2. tur kapsamı
 
 - RYTHO_TOKENS_ENFORCE=1 → jeton tükenme/yetersiz bakiye UX'i
