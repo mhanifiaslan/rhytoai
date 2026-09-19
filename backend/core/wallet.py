@@ -271,26 +271,35 @@ def spend(uid: str, feature: str, *, lang: str = DEFAULT_LANG) -> None:
     )
 
 
-def refund_spend(uid: str, feature: str) -> None:
+def refund_spend(uid: str, feature: str) -> bool:
     """LLM üretemediyse bedeli iade eder — kullanıcı almadığı şeye ödemez.
 
     İade ``purchased``'a yazılır: hangi kovadan düştüğünü geri izlemek
     transaction dışında güvenilmez ve kullanıcı LEHİNE yanılmak doğrudur
     (purchased devrettiği için iade asla yanmaz).
+
+    DÖNÜŞ: bakiye artışı GERÇEKTEN yazıldıysa ``True``.
+
+    ⚠️ Bu dönüş bir süs değil: istemci artık kullanıcıya "harcanan jetonun
+    iade edildi" CÜMLESİNİ kuruyor (gz-2). Eskiden çağıran taraf yalnız
+    "iade geri çağrısı geçildi mi" bilgisine bakıyordu, yani iade yazımı
+    düşüp `logger.warning` ile yutulduğunda ekranda YİNE "iade edildi"
+    yazıyordu — ödemiş kullanıcıya verilen yalan bir söz. Defterin
+    düşmesi ``True``'yu bozmaz: iade YAPILDI, yalnız izi eksik kaldı.
     """
     cost = TOKEN_COSTS.get(feature)
     if not cost:
-        return
+        return False
     ref = _wallet_ref(uid)
     if ref is None:
-        return
+        return False
     try:
         from google.cloud import firestore as gcf
         ref.set({"purchased": gcf.Increment(cost), "updatedAt": _now()},
                 merge=True)
     except Exception as exc:
         logger.warning("Token iadesi yapılamadı (%s/%s): %s", uid, feature, exc)
-        return
+        return False
     try:
         # İade defteri: bakiye artışının izi. Ayrı try — defter düşerse
         # iade YAPILDI, yalnız iz eksik kalır; log bunu doğru söylemeli.
@@ -300,6 +309,8 @@ def refund_spend(uid: str, feature: str) -> None:
         })
     except Exception as exc:
         logger.warning("İade defteri yazılamadı (%s/%s): %s", uid, feature, exc)
+    # Defter düşse de iade YAPILDI: kullanıcının bakiyesi arttı.
+    return True
 
 
 def spender(uid: str, feature: str, *, lang: str = DEFAULT_LANG) -> Callable[[], None]:
@@ -357,7 +368,7 @@ def charge_metered(user, feature: str, free_limit: int,
 def metered_callbacks(user, feature: str, free_limit: int,
                       *, lang: str = DEFAULT_LANG,
                       ) -> tuple[Callable[[], None] | None,
-                                 Callable[[], None] | None]:
+                                 Callable[[], bool] | None]:
     """ÖNBELLEKLİ ölçülü uçlar (iching) için harcama geri çağrıları.
 
     `charge_metered`'dan farkı: burada hiçbir şey HEMEN harcanmaz — dönen
@@ -373,8 +384,11 @@ def metered_callbacks(user, feature: str, free_limit: int,
     def _spend() -> None:
         spend(user.uid, feature, lang=lang)
 
-    def _refund() -> None:
-        refund_spend(user.uid, feature)
+    def _refund() -> bool:
+        # Dönüş TAŞINIR: `_cached_generate` bununla "jetonun iade edildi"
+        # cümlesini kuruyor (gz-2). Yutarsak iching yolunda bayrak her
+        # zaman False olur ve iade edilen jeton kullanıcıya SÖYLENMEZ.
+        return refund_spend(user.uid, feature)
 
     # KT2: charge_metered ile aynı ayrım — deneme kullanıcısı günlük
     # ücretsiz hakkını korur (gerekçe yukarıda).
@@ -614,13 +628,86 @@ def reset_allowance(uid: str, expires_at: dt.datetime | None) -> None:
 _WALLET_FIELDS = ("allowance", "allowanceExpiresAt", "purchased")
 
 
-def transfer_wallet(client, sources: list[str], targets: list[str]) -> None:
+def _devir_govdesi(anlik, kaynak: dict[str, Any]) -> dict[str, Any]:
+    """Devirde hedefe yazılacak gövde: satın alınan bakiye TOPLANIR.
+
+    Eski hâli ``{**kayit}`` + ``merge=True`` idi ve merge ALAN düzeyinde
+    birleştirir: hedefte 300 kredi varken kaynaktan 100 gelince hedef 100'e
+    DÜŞÜYORDU — yok olan 300 kredi parayla alınmıştı.
+
+    ``allowance`` PARA DEĞİL, aylık haktır ve devretmez; iki dönemden İLERİ
+    tarihli olanı geçerli sayılır (dönem sonunda yanacak olanı toplamak
+    uydurma bakiye üretirdi). Bu kural devri aynı zamanda tekrara dayanıklı
+    kılar: TRANSFER olayının olay kimliğiyle idempotency koruması YOKTUR, ama
+    kaynak ilk geçişte sıfırlandığı için toplama 0 ekler ve dönem işareti
+    eşitlendiği için hak ikinci kez yazılmaz.
+
+    Bilinen daraltma: kaynakta ``allowance`` var ama ``allowanceExpiresAt``
+    YOKSA hak artık taşınmaz (``_ts(None)`` iki tarafta da 0). Eski
+    körlemesine merge taşıyordu; dar bir eski-veri hâli, bilinçli kabul.
+    """
+    mevcut = (anlik.to_dict() or {}) if getattr(anlik, "exists", False) else {}
+    govde: dict[str, Any] = {
+        "purchased": (int(mevcut.get("purchased", 0) or 0)
+                      + int(kaynak.get("purchased", 0) or 0)),
+        "updatedAt": _now(),
+    }
+    if _ts(kaynak.get("allowanceExpiresAt")) > _ts(
+            mevcut.get("allowanceExpiresAt")):
+        govde["allowance"] = int(kaynak.get("allowance", 0) or 0)
+        govde["allowanceExpiresAt"] = kaynak.get("allowanceExpiresAt")
+    return govde
+
+
+def transfer_wallet(client, sources: list[str], targets: list[str],
+                    *, event_id: str | None = None) -> None:
     """TRANSFER olayında cüzdanı da taşır — satın alınmış bakiye kullanıcının
     parasıdır, kimlik değişiminde kaybolamaz.
 
-    Yalnızca [_WALLET_FIELDS] taşınır ve kaynakta bu alanlardan hiçbiri
-    yoksa hedefe HİÇ yazılmaz: cüzdanı olmayan bir kimlikten devir, hedefin
-    mevcut cüzdanını sıfırlamamalı.
+    Yalnızca [_WALLET_FIELDS] taşınır ve kaynakların HİÇBİRİNDE bu
+    alanlardan biri yoksa hedefe HİÇ yazılmaz: cüzdanı olmayan bir kimlikten
+    devir, hedefin mevcut cüzdanını sıfırlamamalı.
+
+    Hedefe yazım OKU-TOPLA-YAZ'dır ([_devir_govdesi]): ``purchased``
+    toplanır, ``allowance``ta ileri tarihli dönem kazanır.
+
+    Transaction KULLANILMIYOR ve gerekçe "tek yazan webhook işleyicisi"
+    DEĞİL — o ifade yanlıştı: bu dokümana sıradan API istekleri de yazıyor
+    ([_spend_txn] her harcamada ``purchased``ı düşürüyor, [credit_pack] ve
+    [refund_spend] de yazıyor). Gerçek gerekçe: oku-topla-yaz'ın açtığı yarış
+    penceresine düşmek için hedefin, kimliğin devredildiği milisaniyelerde
+    ikinci bir cihazda harcama yapması gerekir; TRANSFER nadir bir olay ve bu
+    kesişim bilinçli kabul edildi. Kapatılacaksa `client.transaction()` ile
+    ayrı bir iş.
+
+    Çok HEDEFLİ TRANSFER'de her hedef kaynakların TAM toplamını alır, yani
+    kredi hedef sayısı kadar çoğalır (eski kod da böyleydi; artık hedefin
+    mevcut bakiyesinin ÜSTÜNE eklendiği için adı konuyor). Pratikte RevenueCat
+    tek hedef gönderiyor.
+
+    Çağıran taraf bu fonksiyonu abonelik kaydının VARLIĞINDAN bağımsız
+    çağırmak zorundadır (bkz. api/billing.py `_handle_transfer`) — paket almak
+    için abonelik şart değil, yani abonelik kaydı olmayan bir kimliğin de
+    bakiyesi olabilir.
+
+    SIRA: önce HEDEFLER yazılır, kaynaklar EN SONDA sıfırlanır — ve hedef
+    yazımındaki hata YUTULMAZ, fırlatılır.
+
+    ⚠️ Tersi ölçüldü ve kalıcı kredi kaybı üretiyordu. Eski sırada kaynaklar
+    ÖNCE sıfırlanıyor, hedefe yazım ``except Exception: logger.warning`` ile
+    yutuluyor, webhook 200 dönüyor ve RevenueCat bir daha DENEMİYORDU. Geçici
+    bir Firestore hatasında: 1. geçişte kaynaklar 0'landı ve hedef yazılamadı;
+    Firestore düzelince tekrar gelen olay hedefe 350 değil **0** yazdı —
+    350 kredi kalıcı olarak yok. [credit_pack] tam bu yüzden fırlatıyor ve
+    gerekçesi orada yazılı: "orada kaybedilen tek istek, burada kullanıcının
+    parası." Devir de kullanıcının parasıdır.
+
+    TEKRAR KORUMASI artık kaynağın sıfır olmasına DEĞİL DEFTERE bağlı:
+    ``event_id`` verildiğinde hedefin ``ledger/transfer-{event_id}`` işareti
+    aranır ve varsa o hedef atlanır. Sıra tersine döndüğü için "kaynak zaten
+    sıfır, tekrar 0 ekler" güvencesi ortadan kalkıyordu; defter onun yerini
+    alıyor. ``event_id`` YOKSA (eski çağıran) koruma da yok — o hâlde tekrar
+    çift kredi verebilir, bu yüzden çağıran olay kimliğini GEÇMELİ.
 
     Bilinen sınır (AP-turu): ledger alt koleksiyonu TAŞINMAZ — kredi
     geçmişi eski uid'de kalır, hedefte idempotency işaretleri sıfırlanır.
@@ -630,23 +717,66 @@ def transfer_wallet(client, sources: list[str], targets: list[str]) -> None:
         return (client.collection("users").document(uid)
                 .collection("private").document("wallet"))
 
-    kayit: dict[str, Any] | None = None
+    # BÜTÜN kaynaklar TOPLANIR. Eski hâli "ilk var olan kaynak kazanır"dı
+    # (``if snapshot.exists and kayit is None``) ama döngü HER kaynağı
+    # sıfırlıyordu: ikinci kaynağın bakiyesi hiçbir yere gitmeden yok
+    # oluyordu. Ölçüldü: a=100, b=250, hedef=0 → hedef 100, 250 kredi
+    # buharlaştı. Sıcak yol, çünkü RevenueCat'in ``transferred_from`` alanı
+    # LİSTEDİR (anonim kimlik + eski uid birlikte gelebilir).
+    toplam = 0
+    hak: dict[str, Any] = {}
+    cuzdan_bulundu = False
     for kaynak in sources:
         try:
             snapshot = _ref(kaynak).get()
-            if snapshot.exists and kayit is None:
-                ham = snapshot.to_dict() or {}
-                alanlar = {k: ham[k] for k in _WALLET_FIELDS if k in ham}
-                kayit = alanlar or None
+            if not snapshot.exists:
+                # Sıfırlama YALNIZ var olan cüzdana: olmayanı sıfırlamak boş
+                # bir doküman YARATMAKTAN başka iş yapmaz.
+                continue
+            ham = snapshot.to_dict() or {}
+            if any(k in ham for k in _WALLET_FIELDS):
+                cuzdan_bulundu = True
+            toplam += int(ham.get("purchased", 0) or 0)
+            if _ts(ham.get("allowanceExpiresAt")) > _ts(
+                    hak.get("allowanceExpiresAt")):
+                hak = {"allowance": int(ham.get("allowance", 0) or 0),
+                       "allowanceExpiresAt": ham.get("allowanceExpiresAt")}
+        except Exception as exc:
+            # Okunamayan kaynak ATLANIR: bir kaynağın erişilemez olması
+            # diğerlerinin parasını rehin almamalı.
+            logger.warning("Cüzdan devri (kaynak %s) okunamadı: %s",
+                           kaynak, exc)
+
+    if not cuzdan_bulundu:
+        return
+    kayit = {**hak, "purchased": toplam}
+
+    # 1) HEDEFLER. Buradaki hata YUTULMAZ — fırlatırsa webhook 500 görür ve
+    #    RevenueCat yeniden dener. Kaynaklar henüz sıfırlanmadığı için o
+    #    tekrar parayı bulur.
+    for hedef in targets:
+        hedef_ref = _ref(hedef)
+        defter = (hedef_ref.collection("ledger")
+                  .document(f"transfer-{event_id}") if event_id else None)
+        if defter is not None and getattr(defter.get(), "exists", False):
+            # Bu olay bu hedefe zaten işlendi: tekrar çift kredi vermez.
+            continue
+        # OKU-TOPLA-YAZ: `merge=True` ALAN düzeyinde birleştirdiği için düz
+        # yazım hedefin bakiyesini EZİYORDU (bkz. _devir_govdesi). Hedef
+        # okuması döngünün İÇİNDE: her hedef kendi bakiyesiyle toplanır.
+        hedef_ref.set(_devir_govdesi(hedef_ref.get(), kayit), merge=True)
+        if defter is not None:
+            defter.set({"type": "transfer", "from": list(sources),
+                        "amount": int(kayit.get("purchased", 0) or 0),
+                        "at": _now()})
+
+    # 2) KAYNAKLAR en sonda. Buraya gelindiyse para hedefte.
+    for kaynak in sources:
+        try:
             _ref(kaynak).set({"allowance": 0, "purchased": 0,
                               "updatedAt": _now()}, merge=True)
         except Exception as exc:
-            logger.warning("Cüzdan devri (kaynak %s) hatası: %s", kaynak, exc)
-
-    if not kayit:
-        return
-    for hedef in targets:
-        try:
-            _ref(hedef).set({**kayit, "updatedAt": _now()}, merge=True)
-        except Exception as exc:
-            logger.warning("Cüzdan devri (hedef %s) hatası: %s", hedef, exc)
+            # Sıfırlama düşerse para hedefte DURUYOR; en kötüsü kaynakta da
+            # görünmeye devam etmesi. Defter işareti tekrarı zaten kesiyor.
+            logger.warning("Cüzdan devri (kaynak %s) sıfırlanamadı: %s",
+                           kaynak, exc)

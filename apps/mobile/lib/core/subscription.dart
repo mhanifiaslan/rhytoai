@@ -209,21 +209,37 @@ bool paywallKarariVerilebilir(AsyncValue<SubscriptionStatus> durum) =>
 /// değişir. Karar: **sadece aylık**.
 const List<PackageType> kOfferedPackageTypes = [PackageType.monthly];
 
+/// Mağazadan teklifleri getiren işlev — TEST DİKİŞİ.
+///
+/// Dikiş olmadan bu sağlayıcının GERÇEK gövdesi hiç koşmuyor: `Purchases`
+/// eklentisi `flutter test` içinde çağrılamaz ve dart-define verilmediği için
+/// `billingConfigured` false. Yani "hata yutuluyor mu" sorusunu hiçbir test
+/// soramıyordu — yutmanın geri gelmesi sessiz kalırdı.
+typedef TeklifGetirici = Future<Offerings> Function();
+
+/// `null` = üretim yolu (mağaza anahtarı yoksa boş liste).
+final teklifGetiriciProvider = Provider<TeklifGetirici?>((_) => null);
+
 /// Satın alınabilir paketler.
+///
+/// Hata YUTULMAZ — bilerek. Eskiden mağaza/ağ hatasında BOŞ LİSTE dönüyordu
+/// ve iki sonucu vardı: (1) bu sağlayıcı auto-dispose DEĞİL (Riverpod 3
+/// varsayılanı), yani boş liste oturum boyunca önbellekte kalıyor ve
+/// paywall'ı kapatıp açmak kurtarmıyordu — tek çıkış uygulamayı yeniden
+/// başlatmaktı; (2) ekran "Mağazada tanımlı paket bulunamadı" diyerek ağ
+/// sorununu mağazaya yıkıyordu. Fırlatınca `paywall_screen.dart`'taki
+/// `error:` dalı canlanır ve kullanıcı yeniden deneme düğmesi görür.
 final offeringsProvider = FutureProvider<List<Package>>((ref) async {
-  if (!billingConfigured) return const [];
-  try {
-    final offerings = await Purchases.getOfferings();
-    final all = offerings.current?.availablePackages ?? const <Package>[];
-    final filtered = all
-        .where((p) => kOfferedPackageTypes.contains(p.packageType))
-        .toList();
-    // Teklifte hiç eşleşme yoksa kullanıcıyı boş ekranla baş başa bırakma.
-    return filtered.isEmpty ? all : filtered;
-  } catch (e) {
-    debugPrint('Paketler alınamadı: $e');
-    return const [];
-  }
+  final getirici = ref.watch(teklifGetiriciProvider);
+  if (getirici == null && !billingConfigured) return const [];
+  final offerings =
+      getirici == null ? await Purchases.getOfferings() : await getirici();
+  final all = offerings.current?.availablePackages ?? const <Package>[];
+  final filtered = all
+      .where((p) => kOfferedPackageTypes.contains(p.packageType))
+      .toList();
+  // Teklifte hiç eşleşme yoksa kullanıcıyı boş ekranla baş başa bırakma.
+  return filtered.isEmpty ? all : filtered;
 });
 
 /// Satın alma/geri yükleme ÖNCESİ RevenueCat kimliğini garantiye alır.

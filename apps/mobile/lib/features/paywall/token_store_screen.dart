@@ -169,8 +169,12 @@ class _TokenStoreScreenState extends ConsumerState<TokenStoreScreen> {
                 padding: EdgeInsets.all(RythoSpace.xl),
                 child: Center(child: AstrolabeSpinner()),
               ),
+              // Mağaza hatası artık BURAYA da düşüyor (sağlayıcı yutmuyor)
+              // ve çeviri paywall'la AYNI kapıdan geçiyor: `friendlyError`
+              // PlatformException'ı tanımadığı için ağ hatasında "beklenmeyen
+              // sorun" diyordu, paywall doğru metni gösterirken.
               error: (e, _) => ErrorCard(
-                message: friendlyError(e, l10n),
+                message: magazaVeyaAgHatasi(e, l10n),
                 onRetry: () => ref.invalidate(tokenPacksProvider),
               ),
               data: (urunler) => urunler.isEmpty

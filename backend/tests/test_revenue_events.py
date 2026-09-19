@@ -182,8 +182,11 @@ def depo(monkeypatch):
         monkeypatch.setattr(f"api.billing.wallet.{ad}", lambda *a, **k: True)
     monkeypatch.setattr("api.billing.wallet.reset_allowance",
                         lambda uid, exp: None)
+    # `event_id` anahtar sozcugu: devrin tekrar korumasi artik deftere bagli
+    # (bkz. core/wallet.transfer_wallet). Sahte onu KABUL ETMELI, yoksa
+    # gercek imza degisikligi burada TypeError'a donusur.
     monkeypatch.setattr("api.billing.wallet.transfer_wallet",
-                        lambda c, s, t: None)
+                        lambda c, s, t, **k: None)
     sahte = SahteFirestore({"users/u": {"displayName": "U"},
                             "users/hedef": {"displayName": "H"}})
     monkeypatch.setattr("api.billing.firestore_client.get_client",

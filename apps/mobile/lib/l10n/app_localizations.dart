@@ -1424,6 +1424,18 @@ abstract class AppLocalizations {
   /// **'Gökyüzüne şu an ulaşılamıyor.'**
   String get errorSkyUnavailable;
 
+  /// No description provided for @reportUnavailable.
+  ///
+  /// In tr, this message translates to:
+  /// **'Okumayı şu an üretemedik. Birkaç saniye sonra tekrar dene.'**
+  String get reportUnavailable;
+
+  /// No description provided for @reportUnavailableRefunded.
+  ///
+  /// In tr, this message translates to:
+  /// **'Raporu şu an üretemedik; harcanan jeton iade edildi. Birkaç saniye sonra tekrar dene.'**
+  String get reportUnavailableRefunded;
+
   /// No description provided for @promoTitle.
   ///
   /// In tr, this message translates to:

@@ -754,6 +754,14 @@ class AppLocalizationsTr extends AppLocalizations {
   String get errorSkyUnavailable => 'Gökyüzüne şu an ulaşılamıyor.';
 
   @override
+  String get reportUnavailable =>
+      'Okumayı şu an üretemedik. Birkaç saniye sonra tekrar dene.';
+
+  @override
+  String get reportUnavailableRefunded =>
+      'Raporu şu an üretemedik; harcanan jeton iade edildi. Birkaç saniye sonra tekrar dene.';
+
+  @override
   String get promoTitle => 'Yıldızların ötesine geç ✨';
 
   @override

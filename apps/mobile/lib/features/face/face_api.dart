@@ -7,6 +7,7 @@ library;
 
 import 'package:dio/dio.dart';
 
+import '../../core/api.dart' show RaporUretilemedi;
 import 'face_capture_screen.dart';
 
 /// Ölçümleri uca gönderir ve okumayı döndürür.
@@ -19,5 +20,10 @@ Future<String> fetchFirasaReading(Dio dio, FaceCaptureResult sonuc) async {
     '/api/v1/face/reading',
     data: sonuc.toJson(),
   );
+  // Yedek metin firaset okumasi SAYILMAZ (gz-2): uc cumlelik hazir paragrafi
+  // okuma gibi gostermek, jetonun iade edildigini de saklamak olurdu.
+  if (yanit.data?['fallback'] == true) {
+    throw RaporUretilemedi(jetonIadeEdildi: yanit.data?['refunded'] == true);
+  }
   return (yanit.data?['reading'] as String?)?.trim() ?? '';
 }

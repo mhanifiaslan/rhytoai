@@ -18,6 +18,7 @@ import '../../core/api.dart';
 import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../widgets/atlas_widgets.dart' show AstrolabeSpinner;
+import '../../widgets/common.dart' show ErrorCard;
 import '../../widgets/glass.dart';
 import '../../widgets/motion.dart';
 import '../profile/legal_page.dart' show LegalPage, privacyPolicySections;
@@ -254,8 +255,29 @@ class FaceReadingScreen extends ConsumerStatefulWidget {
 }
 
 class _FaceReadingScreenState extends ConsumerState<FaceReadingScreen> {
-  late final Future<String> _okuma =
+  /// `final` DEGIL (gz-2): yedek metin artik hata olarak duser ve hata
+  /// kartindaki "birkac saniye sonra tekrar dene" cumlesinin ARKASINDA bir
+  /// yol olmasi gerekiyor. Sabit bir future yeniden kurulamadigi icin tek
+  /// cikis ekrandan cikip YUZU BASTAN CEKMEKTI — oysa olculen oranlar
+  /// elimizde, yeniden istenecek olan yalniz okuma.
+  late Future<String> _okuma;
+
+  @override
+  void initState() {
+    super.initState();
+    _okuma = _iste();
+  }
+
+  Future<String> _iste() =>
       fetchFirasaReading(ref.read(apiProvider), widget.result);
+
+  /// Blok govde: ok govdesi atamanin DEGERINI (Future) dondurur ve
+  /// `setState` "callback bir Future dondurdu" diye firlatir.
+  void _tekrarDene() {
+    setState(() {
+      _okuma = _iste();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -273,9 +295,14 @@ class _FaceReadingScreenState extends ConsumerState<FaceReadingScreen> {
               return Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
-                  child: Text(friendlyError(snap.error ?? Exception(), l10n),
-                      textAlign: TextAlign.center,
-                      style: RythoText.body(14)),
+                  // Duz metin CIKMAZ SOKAKTI (gz-2): metin "birkac saniye
+                  // sonra tekrar dene" diyor ama dokunacak bir sey yoktu.
+                  // Yeniden denenen yalniz OKUMA istegi; cekim tekrarlanmaz.
+                  child: ErrorCard(
+                    message: friendlyError(snap.error ?? Exception(), l10n),
+                    screen: 'atlas',
+                    onRetry: _tekrarDene,
+                  ),
                 ),
               );
             }

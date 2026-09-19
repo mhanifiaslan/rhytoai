@@ -209,6 +209,11 @@ def daily(data: BirthData,
             today=entitlements.user_local_date(user.uid))
         return {"status": "success", "data": {
             "reading": report["text"], "cached": report.get("cached", False),
+            # Yedek metin okuma gibi DONMEZ (gz-2): istemci bunu gorup
+            # "simdi uretemedik" der. /horoscope'taki satirin aynisi.
+            # Gunluk okuma jeton harcamaz — `refunded` burada False gelir.
+            "fallback": report.get("fallback", False),
+            "refunded": report.get("refunded", False),
             "sun_sign": natal["sun_sign"], "moon_sign": natal["moon_sign"],
             "ascendant": natal["ascendant"],
             "moon_phase": sky["moon_phase"],
@@ -237,6 +242,9 @@ def natal(data: BirthData,
             refund=lambda: wallet.refund_spend(user.uid, "natal"))
         return {"status": "success", "data": {
             "chart": prompts.localize_chart(lang, chart),
+            # Yedek metin rapor gibi DONMEZ (gz-2); jeton iadesi de soylenir.
+            "fallback": report.get("fallback", False),
+            "refunded": report.get("refunded", False),
             "report": report["text"],
         }}
     except HTTPException:
@@ -266,6 +274,12 @@ def bazi(data: BirthData,
         # Ekranda gosterilen element/hayvan/On Tanri adlari da dile gore.
         return {"status": "success", "data": {
             "chart": prompts.localize_bazi(lang, chart),
+            # Yedek metin rapor gibi DONMEZ (gz-2). BaZi'de bayraklar
+            # HARITAYLA BIRLIKTE gider: harita deterministik hesap, yalniz
+            # yorum uretilemedi — sekme haritayi cizip yorumun yerine durust
+            # cumleyi koyuyor.
+            "fallback": report.get("fallback", False),
+            "refunded": report.get("refunded", False),
             "report": report["text"],
         }}
     except HTTPException:

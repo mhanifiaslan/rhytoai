@@ -89,24 +89,34 @@ final walletProvider = FutureProvider<WalletStatus>((ref) async {
   }
 });
 
+/// Mağazadan ürünleri getiren işlev — TEST DİKİŞİ
+/// ([offeringsProvider]'ın `TeklifGetirici`si ile aynı gerekçe).
+typedef UrunGetirici = Future<List<StoreProduct>> Function(
+    List<String> kimlikler);
+
+/// `null` = üretim yolu.
+final urunGetiriciProvider = Provider<UrunGetirici?>((_) => null);
+
 /// Mağazadaki token paketleri (fiyat metinleri mağazadan gelir).
 ///
 /// Sıra [kTokenPackIds] sırasıyla döner: küçükten büyüğe.
+///
+/// Hata YUTULMAZ ([offeringsProvider] ile aynı gerekçe): boş liste oturum
+/// boyunca önbellekte kalıyor ve kullanıcı yeniden deneme düğmesi OLMAYAN bir
+/// boşluk görüyordu — `ErrorCard(onRetry: …)` dalı erişilemezdi.
 final tokenPacksProvider = FutureProvider<List<StoreProduct>>((ref) async {
-  if (!billingConfigured) return const [];
-  try {
-    final products = await Purchases.getProducts(
-      kTokenPackIds,
-      productCategory: ProductCategory.nonSubscription,
-    );
-    products.sort((a, b) => kTokenPackIds
-        .indexOf(a.identifier)
-        .compareTo(kTokenPackIds.indexOf(b.identifier)));
-    return products;
-  } catch (e) {
-    debugPrint('Token paketleri alınamadı: $e');
-    return const [];
-  }
+  final getirici = ref.watch(urunGetiriciProvider);
+  if (getirici == null && !billingConfigured) return const [];
+  final products = getirici == null
+      ? await Purchases.getProducts(
+          kTokenPackIds,
+          productCategory: ProductCategory.nonSubscription,
+        )
+      : await getirici(kTokenPackIds);
+  products.sort((a, b) => kTokenPackIds
+      .indexOf(a.identifier)
+      .compareTo(kTokenPackIds.indexOf(b.identifier)));
+  return products;
 });
 
 /// Paket satın alır ve sunucu bakiyeyi görene kadar bekler.

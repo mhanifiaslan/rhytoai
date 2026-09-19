@@ -450,3 +450,222 @@ def test_onbellekli_kapi_pesin_harcamaz(depo, monkeypatch):
     assert _cuzdan(depo)["allowance"] == 8  # iching bedeli 2
     refund_cb()
     assert _cuzdan(depo)["purchased"] == 2  # iade purchased'a
+
+
+# ---------------------------------------------------------------------------
+# Kimlik devri (TRANSFER)
+#
+# Devir PARA taşır: aynı Play hesabıyla farklı Firebase hesapları arasında
+# geçiş sıradan bir davranıştır ve TRANSFER'i tetikler. Buradaki testler
+# `transfer_wallet`'ın GERÇEK gövdesini koşar (monkeypatch YOK) ve sahte depo
+# TAM YOLLA anahtarlanır — kümenin en pahalı satırı olan oku-topla-yaz tam
+# burada ölçülüyor.
+# ---------------------------------------------------------------------------
+
+def test_devir_IKI_kaynagi_da_toplar(depo):
+    """RevenueCat'in `transferred_from` alanı LİSTEDİR (anonim kimlik + eski
+    uid birlikte gelebilir). Eski kod yalnız İLK var olan kaynağın cüzdanını
+    alıyor ama HER kaynağı sıfırlıyordu: ölçüldü, a=100 + b=250 devrinde hedef
+    100 aldı ve 250 kredi buharlaştı."""
+    depo["users/a/private/wallet"] = {"allowance": 0, "purchased": 100}
+    depo["users/b/private/wallet"] = {"allowance": 0, "purchased": 250}
+
+    wallet.transfer_wallet(SahteClient(depo), ["a", "b"], ["yeni"])
+
+    assert _cuzdan(depo, "yeni")["purchased"] == 350
+    # Aynı bakiye iki kimlikte birden duramaz.
+    assert _cuzdan(depo, "a")["purchased"] == 0
+    assert _cuzdan(depo, "b")["purchased"] == 0
+
+
+def test_devir_cok_kaynakta_ileri_donemli_hakki_secer(depo):
+    """Çok kaynakta `allowance` de TOPLANMAZ: dönem sonunda yanacak iki hakkı
+    toplamak uydurma bakiye üretirdi; ileri tarihli dönem kazanır."""
+    ileri = dt.datetime(2026, 10, 1, tzinfo=dt.timezone.utc)
+    depo["users/a/private/wallet"] = {
+        "allowance": 40, "allowanceExpiresAt": _DONEM, "purchased": 0}
+    depo["users/b/private/wallet"] = {
+        "allowance": 250, "allowanceExpiresAt": ileri, "purchased": 0}
+
+    wallet.transfer_wallet(SahteClient(depo), ["a", "b"], ["yeni"])
+
+    hedef = _cuzdan(depo, "yeni")
+    assert hedef["allowance"] == 250
+    assert hedef["allowanceExpiresAt"] == ileri
+
+
+def test_devir_hedefin_bakiyesini_TOPLAR(depo):
+    """`merge=True` ALAN düzeyinde birleştirir, yani eski yazım hedefin
+    `purchased` alanını EZİYORDU — hedefte 300, kaynakta 100 varken hedef
+    100'e düşüyor ve 300 kredi yok oluyordu."""
+    depo["users/eski/private/wallet"] = {"allowance": 0, "purchased": 100}
+    depo["users/yeni/private/wallet"] = {"allowance": 0, "purchased": 300}
+
+    wallet.transfer_wallet(SahteClient(depo), ["eski"], ["yeni"])
+
+    assert _cuzdan(depo, "yeni")["purchased"] == 400
+    assert _cuzdan(depo, "eski")["purchased"] == 0
+
+
+def test_devir_geride_kalmis_doneme_dokunmaz(depo):
+    """Kaynağın dönemi geride kalmışsa hedefin kalan hakkı korunur."""
+    geri = dt.datetime(2026, 8, 1, tzinfo=dt.timezone.utc)
+    depo["users/eski/private/wallet"] = {
+        "allowance": 250, "allowanceExpiresAt": geri, "purchased": 0}
+    depo["users/yeni/private/wallet"] = {
+        "allowance": 10, "allowanceExpiresAt": _DONEM, "purchased": 0}
+
+    wallet.transfer_wallet(SahteClient(depo), ["eski"], ["yeni"])
+
+    assert _cuzdan(depo, "yeni")["allowance"] == 10
+
+
+def test_devir_webhook_tekrarinda_bakiyeyi_BOZMAZ(depo):
+    """TRANSFER olayının olay kimliğiyle tekrar koruması YOK: RevenueCat aynı
+    olayı ikinci kez gönderdiğinde ne `purchased` çift kredi üretmeli ne de
+    `allowance` ikinci kez yazılmalı. Kaynak ilk geçişte sıfırlandığı için
+    toplama 0 ekler; dönem işareti eşitlendiği için hak tekrar geçmez."""
+    ileri = dt.datetime(2026, 10, 1, tzinfo=dt.timezone.utc)
+    depo["users/eski/private/wallet"] = {
+        "allowance": 250, "allowanceExpiresAt": ileri, "purchased": 100}
+    depo["users/yeni/private/wallet"] = {"allowance": 0, "purchased": 300}
+    client = SahteClient(depo)
+
+    wallet.transfer_wallet(client, ["eski"], ["yeni"])
+    wallet.transfer_wallet(client, ["eski"], ["yeni"])
+
+    hedef = _cuzdan(depo, "yeni")
+    assert hedef["purchased"] == 400
+    assert hedef["allowance"] == 250
+    assert hedef["allowanceExpiresAt"] == ileri
+
+
+def test_devir_cuzdansiz_kaynak_hedefi_SIFIRLAMAZ(depo):
+    """Cüzdanı olmayan bir kimlikten devir, hedefin bakiyesine dokunamaz."""
+    depo["users/yeni/private/wallet"] = {"allowance": 0, "purchased": 300}
+
+    wallet.transfer_wallet(SahteClient(depo), ["hic-yok"], ["yeni"])
+
+    assert _cuzdan(depo, "yeni")["purchased"] == 300
+
+
+def test_devir_olmayan_kaynakta_BOS_DOKUMAN_yaratmaz(depo):
+    """Var olmayan cüzdanı sıfırlamak boş bir doküman yaratmaktan başka iş
+    yapmaz; devir artık abonelik yazımından ÖNCE koştuğu için gereksiz
+    doküman hiç üretilmemeli."""
+    wallet.transfer_wallet(SahteClient(depo), ["hic-yok"], ["yeni"])
+
+    assert "users/hic-yok/private/wallet" not in depo
+    assert "users/yeni/private/wallet" not in depo
+
+
+def test_devir_COK_HEDEFTE_krediyi_cogaltir(depo):
+    """BİLİNÇLİ sınır, kaza değil: her hedef kaynakların TAM toplamını alır,
+    yani kredi hedef sayısı kadar çoğalır. RevenueCat pratikte tek hedef
+    gönderiyor; bu test kararı GÖRÜNÜR kılıyor — sessizce değişmesin."""
+    depo["users/eski/private/wallet"] = {"allowance": 0, "purchased": 100}
+
+    wallet.transfer_wallet(SahteClient(depo), ["eski"], ["a", "b"])
+
+    assert _cuzdan(depo, "a")["purchased"] == 100
+    assert _cuzdan(depo, "b")["purchased"] == 100
+
+
+# ---------------------------------------------------------------------------
+# "Jetonun iade edildi" CUMLESI dogru mu (gz-2, 2026-09-19)
+# ---------------------------------------------------------------------------
+#
+# Yama bu vaadi kullanicinin EKRANINA koyuyor. Eskiden bayrak
+# `refund is not None` idi, yani "geri cagri gecildi mi" sorusunu
+# cevapliyordu; iade yazimi dusup `logger.warning` ile yutuldugunda ekranda
+# YINE "iade edildi" yaziyordu ve bakiye eksik kaliyordu.
+
+
+def test_iade_basarisizsa_refund_spend_FALSE_doner(monkeypatch):
+    """Bakiye artisi yazilamadiysa "iade edildi" denemez."""
+    from core import wallet as w
+
+    class _Patlayan:
+        def set(self, *a, **k):
+            raise RuntimeError("Firestore dustu")
+
+        def collection(self, _):
+            raise AssertionError("bakiye yazilamadan deftere gidilmemeli")
+
+    monkeypatch.setattr(w, "_wallet_ref", lambda uid: _Patlayan())
+    assert w.refund_spend("u1", "natal") is False
+
+
+def test_iade_yazildiysa_TRUE_doner(monkeypatch):
+    from core import wallet as w
+
+    yazimlar = []
+
+    class _Defter:
+        def document(self, *a):
+            return self
+
+        def set(self, veri, **k):
+            yazimlar.append(("defter", veri))
+
+    class _Ref:
+        def set(self, veri, **k):
+            yazimlar.append(("bakiye", veri))
+
+        def collection(self, _):
+            return _Defter()
+
+    monkeypatch.setattr(w, "_wallet_ref", lambda uid: _Ref())
+    assert w.refund_spend("u1", "natal") is True
+    assert [t for t, _ in yazimlar] == ["bakiye", "defter"]
+
+
+def test_defter_dusse_de_iade_YAPILDI_sayilir(monkeypatch):
+    """Iade bakiyeye yazildi; yalniz izi eksik kaldi. Kullaniciya
+    "iade edilmedi" demek burada YANLIS olurdu."""
+    from core import wallet as w
+
+    class _Defter:
+        def document(self, *a):
+            return self
+
+        def set(self, *a, **k):
+            raise RuntimeError("defter dustu")
+
+    class _Ref:
+        def set(self, *a, **k):
+            pass
+
+        def collection(self, _):
+            return _Defter()
+
+    monkeypatch.setattr(w, "_wallet_ref", lambda uid: _Ref())
+    assert w.refund_spend("u1", "natal") is True
+
+
+def test_bilinmeyen_ozellikte_iade_YOK():
+    from core import wallet as w
+
+    assert w.refund_spend("u1", "olmayan-ozellik") is False
+
+
+def test_cached_generate_refunded_GERCEK_sonucu_tasir(monkeypatch):
+    """Bayrak "geri cagri gecildi mi"yi degil "iade yazildi mi"yi soyler."""
+    from services import report_service as rs
+
+    monkeypatch.setattr(rs.gemini_service, "generate", lambda *a, **k: None)
+    monkeypatch.setattr(rs.cache, "get", lambda k: None)
+    monkeypatch.setattr(rs.cache, "set", lambda *a, **k: None)
+
+    basarili = rs._cached_generate(
+        "anahtar-1", "prompt", fallback="yedek", refund=lambda: True)
+    assert basarili["refunded"] is True
+
+    basarisiz = rs._cached_generate(
+        "anahtar-2", "prompt", fallback="yedek", refund=lambda: False)
+    assert basarisiz["refunded"] is False, (
+        "iade yazilamadi ama ekranda 'iade edildi' yazacakti")
+
+    gericagrisiz = rs._cached_generate(
+        "anahtar-3", "prompt", fallback="yedek")
+    assert gericagrisiz["refunded"] is False

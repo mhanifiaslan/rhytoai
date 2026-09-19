@@ -225,6 +225,20 @@ def _handle_transfer(client, event: dict[str, Any]) -> dict[str, Any]:
         logger.warning("TRANSFER olayinda hedef kimlik yok; atlandi.")
         return {"status": "ignored", "event": _TRANSFER_EVENT}
 
+    # Cüzdan devri ABONELİK kaydından ÖNCE ve ONDAN BAĞIMSIZ: satın alınmış
+    # bakiye kullanıcının parasıdır ve abonelik olmadan da var olabilir (paket
+    # almak için abonelik şart değil — bkz. core/wallet.py charge_metered). Bu
+    # çağrı aşağıdaki "kaynak abonelik kaydi bulunamadi" erken çıkışının
+    # ALTINDAYDI: yalnız kredi paketi almış bir kimlikten devirde parayla
+    # alınmış bakiye eski kimlikte öksüz kalıyordu.
+    # `event_id` ZORUNLU sayılmalı: devrin tekrar koruması artık kaynağın
+    # sıfırlanmasına değil hedefteki `ledger/transfer-{id}` işaretine bağlı
+    # (sıra tersine döndü — bkz. wallet.transfer_wallet). Kimlik geçmezsek
+    # webhook tekrarı çift kredi verir. RevenueCat her olayda `id` yolluyor;
+    # `_record_revenue_event` de aynı alanı idempotency için kullanıyor.
+    wallet.transfer_wallet(client, kaynaklar, hedefler,
+                           event_id=str(event.get("id") or "") or None)
+
     kayit: dict[str, Any] | None = None
     for kaynak in kaynaklar:
         anlik = _subscription_ref(client, kaynak).get()
@@ -254,10 +268,6 @@ def _handle_transfer(client, event: dict[str, Any]) -> dict[str, Any]:
                               doc_id=f"{event.get('id')}-{hedef}")
     for kaynak in kaynaklar:
         _mirror_plan(client, kaynak, {"active": False})
-
-    # Cüzdan da taşınır: satın alınmış bakiye kullanıcının parası, kimlik
-    # değişiminde kaybolamaz.
-    wallet.transfer_wallet(client, kaynaklar, hedefler)
 
     logger.info("Abonelik devredildi: %s -> %s aktif=%s",
                 kaynaklar, hedefler, kayit.get("active"))

@@ -338,6 +338,8 @@
   "errorGeneric": "Something unexpected happened. Please try again shortly.",
   "errorConnection": "Couldn't connect. Check your internet and try again.",
   "errorSkyUnavailable": "The sky is out of reach right now.",
+  "reportUnavailable": "We couldn't produce your reading just now. Try again in a few seconds.",
+  "reportUnavailableRefunded": "We couldn't produce your report just now — the token you spent has been refunded. Try again in a few seconds.",
   "promoTitle": "Go beyond the stars ✨",
   "promoBody": "Explore the full analysis of your birth chart.",
   "promoAction": "Explore",

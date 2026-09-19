@@ -230,8 +230,17 @@ final dailyReadingProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   final dio = ref.watch(apiProvider);
   final response =
       await dio.post('/api/v1/reports/daily', data: birthPayload(profile));
+  final veri = Map<String, dynamic>.from(response.data['data']);
+  // Yedek metin okuma SAYILMAZ (gz-2): hata olarak yukselir — Gokyuzu
+  // kartinda durust cumle + tekrar dene cikar ve sayac "uretildi" demez;
+  // yoksa olcum de yalan soyluyordu. Burada okumanin DISINDA gosterilecek
+  // bir sey yok (burc etiketleri okumanin ustundeki satir), o yuzden
+  // BaZi'deki gibi kismi cizim anlamli degil.
+  if (veri['fallback'] == true) {
+    throw RaporUretilemedi(jetonIadeEdildi: veri['refunded'] == true);
+  }
   Analytics.reportGenerated('daily');
-  return Map<String, dynamic>.from(response.data['data']);
+  return veri;
 });
 
 /// Abone değilken ücretli uca istek atılmamalı.
@@ -251,8 +260,16 @@ final natalReportProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   final dio = ref.watch(apiProvider);
   final response =
       await dio.post('/api/v1/reports/natal', data: birthPayload(profile));
+  final veri = Map<String, dynamic>.from(response.data['data']);
+  // Yedek metin rapor SAYILMAZ (gz-2): Atlas satiri hata nesnesini
+  // `friendlyError`e verip "su an uretemedik / jetonun iade edildi" der.
+  // Natal CARKI bu saglayicidan gelmiyor (`natalChartProvider` ayri), yani
+  // firlatmak olculmus hicbir seyi goturmuyor.
+  if (veri['fallback'] == true) {
+    throw RaporUretilemedi(jetonIadeEdildi: veri['refunded'] == true);
+  }
   Analytics.reportGenerated('natal');
-  return Map<String, dynamic>.from(response.data['data']);
+  return veri;
 });
 
 /// BaZi haritası + rapor — Rytho+ .
@@ -263,8 +280,17 @@ final baziReportProvider = FutureProvider<Map<String, dynamic>?>((ref) async {
   final dio = ref.watch(apiProvider);
   final response =
       await dio.post('/api/v1/reports/bazi', data: birthPayload(profile));
-  Analytics.reportGenerated('bazi');
-  return Map<String, dynamic>.from(response.data['data']);
+  final veri = Map<String, dynamic>.from(response.data['data']);
+  // BURADA FIRLATILMIYOR — bilincli (gz-2). Yedek metin "uretildi"
+  // SAYILMAZ, o yuzden sayac susuyor; ama harita LLM urunu DEGIL:
+  // dort sutun, Day Master, gizli kokler, On Tanrilar, guc hukmu, element
+  // dagilimi, Shen Sha, sans donemleri — hepsi `get_bazi_chart`in
+  // deterministik ciktisi ve ucreti odendi. Firlatsaydik ekran `data` dalina
+  // hic girmez, olculmus ve dogru olan her sey silinir, kullanici bos bir
+  // hata karti gorurdu. Eksik olan YALNIZ yorum; sekme bayragi gorup onun
+  // yerine durust cumleyi koyuyor.
+  if (veri['fallback'] != true) Analytics.reportGenerated('bazi');
+  return veri;
 });
 
 /// Doğum Heksagramı — Rytho+ (Revize İ5). Kalıcı kimlik katmanı: doğum

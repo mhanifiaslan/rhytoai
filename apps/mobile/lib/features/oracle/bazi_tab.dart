@@ -8,7 +8,8 @@ import '../../widgets/atlas_widgets.dart';
 import '../../widgets/frame_sequence.dart';
 import '../../widgets/motion.dart';
 import '../paywall/plus_locked_card.dart';
-import '../../core/api.dart' show friendlyError;
+import '../../core/api.dart' show RaporUretilemedi, friendlyError;
+import '../../widgets/common.dart' show ErrorCard;
 import '../../l10n/app_localizations.dart';
 
 /// BaZi — Dört Sütun tablosu, Day Master, element dağılımı, şans dönemleri.
@@ -39,9 +40,18 @@ class BaziTab extends ConsumerWidget {
           l10n.baziWaitStage3,
         ],
       ),
+      // Duz metin CIKMAZ SOKAKTI: bu sekmede asagi cekme YOK, yani hatayi
+      // goren kullanici uygulamayi yeniden acmak zorunda kaliyordu. ErrorCard
+      // depodaki ortak desen (sky_screen, token_store_screen).
       error: (e, _) => Center(
-        child: Text(friendlyError(e, l10n),
-            style: RythoText.body(13, color: RythoColors.parchmentDim)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: ErrorCard(
+            message: friendlyError(e, l10n),
+            screen: 'oracle',
+            onRetry: () => ref.invalidate(baziReportProvider),
+          ),
+        ),
       ),
       data: (data) {
         if (data == null) {
@@ -318,8 +328,22 @@ class BaziTab extends ConsumerWidget {
           const SectionDivider(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: MarginNote(
-                title: l10n.baziFateNote, text: data['report'] ?? ''),
+            // Yorum uretilemediyse (gz-2) HARITA YERINDE KALIR, yalniz bu
+            // kalem durust cumleye doner. Ustteki her sey deterministik
+            // hesap ve ucreti odendi; LLM paragrafi dustu diye onu da
+            // silmek "olculeni soyle" doktrinini tersine cevirmek olurdu.
+            // `screen` kapali kumeden ('bazi' sessizce dusurulurdu).
+            child: data['fallback'] == true
+                ? ErrorCard(
+                    message: friendlyError(
+                        RaporUretilemedi(
+                            jetonIadeEdildi: data['refunded'] == true),
+                        l10n),
+                    screen: 'oracle',
+                    onRetry: () => ref.invalidate(baziReportProvider),
+                  )
+                : MarginNote(
+                    title: l10n.baziFateNote, text: data['report'] ?? ''),
           ),
           const SizedBox(height: 32),
         ]);

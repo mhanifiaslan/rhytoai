@@ -424,10 +424,17 @@ class _FullReportRow extends ConsumerWidget {
         subtitle: l10n.atlasReportPreparing,
         onTap: () {},
       ),
-      error: (_, _) => _AtlasRow(
+      // Hata nesnesi ATILIYORDU: yedek metin artik `RaporUretilemedi` olarak
+      // buraya duser (gz-2) ve sabit "tekrar dene" alt satiri kullaniciya ne
+      // "su an uretemedik" ne "jetonun iade edildi" diyordu — yani durust
+      // cumle ekrana HIC gelmiyordu. Alt satir bu dalda uc satira aciliyor:
+      // iade cumlesi tek satira sigmiyor ve ellipsis tam da soylenmesi
+      // gereken yeri kesiyordu.
+      error: (e, _) => _AtlasRow(
         emoji: '📜',
         title: l10n.atlasFullReport,
-        subtitle: l10n.atlasReportRetry,
+        subtitle: friendlyError(e, l10n),
+        subtitleLines: 3,
         onTap: () => ref.invalidate(natalReportProvider),
       ),
       data: (veri) {
@@ -623,12 +630,19 @@ class _AtlasRow extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.subtitleLines = 1,
     this.locked = false,
   });
 
   final String emoji;
   final String title;
   final String subtitle;
+
+  /// Alt satirin tavani. Varsayilan 1: satirlar tek bakista taranan bir
+  /// listede duruyor. Hata dalinda 3 (gz-2) — "harcanan jeton iade edildi"
+  /// cumlesi tek satira sigmiyor ve ellipsis tam da soylenmesi gereken yeri
+  /// kesiyordu.
+  final int subtitleLines;
   final VoidCallback onTap;
 
   /// Rytho+ kilidi — rozet gösterilir, dokunuş paywall'a gider.
@@ -659,7 +673,7 @@ class _AtlasRow extends StatelessWidget {
                     style: RythoType.cardTitle),
                 const SizedBox(height: 2),
                 Text(subtitle,
-                    maxLines: 1,
+                    maxLines: subtitleLines,
                     overflow: TextOverflow.ellipsis,
                     style: RythoType.caption),
               ],

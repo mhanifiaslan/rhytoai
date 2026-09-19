@@ -755,6 +755,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errorSkyUnavailable => 'The sky is out of reach right now.';
 
   @override
+  String get reportUnavailable =>
+      'We couldn\'t produce your reading just now. Try again in a few seconds.';
+
+  @override
+  String get reportUnavailableRefunded =>
+      'We couldn\'t produce your report just now — the token you spent has been refunded. Try again in a few seconds.';
+
+  @override
   String get promoTitle => 'Go beyond the stars ✨';
 
   @override

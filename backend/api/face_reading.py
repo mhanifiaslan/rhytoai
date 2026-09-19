@@ -143,7 +143,12 @@ def firasa_reading(
             spend=wallet.spender(user.uid, "face", lang=lang),
             refund=lambda: wallet.refund_spend(user.uid, "face"))
         return {"status": "success", "reading": rapor["text"],
-                "cached": rapor.get("cached", False)}
+                "cached": rapor.get("cached", False),
+                # Yedek metin firaset okumasi gibi DONMEZ (gz-2): burada
+                # LLM paragrafinin DISINDA gosterilecek bir sey yok, o yuzden
+                # istemci "simdi uretemedik, jetonun iade edildi" der.
+                "fallback": rapor.get("fallback", False),
+                "refunded": rapor.get("refunded", False)}
     except HTTPException:
         raise
     except Exception as exc:

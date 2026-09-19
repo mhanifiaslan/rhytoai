@@ -53,6 +53,11 @@ Duration? rythoRetry(int retryCount, Object error) {
     final kod = error.response?.statusCode;
     if (kod != null && kod >= 400 && kod < 500) return null;
   }
+  // Yedek metin (gz-2) AG hatasi degil: sunucu 200 dondu, uretim dustu.
+  // Otomatik yeniden deneme burada tam olarak yukarida anlatilan, kotayi
+  // besleyen dongunun aynisini kurar (ustelik her deneme bir jeton dus/iade
+  // turu); karari kullanici verir — ekranlarda "tekrar dene" var.
+  if (error is RaporUretilemedi) return null;
   if (retryCount >= 2) return null;
   return Duration(milliseconds: 400 * (retryCount + 1));
 }

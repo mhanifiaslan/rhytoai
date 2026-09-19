@@ -100,9 +100,18 @@ def _cached_generate(cache_key: str, prompt: str, fallback: str,
                   owner_uid=owner_uid)
         return {"text": text, "cached": False,
                 **({} if grounded else {"ungrounded": True})}
-    if refund is not None:
-        refund()
-    return {"text": fallback, "cached": False, "fallback": True}
+    # `refunded` ISTEMCININ durust cumlesini kurmasi icin (gz-2): jeton
+    # harcamayan uclarda (gunluk okuma) "jetonun iade edildi" demek YALAN
+    # olurdu, bu yuzden bayrak istemcide sabitlenmiyor — buradan geliyor.
+    #
+    # ⚠️ Bayrak "geri cagri GECILDI mi"yi DEGIL "iade YAZILDI mi"yi
+    # soylemeli. Eskisi `refund is not None` idi ve iade yazimi dusup
+    # `logger.warning` ile yutuldugunda ekranda YINE "jetonun iade edildi"
+    # yaziyordu: odemis kullaniciya yalan bir soz, ustelik bakiyesi eksik.
+    # `refund_spend` artik bakiye artisini GERCEKTEN yazdiysa True donuyor.
+    iade_edildi = bool(refund()) if refund is not None else False
+    return {"text": fallback, "cached": False, "fallback": True,
+            "refunded": iade_edildi}
 
 
 def daily_reading(user_id: str, natal: dict[str, Any], sky: dict[str, Any],

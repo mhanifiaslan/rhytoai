@@ -155,6 +155,28 @@ final apiProvider = Provider<Dio>((ref) {
 /// **"Not Found"** yazdı.
 const _cerceveMetinleri = {'Not Found', 'Method Not Allowed'};
 
+/// Sunucu 200 dondu ama YORUM uretilemedi (yedek metin bayragi).
+///
+/// gz-2: Gemini kotasi doldugunda uc, uc cumlelik hazir bir paragrafi normal
+/// rapor gibi donduruyordu. Kullanici bunu URUN saniyor ("rapor cok yuzeysel"
+/// bize model sikayeti olarak donuyor), jetonunun iade edildigini de
+/// ogrenmiyordu. Depo doktrini "olculmeyen soylenmez": uretilmemis metin
+/// rapor yerine gecmez. Karsit ornek zaten depoda — sohbet ucu ayni durumda
+/// `llm_unavailable` diyor.
+///
+/// Sinir: bu istisna YALNIZ yorumu temsil eder. OLCULMUS cikti (BaZi
+/// haritasi, natal carki) yerinde kalir; onu da silmek ayni doktrini ters
+/// yone cevirirdi. Bu yuzden BaZi saglayicisi firlatmaz, sekme bayraga bakar.
+class RaporUretilemedi implements Exception {
+  const RaporUretilemedi({this.jetonIadeEdildi = false});
+
+  /// Sunucu harcanan jetonu geri verdi mi?
+  ///
+  /// Gunluk okuma jeton HARCAMAZ; orada "jetonun iade edildi" demek yalan
+  /// olurdu. Bu yuzden bayrak istemcide sabitlenmiyor, sunucudan geliyor.
+  final bool jetonIadeEdildi;
+}
+
 /// Hata mesajını kullanıcıya gösterilebilir hale getirir.
 ///
 /// Backend kendi hatalarında kullanıcının dilinde ve anlaşılır bir `detail`
@@ -168,6 +190,13 @@ const _cerceveMetinleri = {'Not Found', 'Method Not Allowed'};
 /// düşüyordu. Metni gövdeden silmek atlanan çağrıyı DERLEYİCİYE yakalattırır
 /// — gramer/dil tarayıcısı ARB'ye bakıyor, gövdeye gömülü sabiti görmüyor.
 String friendlyError(Object error, AppLocalizations l10n) {
+  // Tek suzgec: dort yol da ayni durust cumleyi gosterir (gz-2). Imza ve
+  // "govdeye gomulu Turkce YOK" kurali korunuyor — cumleler ARB'den gelir.
+  if (error is RaporUretilemedi) {
+    return error.jetonIadeEdildi
+        ? l10n.reportUnavailableRefunded
+        : l10n.reportUnavailable;
+  }
   if (error is DioException) {
     // Sunucunun `detail` alani zaten kullanicinin dilinde uretiliyor
     // (Accept-Language ile), o yuzden oldugu gibi gosterilir — cerceveden

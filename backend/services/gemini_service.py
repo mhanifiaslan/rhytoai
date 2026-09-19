@@ -195,7 +195,11 @@ def generate(prompt: str, temperature: float = 0.9,
             logger.info("Üretim boş metin döndürdü (deneme %d)", deneme)
             return None
         except Exception as exc:
-            logger.warning("Gemini üretim hatası: %s", exc)
+            # Kota (429) ile agir hatayi ayirmak icin yigin izi de gerekli:
+            # yedek metin artik istemcide HATA ya da "yorum uretilemedi"
+            # (gz-2), yani bu satir "kullanici urunu goremedi" anlamina
+            # geliyor.
+            logger.exception("Gemini üretim hatası: %s", exc)
             return None
     return None
 

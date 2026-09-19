@@ -15,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../../theme/rytho_theme.dart';
 import '../../theme/rytho_tokens.dart';
 import '../../widgets/atlas_widgets.dart';
+import '../../widgets/common.dart' show ErrorCard;
 import '../../widgets/cosmic_scaffold.dart';
 import '../../widgets/glass.dart';
 import '../../widgets/motion.dart';
@@ -266,9 +267,16 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
             padding: EdgeInsets.symmetric(vertical: 30),
             child: Center(child: AstrolabeSpinner()),
           ),
-          error: (e, _) => _unavailable(l10n, '$e'),
+          // Mağaza/ağ hatası artık YUTULMUYOR (bkz. core/subscription.dart
+          // `offeringsProvider`): çevrilmiş metin + yeniden deneme. Tazeleme
+          // ELLE isteniyor çünkü sağlayıcı auto-dispose DEĞİL — hatalı sonuç
+          // oturum boyunca önbellekte kalır, ekranı kapatıp açmak kurtarmaz.
+          error: (e, _) => ErrorCard(
+            message: magazaVeyaAgHatasi(e, l10n),
+            onRetry: () => ref.invalidate(offeringsProvider),
+          ),
           data: (packages) {
-            if (packages.isEmpty) return _unavailable(l10n, null);
+            if (packages.isEmpty) return _unavailable(l10n);
             _selected ??= _defaultPackage(packages);
             // Tek plan varsa seçim yapılacak bir şey yok; radyo düğmesi
             // göstermek kullanıcıya sahte bir karar sunar.
@@ -388,15 +396,20 @@ class _PaywallScreenState extends ConsumerState<PaywallScreen> {
     return packages.first;
   }
 
-  Widget _unavailable(AppLocalizations l10n, String? detail) => GlassPanel(
+  /// Mağaza sorunsuz yanıtladı ama gösterilecek paket YOK.
+  ///
+  /// Hata metni buraya artık GİRMEZ: mağaza/ağ hatası `error:` dalına düşüyor.
+  /// Ayrım pahalı bir bulgunun karşılığı — "Mağazada tanımlı paket
+  /// bulunamadı" cümlesi ağ sorununda yanlış teşhisti ve kullanıcıyı
+  /// bekleyecek bir şey olmadığına inandırıyordu.
+  Widget _unavailable(AppLocalizations l10n) => GlassPanel(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text(l10n.billingUnavailable, style: RythoText.display(16)),
           const SizedBox(height: 6),
           Text(
-            detail ??
-                (billingConfigured
-                    ? l10n.billingNoPackages
-                    : l10n.billingNotConfigured),
+            billingConfigured
+                ? l10n.billingNoPackages
+                : l10n.billingNotConfigured,
             style: RythoText.body(12.5, color: RythoColors.parchmentDim),
           ),
         ]),
