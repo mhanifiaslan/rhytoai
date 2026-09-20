@@ -180,7 +180,23 @@ SENİN sıran (sıra ÖNEMLİ — 1 yapılmadan AAB üretme):
    §3'ten satır satır; **veri silme URL'si Data safety formunun İÇİNDE**
    (`…/legal/hesap-silme.html`); **AD_ID AYRI bir bölüm** → **HAYIR**
    (2026-09-18: izin manifest'ten kaldırıldı; "evet" demek mağaza
-   listesine "reklam kimliği kullanıyor" yazdırırdı); Health apps formu herkese zorunlu
+   listesine "reklam kimliği kullanıyor" yazdırırdı).
+   **⚠️ "Reklam kimliği beyanı eksik" hatası izinsiz bundle'da da SÜRERSE**
+   (2026-09-20'de ölçüldü, iki gün kaybettirdi): Play kontrolü kanaldaki
+   TÜM aktif/askıdaki bundle'lara bakıyor, yalnız yeni yüklenene değil.
+   Kanal durdurulup devam ettirilince AD_ID'li eski 43 önce canlanıyor,
+   44 sonra yerine geçiyor; kontrol ikisini birden görüyor ve eski
+   bundle silinemiyor. Kod suçlanmadan ÖNCE 10 saniyelik deney: formda
+   **Evet** → kaydet. Evet'te AD_ID'siz sürüm yalnız uyarılır (atlanabilir),
+   Hayır'da AD_ID'li bundle varsa engellenir; Evet'te gönder düğmesi
+   açılıp Hayır'da hata dönüyorsa suçlu kanaldaki eski bundle'dır.
+   Çıkış: Evet → gönder (yeni bundle eskiyi devre dışı bırakır) → sonra
+   Hayır → gönder. Yine hata → başka kanalda (Dahili test) eski bundle
+   aktif; **Sürüm → Uygulama paketi gezgini** hangi bundle'ın nerede
+   durduğunu gösterir. Sürüm kodu 44 AD_ID'yi kaldıran commit'le aynı
+   commit'te doğdu (`f8babfe`), yani AD_ID'li bir 44 var olamaz; 43
+   (`8e10294`) izni `firebase_analytics`'ten taşıyordu.
+   Health apps formu herkese zorunlu
    (→ "sağlıkla ilgili değil"); hedef kitle 13+; reklam yok.
 7. **Mağaza kaydı**: görseller (512 ikon · 1024×500 · ≥2 ekran
    görüntüsü, GERÇEK harita/gökyüzü verisiyle) + kısa/uzun açıklama
