@@ -12,10 +12,18 @@
 	</array>
 
 	<!-- Davet baglantisi (Universal Links).
-	     apple-app-site-association dosyasi rhytoai.web.app altinda
-	     yayinda; icindeki TEAMID gercek Team ID ile degistirilmeli. -->
+	     IKI alan adi da yazili: birincil alan adi rytho.app'e tasindi
+	     (2026-09) ama rhytoai.web.app hala yayinda ve sahadaki eski
+	     davet baglantilari onu tasiyor. Android tarafi da ikisini birden
+	     taniyor (AndroidManifest'te iki autoVerify intent-filter).
+	     Yalniz eskisi birakilsaydi yeni davetler iOS'ta uygulamayi HIC
+	     acmaz, tarayiciya duserdi.
+	     ⚠️ apple-app-site-association icindeki TEAMID hala YER TUTUCU;
+	     gercek Team ID yazilmadan Universal Links calismaz
+	     (web/.well-known/apple-app-site-association). -->
 	<key>com.apple.developer.associated-domains</key>
 	<array>
+		<string>applinks:rytho.app</string>
 		<string>applinks:rhytoai.web.app</string>
 	</array>
 </dict>
