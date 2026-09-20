@@ -13,7 +13,13 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 # yeniden vektorleme faturasi cikarir ve ilk istekler anahtar kelime moduna
 # duser. Bu yuzden deploy'dan ONCE kapsama dogrulanir.
 Write-Host "0/2 Vektor artefakti dogrulaniyor..."
-$pythonExe = Join-Path $repoRoot "backend\.venv\Scripts\python.exe"
+# venv duzeni platforma gore degisiyor: Windows'ta .venv/Scripts/python.exe,
+# macOS/Linux'ta .venv/bin/python. Yalniz birini aramak betigi digerinde
+# "venv bulunamadi" uyarisiyla SESSIZCE artefakt dogrulamasiz birakirdi.
+$pythonExe = Join-Path $repoRoot "backend/.venv/Scripts/python.exe"
+if (-not (Test-Path $pythonExe)) {
+    $pythonExe = Join-Path $repoRoot "backend/.venv/bin/python"
+}
 if (Test-Path $pythonExe) {
     # PS 5.1 tuzagi: dogrulama betigi INFO loglarini STDERR'e yazar ve
     # ErrorActionPreference=Stop bunu gercek hata sanip deploy'u yarida
@@ -21,7 +27,7 @@ if (Test-Path $pythonExe) {
     # Cikti dosyaya yonlendirilir, karar YALNIZCA cikis koduna bakar.
     $eskiTercih = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
-    & $pythonExe (Join-Path $repoRoot "backend\scripts\build_embeddings.py") --check 2>$null
+    & $pythonExe (Join-Path $repoRoot "backend/scripts/build_embeddings.py") --check 2>$null
     $kontrolKodu = $LASTEXITCODE
     $ErrorActionPreference = $eskiTercih
     if ($kontrolKodu -ne 0) {

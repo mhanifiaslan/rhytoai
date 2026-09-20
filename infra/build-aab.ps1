@@ -25,10 +25,24 @@
 # hatasiyla dusuruyor (bir kez dusurdu).
 $ErrorActionPreference = "Stop"
 
+# YOL AYIRACI: her yerde ILERI BOLU. `Join-Path $kok "apps\mobile"` macOS'ta
+# ters boluyu AYIRAC SAYMAZ, dosya adinin PARCASI sayar ve "apps\mobile" diye
+# var olmayan tek bir klasor arar. Ileri bolu iki platformda da calisir
+# (Windows API'si onu da kabul eder).
 $repoRoot = Split-Path -Parent $PSScriptRoot
-$mobil = Join-Path $repoRoot "apps\mobile"
+$mobil = Join-Path $repoRoot "apps/mobile"
 $defines = Join-Path $mobil "dart_defines.local.json"
-$flutter = "C:\flutter\bin\flutter.bat"
+
+# Flutter once PATH'ten aranir; bulunamazsa Windows'taki bilinen kurulum.
+# Sabit yol tek basina birakilsaydi betik macOS'ta hic calismazdi.
+$flutter = (Get-Command flutter -ErrorAction SilentlyContinue).Source
+if (-not $flutter -and (Test-Path "C:/flutter/bin/flutter.bat")) {
+    $flutter = "C:/flutter/bin/flutter.bat"
+}
+if (-not $flutter) {
+    throw ("flutter bulunamadi: ne PATH'te var ne C:/flutter/bin/flutter.bat. " +
+           "Flutter SDK'yi kur ve bin klasorunu PATH'e ekle.")
+}
 
 if (-not (Test-Path $defines)) {
     throw ("dart_defines.local.json bulunamadi ($defines). " +
@@ -55,7 +69,7 @@ if ($androidKey.StartsWith("test_")) {
 # KT4: release imzasi dogrulanir. build.gradle.kts key.properties yoksa
 # SESSIZCE debug anahtarina dusuyor - Play boyle bir AAB'yi ya reddeder
 # ya da App Signing'e yanlis anahtar gider. Kapi burada.
-$keyProps = Join-Path $mobil "android\key.properties"
+$keyProps = Join-Path $mobil "android/key.properties"
 if (-not (Test-Path $keyProps)) {
     throw ("android\key.properties yok - release imzasi kurulmamis. " +
            "Bu haliyle AAB DEBUG anahtariyla imzalanirdi.")
@@ -81,12 +95,15 @@ try {
 }
 
 Write-Host "3/3 Paket dogrulaniyor..."
-$aab = Join-Path $mobil "build\app\outputs\bundle\release\app-release.aab"
+$aab = Join-Path $mobil "build/app/outputs/bundle/release/app-release.aab"
 if (-not (Test-Path $aab)) { throw "AAB uretilmedi: $aab" }
 
 # Dart snapshot'i (libapp.so) cikarilip icinde anahtar ARANIR. Sabit
 # dizeler AOT snapshot'a gomulur; define gecmediyse dize hic olmaz.
-$gecici = Join-Path $env:TEMP ("rytho-aab-" + [guid]::NewGuid().ToString("N"))
+# $env:TEMP yalniz Windows'ta tanimli; macOS'ta bos gelir ve Join-Path
+# kok dizine yazmaya calisirdi. .NET'in kendi gecici klasoru iki
+# platformda da dogru yeri verir.
+$gecici = Join-Path ([System.IO.Path]::GetTempPath()) ("rytho-aab-" + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Force $gecici | Out-Null
 try {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -159,7 +176,7 @@ $yasakIzinler = @(
     "android.permission.ACCESS_ADSERVICES_AD_ID",
     "android.permission.ACCESS_ADSERVICES_ATTRIBUTION"
 )
-$birlesmis = Get-ChildItem -Path (Join-Path $mobil "build\app\intermediates\merged_manifest\release") -Filter "AndroidManifest.xml" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+$birlesmis = Get-ChildItem -Path (Join-Path $mobil "build/app/intermediates/merged_manifest/release") -Filter "AndroidManifest.xml" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($birlesmis) {
     $mf = Get-Content $birlesmis.FullName -Raw
     # YORUMLAR ONCE ATILIR. Kendi manifest yorumlarimiz bu izin adlarini

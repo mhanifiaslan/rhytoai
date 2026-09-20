@@ -1,0 +1,164 @@
+# RythoAI — Claude için proje notları
+
+Bu dosya her oturumda otomatik okunur. Amacı: **makineler arasında taşınmayan
+bilgiyi** taşımak. Buradaki her madde ya ölçülerek bulundu ya da bir kez
+canlıda zarar verdi; hiçbiri teorik değil.
+
+Ürün: doğum haritanı bilen ve gökyüzünü her gün takip eden kişisel AI astrolog.
+Flutter mobil + FastAPI backend (Cloud Run) + bağımlılıksız vanilla-JS admin
+panel. Firebase projesi **`rhytoai`**, paket adı **`ai.rytho`**.
+
+---
+
+## 1. Yazım dili ve yorum doktrini
+
+Kod içindeki **yorumlar, değişken/fonksiyon adları ve test adları TÜRKÇE**
+yazılır. Kullanıcıya görünen metinler `l10n` üzerinden TR+EN.
+
+Yorum **NE yaptığını değil NEDEN öyle olduğunu** anlatır. "Bu döngü listeyi
+gezer" değersizdir; "bu kapı şu yüzden var, olmasaydı şu sessizce bozulurdu"
+değerlidir. Bir yorumun gerekçesi yanlışsa yorum **kusurdur** — bu depoda iki
+kez yanlış gerekçe düzeltildi.
+
+**Ölçülmeyen söylenmez.** Ürünün çekirdek ilkesi: hesaplanmamış bir şey
+kullanıcıya söylenmez, beyan edilmez, metne girmez. Tersi de geçerli —
+**ölçülen, yanlış adla sunulmaz**.
+
+---
+
+## 2. Ortam (makineye bağlı — kendi makinende doğrula)
+
+| Şey | Gereklilik |
+|---|---|
+| Python | **3.11 ŞART.** 3.12'de `pyswisseph` kurulmuyor. venv: `backend/.venv` |
+| Flutter | `3.44.7 stable` / Dart `3.12.2`; pubspec `sdk: ^3.12.0` |
+| JDK | 17 (Android Gradle) |
+| Android SDK | **cmdline-tools kurulu olmalı** — eksikken AAB derlemesi yanıltıcı bir "strip" hatası veriyor |
+| gcloud / firebase | her komutta proje bayrağı: `--project rhytoai` |
+
+`gcloud`'un varsayılan projesi başka bir projeye düşerse elle çalıştırdığın
+komutlar **sessizce yanlış projeye** gider. Bu bir kez yanlış bir "panelde hiç
+admin yok" blocker'ı ürettirdi.
+
+Betikler PowerShell (`.ps1`) ve macOS'ta `pwsh` ile koşar:
+`brew install --cask powershell`.
+
+---
+
+## 3. Git'in TAŞIMADIĞI dosyalar
+
+Yeni bir makineye geçerken bunlar elle kopyalanır. Biri eksikken derleme
+**sessizce** bozuk çıkar:
+
+| Dosya | Eksikse ne olur |
+|---|---|
+| `apps/mobile/dart_defines.local.json` | Paket RevenueCat anahtarsız çıkar; cihazda **tüm satın almalar** "kullanılamıyor" der. Derleme BAŞARILI görünür. |
+| `apps/mobile/android/key.properties` | Yayın imzası kurulmaz. İçindeki `storeFile` mutlak yol — makineye göre düzeltilir. |
+| Keystore (`rytho-upload.jks`) | **Yeri doldurulamaz.** Kaybolursa uygulama bir daha güncellenemez. |
+| `backend/.env` | Yerel backend anahtarları. |
+
+`google-services.json` git'te **var**. Segmentasyon modeli (16 MB) git'te yok
+ama tek komutla iner (`apps/mobile/scripts/fetch_models.ps1`); **o dosya
+yokken `flutter test` hiç başlamaz** ("Failed to build asset bundle").
+
+---
+
+## 4. Asla atlanmayan kapılar
+
+**AAB ASLA düz `flutter build appbundle` ile üretilmez.** Her zaman
+`infra/build-aab.ps1`. Betikte beş kapı var ve hepsi sessiz hatalar için:
+RevenueCat anahtarı gerçekten pakette mi, `test_` önekli anahtar değil mi,
+imza debug'a düşmüş mü, kullanılmayan izin geri gelmiş mi (mağaza listesinde
+"Mikrofon" yazardı ve gizlilik metnimizi yalanlardı), kamera zorunlu mu.
+
+Bir kez 1.5.0+17 düz komutla üretildi: derleme başarılı, testler yeşil, imza
+doğru — kusur ancak mağaza ekranında görüldü.
+
+**Dağıtım:** backend `infra/deploy-backend.ps1`, hosting
+`firebase deploy --only hosting --project rhytoai`.
+
+---
+
+## 5. Tekrar eden tuzaklar
+
+**Testler üretime yazabiliyordu.** `conftest.py`'de üç autouse pin var
+(`kapi_hermetik`, `depolama_hermetik`, `firestore_hermetik`). Sebep ölçüldü:
+üretimde `users/dev-user` dokümanı bulundu, içinde o gün yazılmış bir
+`termsConsent` vardı — `RYTHO_DEV_MODE` varsayılanı `"1"` ve makinede ADC var.
+Pin sonrası takım süresi **214 sn → 83 sn** düştü.
+**Kural: dış dünyaya çıkan her yeni istemci için `conftest`'e ayrı pin.**
+
+**Türkçe metin eşleştirme.** `str.lower()` Türkçe bilmez (`"İ".lower()` →
+`"i" + U+0307`). Alt dizi eşleşmesi yanlış pozitif üretir: "il**iş**kimde"
+içinde "iş" var; ham `feedback` araması `HapticFeedback`'e takılıyor; ham
+`['reply']` sohbet cevabına takılıyor. Eşleşmeyi **kelime başına ya da dize
+literaline** bağla.
+
+**Bir şeyin YOKLUĞUNU arayan bekçi, onu ANLATAN yorumu görmemeli.** İki kez
+patladı: build kapısı kendi manifest yorumuna takıldı, davet sayfası testi
+kendi HTML yorumuna. Eşleşmeden **önce yorumları at**.
+
+**PowerShell kaynak dosyaya DOKUNMAZ.** Windows'ta ANSI kod sayfası cp1254;
+`Get-Content`/`Set-Content` UTF-8 kaynağı bozuyor (`GÖKYÜZÜ` → `GÃ–KYÃœZÃœ`)
+ve `flutter analyze` bunu fark etmiyor. Satır düzenlemesi için Python
+(`io.open(..., encoding='utf-8')`).
+
+**`core.autocrlf=true`.** Dosyaların çoğu CRLF. İçeriği LF yazarsan tek
+satırlık düzeltme 1000+ satırlık hayalet diff'e döner. Yazarken dosyanın
+kendi satır sonunu koru.
+
+**Riverpod:** `FutureProvider` varsayılan `isAutoDispose = false` — yutulan
+bir hata **oturum boyunca** önbellekte kalır. Ayrıca `apiProvider`'ın
+interceptor'larından `apiProvider`'ı izleyen bir sağlayıcıya dokunmak
+`CircularDependencyError` fırlatır (bkz. bulgu B10).
+
+---
+
+## 6. Bugünkü durum (2026-09-20)
+
+Dal: `yuz-okuma-cihaz-usti-olcum`. Sürüm **1.15.9+44**. Backend rev **00096**.
+
+**Bekleyen:** Google Play kapalı test, "Reklam Kimliği" beyanı hatası
+yüzünden başlatılamadı. `AD_ID` izni paketten çıkarıldı ve formda "Hayır"
+işaretli; hata sürüyor, Play desteğinden yanıt bekleniyor. Sürüm bilerek
+artırılmıyor — araya ikinci bir sürüm kodu sokmak o yazışmayı bulandırır.
+
+**Açık bulgular** (`docs/test-raporu.md`): **B9** silinen hesap "en iyi çaba"
+aynalarıyla diriliyor (ölçüldü); **B10** 402 kapısı ve cüzdan tazelemesi
+Riverpod halkasına çarpıyor (ölçüldü, uygulanmadı).
+
+**Mağaza görselleri bayat olabilir** — `store/play/` kareleri ham cihaz
+yakalamalarından üretiliyor, yani koddaki metin düzeltmesi kareye yansımaz.
+`shot-1-sky.png` düzeltilmiş bir kusuru göstermeye devam ediyor. Kural:
+**piksel elle düzenlenmez**, ya kadraj ya yeniden yakalama.
+
+---
+
+## 7. iOS durumu
+
+`apps/mobile/ios/` projesi **var** ve beklenenden ileride: bundle id
+`ai.rytho`, Info.plist izin metinleri yazılı, `Runner.entitlements`'ta Apple
+ile Giriş + associated-domains, `sign_in_with_apple` hem pakette hem
+`auth_service.dart`'ta, `REVENUECAT_IOS_KEY` dart-define yuvası tanımlı,
+`apple-app-site-association` canlıda.
+
+**Eksikler (ölçüldü):** `GoogleService-Info.plist` yok · `Podfile` yok ·
+entitlements'ta `aps-environment` yok (push iOS'ta çalışmaz) ·
+`apple-app-site-association` içinde `TEAMID` **yer tutucu** ·
+`associated-domains` hâlâ `rhytoai.web.app` diyor ama alan adı **`rytho.app`**'e
+taşındı (davet bağlantıları iOS'ta açılmaz) · App Store Connect kaydı ve IAP
+ürünleri yok (Play'dekilerden ayrı oluşturulur) · Info.plist izin metinleri
+yalnız Türkçe.
+
+iOS derlemesi/imzalaması/yüklemesi **yalnız macOS**'ta yapılabilir.
+
+---
+
+## 8. Belgeler
+
+`docs/test-raporu.md` — senaryo listesi ve bulgular (B1…B10) ·
+`docs/konsol-gorevleri.md` — Firebase/Play/Cloud konsol işleri ·
+`docs/store-launch.md` — mağaza metni, yasak dil, görsel borçları ·
+`docs/maliyet-calismasi.md` — birim maliyetler ve marj ·
+`docs/ozellikler.md` — ücretsiz/Plus tarifesi (koddan sapmamalı) ·
+`docs/design/design-system.md` — hareket ve tipografi doktrini.

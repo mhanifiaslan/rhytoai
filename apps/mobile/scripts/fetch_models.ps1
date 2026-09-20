@@ -11,7 +11,8 @@
 # Kullanım:  apps/mobile klasöründen  ./scripts/fetch_models.ps1
 $ErrorActionPreference = "Stop"
 
-$hedefKlasor = Join-Path $PSScriptRoot "..\assets\models"
+# Ileri bolu: macOS'ta ters bolu AYIRAC DEGIL, dosya adinin parcasi.
+$hedefKlasor = Join-Path $PSScriptRoot "../assets/models"
 $hedef = Join-Path $hedefKlasor "selfie_multiclass_256x256.tflite"
 $kaynak = "https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_multiclass_256x256/float32/latest/selfie_multiclass_256x256.tflite"
 
