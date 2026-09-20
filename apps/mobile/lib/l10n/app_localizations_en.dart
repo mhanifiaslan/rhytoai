@@ -760,7 +760,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportUnavailableRefunded =>
-      'We couldn\'t produce your report just now — the token you spent has been refunded. Try again in a few seconds.';
+      'We couldn\'t produce your report just now — the credit you spent has been refunded. Try again in a few seconds.';
 
   @override
   String get promoTitle => 'Go beyond the stars ✨';

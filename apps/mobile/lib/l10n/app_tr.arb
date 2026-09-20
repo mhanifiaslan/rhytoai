@@ -339,7 +339,7 @@
   "errorConnection": "Bağlantı kurulamadı. İnternetini kontrol edip tekrar dene.",
   "errorSkyUnavailable": "Gökyüzüne şu an ulaşılamıyor.",
   "reportUnavailable": "Okumayı şu an üretemedik. Birkaç saniye sonra tekrar dene.",
-  "reportUnavailableRefunded": "Raporu şu an üretemedik; harcanan jeton iade edildi. Birkaç saniye sonra tekrar dene.",
+  "reportUnavailableRefunded": "Raporu şu an üretemedik; harcanan kredi iade edildi. Birkaç saniye sonra tekrar dene.",
   "promoTitle": "Yıldızların ötesine geç ✨",
   "promoBody": "Doğum haritanın derin analizini ve kişilik raporunu keşfet.",
   "promoAction": "Keşfet",

@@ -337,6 +337,54 @@ Kurallar:
 - `RYTHO_TOKENS_ENFORCE=1` — CANLI (K5 kapanışı; kuru çalışma dönemi
   bitti). Denemedeki kullanıcı günlük ücretsiz hakkını KORUR (KT2).
 
+### Yayın bölgesi: ÖNCE TÜRKİYE (2026-09-20 kararı)
+
+Uygulama **yalnız Türkiye'de** yayınlanır; ürün olgunlaşınca dünyaya açılır.
+Gerekçe teknik: telefon doğrulaması Firebase'de `allowlistOnly: ["TR"]` ile
+sınırlı ve istemcide `phone_verify_screen.dart` `_smsBolgeleri = {'TR'}`
+kapısı var. +90 dışı bir numarada SMS **hiç gönderilmiyor**, dürüst mesaj
+çıkıyor (`phoneRegionUnsupported`) — yani dünyaya açılsa kayıt akışı
+diğer ülkelerde yarım kalırdı.
+
+Dünyaya açarken yapılacaklar (hepsi ayrı iş):
+Firebase SMS bölge listesini genişlet **ve** `_smsBolgeleri` kümesini
+birlikte güncelle (iki yer aynı gerçeği söylemeli) · reCAPTCHA Enterprise'ı
+aç (SMS toll-fraud) · Play ülke listesi · fiyatlandırma/para birimi ·
+hukuk metinlerinin dil/yetki alanı.
+
+### Mağaza ürün adları uygulamanın SÖZLÜĞÜNE uymalı
+
+Play Console'daki ürün adı ve temel plan kimliği **makbuza basılıyor** ve
+kullanıcının satın alma kaydında kalan tek metin o. 2026-09-20'de test
+makbuzları okundu, bugünkü adlar şunlar:
+
+| Makbuzda görünen | Uygulama ne diyor | Durum |
+|---|---|---|
+| `Test: Aylık Plus` | `paywallTitle` = **"Rytho+"**, plan adı **"Aylık"** | marka adı eksik |
+| `Test: 1000 Jeton` | `tokenPackAmount` = **"{count} kredi"**, ekran **"Kredi Mağazası"** | **"Jeton" yanlış kelime** |
+
+"Jeton" kullanıcıya gösterilen sözlükten R2-F2 kararıyla çıkarıldı ("AI
+kredisi"). Makbuzda durması, uygulamanın hiç kullanmadığı bir kelimeyle
+ödeme kaydı bırakmak demek.
+
+Play Console → Kazanç sağlama → Ürünler'de düzeltilecek (ad alanı;
+kimlikler `rytho_plus_monthly`, `rytho_tokens_*` **DEĞİŞMEZ** — kimlik
+değişirse mevcut satın almalar kopar):
+
+| Ürün kimliği | Ad (TR) | Ad (EN) |
+|---|---|---|
+| `rytho_plus_monthly` | Rytho+ Aylık | Rytho+ Monthly |
+| `rytho_tokens_small` | 100 AI Kredisi | 100 AI Credits |
+| `rytho_tokens_medium` | 300 AI Kredisi | 300 AI Credits |
+| `rytho_tokens_large` | 1000 AI Kredisi | 1000 AI Credits |
+
+⚠️ Uygulama normalde KENDİ adlarını çiziyor (`paywall_screen.dart` plan
+adını `l10n.planMonthly`'den, `token_store_screen.dart` miktarı
+`l10n.tokenPackAmount`'tan alır) — ama ikisinin de **yedek dalı
+`product.title`**, yani mağaza adı. Paket kimliği tanınmazsa Play
+Console'daki metin uygulamanın İÇİNDE görünür. Bu yüzden iki taraf da
+aynı sözlüğü konuşmalı.
+
 ### Kalan konsol işleri — uygulama sahibinin
 
 1. **App Store Connect** ve **Play Console**'da abonelik ürününü oluştur:

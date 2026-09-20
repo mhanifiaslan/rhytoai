@@ -759,7 +759,7 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get reportUnavailableRefunded =>
-      'Raporu şu an üretemedik; harcanan jeton iade edildi. Birkaç saniye sonra tekrar dene.';
+      'Raporu şu an üretemedik; harcanan kredi iade edildi. Birkaç saniye sonra tekrar dene.';
 
   @override
   String get promoTitle => 'Yıldızların ötesine geç ✨';

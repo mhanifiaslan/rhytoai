@@ -1433,7 +1433,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportUnavailableRefunded.
   ///
   /// In tr, this message translates to:
-  /// **'Raporu şu an üretemedik; harcanan jeton iade edildi. Birkaç saniye sonra tekrar dene.'**
+  /// **'Raporu şu an üretemedik; harcanan kredi iade edildi. Birkaç saniye sonra tekrar dene.'**
   String get reportUnavailableRefunded;
 
   /// No description provided for @promoTitle.
