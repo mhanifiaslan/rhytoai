@@ -114,25 +114,72 @@ interceptor'larından `apiProvider`'ı izleyen bir sağlayıcıya dokunmak
 
 ---
 
-## 6. Bugünkü durum (2026-09-20)
+## 6. Bugünkü durum (2026-09-25)
 
-Dal: `yuz-okuma-cihaz-usti-olcum`. Sürüm **1.15.9+44**. Backend rev **00096**.
+Dal: `yuz-okuma-cihaz-usti-olcum`. Sürüm **1.16.0+45**. Backend rev **00096**.
 
-**Bekleyen:** Google Play kapalı test, "Reklam Kimliği" beyanı hatası
-yüzünden başlatılamadı. `AD_ID` izni paketten çıkarıldı ve formda "Hayır"
-işaretli; hata sürüyor, Play desteğinden yanıt bekleniyor. Sürüm bilerek
-artırılmıyor — araya ikinci bir sürüm kodu sokmak o yazışmayı bulandırır.
+**Kapalı test yürüyor** (Alpha kanalı). 45 hem dahili hem kapalı testte.
 
-**Açık bulgular** (`docs/test-raporu.md`): **B9** silinen hesap "en iyi çaba"
-aynalarıyla diriliyor (ölçüldü); **B10** 402 kapısı ve cüzdan tazelemesi
-Riverpod halkasına çarpıyor (ölçüldü, uygulanmadı).
+⚠️ **Üretim yolundaki tek kritik madde: testçi sayısı.** Kontrol panelinde
+"0 test kullanıcısı kayıtlı" görünüyordu — 12 testçi / 14 gün sayacı
+testçiler **opt-in bağlantısını açana kadar başlamaz**. Listeye eklemek
+yetmiyor.
+
+**App Check zorlaması HÂLÂ AÇILMAMALI.** Sahadaki dağılım ölçüldü
+(2026-09-21): 7 kişi build **41**'de, 3 kişi 44'te. App Check 43'te
+eklendi; 41'de yok. Şimdi açılırsa o 7 kişi Firestore'a ve girişe
+erişemez. 45 yayılıp 41 sayısı sıfırlanınca açılabilir.
+
+**Zorunlu güncelleme eşiği 0** (`config/app` belgesi yok, env tabanı 0) —
+yani hiçbir derleme kilitli değil. Eşiği yükseltmeden önce 44/45'in o
+kullanıcıların bulunduğu **her kanalda** yayında olduğundan emin ol;
+yoksa güncelleme bulamayıp kilitli kalırlar.
+
+**Açık bulgular** (`docs/test-raporu.md`): **B9** silinen hesap "en iyi
+çaba" aynalarıyla diriliyor (ölçüldü); **B10** 402 kapısı ve cüzdan
+tazelemesi Riverpod halkasına çarpıyor (ölçüldü, uygulanmadı).
+
+**Konsol borcu:** Play Console ürün adları hâlâ uygulamanın sözlüğüne
+uymuyor (makbuzda "1000 Jeton", uygulamada "1000 kredi") — girilecek tam
+metin `docs/store-launch.md`'de tabloyla hazır.
 
 **Mağaza görselleri bayat olabilir** — `store/play/` kareleri ham cihaz
-yakalamalarından üretiliyor, yani koddaki metin düzeltmesi kareye yansımaz.
-`shot-1-sky.png` düzeltilmiş bir kusuru göstermeye devam ediyor. Kural:
-**piksel elle düzenlenmez**, ya kadraj ya yeniden yakalama.
+yakalamalarından üretiliyor, yani koddaki metin düzeltmesi kareye
+yansımaz. `shot-1-sky.png` düzeltilmiş bir kusuru göstermeye devam
+ediyor. Kural: **piksel elle düzenlenmez**, ya kadraj ya yeniden yakalama.
 
----
+### Play Console tuzakları (ölçüldü, gün kaybettirdi)
+
+**"Reklam kimliği beyanı eksik" hatası ETKİN TÜM KANALLARA bakar.** İzni
+44'te kaldırdık ama hata sürdü: **dahili test** hâlâ 41'deydi ve o pakette
+AD_ID vardı. Kapalı testi temizlemek yetmedi. 10 saniyelik teşhis: formda
+**Evet** → kaydet. Evet'te AD_ID'siz sürüm yalnız uyarılır, Hayır'da
+AD_ID'li paket varsa **engellenir**; Evet'te gönder açılıp Hayır'da hata
+dönüyorsa suçlu bir kanalda duran eski pakettir. Kod suçlanmadan önce bu
+yapılır.
+
+**Sürüm kodu uygulama genelinde benzersizdir, kanal başına değil.** Aynı
+AAB'yi ikinci bir kanala **yükleyemezsin** ("sürüm kodu daha önce
+kullanıldı"). Kanallar arası taşıma **yalnız yukarı** çalışır:
+dahili → kapalı → üretim, "Sürümü yükselt" ile.
+
+**Hedef kanalda taslak sürüm varsa yükseltme kapalı kalır**
+("Kanalın zaten taslak bir sürümü var"). Ya taslağı sil, ya da taslağı
+düzenleyip paketi **kitaplıktan** seç (yeniden yükleme değil, o yüzden
+"kod kullanıldı" hatası vermez).
+
+### Derleme ortamı tuzakları (2026-09-25)
+
+**Flutter, JAVA_HOME'u değil Android Studio'nun JBR'sini kullanabiliyor.**
+`JAVA_HOME` Adoptium 17'yi gösterirken derleme JBR **21** ile koşuyordu.
+`flutter doctor -v` hangi Java'yı kullandığını söyler; sabitlemek için
+`flutter config --jdk-dir="<jdk17 yolu>"`.
+
+**Gradle'ın JVM'i çökebiliyor** (`EXCEPTION_ACCESS_VIOLATION`). Çökme
+GC'de DEĞİL `MethodHandleNatives.resolve`'daydı ve hem JBR 21'de hem
+Temurin 17'de tekrarladı — yani JDK satıcısı değildi. `flutter clean`
+sonrası tekrarlamadı. Çökme günlüğü `apps/mobile/android/hs_err_pid*.log`;
+**çöken iş parçacığına bak**, "GC" görünce bellek sanma.
 
 ## 7. iOS durumu
 
