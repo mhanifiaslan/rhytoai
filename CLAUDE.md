@@ -138,17 +138,33 @@ App Check 1.15.8+43'te eklendi, yani **43 öncesi derlemeler artık
 sürümü bilinmiyor, `yhykbr1984@gmail.com` ve `mhanifiaslan@yandex.com`
 41); sahibin kararı: yeniden kursunlar.
 
-⚠️ **Panel ve `web/auth/action` App Check KURMUYOR** ama Auth zorlandı.
-Zorlamadan 4 dk sonra ölçüldü: web isteği kapıdan geçiyor (normal kimlik
-hatası dönüyor), yani panel girişi çalışıyor. Ham REST isteği de geçiyordu
-— ama o ölçüm yayılma tamamlanmadan yapıldı, **hiçbir şey kanıtlamaz**.
-Tekrar ölçülmeli: geçmeye devam ediyorsa bot kayıt yolu kapanmamış
-demektir ve API anahtarı kısıtlaması asıl savunma olur.
+**Web yüzeyleri App Check kullanıyor** (2026-09-26, ölçüldü). Zorlama
+açılınca panel girişi ve şifre sıfırlama sayfası TAMAMEN kapanmıştı —
+mobilde App Check 43'ten beri vardı ama webde hiç yoktu. Ortak kurulum
+`web/assets/appcheck.js`. Üç incelik:
 
-**Zorunlu güncelleme eşiği 0** (`config/app` belgesi yok, env tabanı 0) —
-yani hiçbir derleme kilitli değil. Eşiği yükseltmeden önce 44/45'in o
-kullanıcıların bulunduğu **her kanalda** yayında olduğundan emin ol;
-yoksa güncelleme bulamayıp kilitli kalırlar.
+- Sağlayıcı **reCAPTCHA ENTERPRISE**, v3 değil: klasik reCAPTCHA
+  kullanımdan kalktı, Firebase Console o formu artık doldurtmuyor. v3
+  Firebase'e GİZLİ anahtar verdiriyordu; Enterprise yalnız SİTE anahtarını
+  alıyor (paylaşılan sır yok). Site anahtarı herkese açıktır, depoda durur.
+- App Check **örnek başınadır**. Panel, giriş penceresini same-origin
+  yapmak için ikinci bir Firebase örneği (`'yonetim'`) kuruyor; yalnız
+  birini etkinleştirmek diğerinin isteklerini jetonsuz bırakır.
+- reCAPTCHA anahtarının izinli alan adları arasında
+  **`rhytoai.firebaseapp.com` ŞART** — `authDomain` o ve giriş işleyicisi
+  orada çalışıyor. Aynı alan adı Browser API anahtarının referrer
+  listesinde de olmalı.
+
+Doğrulama (tarayıcıda, uçtan uca): panelde `signInWithEmailAndPassword`
+→ `auth/invalid-credential`, şifre sayfasında `applyActionCode` →
+`auth/invalid-action-code`. İkisi de **App Check hatası değil**, yani kapı
+aşılıyor.
+
+**API anahtarları kısıtlandı** (2026-09-26): Android anahtarı → paket
+`ai.rytho` + Firebase'de kayıtlı 5 SHA-1; Browser anahtarı → `rytho.app`,
+`www.rytho.app`, `rhytoai.web.app`, `rhytoai.firebaseapp.com`. Bot kapısı
+buydu ve kapandığı ölçüldü: kısıtsız istek artık
+`Requests from this Android client application <empty> are blocked`.
 
 **Açık bulgular** (`docs/test-raporu.md`): **B9** silinen hesap "en iyi
 çaba" aynalarıyla diriliyor (ölçüldü); **B10** 402 kapısı ve cüzdan
