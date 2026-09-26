@@ -17,9 +17,19 @@
 (function (w) {
   'use strict';
 
-  /* Firebase Console → App Check → "Default Web App" → reCAPTCHA v3
-     kaydedildiğinde verilen SİTE anahtarı buraya yazılır. */
-  var SITE_ANAHTARI = '';
+  /* Firebase Console → App Check → "Default Web App" → reCAPTCHA
+     ENTERPRISE kaydında kullanılan SİTE anahtarı.
+
+     Enterprise, v3 DEĞİL: klasik reCAPTCHA 2026'da kullanımdan kaldırıldı
+     ve Firebase Console o formu artık doldurtmuyor (alanlar kapalı). İki
+     kayıt biçimi aynı şeyi istemiyor — v3 Firebase'e GİZLİ anahtarı
+     verdiriyordu, Enterprise yalnız SİTE anahtarını alıyor; doğrulamayı
+     Cloud API'si üzerinden servis hesabıyla yapıyor, paylaşılan sır yok.
+
+     Anahtar `gcloud recaptcha keys list` ile doğrulandı: tür SCORE,
+     izinli alan adları rytho.app · rhytoai.web.app · rhytoai.firebaseapp.com
+     (sonuncusu ŞART, authDomain o). */
+  var SITE_ANAHTARI = '6LcLFdAtAAAAAJiyibdOKEDGdTQJhez--tnZclj5';
 
   /* App Check ÖRNEK BAŞINADIR. Panel, giriş açılır penceresini same-origin
      yapmak için ikinci bir Firebase örneği ('yonetim') kuruyor
@@ -30,7 +40,7 @@
     if (!SITE_ANAHTARI) return false;
     try {
       var ac = app ? firebase.appCheck(app) : firebase.appCheck();
-      ac.activate(new firebase.appCheck.ReCaptchaV3Provider(SITE_ANAHTARI),
+      ac.activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(SITE_ANAHTARI),
                   /* isTokenAutoRefreshEnabled */ true);
       return true;
     } catch (e) {
