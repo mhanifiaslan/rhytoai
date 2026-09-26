@@ -6,7 +6,10 @@ madde ya ölçülerek bulundu ya da bir kez zarar verdi. Windows makinesinde
 şeyler.
 
 Ölçüm tarihi: **2026-09-26**. Dal: `yuz-okuma-cihaz-usti-olcum`.
-Uzak depo: `https://github.com/mhanifiaslan/rhytoai.git`
+Uzak depo: `https://github.com/mhanifiaslan/rythoai.git`
+(GitHub deposu `rhytoai` → `rythoai` olarak yeniden adlandırılmış; eski
+adres hâlâ yönlendiriyor ama **yeni adresi kullan** — yönlendirme kalıcı
+bir garanti değil ve `git push` her seferinde uyarı basıyor.)
 
 ---
 
@@ -53,8 +56,8 @@ RevenueCat Test Store anahtarı, App Store anahtarı değil (madde 6.7).
 ## 3. Klonlama ve ilk koşu
 
 ```bash
-git clone https://github.com/mhanifiaslan/rhytoai.git
-cd rhytoai
+git clone https://github.com/mhanifiaslan/rythoai.git
+cd rythoai
 git checkout yuz-okuma-cihaz-usti-olcum
 ```
 
