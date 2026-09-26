@@ -125,10 +125,25 @@ Dal: `yuz-okuma-cihaz-usti-olcum`. Sürüm **1.16.0+45**. Backend rev **00096**.
 testçiler **opt-in bağlantısını açana kadar başlamaz**. Listeye eklemek
 yetmiyor.
 
-**App Check zorlaması HÂLÂ AÇILMAMALI.** Sahadaki dağılım ölçüldü
-(2026-09-21): 7 kişi build **41**'de, 3 kişi 44'te. App Check 43'te
-eklendi; 41'de yok. Şimdi açılırsa o 7 kişi Firestore'a ve girişe
-erişemez. 45 yayılıp 41 sayısı sıfırlanınca açılabilir.
+**App Check zorlaması AÇILDI** (2026-09-26 08:50 UTC). Ölçülen durum:
+`firestore.googleapis.com` **ENFORCED**, `identitytoolkit.googleapis.com`
+**ENFORCED**, `firebasestorage.googleapis.com` **UNENFORCED** (kalan tek
+servis; avatar yolu). Sorgu:
+`GET firebaseappcheck.googleapis.com/v1/projects/rhytoai/services/{servis}`
+— ADC ile çağırırken `x-goog-user-project: rhytoai` başlığı ŞART, yoksa
+kota projesi hatası döner.
+
+App Check 1.15.8+43'te eklendi, yani **43 öncesi derlemeler artık
+çalışmıyor**. Açıldığı an üç hesap 43'ün altındaydı (`erkandndr@gmail.com`
+sürümü bilinmiyor, `yhykbr1984@gmail.com` ve `mhanifiaslan@yandex.com`
+41); sahibin kararı: yeniden kursunlar.
+
+⚠️ **Panel ve `web/auth/action` App Check KURMUYOR** ama Auth zorlandı.
+Zorlamadan 4 dk sonra ölçüldü: web isteği kapıdan geçiyor (normal kimlik
+hatası dönüyor), yani panel girişi çalışıyor. Ham REST isteği de geçiyordu
+— ama o ölçüm yayılma tamamlanmadan yapıldı, **hiçbir şey kanıtlamaz**.
+Tekrar ölçülmeli: geçmeye devam ediyorsa bot kayıt yolu kapanmamış
+demektir ve API anahtarı kısıtlaması asıl savunma olur.
 
 **Zorunlu güncelleme eşiği 0** (`config/app` belgesi yok, env tabanı 0) —
 yani hiçbir derleme kilitli değil. Eşiği yükseltmeden önce 44/45'in o
@@ -139,7 +154,10 @@ yoksa güncelleme bulamayıp kilitli kalırlar.
 çaba" aynalarıyla diriliyor (ölçüldü); **B10** 402 kapısı ve cüzdan
 tazelemesi Riverpod halkasına çarpıyor (ölçüldü, uygulanmadı).
 
-**Konsol borcu:** Play Console ürün adları hâlâ uygulamanın sözlüğüne
+**Konsol borcu:** API anahtarlarında **uygulama kısıtlaması YOK**
+(`Android key` ve `Browser key`, ölçüldü 2026-09-26) — anahtar APK'nın
+içinde herkese açık ve izinli API'ler arasında `identitytoolkit` var, yani
+bot kayıt yolu buradan geçiyor. Play Console ürün adları hâlâ uygulamanın sözlüğüne
 uymuyor (makbuzda "1000 Jeton", uygulamada "1000 kredi") — girilecek tam
 metin `docs/store-launch.md`'de tabloyla hazır.
 
