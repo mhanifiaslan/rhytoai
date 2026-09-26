@@ -17,9 +17,14 @@
   var auth = (function () {
     var ana = location.hostname;
     var uygun = /\.web\.app$|\.firebaseapp\.com$/.test(ana);
+    /* App Check HER örnek için ayrı etkinleştirilir; jetonsuz kalan örneğin
+       istekleri reddedilir (bkz. /assets/appcheck.js). */
+    if (window.RY_appCheckKur) RY_appCheckKur();
     if (!uygun) return firebase.auth();
     var cfg = Object.assign({}, firebase.app().options, { authDomain: ana });
-    return firebase.initializeApp(cfg, 'yonetim').auth();
+    var yonetim = firebase.initializeApp(cfg, 'yonetim');
+    if (window.RY_appCheckKur) RY_appCheckKur(yonetim);
+    return yonetim.auth();
   })();
   RY.auth = auth;
 
