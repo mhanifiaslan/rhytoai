@@ -100,29 +100,47 @@ Yıllık ücretli. Bunsuz ne imzalama ne TestFlight ne App Store Connect var.
 Üyelikten çıkan **Team ID** (10 karakter) üç yerde birden lazım: Xcode
 imzalama, `apple-app-site-association`, ve entitlements profili.
 
-### 4.2 — Firebase'de iOS uygulaması kaydı · **SEN**
-Firebase Console → proje `rhytoai` → iOS uygulaması ekle, bundle
-`ai.rytho`. Çıkan **`GoogleService-Info.plist`**'i indir.
+### 4.2 — Firebase'de iOS kaydı · ✅ **BİTTİ** (2026-09-26)
 
-⚠️ Dosyayı `apps/mobile/ios/Runner/` altına kopyalamak **YETMEZ**.
-`project.pbxproj`'de dosya referansı ve Copy Bundle Resources girdisi yok
-(ölçüldü: `grep GoogleService project.pbxproj` hiçbir şey dönmüyor), yani
-pakete girmez. Xcode'da Runner hedefine **sürükleyerek** ekle ve "Copy
-items if needed" + Runner target işaretli olsun.
+`ai.rytho` bundle'ıyla kaydedildi ve **`GoogleService-Info.plist` depoda**:
+`apps/mobile/ios/Runner/GoogleService-Info.plist`. Android'in
+`google-services.json`'ı da git'te — aynı düzen. Mac'te taşınacak bir şey
+yok, `git pull` yeter.
+
+⚠️ **Ama Xcode hedefine hâlâ EKLENMEDİ.** `project.pbxproj` klasör-senkronlu
+grup kullanmıyor (`objectVersion = 54`) ve Copy Bundle Resources'ta yalnız
+dört girdi var. Dosya diskte durduğu hâlde **pakete girmez**. Xcode'da
+Runner hedefine sürükle ("Copy items if needed" kapalı — dosya zaten yerinde,
+"Add to targets: Runner" işaretli).
 
 Bunsuz uygulama **ilk karede çöker**: `main.dart:78` `Firebase.initializeApp()`
 seçeneksiz çağrılıyor ve depoda `firebase_options.dart` yok, yani
 yapılandırmanın tek kaynağı bu dosya.
 
-### 4.3 — Google ile giriş · **SEN (plist geldikten sonra)**
-`GoogleService-Info.plist` içindeki **`REVERSED_CLIENT_ID`** değeri
-`Info.plist`'e `CFBundleURLTypes` olarak yazılır, ayrıca `GIDClientID`
-eklenir. Şu an ikisi de yok (ölçüldü). Bunlar olmadan Google girişi iOS'ta
-açılmaz — geri dönüş URL'si kaydedilmemiş olur.
+**Bir kez yanlış kaydedildi ve bu öğretici bir kazaydı:** bundle `app.rytho`
+girilmişti (`ai` yerine `app`). İnen plist de o kimliği taşıyordu ve
+`FirebaseApp.configure()` uyuşmazlığı **hata değil uyarı** ile geçiyor —
+yani uygulama "çalışıyor" görünürken App Check, Google girişi, push ve
+Crashlytics tek tek sessizce bozulurdu. Kayıt silinip yeniden açıldı.
+Bekçi: `backend/tests/test_ios_config.py` artık bundle kimliğini beş
+dosyada birden bağlıyor.
 
-Ek olarak `main.dart:133` `GoogleSignIn.instance.initialize` yalnız
-`serverClientId` geçiyor; iOS `clientId` de ister. Plist gelince bu satır
-güncellenecek.
+### 4.3 — Google ile giriş · ✅ **BİTTİ** (2026-09-26)
+
+`Info.plist`'e `CFBundleURLTypes` (REVERSED_CLIENT_ID) ve `GIDClientID`
+eklendi; ikisi de `GoogleService-Info.plist`'ten **okunarak** yazıldı, elle
+kopyalanmadı. URL şeması yalnız `Info.plist`'ten okunabiliyor — Dart'tan
+verilemez; kayıtlı olmasaydı Google tarayıcıda oturumu açar ama uygulamaya
+dönemezdi ve giriş yarıda kalırdı.
+
+`main.dart:133`'teki `GoogleSignIn.instance.initialize(serverClientId: …)`
+**değiştirilmedi**: eklenti (`google_sign_in_ios` 6.3.0,
+`FLTGoogleSignInPlugin.m:22`) iOS istemci kimliğini doğrudan
+`GoogleService-Info.plist`'ten okuyor, ayrıca `GIDClientID` de yazılı.
+
+**iOS API anahtarı kısıtlandı:** bundle `ai.rytho`, 27 API hedefi korunarak.
+Kayıt açılınca doğan anahtarın bundle listesi **boş** geliyordu — dün
+Android ve Browser anahtarları için kapattığımız bot yolunun aynısı.
 
 ### 4.4 — İmzalama · **SEN (Xcode'da)**
 `project.pbxproj`'de `DEVELOPMENT_TEAM` anahtarı **hiç yok** ve Runner
@@ -192,6 +210,10 @@ ekranda gerçekten kilitli kalır (bekçi:
 
 Mac'te bunları yeniden yapma, yapıldı ve testten geçti:
 
+- **`GoogleService-Info.plist`** depoda (`ios/Runner/`), bundle
+  `ai.rytho` doğrulanmış. **Xcode hedefine eklenmesi hâlâ gerekli** (4.2).
+- **Google girişi** `Info.plist`'e bağlandı; iOS API anahtarı `ai.rytho`
+  ile kısıtlandı (4.3).
 - **`ios/Podfile`** yazıldı, `platform :ios, '15.5'` **açık**. Flutter'ın
   şablonunda bu satır yorumlu gelir ve o yüzden `pod install` şu hatayla
   düşerdi: *"platform of the target Runner (iOS 13.0) is not compatible
@@ -217,6 +239,10 @@ Mac'te bunları yeniden yapma, yapıldı ve testten geçti:
 
 ## 6. Bitmemiş, Mac'te yapılacak kod işleri
 
+- **`GoogleService-Info.plist` Xcode hedefine eklenmeli.** Dosya diskte
+  ve git'te ama Copy Bundle Resources'ta değil — pakete girmiyor. Aynı
+  yapısal sebep (`objectVersion = 54`, klasör-senkronlu grup yok)
+  Windows'tan çözülemezdi.
 - **`en.lproj/InfoPlist.strings` bağlanmalı.** Dosya
   `apps/mobile/ios/Runner/en.lproj/` altında **hazır** ama Xcode projesine
   bağlı değil: Copy Bundle Resources'ta yok ve `knownRegions` yalnız

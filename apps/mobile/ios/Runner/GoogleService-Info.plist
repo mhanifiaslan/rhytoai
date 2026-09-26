@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>770582338651-gj3mhjnnibvd0jd4ur3o7hbsq81lq9nh.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.770582338651-gj3mhjnnibvd0jd4ur3o7hbsq81lq9nh</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>770582338651-fucpggf19asrvcpstis8sqmkk5tm1u38.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCh1OAt98A6zqbtPY6jgvbEOD7AShyWEVo</string>
+	<key>GCM_SENDER_ID</key>
+	<string>770582338651</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>ai.rytho</string>
+	<key>PROJECT_ID</key>
+	<string>rhytoai</string>
+	<key>STORAGE_BUCKET</key>
+	<string>rhytoai.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:770582338651:ios:e389235431dc6dd353737e</string>
+</dict>
+</plist>

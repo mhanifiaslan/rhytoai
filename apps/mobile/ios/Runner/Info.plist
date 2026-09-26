@@ -15,6 +15,34 @@
 	     veriyor: fotograf cihazda islenir, yuklenmez. -->
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Yüz okuma için galeriden fotoğraf seçebilirsin. Fotoğraf yalnızca cihazında işlenir; hiçbir yere gönderilmez ve saklanmaz.</string>
+	<!-- Google ile Giris (iOS). Iki parca da GEREKLI ve ikisi de buradan
+	     okunur; Dart tarafindan verilemez:
+
+	     CFBundleURLTypes -> isletim sisteminin geri donus URL semasi. Google
+	     tarayicida oturumu acip uygulamaya bu sema ile donuyor; kayitli
+	     degilse iOS donusu hicbir yere yonlendiremez ve giris YARIDA kalir.
+	     Deger GoogleService-Info.plist'teki REVERSED_CLIENT_ID ile BIREBIR ayni.
+
+	     GIDClientID -> iOS OAuth istemci kimligi (ayni dosyadaki CLIENT_ID).
+
+	     ⚠️ Ikisi de bundle ai.rytho icin uretildi. Firebase'de kayit bir kez
+	     app.rytho diye acildi (yazim hatasi) ve o plist sessiz bir tuzakti:
+	     FirebaseApp.configure() uyusmazligi HATA degil UYARI ile geciyor,
+	     sonra App Check, giris ve push tek tek bozuluyordu. Bu degerler
+	     degistirilecekse kaynak DAIMA GoogleService-Info.plist olmali. -->
+	<key>GIDClientID</key>
+	<string>770582338651-gj3mhjnnibvd0jd4ur3o7hbsq81lq9nh.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.770582338651-gj3mhjnnibvd0jd4ur3o7hbsq81lq9nh</string>
+			</array>
+		</dict>
+	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

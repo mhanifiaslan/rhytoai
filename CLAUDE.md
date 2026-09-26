@@ -298,11 +298,25 @@ dosyasıyla · `UIBackgroundModes/remote-notification` ·
 `ITSAppUsesNonExemptEncryption` · `STRIP_STYLE = non-global` · zorunlu
 güncelleme ve abonelik yönetiminde iOS dalı · mağaza-nötr metinler.
 
+**Firebase iOS kaydı AÇILDI** (2026-09-26): bundle `ai.rytho`,
+`GoogleService-Info.plist` depoda (`ios/Runner/`), Google girişi
+`Info.plist`'e bağlandı (`CFBundleURLTypes` + `GIDClientID`, ikisi de
+plist'ten okunarak), iOS API anahtarı `ai.rytho` ile kısıtlandı (27 API
+hedefi korunarak). **Ama plist Xcode hedefine hâlâ eklenmedi** — diskte
+durduğu hâlde pakete girmiyor, bkz. aşağıdaki tuzak.
+
+⚠️ **Kayıt bir kez `app.rytho` diye açıldı** (`ai` yerine `app`). İnen
+plist o kimliği taşıyordu ve `FirebaseApp.configure()` uyuşmazlığı **hata
+değil UYARI** ile geçiyor: uygulama "çalışıyor" görünürken App Check (App
+Attest kimliğe bağlı), Google girişi, push ve Crashlytics tek tek sessizce
+bozulurdu. Firebase bundle kimliğini **düzenlettirmiyor** — kayıt silinip
+yeniden açıldı. Bekçi: `backend/tests/test_ios_config.py`, kimliği beş
+dosyada birden bağlıyor (pbxproj ×3, gradle, AASA, plist).
+
 **Kalan engelleyiciler hesap işidir, kod değil:** Apple Developer üyeliği →
-Team ID · Firebase'de iOS kaydı → `GoogleService-Info.plist` · ondan çıkan
-`REVERSED_CLIENT_ID` ile `CFBundleURLTypes`/`GIDClientID` · imzalama ·
-APNs anahtarı · gerçek `appl_` RevenueCat anahtarı (şu anki `test_` önekli)
-· AASA'daki `TEAMID` yer tutucusu · App Store Connect kaydı ve IAP ürünleri.
+Team ID · imzalama · APNs anahtarı · gerçek `appl_` RevenueCat anahtarı
+(şu anki `test_` önekli) · AASA'daki `TEAMID` yer tutucusu · App Store
+Connect kaydı ve IAP ürünleri.
 
 ### iOS tuzakları (ölçüldü)
 
