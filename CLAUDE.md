@@ -103,6 +103,20 @@ kendi HTML yorumuna. Eşleşmeden **önce yorumları at**.
 ve `flutter analyze` bunu fark etmiyor. Satır düzenlemesi için Python
 (`io.open(..., encoding='utf-8')`).
 
+**Git Bash heredoc'u ters bölü yiyor.** Sınırlayıcı tırnaklı olsa bile
+(`cat > dosya <<'SON'`) bir kaçış katmanı düşüyor: kaynakta iki ters bölü
+yazsan diske bir tane iniyor. Bu oturumda **altı kez** oldu ve en sinsisi
+şuydu: bir Windows yolundaki ters bölü + `a` ikilisi ASCII **BEL** (0x07)
+karakterine dönüştü ve dosyaya **görünmez bir kontrol baytı** yazdı —
+`Read` aracı bile onu göstermedi, yalnız `repr()` yakaladı. Bir başkası
+`build` + ters bölü + `app` yolunu `buildpp` yaptı, bir başkası Python
+docstring'inde geçersiz-kaçış uyarısı üretti. Altıncısı tam da **bu
+paragrafı yazarken** oldu.
+
+Kural: **ters bölü içeren dosyayı heredoc ile yazma.** Write/Edit aracını
+kullan (dizeyi olduğu gibi geçirir) ya da Python'da `chr(92)` ile kur. Yol
+örneği gereken docstring'i ham dize yap (`r` önekli üç tırnak).
+
 **`core.autocrlf=true`.** Dosyaların çoğu CRLF. İçeriği LF yazarsan tek
 satırlık düzeltme 1000+ satırlık hayalet diff'e döner. Yazarken dosyanın
 kendi satır sonunu koru.
@@ -120,10 +134,18 @@ Dal: `yuz-okuma-cihaz-usti-olcum`. Sürüm **1.16.0+45**. Backend rev **00096**.
 
 **Kapalı test yürüyor** (Alpha kanalı). 45 hem dahili hem kapalı testte.
 
-⚠️ **Üretim yolundaki tek kritik madde: testçi sayısı.** Kontrol panelinde
-"0 test kullanıcısı kayıtlı" görünüyordu — 12 testçi / 14 gün sayacı
-testçiler **opt-in bağlantısını açana kadar başlamaz**. Listeye eklemek
-yetmiyor.
+⚠️ **Üretim yolundaki tek kritik madde: testçi sayısı.** 12 testçi / 14 gün
+sayacı, testçiler **opt-in bağlantısını açıp "Testçi ol"a basana kadar
+başlamaz**; listeye e-posta eklemek hiçbir şey saymaz. Kök neden ölçüldü
+(2026-09-26): sayaç 0'dı çünkü bağlantı **hiç dağıtılmamıştı** — sahibi de
+o sayfayı ilk kez o gün gördü. Bağlantı canlı (HTTP 200):
+`https://play.google.com/apps/testing/ai.rytho`.
+
+Üç sessiz kopma noktası: testçi bağlantıyı **listedeki Google hesabıyla**
+açmalı (telefonda ikinci hesap varsa Play varsayılanı seçer ve kayıt
+tutmaz); **dahili testten kurulu olması saymaz**, yine basması gerekir;
+ve 14 gün boyunca **kayıtlı kalmalı** — "testten ayrıl" sayıyı düşürür ve
+sayaç geriler.
 
 **App Check zorlaması AÇILDI** (2026-09-26 08:50 UTC). Ölçülen durum:
 `firestore.googleapis.com` **ENFORCED**, `identitytoolkit.googleapis.com`
@@ -166,16 +188,63 @@ aşılıyor.
 buydu ve kapandığı ölçüldü: kısıtsız istek artık
 `Requests from this Android client application <empty> are blocked`.
 
+**Alan adı taşınırken Firebase Auth yetkili alan listesi taşınmamıştı**
+(ölçüldü 2026-09-26). Listede yalnız `rhytoai.firebaseapp.com`,
+`rhytoai.web.app` ve iki ölü önizleme kanalı vardı; `rytho.app` yoktu ve
+panelde Google ile giriş `auth/unauthorized-domain` ile düşüyordu. Hata
+`authDomain`'den değil, **sayfanın kendi ana makinesinden** gelir — panel
+`rytho.app`'te varsayılan örneği kullanıyor (`app.js`: `uygun` yalnız
+`.web.app`/`.firebaseapp.com` için true), yani kod değişikliği gerekmedi.
+`rytho.app` + `www.rytho.app` eklendi. ⚠️ Alan listesi **TAM DEĞİŞİMLE**
+yazılır — PATCH gövdesine mevcut girdiler de konmazsa eski ana makinelerden
+giriş kapanır:
+`PATCH identitytoolkit.googleapis.com/admin/v2/projects/rhytoai/config?updateMask=authorizedDomains`
+
+**Panele girebilen tek hesap:** `aslan.mh@gmail.com`, rol `owner`, üç giriş
+yöntemi kayıtlı (google.com · password · phone). Paneldeki şifre **Firebase
+Auth hesabının** şifresidir, Google hesabının değil — unutulursa "Şifreni mi
+unuttun?" akışı kullanılır. Yetki `tools/set_admin.py` ile basılan custom
+claim'den gelir, panelde kullanıcı listesi yoktur.
+
+**Google Search Console doğrulandı** (2026-09-26, uçtan uca ölçüldü):
+`web/googleb6af2cb19834337d.html`, üç ana makinede de 53 bayt birebir.
+Google doğrulamayı periyodik tekrar okur ve Hosting her deploy'da `web/`
+klasörünü **tamamen** değiştirir — dosya depodan çıkarsa başka bir makineden
+yapılan ilk deploy onu siler ve mülk **sessizce** doğrulanmamışa döner.
+Bekçi: `backend/tests/test_web_seo.py`. Aynı dosya dört şeyi daha sabitliyor:
+sitemap beyanının ana makinesi, sitemap'in tüm indekslenebilir sayfaları
+listelemesi, `x-default` hreflang, ve davet sayfası çifti — `/i/` **noindex
+taşımalı ama taranabilir kalmalı**, çünkü `Disallow` indekslemeyi durdurmaz
+ve Google noindex'i görebilmek için sayfayı çekebilmek zorundadır.
+
 **Açık bulgular** (`docs/test-raporu.md`): **B9** silinen hesap "en iyi
 çaba" aynalarıyla diriliyor (ölçüldü); **B10** 402 kapısı ve cüzdan
 tazelemesi Riverpod halkasına çarpıyor (ölçüldü, uygulanmadı).
 
-**Konsol borcu:** API anahtarlarında **uygulama kısıtlaması YOK**
-(`Android key` ve `Browser key`, ölçüldü 2026-09-26) — anahtar APK'nın
-içinde herkese açık ve izinli API'ler arasında `identitytoolkit` var, yani
-bot kayıt yolu buradan geçiyor. Play Console ürün adları hâlâ uygulamanın sözlüğüne
+**Konsol borcu:** Play Console ürün adları hâlâ uygulamanın sözlüğüne
 uymuyor (makbuzda "1000 Jeton", uygulamada "1000 kredi") — girilecek tam
-metin `docs/store-launch.md`'de tabloyla hazır.
+metin `docs/store-launch.md`'de tabloyla hazır. Kapalı test sekmesindeki
+**geri bildirim URL'si/e-postası boş**. `firebasestorage.googleapis.com`
+App Check zorlaması hâlâ **UNENFORCED**.
+(API anahtarı kısıtlaması borç DEĞİL artık — yukarıda kapatıldı.)
+
+**Geliştirici adı — çözülmemiş çelişki.** Play'in kendi opt-in sayfası
+(2026-09-26 ekran görüntüsü) daveti gönderen tarafı İKİ yerde **"Rhyto AI"**
+diye adlandırıyor: uygulama adının altındaki gri satırda ve "… has invited
+you to a testing program …" cümlesinde. Sahibi ise Console'daki alanın
+**"Rytho"** okuduğunu söylüyor; `rytho.app` ve paket adı `ai.rytho` zaten
+doğru. **Play bu ismi Firebase'den ALMAZ** — yani `rhytoai` proje kimliği
+bunun açıklaması değil, öyle sanmak yanlış gerekçe olur.
+
+Dışarıdan ölçülemedi: uygulama üretimde olmadığı için geliştirici sayfası
+(`/store/apps/dev?id=5423180944698765`) 404 dönüyor, opt-in sayfası da
+girişin arkasında. Tek kanıt o ekran görüntüsü.
+
+Ad Console'da İKİ ayrı yerde duruyor — **Geliştirici hesabı → Hesap
+ayrıntıları → *Geliştirici adı*** ve **Geliştirici sayfası**. Hangisi
+yanlışsa o düzeltilir; ikisi de doğruysa opt-in sayfasındaki isim
+propagasyon gecikmesidir. **Ayarlar sayfasında DEĞİL** (orada yalnız bağlı
+hizmetler, e-posta listeleri ve para kazanma var) — bir kez orada arandı.
 
 **Mağaza görselleri bayat olabilir** — `store/play/` kareleri ham cihaz
 yakalamalarından üretiliyor, yani koddaki metin düzeltmesi kareye

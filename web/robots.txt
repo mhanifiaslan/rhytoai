@@ -1,5 +1,11 @@
 User-agent: *
 Allow: /
-Disallow: /i/
 
-Sitemap: https://rhytoai.web.app/sitemap.xml
+# /i/ (davet sayfasi) BILEREK engellenmiyor. Disallow yalnizca TARAMAYI
+# durdurur; indekslemeyi durdurmaz — paylasilan davet baglantisi dis link
+# olarak Google'a ulasinca sayfa basliksiz indekslenirdi. Indeksleme
+# noindex ile kapatiliyor (web/i/index.html + firebase.json X-Robots-Tag),
+# ve Google o noindex'i gorebilmek icin sayfayi tarayabilmek ZORUNDA.
+# Buraya Disallow geri eklenirse noindex korumasi sessizce olur.
+
+Sitemap: https://rytho.app/sitemap.xml
