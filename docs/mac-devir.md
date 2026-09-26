@@ -17,7 +17,7 @@ bir garanti değil ve `git push` her seferinde uyarı basıyor.)
 
 | Araç | Sürüm | Not |
 |---|---|---|
-| Xcode | güncel | **Yalnız macOS**. `xcode-select --install` yetmez, tam Xcode gerekir |
+| Xcode | **26.6** (17F113) | **Yalnız macOS**. Tam Xcode gerekir. **Xcode 27 derleyemiyor** (§7) — 26.6 yan yana kurulur ve `xcode-select` ona çevrilir |
 | CocoaPods | güncel | `sudo gem install cocoapods` ya da `brew install cocoapods` |
 | Flutter | **3.44.7 stable** (Dart 3.12.2) | `pubspec` `sdk: ^3.12.0`. Farklı minör sürüm kilit dosyasını oynatır |
 | Python | **3.11 ŞART** | 3.12'de `pyswisseph` kurulmuyor. venv: `backend/.venv` |
@@ -107,11 +107,11 @@ imzalama, `apple-app-site-association`, ve entitlements profili.
 `google-services.json`'ı da git'te — aynı düzen. Mac'te taşınacak bir şey
 yok, `git pull` yeter.
 
-⚠️ **Ama Xcode hedefine hâlâ EKLENMEDİ.** `project.pbxproj` klasör-senkronlu
-grup kullanmıyor (`objectVersion = 54`) ve Copy Bundle Resources'ta yalnız
-dört girdi var. Dosya diskte durduğu hâlde **pakete girmez**. Xcode'da
-Runner hedefine sürükle ("Copy items if needed" kapalı — dosya zaten yerinde,
-"Add to targets: Runner" işaretli).
+✅ **Xcode hedefine EKLENDİ** (Mac, 2026-09-26). `project.pbxproj`
+klasör-senkronlu grup kullanmadığı için (`objectVersion = 54`) diskte durmak
+yetmiyordu; Runner'ın Copy Bundle Resources'ına CocoaPods'un `xcodeproj`
+kütüphanesiyle eklendi. **Ölçüldü:** derlenen `Runner.app` içinde
+`GoogleService-Info.plist` var ve `BUNDLE_ID = ai.rytho`.
 
 Bunsuz uygulama **ilk karede çöker**: `main.dart:78` `Firebase.initializeApp()`
 seçeneksiz çağrılıyor ve depoda `firebase_options.dart` yok, yani
@@ -211,7 +211,9 @@ ekranda gerçekten kilitli kalır (bekçi:
 Mac'te bunları yeniden yapma, yapıldı ve testten geçti:
 
 - **`GoogleService-Info.plist`** depoda (`ios/Runner/`), bundle
-  `ai.rytho` doğrulanmış. **Xcode hedefine eklenmesi hâlâ gerekli** (4.2).
+  `ai.rytho` doğrulanmış ve Runner hedefinde — pakete giriyor (4.2).
+- **CocoaPods entegrasyonu** (`pod install`, `Podfile.lock` depoda) ve
+  **imzasız cihaz derlemesi** Mac'te geçti (2026-09-26, Xcode 26.6).
 - **Google girişi** `Info.plist`'e bağlandı; iOS API anahtarı `ai.rytho`
   ile kısıtlandı (4.3).
 - **`ios/Podfile`** yazıldı, `platform :ios, '15.5'` **açık**. Flutter'ın
@@ -239,10 +241,6 @@ Mac'te bunları yeniden yapma, yapıldı ve testten geçti:
 
 ## 6. Bitmemiş, Mac'te yapılacak kod işleri
 
-- **`GoogleService-Info.plist` Xcode hedefine eklenmeli.** Dosya diskte
-  ve git'te ama Copy Bundle Resources'ta değil — pakete girmiyor. Aynı
-  yapısal sebep (`objectVersion = 54`, klasör-senkronlu grup yok)
-  Windows'tan çözülemezdi.
 - **`en.lproj/InfoPlist.strings` bağlanmalı.** Dosya
   `apps/mobile/ios/Runner/en.lproj/` altında **hazır** ama Xcode projesine
   bağlı değil: Copy Bundle Resources'ta yok ve `knownRegions` yalnız
@@ -258,7 +256,6 @@ Mac'te bunları yeniden yapma, yapıldı ve testten geçti:
   `firebase_messaging` de aynı delegeyi sahipleniyor ve hangisinin
   kazandığı ancak **cihazda** ölçülebilir. Mac'te gerçek cihazla
   doğrulanarak eklenmeli — "ölçülmeyen söylenmez".
-- **`main.dart:133` `GoogleSignIn` `clientId`** — 4.3'e bağlı.
 
 ---
 
@@ -274,11 +271,44 @@ Mac'te bunları yeniden yapma, yapıldı ve testten geçti:
 - **`gcloud`'un varsayılan projesi kayabiliyor.** Her komutta
   `--project rhytoai` yaz; yoksa komutlar **sessizce yanlış projeye**
   gider. Bu bir kez yanlış bir "panelde hiç admin yok" blocker'ı ürettirdi.
-- **Satır sonları.** Depoda `core.autocrlf` Windows tarafında etkin ve
-  dosyaların bir kısmı CRLF (ör. `ios/Runner/Info.plist`,
-  `AppDelegate.swift`), çoğu LF. Düzenlerken **dosyanın kendi satır
-  sonunu koru**, yoksa tek satırlık bir düzeltme 1000 satırlık hayalet
-  diff'e döner.
+- **Satır sonları.** Depo (index) her şeyi **LF** saklıyor; CRLF yalnız
+  Windows çalışma kopyasında `core.autocrlf` yüzünden görünür. Mac'te
+  `autocrlf` ayarsız bırakılır ve dosyalar LF gelir (ölçüldü:
+  `git ls-files --eol apps/mobile/ios` hepsi `i/lf w/lf`). Mac'te
+  `autocrlf=true` yapma — o zaman hayalet diff burada başlar.
+- **Xcode 27 bu depoyu DERLEYEMİYOR** (ölçüldü 2026-09-26, Xcode 27.0
+  27A266a). İki bağımsız kırılma: (1) Swift 6.4, `purchases-ios` 5.67.1'i
+  (`purchases_flutter` 9.16.1 üzerinden) reddediyor —
+  `PaywallColor.swift:56` "Invalid redeclaration of synthesized memberwise
+  init"; (2) Xcode 27'nin `lipo`'su `-verify_arch`'a birden çok mimari
+  verilince argümanı dosya sanıyor ve Flutter 3.44.7'nin simülatör
+  derlemesi "does not contain architectures" ile düşüyor. Çözüm olarak
+  **Xcode 26.6 (17F113) yan yana kuruldu**: `/Applications/Xcode-26.app`.
+  Alternatif `purchases_flutter` 10.x'e majör atlamaktı; Android'i de
+  etkileyeceği için seçilmedi.
+- **`DEVELOPER_DIR` YETMEZ, `xcode-select` şart.** `objective_c` paketinin
+  native-assets kancası SDK'yı `xcrun --show-sdk-path` ile soruyor
+  (`hook/build.dart:183`) ve Flutter kancaya `DEVELOPER_DIR`'ı geçirmiyor.
+  Sonuç: derleyici Xcode 26'dan, SDK Xcode 27'den gelir ve bağlama
+  "unknown architecture … libSystem.B.tbd" ile düşer. Doğrusu:
+  `sudo xcode-select -s /Applications/Xcode-26.app/Contents/Developer`.
+  Xcode'u değiştirdikten sonra `.dart_tool/hooks_runner` ve `build/ios`
+  silinir.
+- **Xcode'un yolunda boşluk ya da Türkçe harf olmasın.** Finder'da
+  kopyalanınca "Xcode kopyası.app" oluyor; adını `Xcode-26.app` yap.
+- **Uygulama iOS 26+ simülatörde HİÇ çalışmaz.** ML Kit (yüz okuma) arm64
+  simülatör dilimi taşımıyor; Flutter `EXCLUDED_ARCHS[sdk=iphonesimulator*]
+  = arm64` yazıyor ama iOS 26+ Apple Silicon simülatörleri arm64 zorunlu
+  tutuyor. Test yolu **gerçek cihaz**. (TFLite ve App Attest de zaten
+  cihaz istiyordu.)
+- **`flutter analyze` Mac'te `build/`'i taramasın.** Flutter burada SPM
+  için eklenti kaynaklarını `build/ios/SourcePackages`'a indiriyor;
+  dışlanmazsa üçüncü taraf testlerinden 864 sahte hata sayılıyordu.
+  `analysis_options.yaml`'da `analyzer: exclude: [build/**]`.
+- **CocoaPods ve Homebrew:** `brew install cocoapods` (sistem ruby 2.6
+  yeni CocoaPods'u kaldırmaz). `powershell` cask'ı kaldırılmış; yalnız
+  `powershell@preview` var ya da GitHub'dan `.pkg`. Model indirmek için
+  pwsh şart değil — `fetch_models.ps1`'deki URL'yi `curl` ile çekmek aynı.
 
 ---
 
