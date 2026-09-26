@@ -3251,13 +3251,13 @@ abstract class AppLocalizations {
   /// No description provided for @forceUpdateAction.
   ///
   /// In tr, this message translates to:
-  /// **'Google Play\'de güncelle'**
+  /// **'Mağazada güncelle'**
   String get forceUpdateAction;
 
   /// No description provided for @forceUpdateStoreFailed.
   ///
   /// In tr, this message translates to:
-  /// **'Mağaza açılamadı — Google Play\'de \"Rytho\" diye arat.'**
+  /// **'Mağaza açılamadı — uygulama mağazanda \"Rytho\" diye arat.'**
   String get forceUpdateStoreFailed;
 
   /// No description provided for @signInMethodsRow.
@@ -3365,13 +3365,13 @@ abstract class AppLocalizations {
   /// No description provided for @purchaseItemUnavailable.
   ///
   /// In tr, this message translates to:
-  /// **'Ürün mağazada bulunamadı. Play Store\'da test kanalına katılan Google hesabının seçili olduğundan emin olup tekrar dene.'**
+  /// **'Ürün mağazada bulunamadı. Test kanalına katılan hesabın mağazada seçili olduğundan emin olup tekrar dene.'**
   String get purchaseItemUnavailable;
 
   /// No description provided for @purchaseStoreProblem.
   ///
   /// In tr, this message translates to:
-  /// **'Google Play şu an satın almayı tamamlayamadı. Birkaç dakika sonra tekrar dene.'**
+  /// **'Mağaza şu an satın almayı tamamlayamadı. Birkaç dakika sonra tekrar dene.'**
   String get purchaseStoreProblem;
 
   /// No description provided for @tokenStoreTitle.

@@ -11,6 +11,7 @@
 /// toplar; profil satırından açılır.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -30,9 +31,17 @@ import '../../widgets/glass.dart';
 import '../paywall/paywall_screen.dart';
 import '../paywall/token_store_screen.dart';
 
-/// Play abonelik yönetimi sayfası. `sku` boşsa genel abonelikler sayfası
-/// açılır — kullanıcıyı hiçbir durumda çıkmaz sokakta bırakmayız.
-Uri _playSubscriptionUri(String? productId) {
+/// Mağazanın abonelik yönetimi sayfası. `sku` boşsa genel abonelikler
+/// sayfası açılır — kullanıcıyı hiçbir durumda çıkmaz sokakta bırakmayız.
+///
+/// iOS'ta Apple'ın sabit adresi kullanılır: ürün kimliği ALMAZ ve App Store
+/// kaydı olmadan da çalışır. Platform ayrımı olmadan bu fonksiyon iOS'ta
+/// Play sayfasını açıyordu — abonelik iptali oradan İMKÂNSIZ ve bu, mağaza
+/// kuralı ihlali sayılır (kullanıcı aboneliğini yönetebilmeli).
+Uri storeSubscriptionUri(String? productId) {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    return Uri.parse('https://apps.apple.com/account/subscriptions');
+  }
   const paket = 'ai.rytho';
   // Play webhook'u ürün kimliğini "urun:base_plan" biçiminde gönderebilir
   // (rytho_plus_monthly:monthly). Play'in sku parametresi base-plan eki
@@ -93,7 +102,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
   Future<void> _manage(String? productId) async {
     // Dış tarayıcıya çıkar: Play aboneliği uygulama içinden yönetilemez,
     // mağaza kuralı gereği iptal/duraklatma oranın işi.
-    await launchUrl(_playSubscriptionUri(productId),
+    await launchUrl(storeSubscriptionUri(productId),
         mode: LaunchMode.externalApplication);
   }
 

@@ -1,0 +1,72 @@
+# Rytho — iOS CocoaPods yapılandırması.
+#
+# NEDEN DEPODA DURUYOR: Flutter, Podfile yoksa şablondan üretir — ama o
+# şablonda `platform :ios` satırı YORUMLU gelir (flutter_tools/templates/
+# cocoapods/Podfile-ios:1-2). Satır yorumluyken CocoaPods hedefi
+# Runner.xcodeproj'deki değerden okur ve çözümleme şu hatayla düşer:
+#
+#   The platform of the target `Runner` (iOS 13.0) is not compatible with
+#   `google_mlkit_face_detection` which has a minimum requirement of iOS 15.5
+#
+# Yani dosya üretilse bile sorun kendiliğinden çözülmez. Bir kez elle
+# düzeltip depoya koymamak, her temiz checkout'ta aynı hatayı yeniden
+# ürettirir.
+#
+# 15.5 KEYFİ DEĞİL, paketlerin dayattığı tabandır (pub cache'ten ölçüldü):
+#   google_mlkit_face_detection 0.13.2 → 15.5   (en yüksek; tavanı bu belirliyor)
+#   google_mlkit_commons        0.11.1 → 15.5
+#   firebase_core               4.12.1 → 15.0
+#   firebase_auth / cloud_firestore / firebase_app_check → 15.0
+# Düşürmek ancak yüz okumayı iOS'ta kapatmakla mümkün; bu bir ürün kararıdır
+# ve alınmadı. Paketler yükseltilirse BU SATIR yeniden ölçülmeli.
+platform :ios, '15.5'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+
+    # Flutter'ın kendi yardımcısı pod hedeflerinin IPHONEOS_DEPLOYMENT_TARGET
+    # değerini düşürüyor ya da siliyor (podhelper.rb:83 ve :110). Bunun
+    # bilinen yan etkisi, Xcode'un her derlemede yüzlerce "target overrides
+    # the deployment target" uyarısı basması ve gerçek uyarıların bu gürültüde
+    # kaybolması. Tabanı burada yeniden sabitliyoruz — Runner ile aynı değer.
+    target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.5'
+    end
+  end
+end

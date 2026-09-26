@@ -107,6 +107,19 @@ Future<void> main() async {
       providerAndroid: kDebugMode
           ? const AndroidDebugProvider()
           : const AndroidPlayIntegrityProvider(),
+      // Apple tarafı SESSİZCE varsayılana düşüyordu. `providerApple`
+      // verilmezse paket `AppleDeviceCheckProvider()` kullanıyor
+      // (firebase_app_check 0.4.5+2, firebase_app_check.dart:110) — App
+      // Attest'ten zayıf bir kanıt. Zorlama 2026-09-26'da Firestore ve
+      // identitytoolkit için AÇILDI, yani yanlış sağlayıcıyla çıkan bir
+      // iOS paketi sunucuya hiç bağlanamaz ve bu ancak cihazda görülür.
+      //
+      // Fallback'li varyanta gerek yok: App Attest iOS 14+ ister, taban
+      // 15.5 (ios/Podfile). Simülatörde App Attest çalışmaz, debug
+      // sağlayıcı o boşluğu kapatıyor — Android'deki desenin aynısı.
+      providerApple: kDebugMode
+          ? const AppleDebugProvider()
+          : const AppleAppAttestProvider(),
     );
   } catch (e) {
     debugPrint('App Check etkinleştirilemedi: $e');

@@ -286,26 +286,73 @@ sonrası tekrarlamadı. Çökme günlüğü `apps/mobile/android/hs_err_pid*.log
 
 ## 7. iOS durumu
 
-`apps/mobile/ios/` projesi **var** ve beklenenden ileride: bundle id
-`ai.rytho`, Info.plist izin metinleri yazılı, `Runner.entitlements`'ta Apple
-ile Giriş + associated-domains, `sign_in_with_apple` hem pakette hem
-`auth_service.dart`'ta, `REVENUECAT_IOS_KEY` dart-define yuvası tanımlı,
-`apple-app-site-association` canlıda.
-
-**Eksikler (ölçüldü):** `GoogleService-Info.plist` yok · `Podfile` yok ·
-entitlements'ta `aps-environment` yok (push iOS'ta çalışmaz) ·
-`apple-app-site-association` içinde `TEAMID` **yer tutucu** ·
-`associated-domains` hâlâ `rhytoai.web.app` diyor ama alan adı **`rytho.app`**'e
-taşındı (davet bağlantıları iOS'ta açılmaz) · App Store Connect kaydı ve IAP
-ürünleri yok (Play'dekilerden ayrı oluşturulur) · Info.plist izin metinleri
-yalnız Türkçe.
+**Tam envanter ve sıralı yol haritası: `docs/mac-devir.md`.** Burada yalnız
+özet ve tuzaklar var. Denetim 2026-09-26, 63 ajan, 54 onaylanmış bulgu.
 
 iOS derlemesi/imzalaması/yüklemesi **yalnız macOS**'ta yapılabilir.
+
+**Depoda BİTTİ** (2026-09-26): `ios/Podfile` (`platform :ios, '15.5'`
+açık) · deployment target 15.5 · App Check Apple sağlayıcısı
+(`providerApple`) · `aps-environment` Debug/Release ayrı iki entitlements
+dosyasıyla · `UIBackgroundModes/remote-notification` ·
+`ITSAppUsesNonExemptEncryption` · `STRIP_STYLE = non-global` · zorunlu
+güncelleme ve abonelik yönetiminde iOS dalı · mağaza-nötr metinler.
+
+**Kalan engelleyiciler hesap işidir, kod değil:** Apple Developer üyeliği →
+Team ID · Firebase'de iOS kaydı → `GoogleService-Info.plist` · ondan çıkan
+`REVERSED_CLIENT_ID` ile `CFBundleURLTypes`/`GIDClientID` · imzalama ·
+APNs anahtarı · gerçek `appl_` RevenueCat anahtarı (şu anki `test_` önekli)
+· AASA'daki `TEAMID` yer tutucusu · App Store Connect kaydı ve IAP ürünleri.
+
+### iOS tuzakları (ölçüldü)
+
+**`platform :ios` şablonda YORUMLU gelir.** Flutter, Podfile yoksa
+şablondan üretir ama o satır kapalıdır; CocoaPods hedefi pbxproj'deki
+değerden okur ve `google_mlkit_face_detection` 15.5 isterken 13.0 görüp
+düşer. Yani "Podfile yok" tek başına doğru teşhis DEĞİLDİ — dosya
+üretilse bile sorun çözülmezdi. Podfile artık depoda ve satır açık.
+
+**15.5 keyfî değil**, paketlerin dayattığı tabandır: ML Kit 15.5,
+Firebase 15.0. Düşürmek ancak yüz okumayı iOS'ta kapatmakla mümkün.
+
+**`aps-environment` tek dosyada tutulamaz.** Release arşivi `development`
+değeriyle çıkarsa cihaz SANDBOX jetonu alır, sunucu üretim APNs'ine
+gönderir ve bildirim hiçbir yere düşmez — TestFlight'ta çalışır, mağazada
+ölür. Bu yüzden `Runner.entitlements` (development) ve
+`RunnerRelease.entitlements` (production) ayrı; pbxproj Release bloğu
+ikincisine bakıyor. İkisi **yalnız o değerde** farklı kalmalı.
+
+**Dosyayı `Runner/` altına kopyalamak pakete SOKMAZ.** `project.pbxproj`
+klasör-senkronlu grup kullanmıyor (`objectVersion = 54`,
+`PBXFileSystemSynchronizedRootGroup` yok) ve Copy Bundle Resources'ta
+yalnız dört girdi var. `GoogleService-Info.plist` ve
+`en.lproj/InfoPlist.strings` **Xcode'da hedefe eklenmeli**.
+
+**`developmentRegion = en` ama izin metinleri Türkçe** — yani İngilizce
+cihaz Türkçe izin diyaloğu görüyor. Türkiye-öncelikli lansmanda kabul;
+dünyaya açılmadan önce düzeltilmeli. İngilizce metinler
+`ios/Runner/en.lproj/InfoPlist.strings`'te **hazır ama bağlı değil**.
+
+**`AppDelegate`'e bildirim delegesi körlemesine eklenmedi.**
+`flutter_local_notifications` README'si istiyor ama `firebase_messaging` de
+aynı delegeyi sahipleniyor; hangisinin kazandığı yalnız cihazda ölçülür.
+Ölçmeden eklemek push'u onarmak yerine bozabilirdi.
+
+**Simülatörde çalışmayan ikili:** TFLite ve App Attest. İkisi de gerçek
+cihaz ister.
+
+**Bu bölümde iki kez bayat not yakalandı** (2026-09-26): "associated-domains
+hâlâ `rhytoai.web.app` diyor" yazıyordu — oysa `Runner.entitlements` iki
+alan adını birden taşıyor, önceki bir turda düzeltilmiş ve not
+güncellenmemişti. İkincisi yukarıdaki Podfile gerekçesiydi. **Bu bölümdeki
+hiçbir iddiaya ölçmeden güvenme.**
 
 ---
 
 ## 8. Belgeler
 
+`docs/mac-devir.md` — **Mac kurulumu ve iOS yol haritası** (yeni makineye
+geçerken ÖNCE bu okunur) ·
 `docs/test-raporu.md` — senaryo listesi ve bulgular (B1…B10) ·
 `docs/konsol-gorevleri.md` — Firebase/Play/Cloud konsol işleri ·
 `docs/store-launch.md` — mağaza metni, yasak dil, görsel borçları ·

@@ -1,0 +1,24 @@
+/* Rytho — İngilizce izin metinleri (iOS).
+
+   ⚠️ BU DOSYA HENÜZ XCODE PROJESİNE BAĞLI DEĞİL. Diskte hazır duruyor ama
+   Runner hedefinin Copy Bundle Resources'ında yok ve pbxproj'de
+   `knownRegions` yalnız (en, Base) — `tr` hiç yok. Bağlanmadan hiçbir
+   etkisi olmaz. Bağlama işi Xcode'da yapılır (Windows'tan pbxproj'e
+   variant-group cerrahisi yapmak projeyi hiç açılmaz hâle getirebilir);
+   adımlar docs/mac-devir.md'de.
+
+   NEDEN GEREKLİ: Info.plist'teki izin metinleri Türkçe ve projenin
+   `developmentRegion = en`. Yani şu anda İNGİLİZCE cihaz da Türkçe izin
+   diyaloğu görüyor. Türkiye-öncelikli lansmanda bu kabul edilebilir;
+   dünyaya açılmadan önce düzeltilmeli. Apple bu metinleri diyalogda
+   AYNEN gösteriyor ve belirsiz/yanlış dildeki gerekçe tek başına red
+   sebebi olabiliyor (Guideline 5.1.1).
+
+   Metinler Türkçeleriyle AYNI SÖZÜ vermeli: ne yapıldığını VE ne
+   yapılmadığını söylüyorlar. Biri değişirse diğeri de değişmeli. */
+
+"NSContactsUsageDescription" = "If you turn on contact matching, numbers are hashed on your device; your contacts are never sent to our servers.";
+
+"NSCameraUsageDescription" = "Face reading needs access to the camera. The image is processed only on your device — it is never uploaded or stored.";
+
+"NSPhotoLibraryUsageDescription" = "You can pick a photo from your library for face reading. The photo is processed only on your device — it is never uploaded or stored.";

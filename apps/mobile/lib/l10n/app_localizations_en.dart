@@ -1783,11 +1783,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'This version of Rytho is no longer supported. Update the app to continue — the stars are waiting.';
 
   @override
-  String get forceUpdateAction => 'Update on Google Play';
+  String get forceUpdateAction => 'Update in the store';
 
   @override
   String get forceUpdateStoreFailed =>
-      'Couldn\'t open the store — search for \"Rytho\" on Google Play.';
+      'Couldn\'t open the store — search for \"Rytho\" in your app store.';
 
   @override
   String get signInMethodsRow => 'Sign-in methods';
@@ -1850,11 +1850,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get purchaseItemUnavailable =>
-      'The product couldn\'t be found in the store. Make sure the Google account that joined the test track is selected in Play Store, then try again.';
+      'The product couldn\'t be found in the store. Make sure the account that joined the test track is selected in the store, then try again.';
 
   @override
   String get purchaseStoreProblem =>
-      'Google Play couldn\'t complete the purchase right now. Please try again in a few minutes.';
+      'The store couldn\'t complete the purchase right now. Please try again in a few minutes.';
 
   @override
   String get tokenStoreTitle => 'Credit Store';

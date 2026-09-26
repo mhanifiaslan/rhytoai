@@ -1781,11 +1781,11 @@ class AppLocalizationsTr extends AppLocalizations {
       'Rytho\'nun bu sürümü artık desteklenmiyor. Devam etmek için uygulamayı güncelle — yıldızlar bekliyor.';
 
   @override
-  String get forceUpdateAction => 'Google Play\'de güncelle';
+  String get forceUpdateAction => 'Mağazada güncelle';
 
   @override
   String get forceUpdateStoreFailed =>
-      'Mağaza açılamadı — Google Play\'de \"Rytho\" diye arat.';
+      'Mağaza açılamadı — uygulama mağazanda \"Rytho\" diye arat.';
 
   @override
   String get signInMethodsRow => 'Giriş yöntemleri';
@@ -1847,11 +1847,11 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get purchaseItemUnavailable =>
-      'Ürün mağazada bulunamadı. Play Store\'da test kanalına katılan Google hesabının seçili olduğundan emin olup tekrar dene.';
+      'Ürün mağazada bulunamadı. Test kanalına katılan hesabın mağazada seçili olduğundan emin olup tekrar dene.';
 
   @override
   String get purchaseStoreProblem =>
-      'Google Play şu an satın almayı tamamlayamadı. Birkaç dakika sonra tekrar dene.';
+      'Mağaza şu an satın almayı tamamlayamadı. Birkaç dakika sonra tekrar dene.';
 
   @override
   String get tokenStoreTitle => 'Kredi Mağazası';

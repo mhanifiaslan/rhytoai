@@ -37,8 +37,22 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<!-- Ihracat uyumlulugu. Uygulama YALNIZ isletim sisteminin sagladigi
+	     HTTPS/TLS kullaniyor; rehber eslesmesindeki SHA-256 ise OZETLEME,
+	     sifreleme degil — ikisi de muaf. Bu anahtar olmazsa App Store
+	     Connect HER TestFlight yuklemesinde ihracat sorusunu yeniden
+	     soruyor ve dagitimi bekletiyor. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Uzak bildirim. Android tarafinda karsiligi manifest izni; iOS'ta
+	     BU anahtar VE entitlements'taki aps-environment BIRLIKTE gerekir.
+	     Biri eksikken push SESSIZCE calismaz: jeton alinir, bildirim gelmez. -->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -4,5 +4,7 @@
   "_entitlement": "RevenueCat panelindeki Entitlements > Identifier ile BIREBIR ayni olmali (bosluk ve buyuk/kucuk harf dahil). Yanlissa satin alma basarili olur ama uygulama aboneligi gormez.",
   "REVENUECAT_ANDROID_KEY": "goog_XXXXXXXXXXXXXXXX",
   "REVENUECAT_IOS_KEY": "appl_XXXXXXXXXXXXXXXX",
+  "_appstore": "APPSTORE_APP_ID = App Store Connect kaydi olusturulunca alinan SAYISAL kimlik. Bos birakilirsa zorunlu guncelleme ekrani iOS'ta magaza dugmesi GOSTERMEZ (uydurma baglanti yerine durust mesaj).",
+  "APPSTORE_APP_ID": "",
   "RYTHO_PLUS_ENTITLEMENT": "RhytoAI Pro"
 }

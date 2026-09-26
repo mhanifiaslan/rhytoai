@@ -5,6 +5,7 @@
 // katmanda da açılamazsa SÖYLENİR — başka çıkışı olmayan ekranda sessiz
 // buton "uygulama bozuldu" demektir (KT4'te market:// fırlatınca kullanıcı
 // gerçekten kilitli kaldı); (3) metinler l10n'dan gelir.
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,8 +78,11 @@ void main() {
     expect(find.text(l10n.forceUpdateTitle), findsOneWidget);
     expect(find.text(l10n.forceUpdateBody), findsOneWidget);
     expect(find.text(l10n.forceUpdateAction), findsOneWidget);
-    // Play metni korunur (mağaza kararı değişmedi).
-    expect(l10n.forceUpdateAction, contains('Google Play'));
+    // Mağaza adı metne GİRMEZ: aynı dize iOS'ta da gösteriliyor ve
+    // Türkçe ek uyumu yüzünden yer tutucuyla çözülemiyor
+    // ("Play'DE" ama "App Store'DA").
+    expect(l10n.forceUpdateAction, isNot(contains('Google Play')));
+    expect(l10n.forceUpdateAction, isNot(contains('App Store')));
     expect(find.byType(SnackBar), findsNothing);
   });
 
@@ -119,5 +123,45 @@ void main() {
     expect(magaza.cagrilar, [kPlayMarketUri, kPlayWebUri]);
     expect(find.byType(SnackBar), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  group('mağaza adayları platforma göre', () {
+    tearDown(() => debugDefaultTargetPlatformOverride = null);
+
+    test('Android: önce market://, sonra web', () {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      final adaylar = magazaAdaylari();
+      expect(adaylar.map((a) => a.url).toList(), [kPlayMarketUri, kPlayWebUri]);
+    });
+
+    test('iOS: App Store kimliği YOKKEN aday üretilmez', () {
+      // Bu turun asıl kararı. Kimlik `String.fromEnvironment` ile gelir ve
+      // testte boştur — tıpkı App Store Connect kaydı açılmadan yapılan
+      // her derlemede olduğu gibi. Uydurma bir kimlikle kurulan bağlantı
+      // mağazada "uygulama bulunamadı" açar ve kullanıcı bu ekranda
+      // GERÇEKTEN kilitli kalır; boş liste dürüst SnackBar'a düşürür.
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      expect(kAppStoreAppId, isEmpty,
+          reason: 'test derlemesinde APPSTORE_APP_ID tanımlı olmamalı');
+      expect(magazaAdaylari(), isEmpty);
+    });
+
+    testWidgets('iOS: çıkış yokken sessiz kalmaz, SnackBar söyler',
+        (tester) async {
+      // Sıfırlama GÖVDE İÇİNDE: `testWidgets` gövde biter bitmez foundation
+      // debug değişkenlerinin sıfırlanmış olmasını doğruluyor
+      // (binding._verifyInvariants), yani tearDown çok geç kalıyor.
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+      try {
+        final magaza = _SahteMagaza(market: false, web: false);
+        await tester.pumpWidget(_sar(ForceUpdateScreen(launcher: magaza.ac)));
+        await tester.tap(find.text(_tr().forceUpdateAction));
+        await tester.pump();
+        expect(magaza.cagrilar, isEmpty, reason: 'denenecek adres yok');
+        expect(find.text(_tr().forceUpdateStoreFailed), findsOneWidget);
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
   });
 }

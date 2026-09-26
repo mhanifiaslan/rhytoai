@@ -16,7 +16,7 @@
 	     CODE_SIGN_ENTITLEMENTS, Release blogu).
 	     Ikisi aps-environment DISINDA birebir ayni kalmali. -->
 	<key>aps-environment</key>
-	<string>development</string>
+	<string>production</string>
 
 	<!-- Apple ile Giris (App Store Guideline 4.8 geregi zorunlu).
 	     Bu yetenegin Apple Developer portalinda da App ID uzerinde

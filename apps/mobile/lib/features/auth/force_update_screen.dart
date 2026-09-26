@@ -14,6 +14,7 @@
 /// başka çıkışı olmayan ekranda "uygulama bozuldu" demektir.
 library;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -38,6 +39,36 @@ final Uri kPlayMarketUri = Uri.parse('market://details?id=ai.rytho');
 /// Web sayfası — Play uygulaması olmayan cihazlar (ör. bazı tabletler).
 final Uri kPlayWebUri =
     Uri.parse('https://play.google.com/store/apps/details?id=ai.rytho');
+
+/// App Store'un SAYISAL uygulama kimliği (App Store Connect kaydıyla doğar).
+///
+/// Apple, paket adıyla mağaza sayfası açmaya izin vermiyor; tek yol bu
+/// sayı. Kayıt henüz açılmadığı için varsayılan BOŞ ve bu bilinçli:
+/// uydurma bir kimlikle kurulan bağlantı mağazada "uygulama bulunamadı"
+/// sayfası açar ve kullanıcı zorunlu güncelleme ekranında gerçekten
+/// kilitli kalır. Boşken düğme hiç gösterilmez, dürüst mesaj verilir.
+/// Kimlik alınınca `dart_defines.local.json` içine yazılır.
+const kAppStoreAppId = String.fromEnvironment('APPSTORE_APP_ID');
+
+/// Denenecek mağaza adayları, sırayla. Boş liste = bu platformda çıkış yok.
+///
+/// `defaultTargetPlatform` kullanılıyor, `Platform.isIOS` değil: ilki
+/// widget testinde değiştirilebilir, ikincisi test edilemez.
+List<({Uri url, LaunchMode mod})> magazaAdaylari() {
+  if (defaultTargetPlatform == TargetPlatform.iOS) {
+    if (kAppStoreAppId.isEmpty) return const [];
+    return [
+      (url: Uri.parse('itms-apps://apps.apple.com/app/id$kAppStoreAppId'),
+       mod: LaunchMode.platformDefault),
+      (url: Uri.parse('https://apps.apple.com/app/id$kAppStoreAppId'),
+       mod: LaunchMode.externalApplication),
+    ];
+  }
+  return [
+    (url: kPlayMarketUri, mod: LaunchMode.platformDefault),
+    (url: kPlayWebUri, mod: LaunchMode.externalApplication),
+  ];
+}
 
 class ForceUpdateScreen extends StatefulWidget {
   const ForceUpdateScreen({super.key, this.launcher});
@@ -67,12 +98,11 @@ class _ForceUpdateScreenState extends State<ForceUpdateScreen> {
     // Messenger await'ten ÖNCE alınır: sonra context ölmüş olabilir.
     final mesajci = ScaffoldMessenger.of(context);
     final l10n = AppLocalizations.of(context);
-    try {
-      if (await ac(kPlayMarketUri)) return;
-    } catch (_) {}
-    try {
-      if (await ac(kPlayWebUri, mode: LaunchMode.externalApplication)) return;
-    } catch (_) {}
+    for (final aday in magazaAdaylari()) {
+      try {
+        if (await ac(aday.url, mode: aday.mod)) return;
+      } catch (_) {}
+    }
     // İki katman da düştü (Play yok, tarayıcı yok ya da kısıtlı profil):
     // kullanıcı mağazada elle aratabilsin diye söylenir.
     if (!mounted) return;
